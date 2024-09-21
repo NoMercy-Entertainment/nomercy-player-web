@@ -1,10 +1,10 @@
-import nmplayer from './src/index.ts';
+import nmplayer from './src/index';
 import { OctopusPlugin } from './src/plugins/octopusPlugin';
 import { DesktopUIPlugin } from './src/plugins/desktopUIPlugin';
 import { MobileUIPlugin } from './src/plugins/mobileUIPlugin';
 import { TVUIPlugin } from './src/plugins/tvUIPlugin';
 import { KeyHandlerPlugin } from './src/plugins/keyHandlerPlugin';
-import {SabrePlugin} from "./src/plugins/sabrePlugin";
+import type { SetupConfig } from './src/index.d';
 
 // const gain = document.querySelector('#gain');
 // const gainSlider = document.querySelector('#gainSlider');
@@ -15,7 +15,7 @@ import {SabrePlugin} from "./src/plugins/sabrePlugin";
 // 		gainSlider.value = 1;
 // 		return;
 // 	}
-//	
+//
 // 	player.setGain(e.target.value);
 // });
 
@@ -26,10 +26,7 @@ import {SabrePlugin} from "./src/plugins/sabrePlugin";
 // });
 
 
-/**
- * @type {import("./src/index.d").SetupConfig}
- */
-const config = {
+const config: SetupConfig = {
 	muted: false,
 	controls: false,
 	preload: 'auto',
@@ -110,16 +107,16 @@ const config = {
 					kind: 'subtitles',
 				},
 				{
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Sintel.(2010)/thumbs_256x109.vtt",
-					kind: "thumbnails"
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Sintel.(2010)/thumbs_256x109.vtt',
+					kind: 'thumbnails',
 				},
 				{
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Sintel.(2010)/chapters.vtt",
-					kind: "chapters"
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Sintel.(2010)/chapters.vtt',
+					kind: 'chapters',
 				},
 				{
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Sintel.(2010)/thumbs_256x109.webp",
-					kind: "sprite"
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Sintel.(2010)/thumbs_256x109.webp',
+					kind: 'sprite',
 				},
 			],
 		},
@@ -169,16 +166,16 @@ const config = {
 					kind: 'subtitles',
 				},
 				{
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Cosmos.Laundromat.(2015)/thumbs_256x144.vtt",
-					kind: "thumbnails"
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Cosmos.Laundromat.(2015)/thumbs_256x144.vtt',
+					kind: 'thumbnails',
 				},
 				{
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Cosmos.Laundromat.(2015)/chapters.vtt",
-					kind: "chapters"
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Cosmos.Laundromat.(2015)/chapters.vtt',
+					kind: 'chapters',
 				},
 				{
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Cosmos.Laundromat.(2015)/thumbs_256x144.webp",
-					kind: "sprite"
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Cosmos.Laundromat.(2015)/thumbs_256x144.webp',
+					kind: 'sprite',
 				},
 			],
 		},
@@ -191,156 +188,156 @@ const config = {
 			duration: '12:13',
 			tracks: [
 				{
-					label: "Brazilian (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.bra.full.vtt",
-					language: "bra",
-					kind: "subtitles"
+					label: 'Brazilian (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.bra.full.vtt',
+					language: 'bra',
+					kind: 'subtitles',
 				},
 				{
-					label: "Chinese (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.chi.full.vtt",
-					language: "chi",
-					kind: "subtitles"
+					label: 'Chinese (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.chi.full.vtt',
+					language: 'chi',
+					kind: 'subtitles',
 				},
 				{
-					label: "Croatian (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.cro.full.vtt",
-					language: "cro",
-					kind: "subtitles"
+					label: 'Croatian (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.cro.full.vtt',
+					language: 'cro',
+					kind: 'subtitles',
 				},
 				{
-					label: "Chech (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.cze.full.vtt",
-					language: "cze",
-					kind: "subtitles"
+					label: 'Chech (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.cze.full.vtt',
+					language: 'cze',
+					kind: 'subtitles',
 				},
 				{
-					label: "Danish (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.dan.full.vtt",
-					language: "dan",
-					kind: "subtitles"
+					label: 'Danish (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.dan.full.vtt',
+					language: 'dan',
+					kind: 'subtitles',
 				},
 				{
-					label: "Dutch (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.dut.full.vtt",
-					language: "dut",
-					kind: "subtitles"
+					label: 'Dutch (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.dut.full.vtt',
+					language: 'dut',
+					kind: 'subtitles',
 				},
 				{
-					label: "English (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.eng.full.vtt",
-					language: "eng",
-					kind: "subtitles"
+					label: 'English (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.eng.full.vtt',
+					language: 'eng',
+					kind: 'subtitles',
 				},
 				{
-					label: "French (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.fre.full.vtt",
-					language: "fre",
-					kind: "subtitles"
+					label: 'French (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.fre.full.vtt',
+					language: 'fre',
+					kind: 'subtitles',
 				},
 				{
-					label: "German (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.ger.full.vtt",
-					language: "ger",
-					kind: "subtitles"
+					label: 'German (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.ger.full.vtt',
+					language: 'ger',
+					kind: 'subtitles',
 				},
 				{
-					label: "Greek (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.gre.full.vtt",
-					language: "gre",
-					kind: "subtitles"
+					label: 'Greek (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.gre.full.vtt',
+					language: 'gre',
+					kind: 'subtitles',
 				},
 				{
-					label: "Hebrew (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.heb.full.vtt",
-					language: "heb",
-					kind: "subtitles"
+					label: 'Hebrew (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.heb.full.vtt',
+					language: 'heb',
+					kind: 'subtitles',
 				},
 				{
-					label: "Hungarian (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.hun.full.vtt",
-					language: "hun",
-					kind: "subtitles"
+					label: 'Hungarian (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.hun.full.vtt',
+					language: 'hun',
+					kind: 'subtitles',
 				},
 				{
-					label: "Indian (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.ind.full.vtt",
-					language: "ind",
-					kind: "subtitles"
+					label: 'Indian (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.ind.full.vtt',
+					language: 'ind',
+					kind: 'subtitles',
 				},
 				{
-					label: "Italian (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.ita.full.vtt",
-					language: "ita",
-					kind: "subtitles"
+					label: 'Italian (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.ita.full.vtt',
+					language: 'ita',
+					kind: 'subtitles',
 				},
 				{
-					label: "Japanese (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.jpn.full.vtt",
-					language: "jpn",
-					kind: "subtitles"
+					label: 'Japanese (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.jpn.full.vtt',
+					language: 'jpn',
+					kind: 'subtitles',
 				},
 				{
-					label: "Norwegian (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.nor.full.vtt",
-					language: "nor",
-					kind: "subtitles"
+					label: 'Norwegian (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.nor.full.vtt',
+					language: 'nor',
+					kind: 'subtitles',
 				},
 				{
-					label: "Persian (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.per.full.vtt",
-					language: "per",
-					kind: "subtitles"
+					label: 'Persian (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.per.full.vtt',
+					language: 'per',
+					kind: 'subtitles',
 				},
 				{
-					label: "Portugese (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.por.full.vtt",
-					language: "por",
-					kind: "subtitles"
+					label: 'Portugese (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.por.full.vtt',
+					language: 'por',
+					kind: 'subtitles',
 				},
 				{
-					label: "Russian (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.rus.full.vtt",
-					language: "rus",
-					kind: "subtitles"
+					label: 'Russian (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.rus.full.vtt',
+					language: 'rus',
+					kind: 'subtitles',
 				},
 				{
-					label: "Spanish (Full)",
-					type: "sdh",
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.spa.full.vtt",
-					language: "spa",
-					kind: "subtitles"
+					label: 'Spanish (Full)',
+					type: 'sdh',
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/subtitles/Tears.of.Steel.(2012).NoMercy.spa.full.vtt',
+					language: 'spa',
+					kind: 'subtitles',
 				},
 				{
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/previews.vtt",
-					kind: "thumbnails"
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/previews.vtt',
+					kind: 'thumbnails',
 				},
 				{
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/chapters.vtt",
-					kind: "chapters"
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/chapters.vtt',
+					kind: 'chapters',
 				},
 				{
-					file: "https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/sprite.webp",
-					kind: "sprite"
+					file: 'https://raw.githubusercontent.com/NoMercy-Entertainment/media/master/Films/Films/Tears.of.Steel.(2012)/sprite.webp',
+					kind: 'sprite',
 				},
 			],
 		},
@@ -398,24 +395,12 @@ const config = {
 		1.75,
 		2,
 	],
-	fullscreen: {
-		iOS: true,
-		alwaysInLandscapeMode: true,
-		enable: true,
-		enterOnRotate: true,
-		exitOnRotate: true,
-	},
-
 	// NoMercy test account
 	// accessToken: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiJkNWE1YTAwNS05ZWE2LTRlODMtYmZmNy05ZTQ0MjY5OTg4OWMiLCJqdGkiOiJiNDAyZWU0YThjNGYxYzJjN2RhNmE0ODZjNjY2NDI4YWYyMzMwNGI2MzIyNzRmZjZjNThkODI2YTdjYTEzYTFhYmM2NTA2YjIyOWVmNWE3YiIsImlhdCI6MTY5MzI0NTIwNi42Mjk3NTUsIm5iZiI6MTY5MzI0NTIwNi42Mjk3NTYsImV4cCI6MTcyNDc4MTIwNi42MjM2NjcsInN1YiI6ImQ5OWE1NzQxLTM2ZTgtNGU1ZC1iYzUzLTg1MzAyNmIzZjRhYSIsInNjb3BlcyI6WyJvcGVuaWQiLCJwcm9maWxlIiwiZW1haWwiXSwibmFtZSI6IlRlc3QgVXNlciIsImVtYWlsIjoidGVzdEBub21lcmN5LnR2In0.GV7HlmRAVDL3Bb1MdWltS1AX8dR1LHRMF_vtvM01abLu2983djSKSUvtB26KV5MCpOSuOX-ZwlBlqbMJ5JUX55fSonUE0oiz0ujn8QIk0-G0ptB1-hqn6qIRtxncwZaT0TGNpF7TFejjMC_VcqwjtzmRA58JC940u7QL7k5304cbHJXv-_Op1FpAR3dRA0g3BVR8uJ5ckp1hO-KAj83NOetnviglQf6130WQKtx2AWC1qT55NW3Xx1YFAZZUptjgRZ5mhvDd0_OmTNnFvsQZYaHr5H2WFAzKfW7GEvlu7xFIiMxfhpfowyvV3u4VqoDU-wIfkod-U0lL9JlwnsufFAvE_dfXjMhDXZG80oFPifYLanj7DsL4lIfbaVJO92W1K4bYW0t8Jfi8U3ZdqXtvPSpjPmx5dyz9Z2Na16GtH0_sZu5oMPgbGRMk0pZLi0uGWb_Wxyg3MFMEE4f0zA3gRSc1yt3gCI-AIaiCeMKAbC_uPauV3QcNzbCV2JVxOzW-tKlexALBPYe53DKkODPVcQHhv_d1sqXZxqwS8OfkZzqNCg2MpN2DodgSAVM8b1xZMG_6Ym-hEtDYw0ZCghda7v0pZSAo67jFDv5kEk9MF4j7OGfvk3sFT-mi7gFogKLByrMfQMfs4-qnHrsoKOVZRU6S1JHkRJFSxkwcamv_AYI',
 };
 
 const player = nmplayer('player')
 	.setup(config);
-
-const sabrePlugin = new SabrePlugin();
-player.registerPlugin('sabre', sabrePlugin);
-player.usePlugin('sabre');
 
 const desktopUIPlugin = new DesktopUIPlugin();
 player.registerPlugin('desktopUI', desktopUIPlugin);
@@ -429,6 +414,10 @@ const tvUIPlugin = new TVUIPlugin();
 player.registerPlugin('tvUI', tvUIPlugin);
 player.usePlugin('tvUI');
 
+// const sabrePlugin = new SabrePlugin();
+// player.registerPlugin('sabre', sabrePlugin);
+// player.usePlugin('sabre');
+
 const octopusPlugin = new OctopusPlugin();
 player.registerPlugin('octopus', octopusPlugin);
 player.usePlugin('octopus');
@@ -437,48 +426,60 @@ const keyHandlerPlugin = new KeyHandlerPlugin();
 player.registerPlugin('keyHandler', keyHandlerPlugin);
 player.usePlugin('keyHandler');
 
+// @ts-ignore
 player.on('ready', (data) => {
 	console.log('ready', data);
 });
+// @ts-ignore
 player.on('setupError', (data) => {
 	console.log('setupError', data);
 });
 
 // Playlist
+// @ts-ignore
 player.on('playlist', (data) => {
 	console.log('playlist', data);
 });
+// @ts-ignore
 player.on('item', (data) => {
 	console.log('item', data);
 });
+// @ts-ignore
 player.on('playlistComplete', (data) => {
 	console.log('playlistComplete', data);
 });
 
 // Buffer
+// @ts-ignore
 player.on('bufferChange', (data) => {
 	console.log('bufferChange', data);
 });
 
 // Playback
-player.on('firstFrame', () => {
+player.on('firstFramce', () => {
 	console.log('firstFrame');
 });
+// @ts-ignore
 player.on('play', (data) => {
 	console.log('play', data);
 });
+// @ts-ignore
 player.on('pause', (data) => {
 	console.log('pause', data);
 });
+// @ts-ignore
 player.on('buffer', (data) => {
 	console.log('buffer', data);
 });
+// @ts-ignore
 player.on('idle', (data) => {
 	console.log('idle', data);
 });
+// @ts-ignore
 player.on('complete', (data) => {
 	console.log('complete', data);
 });
+// @ts-ignore
 player.on('error', (data) => {
 	console.log('error', data);
 });
@@ -489,7 +490,8 @@ player.on('seek', (data) => {
 player.on('seeked', (data) => {
 	console.log('seeked', data);
 });
-player.on('time', (_data) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+player.on('time', (data) => {
 	// console.log('time', data);
 });
 
@@ -501,6 +503,7 @@ player.on('volume', (data) => {
 	console.log('volume', data);
 });
 
+// @ts-ignore
 player.on('gain', (data) => {
 	console.log('gain', data);
 	// gain.innerHTML = data.value;
@@ -511,6 +514,7 @@ player.on('gain', (data) => {
 player.on('fullscreen', (data) => {
 	console.log('fullscreen', data);
 });
+// @ts-ignore
 player.on('resize', (data) => {
 	console.log('resize', data);
 });
@@ -534,63 +538,80 @@ player.on('audioTrackChanged', (data) => {
 });
 
 // Captions
+// @ts-ignore
 player.on('captionsList', (data) => {
 	console.log('captionsList', data);
 });
+// @ts-ignore
 player.on('captionsChanged', (data) => {
 	console.log('captionsChanged', data.label);
 });
 
 // Controls
+// @ts-ignore
 player.on('controls', (data) => {
 	console.log('controls', data);
 });
+// @ts-ignore
 player.on('displayClick', (data) => {
 	console.log('displayClick', data);
 });
 
 // Advertising
+// @ts-ignore
 player.on('adClick', (data) => {
 	console.log('adClick', data);
 });
+// @ts-ignore
 player.on('adCompanions', (data) => {
 	console.log('adCompanions', data);
 });
+// @ts-ignore
 player.on('adComplete', (data) => {
 	console.log('adComplete', data);
 });
+// @ts-ignore
 player.on('adError', (data) => {
 	console.log('adError', data);
 });
+// @ts-ignore
 player.on('adImpression', (data) => {
 	console.log('adImpression', data);
 });
+// @ts-ignore
 player.on('adTime', (data) => {
 	console.log('adTime', data);
 });
+// @ts-ignore
 player.on('adSkipped', (data) => {
 	console.log('adSkipped', data);
 });
+// @ts-ignore
 player.on('beforePlay', (data) => {
 	console.log('beforePlay', data);
 });
+// @ts-ignore
 player.on('beforeComplete', (data) => {
 	console.log('beforeComplete', data);
 });
 
 // Metadata
+// @ts-ignore
 player.on('meta', (data) => {
 	console.log('meta', data);
 });
 
+// @ts-ignore
 player.on('lastTimeTrigger', (data) => {
 	console.log('lastTimeTrigger', data);
 });
 
+// @ts-ignore
 player.on('theaterMode', (data) => {
 	// handle resize container
 	console.log('theaterMode', data);
 });
+// @ts-ignore
 player.on('pip', (data) => {
 	console.log('pip', data);
 });
