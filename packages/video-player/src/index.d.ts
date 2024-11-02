@@ -418,26 +418,27 @@ export interface SetupConfig {
     disableTouchControls?: boolean;
     doubleClickDelay?: number;
 	forceTvMode?: boolean;
+    seekButtons?: boolean;
 
     [key: string]: any;
 }
 
 export interface NMPlayer {
 
-    // off(event: NoParamEvent, callback: () => void): NMPlayer;
-    // off(event: keyof EventParams | NoParamEvent): NMPlayer;
-    // off<TEvent extends keyof EventParams>(event: TEvent, callback: EventCallback<EventParams[TEvent]>): NMPlayer;
-    // on(event: NoParamEvent, callback: () => void): NMPlayer;
-    // on<TEvent extends keyof EventParams>(event: TEvent, callback: EventCallback<EventParams[TEvent]>): NMPlayer;
-    // once(event: NoParamEvent, callback: () => void): NMPlayer;
-    // once<TEvent extends keyof EventParams>(event: TEvent, callback: EventCallback<EventParams[TEvent]>): NMPlayer;
-    // trigger(event: NoParamEvent): NMPlayer;
-    // trigger<TEvent extends keyof EventParams>(event: TEvent, args: EventParams[TEvent]): NMPlayer;
+    // off(event: NoParamEvent, callback: () => void): void;
+    // off(event: keyof EventParams | NoParamEvent): void;
+    // off<TEvent extends keyof EventParams>(event: TEvent, callback: EventCallback<EventParams[TEvent]>): void;
+    // on(event: NoParamEvent, callback: () => void): void;
+    // on<TEvent extends keyof EventParams>(event: TEvent, callback: EventCallback<EventParams[TEvent]>): void;
+    // once(event: NoParamEvent, callback: () => void): void;
+    // once<TEvent extends keyof EventParams>(event: TEvent, callback: EventCallback<EventParams[TEvent]>): void;
+    // trigger(event: NoParamEvent): void;
+    // trigger<TEvent extends keyof EventParams>(event: TEvent, args: EventParams[TEvent]): void;
 	playlistItem(): PlaylistItem;
 	playlistItem(index: number): void;
-    addCues(cues: SliderCue[]): NMPlayer;
+    addCues(cues: SliderCue[]): void;
     addPlugin(name: string, pluginInstance: any): void;
-    castToggle(): NMPlayer;
+    castToggle(): void;
     getAbsolutePosition(): string | null;
     getAdBlock(): boolean;
     getAudioTracks(): AudioTrack[];
@@ -478,41 +479,42 @@ export interface NMPlayer {
     getVisualQuality(): VisualQuality | undefined;
     getVolume(): number;
     getWidth(): number;
-    load(playlist: PlaylistItem[] | string): NMPlayer;
-    next(): NMPlayer;
-    pause(state?: boolean): NMPlayer;
+    load(playlist: PlaylistItem[] | string): void;
+    next(): void;
+    pause(state?: boolean): void;
     pauseAd(toggle: boolean): void;
-    play(state?: boolean): NMPlayer;
+    play(state?: boolean): void;
     playAd(tag: string | string[]): void;
-    playToggle(): NMPlayer;
-    playlistNext(): NMPlayer;
-    playlistPrev(): NMPlayer;
+    playToggle(): void;
+    playlistNext(): void;
+    playlistPrev(): void;
     registerPlugin(id: string, plugin: ReturnType<Plugin>): void;
     usePlugin(id: string): void;
-    remove(): NMPlayer;
-    removeButton(id: string): NMPlayer;
+    remove(): void;
+    removeButton(id: string): void;
     removePlaylistItemCallback(): void;
-    resize(width: number | string, height: number): NMPlayer;
-    seek(position: number): NMPlayer;
-    setAllowFullscreen(allowFullscreen?: boolean): NMPlayer;
-    setCaptions(styles: CaptionsConfig): NMPlayer;
-    setConfig(config: SetupConfig): NMPlayer;
-    setControls(state?: boolean): NMPlayer;
-    setCues(cues: SliderCue[]): NMPlayer;
+    resize(width: number | string, height: number): void;
+    seek(position: number): void;
+    setAllowFullscreen(allowFullscreen?: boolean): void;
+    setCaptions(styles: CaptionsConfig): void;
+    setConfig(config: SetupConfig): void;
+    setControls(state?: boolean): void;
+    setCues(cues: SliderCue[]): void;
     setCurrentAudioTrack(index: number): void;
     setCurrentCaptions(index: number): void;
     setCurrentQuality(index: number): void;
     setFloating(shouldFloat?: boolean): void;
     setFullscreen(state: boolean): void;
-    setMute(state?: boolean): NMPlayer;
-    setPip(state?: boolean): NMPlayer;
-    setPlaybackRate(rate?: number): NMPlayer;
+    setMute(state?: boolean): void;
+    setPip(state?: boolean): void;
+    setPlaybackRate(rate?: number): void;
     setPlaylistItemCallback(callback: null | ((item: PlaylistItem, index: number) => void | Promise<PlaylistItem>)): void;
-    setVolume(volume: number): NMPlayer;
-    setup(options: SetupConfig): NMPlayer;
+    setVolume(volume: number): void;
+    setup(options: SetupConfig): void;
+    setPlaylist(playlist: PlaylistItem[]): void;
     skipAd(): void;
-    stop(): NMPlayer;
-    stopCasting(): NMPlayer;
+    stop(): void;
+    stopCasting(): void;
 
     overlay: HTMLDivElement;
     container: HTMLDivElement;
@@ -608,8 +610,14 @@ export interface NMPlayer {
 	videoPlayer_getTimeData(): TimeData;
 	volumeDown(): void;
 	volumeUp(): void;
-    addButton(icon: string, label: string, handler: () => void, id: string, className?: string): NMPlayer;
+    addButton(icon: string, label: string, handler: () => void, id: string, className?: string): void;
     dispose(): void;
+
+    nextChapter(): void;
+    previousChapter(): void;
+    getPreviousChapter(currentStartTime: number): VTTData['cues'][number] | undefined;
+    getNextChapter(currentStartTime: number): VTTData['cues'][number] | undefined;
+    getCurrentChapter(currentTime: number): VTTData['cues'][number] | undefined;
 
     ui_removeActiveClass(): void;
     ui_resetInactivityTimer(): void;
@@ -708,7 +716,7 @@ export interface NMPlayer {
     emit(event: 'active', callback: (arg: boolean) => void): void;
 	emit(event: 'close'): void;
 	emit(event: 'fonts', data: Font[]): void;
-	emit(event: 'chapters', data: Chapter[]): void;
+	emit(event: 'chapters', data: VTTData): void;
 	emit(event: 'skippers', data: Chapter[]): void;
 	emit(event: 'display-message', value: string): void;
 	emit(event: 'duration', data: PlaybackState): void;
@@ -870,7 +878,7 @@ export interface NMPlayer {
     on(event: 'active', callback: (arg: boolean) => void): void;
 	on(event: 'close', callback?: (callback: (arg?: any) => any) => void): void;
 	on(event: 'fonts', callback: (data: Font[]) => void): void;
-	on(event: 'chapters', callback: (data: Chapter[]) => void): void;
+	on(event: 'chapters', callback: (data: VTTData) => void): void;
 	on(event: 'skippers', callback: (data: Chapter[]) => void): void;
 	on(event: 'display-message', callback: (value: string) => void): void;
 	on(event: 'duration', callback: (data: PlaybackState) => void): void;
@@ -1189,7 +1197,7 @@ export interface NMPlayer {
     once(event: 'active', callback: (arg: boolean) => void): void;
 	once(event: 'close', callback?: (callback: (arg?: any) => any) => void): void;
 	once(event: 'fonts', callback: (data: Font[]) => void): void;
-	once(event: 'chapters', callback: (data: Chapter[]) => void): void;
+	once(event: 'chapters', callback: (data: VTTData) => void): void;
 	once(event: 'skippers', callback: (data: Chapter[]) => void): void;
 	once(event: 'display-message', callback: (value: string) => void): void;
 	once(event: 'duration', callback: (data: PlaybackState) => void): void;
@@ -1252,7 +1260,7 @@ export interface NMPlayer {
 }
 
 interface NMPlayerStatic {
-    (query?: string | number | Element): NMPlayer;
+    (query?: string | number | Element): void;
 
     key: string;
     version: string;
