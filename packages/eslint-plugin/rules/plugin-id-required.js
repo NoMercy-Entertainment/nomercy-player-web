@@ -15,7 +15,7 @@
  *
  * The rule fires on a class that `extends Plugin` (directly, `core.Plugin`, or
  * the generic form `Plugin<...>`) and has no own `static id` field. It does not
- * judge the id's VALUE — vendoring-prefix convention (`'fillz:viz'` for external
+ * judge the id's VALUE — vendoring-prefix convention (`'<vendor>:<name>'` for external
  * authors) depends on which package owns the file and stays a review concern.
  *
  * Abstract intermediate bases are exempt: a class marked `abstract` is a shared
