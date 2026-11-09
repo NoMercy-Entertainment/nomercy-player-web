@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.affected.outputs.matrix }}
+      any: ${{ steps.affected.outputs.any }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Select affected packages
+        id: affected
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          REF: ${{ github.ref }}
+        run: |
+          BASE=all
+          if [ "$EVENT" = "push" ]; then
+            if [ "$REF" = "refs/heads/master" ]; then
+              BASE="$BEFORE"
+            else
+              BASE=$(git merge-base origin/master HEAD 2>/dev/null || echo all)
+            fi
+          fi
+          node .github/scripts/affected.mjs "$BASE" HEAD
+
+  check:
+    needs: plan
+    if: needs.plan.outputs.any == 'true'
+    name: ${{ matrix.short }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # Before setup-node: its yarn cache step runs the global yarn 1 otherwise,
+      # which refuses a repo that pins yarn 4 in packageManager.
+      - name: Enable Corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build core (dependency)
+        if: matrix.needs_core
+        run: yarn workspace @nomercy-entertainment/nomercy-player-core run build
+
+      - name: Typecheck
+        if: matrix.typecheck
+        run: yarn workspace ${{ matrix.name }} run typecheck
+
+      - name: Lint
+        if: matrix.lint
+        env:
+          CI: 'true'
+        run: yarn workspace ${{ matrix.name }} run lint
+
+      - name: Unit tests
+        if: matrix.test
+        run: yarn workspace ${{ matrix.name }} run test
+
+      - name: Build
+        if: matrix.build != ''
+        run: yarn workspace ${{ matrix.name }} run ${{ matrix.build }}
+
+      - name: Install Playwright browsers
+        if: matrix.e2e
+        run: yarn workspace ${{ matrix.name }} exec playwright install --with-deps chromium
+
+      - name: E2E tests
+        if: matrix.e2e
+        run: yarn workspace ${{ matrix.name }} run test:e2e

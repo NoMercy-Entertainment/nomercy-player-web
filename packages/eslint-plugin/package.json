@@ -7,7 +7,8 @@
 	"author": "NoMercy Entertainment",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/NoMercy-Entertainment/eslint-plugin-player.git"
+		"url": "git+https://github.com/NoMercy-Entertainment/nomercy-player-web.git",
+		"directory": "packages/eslint-plugin"
 	},
 	"homepage": "https://github.com/NoMercy-Entertainment/eslint-plugin-player#readme",
 	"bugs": {

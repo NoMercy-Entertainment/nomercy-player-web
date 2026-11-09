@@ -16,7 +16,8 @@
 	"homepage": "https://docs.nomercy.tv/nomercy-music-player/",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/NoMercy-Entertainment/nomercy-music-player.git"
+		"url": "git+https://github.com/NoMercy-Entertainment/nomercy-player-web.git",
+		"directory": "packages/music-player"
 	},
 	"bugs": {
 		"url": "https://github.com/NoMercy-Entertainment/nomercy-music-player/issues"

@@ -16,7 +16,8 @@
 	"homepage": "https://docs.nomercy.tv/nomercy-video-player/",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/NoMercy-Entertainment/nomercy-video-player.git"
+		"url": "git+https://github.com/NoMercy-Entertainment/nomercy-player-web.git",
+		"directory": "packages/video-player"
 	},
 	"bugs": {
 		"url": "https://github.com/NoMercy-Entertainment/nomercy-video-player/issues"

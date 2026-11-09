@@ -9,7 +9,8 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NoMercy-Entertainment/nomercy-media-session.git"
+    "url": "git+https://github.com/NoMercy-Entertainment/nomercy-player-web.git",
+    "directory": "packages/media-session"
   },
   "contributors": [
     "Stoney Eagle <stoney@nomercy.tv>"

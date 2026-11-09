@@ -1,0 +1,168 @@
+name: Publish
+
+# A GitHub release tagged <short>-v<semver> publishes that one package.
+# short: core, video, music, media-session, eslint-plugin.
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish, for example core-v2.6.1
+        required: true
+      dry_run:
+        description: Stop before npm publish
+        type: boolean
+        default: true
+
+jobs:
+  publish:
+    # npm refuses a provenance attestation from a self-hosted runner, so this
+    # job stays GitHub-hosted. Dropping --provenance would publish the same
+    # bytes with no verifiable link back to the commit that built them.
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.tag }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
+    steps:
+      - name: Parse the tag
+        id: tag
+        run: |
+          if [[ ! "$TAG" =~ ^(core|video|music|media-session|eslint-plugin)-v([0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?)$ ]]; then
+            echo "::error::tag '$TAG' does not match <short>-v<semver>"
+            exit 1
+          fi
+          SHORT="${BASH_REMATCH[1]}"
+          case "$SHORT" in
+            video) DIR=video-player ;;
+            music) DIR=music-player ;;
+            *) DIR="$SHORT" ;;
+          esac
+          echo "short=$SHORT" >> "$GITHUB_OUTPUT"
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          echo "version=${BASH_REMATCH[2]}" >> "$GITHUB_OUTPUT"
+          echo "tag $TAG -> package $SHORT (packages/$DIR), version ${BASH_REMATCH[2]}, dry_run=$DRY_RUN"
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+
+      # Before setup-node: its yarn cache step runs the global yarn 1 otherwise.
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: yarn
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Check the tag against package.json and npm
+        id: pkg
+        env:
+          DIR: ${{ steps.tag.outputs.dir }}
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          NAME=$(node -p "require('./packages/$DIR/package.json').name")
+          LOCAL=$(node -p "require('./packages/$DIR/package.json').version")
+          if [ "$LOCAL" != "$VERSION" ]; then
+            echo "::error::tag version $VERSION but packages/$DIR/package.json is $LOCAL"
+            exit 1
+          fi
+          PUBLISHED=$(npm view "$NAME@$VERSION" version 2>/dev/null || echo "")
+          SKIP=false
+          if [ "$PUBLISHED" = "$VERSION" ]; then
+            echo "$NAME@$VERSION is already on npm"
+            [ "$DRY_RUN" = "true" ] || SKIP=true
+          else
+            echo "$NAME@$VERSION is not on npm yet"
+          fi
+          case "$VERSION" in
+            *-*) DISTTAG=rc ;;
+            *) DISTTAG=latest ;;
+          esac
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "skip=$SKIP" >> "$GITHUB_OUTPUT"
+          echo "disttag=$DISTTAG" >> "$GITHUB_OUTPUT"
+          echo "dist-tag $DISTTAG, skip=$SKIP"
+
+      - name: Build core (dependency)
+        if: steps.pkg.outputs.skip != 'true' && steps.tag.outputs.short != 'core'
+        run: yarn workspace @nomercy-entertainment/nomercy-player-core run build
+
+      - name: Typecheck, lint, unit tests
+        if: steps.pkg.outputs.skip != 'true'
+        env:
+          CI: 'true'
+          NAME: ${{ steps.pkg.outputs.name }}
+          DIR: ${{ steps.tag.outputs.dir }}
+        run: |
+          for script in typecheck lint test; do
+            if node -e "process.exit(require('./packages/$DIR/package.json').scripts?.['$script'] ? 0 : 1)"; then
+              echo "== $script"
+              yarn workspace "$NAME" run "$script"
+            else
+              echo "== $script: no such script in $NAME, skipped"
+            fi
+          done
+
+      - name: Install Playwright browsers
+        if: steps.pkg.outputs.skip != 'true' && (steps.tag.outputs.short == 'video' || steps.tag.outputs.short == 'music')
+        run: yarn workspace ${{ steps.pkg.outputs.name }} exec playwright install --with-deps chromium
+
+      - name: E2E tests
+        if: steps.pkg.outputs.skip != 'true' && (steps.tag.outputs.short == 'video' || steps.tag.outputs.short == 'music')
+        run: yarn workspace ${{ steps.pkg.outputs.name }} run test:e2e
+
+      - name: Build package
+        if: steps.pkg.outputs.skip != 'true'
+        env:
+          NAME: ${{ steps.pkg.outputs.name }}
+          DIR: ${{ steps.tag.outputs.dir }}
+        run: |
+          if node -e "process.exit(require('./packages/$DIR/package.json').scripts?.['build:all'] ? 0 : 1)"; then
+            yarn workspace "$NAME" run build:all
+          else
+            yarn workspace "$NAME" run build
+          fi
+
+      # yarn pack rewrites workspace:* to the exact version; npm publish alone would not.
+      - name: Pack
+        if: steps.pkg.outputs.skip != 'true'
+        env:
+          NAME: ${{ steps.pkg.outputs.name }}
+          DIR: ${{ steps.tag.outputs.dir }}
+        run: |
+          TGZ="$RUNNER_TEMP/package.tgz"
+          yarn workspace "$NAME" pack --out "$TGZ"
+          COUNT=$(tar -tzf "$TGZ" | wc -l)
+          echo "pack file count: $COUNT"
+          tar -tzf "$TGZ" | sort
+          if tar -xzOf "$TGZ" package/package.json | grep -F 'workspace:'; then
+            echo "::error::the packed package.json still has a workspace: range"
+            exit 1
+          fi
+          echo "TGZ=$TGZ" >> "$GITHUB_ENV"
+
+      - name: Core version must be on npm
+        if: steps.pkg.outputs.skip != 'true' && (steps.tag.outputs.short == 'video' || steps.tag.outputs.short == 'music')
+        run: |
+          CORE=$(tar -xzOf "$TGZ" package/package.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).dependencies['@nomercy-entertainment/nomercy-player-core']")
+          npm view "@nomercy-entertainment/nomercy-player-core@$CORE" version || { echo "::error::core $CORE is not on npm; publish core first"; exit 1; }
+
+      - name: Publish package
+        if: steps.pkg.outputs.skip != 'true' && env.DRY_RUN != 'true'
+        run: npm publish "$TGZ" --provenance --access public --tag ${{ steps.pkg.outputs.disttag }}
+
+      - name: Dry run stopped before npm publish
+        if: env.DRY_RUN == 'true'
+        run: echo "dry run: would run npm publish $TGZ --provenance --access public --tag ${{ steps.pkg.outputs.disttag }}"

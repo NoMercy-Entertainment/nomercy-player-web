@@ -16,7 +16,8 @@
 	"homepage": "https://docs.nomercy.tv/nomercy-player-core/",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/NoMercy-Entertainment/nomercy-player-core.git"
+		"url": "git+https://github.com/NoMercy-Entertainment/nomercy-player-web.git",
+		"directory": "packages/core"
 	},
 	"bugs": {
 		"url": "https://github.com/NoMercy-Entertainment/nomercy-player-core/issues"

@@ -3,8 +3,7 @@ name: Retract Release
 # npm has no unpublish worth using: after 72 hours it is refused, and before
 # then it breaks every lockfile that already resolved the version. Retraction
 # here means deprecating the bad version and moving the dist-tag back, so
-# an unpinned install of the package stops resolving to it while pinned
-# consumers keep working.
+# an unpinned install of the package stops resolving to it while pinned consumers keep working.
 #
 # Publishing runs on OIDC trusted publishing, which does NOT cover deprecate or
 # dist-tag. This workflow needs an NPM_TOKEN secret with publish rights.
@@ -12,6 +11,11 @@ name: Retract Release
 on:
   workflow_dispatch:
     inputs:
+      package:
+        description: Package to retract from
+        type: choice
+        required: true
+        options: [core, video, music, media-session, eslint-plugin]
       version:
         description: Version being retracted (e.g. 2.0.1)
         required: true
@@ -35,16 +39,19 @@ concurrency:
 
 jobs:
   retract:
-    timeout-minutes: 7200
-    runs-on: [self-hosted, Linux, X64, beast-unit]
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     env:
       NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SHORT: ${{ inputs.package }}
       VERSION: ${{ inputs.version }}
       ROLLBACK_TO: ${{ inputs.rollback_to }}
       DIST_TAG: ${{ inputs.dist_tag }}
+      REASON: ${{ inputs.reason }}
+      DRY_RUN: ${{ inputs.dry_run }}
     steps:
       - uses: actions/checkout@v7
 
@@ -67,7 +74,12 @@ jobs:
       - name: Resolve package and verify both versions exist
         id: pkg
         run: |
-          NAME=$(node -p "require('./package.json').name")
+          case "$SHORT" in
+            video) DIR=video-player ;;
+            music) DIR=music-player ;;
+            *) DIR="$SHORT" ;;
+          esac
+          NAME=$(node -p "require('./packages/$DIR/package.json').name")
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           for v in "$VERSION" "$ROLLBACK_TO"; do
             if ! npm view "${NAME}@${v}" version >/dev/null 2>&1; then
@@ -77,20 +89,22 @@ jobs:
           done
 
       - name: Move the dist-tag back
+        env:
+          NAME: ${{ steps.pkg.outputs.name }}
         run: |
-          NAME='${{ steps.pkg.outputs.name }}'
           echo "${DIST_TAG}: $(npm view "${NAME}" "dist-tags.${DIST_TAG}") -> ${ROLLBACK_TO}"
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
+          if [ "$DRY_RUN" = "true" ]; then
             echo "dry run: npm dist-tag add ${NAME}@${ROLLBACK_TO} ${DIST_TAG}"
           else
             npm dist-tag add "${NAME}@${ROLLBACK_TO}" "${DIST_TAG}"
           fi
 
       - name: Deprecate the retracted version
+        env:
+          NAME: ${{ steps.pkg.outputs.name }}
         run: |
-          NAME='${{ steps.pkg.outputs.name }}'
-          MSG="RETRACTED: ${{ inputs.reason }} Use ${ROLLBACK_TO} instead."
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
+          MSG="RETRACTED: ${REASON} Use ${ROLLBACK_TO} instead."
+          if [ "$DRY_RUN" = "true" ]; then
             echo "dry run: npm deprecate ${NAME}@${VERSION} \"$MSG\""
           else
             npm deprecate "${NAME}@${VERSION}" "$MSG"
@@ -98,19 +112,19 @@ jobs:
 
       - name: Mark the GitHub release as retracted
         run: |
-          tag="v${VERSION}"
-          gh release view "$tag" >/dev/null 2>&1 || tag="${VERSION}"
+          tag="${SHORT}-v${VERSION}"
+          gh release view "$tag" >/dev/null 2>&1 || tag="v${VERSION}"
           if ! gh release view "$tag" >/dev/null 2>&1; then
-            echo "::warning::no GitHub release for ${VERSION} — skipping release notes update"
+            echo "::warning::no GitHub release for ${SHORT} ${VERSION} — skipping release notes update"
             exit 0
           fi
           notice=$(printf '> [!CAUTION]\n> **RETRACTED.** %s\n>\n> `%s` now points at %s.\n\n' \
-            "${{ inputs.reason }}" "$DIST_TAG" "$ROLLBACK_TO")
+            "$REASON" "$DIST_TAG" "$ROLLBACK_TO")
           body=$(gh release view "$tag" --json body --jq .body)
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
+          if [ "$DRY_RUN" = "true" ]; then
             echo "dry run: would prepend"
             echo "$notice"
           else
-            printf '%s%s' "$notice" "$body" > /tmp/body.md
-            gh release edit "$tag" --prerelease --notes-file /tmp/body.md
+            printf '%s%s' "$notice" "$body" > "$RUNNER_TEMP/body.md"
+            gh release edit "$tag" --prerelease --notes-file "$RUNNER_TEMP/body.md"
           fi
