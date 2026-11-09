@@ -30,30 +30,19 @@ import type { BaseEventMap, PluginCtorWithId } from '../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	playerCoreMethods,
 	Plugin,
-	resolvePlayerConstructor,
 	StateError,
 } from '../index';
 import { KeyHandlerPlugin } from '../plugins/key-handler';
 import { SetupState } from '../types';
+import { MockPlayerBase } from './helpers/mock-player-base';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Minimal MockPlayer — mirrors the shape used across core test files
 // ─────────────────────────────────────────────────────────────────────────────
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = {} as HTMLElement;
-
-	get id(): string {
-		return this.playerId;
-	}
-
+class MockPlayer extends MockPlayerBase {
 	declare options: Record<string, unknown>;
 	declare setup: (config: Record<string, unknown>) => this;
 	declare ready: () => Promise<void>;
@@ -81,22 +70,6 @@ class MockPlayer extends EventEmitter<BaseEventMap> {
 
 	declare getPlugin: <P extends object>(PluginClass: PluginCtorWithId & (new () => P)) => P | undefined;
 	declare removePlugin: <P extends Plugin<any, any, any>>(PluginClass: PluginCtorWithId & (new () => P)) => void;
-
-	constructor(id?: string | number) {
-		super();
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this;
-		}
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _resetRegistry(): void {
-		_instances.clear();
-	}
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
