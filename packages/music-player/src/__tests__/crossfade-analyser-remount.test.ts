@@ -27,6 +27,7 @@
  *   3. The old analyser is disconnected during promotion (no dangling tap).
  */
 
+import { MockAnalyserNode, MockSourceNode } from '@nomercy-entertainment/test-support/web-audio';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WebAudioBackend } from '../adapters/audio-backend/web-audio';
 
@@ -41,17 +42,6 @@ class MockGainNode {
 		cancelScheduledValues: vi.fn(),
 	};
 
-	connect = vi.fn();
-	disconnect = vi.fn();
-}
-
-class MockAnalyserNode {
-	fftSize = 2048;
-	connect = vi.fn();
-	disconnect = vi.fn();
-}
-
-class MockSourceNode {
 	connect = vi.fn();
 	disconnect = vi.fn();
 }

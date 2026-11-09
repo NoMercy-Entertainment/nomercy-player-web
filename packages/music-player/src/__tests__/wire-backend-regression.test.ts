@@ -18,6 +18,7 @@
  *      WebAudioBackend, not the default AudioElementBackend.
  */
 
+import { MockAnalyserNode, MockSourceNode } from '@nomercy-entertainment/test-support/web-audio';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AudioElementBackend } from '../adapters/audio-backend/html5-audio';
 import { WebAudioBackend } from '../adapters/audio-backend/web-audio';
@@ -34,17 +35,6 @@ class MockGainNode {
 		cancelScheduledValues: vi.fn(),
 	};
 
-	connect = vi.fn();
-	disconnect = vi.fn();
-}
-
-class MockAnalyserNode {
-	fftSize = 2048;
-	connect = vi.fn();
-	disconnect = vi.fn();
-}
-
-class MockSourceNode {
 	connect = vi.fn();
 	disconnect = vi.fn();
 }

@@ -24,6 +24,7 @@
 
 import type { WebAudioBackend } from '../adapters/audio-backend/web-audio';
 import { AudioGraphPlugin } from '@nomercy-entertainment/nomercy-player-core';
+import { MockSourceNode } from '@nomercy-entertainment/test-support/web-audio';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NMMusicPlayer } from '../index';
 
@@ -38,11 +39,6 @@ class MockGainNode {
 class MockAnalyserNode {
 	fftSize = 2048;
 	smoothingTimeConstant = 0;
-	connect = vi.fn();
-	disconnect = vi.fn();
-}
-
-class MockSourceNode {
 	connect = vi.fn();
 	disconnect = vi.fn();
 }

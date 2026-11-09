@@ -40,6 +40,7 @@
 
 import type { IAudioBackend } from '../adapters/audio-backend/IAudioBackend';
 import type { MusicPlaylistItem } from '../types';
+import { MockSourceNode } from '@nomercy-entertainment/test-support/web-audio';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AudioElementBackend } from '../adapters/audio-backend/html5-audio';
 import { WebAudioBackend } from '../adapters/audio-backend/web-audio';
@@ -94,11 +95,6 @@ function makeMockGain(initial = 1): {
 
 class MockGainNode {
 	gain = makeMockGain(1);
-	connect = vi.fn();
-	disconnect = vi.fn();
-}
-
-class MockSourceNode {
 	connect = vi.fn();
 	disconnect = vi.fn();
 }
