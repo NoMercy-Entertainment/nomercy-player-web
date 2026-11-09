@@ -22,10 +22,10 @@
  *    The correct test asserts 'seek' (emitted inside _seekingTransition when
  *    time(t) dispatches) with payload { time, source? }.
  *  - F3 ('buffering' event): Not declared in BaseEventMap, not emitted anywhere
- *    in core. 'buffering' is a container CSS class token. Test 6 is marked todo.
+ *    in core. 'buffering' is a container CSS class token. Test 6 stays pending.
  *  - F4 ('playing', 'ended'): Backend-bridge-only — emitted by per-library
  *    _wireBackend, not by core mixins. Cannot test in the core package without
- *    a cross-package import. Tests 1 and 2 are marked todo. Coverage exists in
+ *    a cross-package import. Tests 1 and 2 stay pending. Coverage exists in
  *    packages/player-web/nomercy-music-player/src/__tests__/wire-backend-regression.test.ts.
  *  - F5 (cast:* namespace): Plugin.emit() ALWAYS namespaces as
  *    'plugin:<id>:<event>'. CastSenderPlugin.emit('cast:connected', ...) fires
