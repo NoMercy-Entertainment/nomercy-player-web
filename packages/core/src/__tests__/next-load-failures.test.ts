@@ -3,25 +3,17 @@
  * an expired token is refreshed once, and a server error is fatal.
  */
 
-import type { BaseEventMap, BasePlaylistItem } from '../types';
+import type { BasePlaylistItem } from '../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	playerCoreMethods,
 	PlayerError,
 	RepeatState,
-	resolvePlayerConstructor,
 } from '../index';
+import { MockPlayerBase } from './helpers/mock-player-base';
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = {} as HTMLElement;
-	get id(): string { return this.playerId; }
-
+class MockPlayer extends MockPlayerBase {
 	declare setup: (config: Record<string, unknown>) => this;
 	declare next: (opts?: unknown) => Promise<void>;
 	declare repeatState: { (): string; (state: unknown): void };
@@ -29,19 +21,6 @@ class MockPlayer extends EventEmitter<BaseEventMap> {
 	declare item: { (): unknown; (target: unknown, opts?: unknown): void };
 	declare auth: (config: Record<string, unknown>) => void;
 	declare playState: () => string;
-
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing')
-			return resolved.instance as unknown as this;
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _resetRegistry(): void { _instances.clear(); }
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
