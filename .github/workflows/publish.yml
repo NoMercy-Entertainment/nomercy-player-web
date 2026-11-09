@@ -106,7 +106,9 @@ jobs:
           NAME: ${{ steps.pkg.outputs.name }}
           DIR: ${{ steps.tag.outputs.dir }}
         run: |
-          for script in typecheck lint test; do
+          echo "== lint"
+          yarn lint "packages/$DIR"
+          for script in typecheck test; do
             if node -e "process.exit(require('./packages/$DIR/package.json').scripts?.['$script'] ? 0 : 1)"; then
               echo "== $script"
               yarn workspace "$NAME" run "$script"

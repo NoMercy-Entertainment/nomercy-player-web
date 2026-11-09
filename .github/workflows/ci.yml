@@ -74,10 +74,10 @@ jobs:
         run: yarn workspace ${{ matrix.name }} run typecheck
 
       - name: Lint
-        if: matrix.lint
         env:
           CI: 'true'
-        run: yarn workspace ${{ matrix.name }} run lint
+          DIR: packages/${{ matrix.dir }}
+        run: yarn lint "$DIR"
 
       - name: Unit tests
         if: matrix.test

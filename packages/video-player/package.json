@@ -2,7 +2,6 @@
 	"name": "@nomercy-entertainment/nomercy-video-player",
 	"type": "module",
 	"version": "2.8.3",
-	"packageManager": "yarn@4.18.1",
 	"description": "Headless, event-driven HTML5 video player with HLS streaming, subtitle rendering (VTT/ASS/SSA), and a plugin system. No UI — you build your own.",
 	"author": {
 		"name": "NoMercy Entertainment",
@@ -127,19 +126,17 @@
 		"node": ">=18.0.0"
 	},
 	"scripts": {
-		"build": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && node ../core/scripts/resolve-translation-globs.mjs && node ../core/scripts/copy-dist-assets.mjs && node ../core/scripts/inline-css-assets.mjs",
-		"build:iife": "vite build --config vite.iife.config.ts",
+		"build": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\" && run -T tsc -p tsconfig.build.json && run -T tsc-alias -p tsconfig.build.json && node ../core/scripts/resolve-translation-globs.mjs && node ../core/scripts/copy-dist-assets.mjs && node ../core/scripts/inline-css-assets.mjs",
+		"build:iife": "run -T vite build --config vite.iife.config.ts",
 		"build:all": "yarn build && yarn build:iife",
-		"dev": "tsc -p tsconfig.build.json --watch",
-		"typecheck": "tsc --noEmit",
-		"lint": "eslint . --max-warnings 0",
-		"lint:fix": "eslint . --fix --max-warnings 0",
-		"test": "vitest run",
-		"test:watch": "vitest",
-		"test:ui": "vitest --ui --watch",
-		"test:coverage": "vitest run --coverage",
-		"test:e2e": "node scripts/generate-e2e-fixtures.mjs && playwright test",
-		"test:e2e:report": "playwright show-report reports/playwright",
+		"dev": "run -T tsc -p tsconfig.build.json --watch",
+		"typecheck": "run -T tsc --noEmit",
+		"test": "run -T vitest run",
+		"test:watch": "run -T vitest",
+		"test:ui": "run -T vitest --ui --watch",
+		"test:coverage": "run -T vitest run --coverage",
+		"test:e2e": "node scripts/generate-e2e-fixtures.mjs && run -T playwright test",
+		"test:e2e:report": "run -T playwright show-report reports/playwright",
 		"prepublishOnly": "yarn build:all"
 	},
 	"dependencies": {
@@ -147,31 +144,7 @@
 		"@nomercy-entertainment/nomercy-subtitle-octopus": "^0.2.0"
 	},
 	"devDependencies": {
-		"@antfu/eslint-config": "^9.0.0",
-		"@nomercy-entertainment/eslint-plugin-player": "workspace:*",
-		"@playwright/test": "^1.60.0",
-		"@types/node": "^25.9.0",
-		"@vitest/coverage-v8": "^4.1.11",
-		"@vitest/ui": "^4.1.11",
-		"eslint": "^10.4.0",
-		"eslint-plugin-format": "^2.0.1",
-		"happy-dom": "^21.0.4",
-		"hls.js": "^1.6.16",
-		"playwright": "^1.60.0",
-		"prettier": "^3.3.3",
-		"prettier-eslint": "^16.4.2",
-		"tsc-alias": "^1.8.17",
-		"typescript": "^6.0.3",
-		"vite": "^8.0.13",
-		"vite-plugin-dts": "^5.0.0",
-		"vitest": "^4.1.11"
-	},
-	"resolutions": {
-		"brace-expansion": "^5.0.6",
-		"js-yaml": "^4.3.2",
-		"katex": "^0.18.2",
-		"minimatch": "10.2.4",
-		"tinypool@2.1.0": "2.1.2"
+		"hls.js": "^1.6.16"
 	},
 	"publishConfig": {
 		"access": "public"

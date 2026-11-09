@@ -37,7 +37,8 @@ if (base === 'all' || /^0+$/.test(base)) {
     reason = `root change (${outside[0]}): all packages`;
   } else {
     const touched = new Set(files.map(f => f.split('/')[1]).filter(d => dirs.includes(d)));
-    selected = new Set(touched);
+    // Every package is linted by the plugin from the root config, so it reaches all of them.
+    selected = touched.has('eslint-plugin') ? new Set(dirs) : new Set(touched);
     for (const d of dirs) {
       if ([...reach(d)].some(dep => touched.has(dep))) selected.add(d);
     }
@@ -52,7 +53,6 @@ const include = dirs.filter(d => selected.has(d)).map((d) => {
     dir: d,
     name: manifests[d].name,
     typecheck: Boolean(s.typecheck),
-    lint: Boolean(s.lint),
     test: Boolean(s.test),
     build: s['build:all'] ? 'build:all' : (s.build ? 'build' : ''),
     e2e: Boolean(s['test:e2e']),
