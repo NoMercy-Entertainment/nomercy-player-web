@@ -25,13 +25,13 @@ import {
 	playerCoreMethods,
 } from '../index';
 import { makeFakeLogger } from './helpers/fake-logger';
-import { MockPlayerBase } from './helpers/mock-player-base';
 import { makeFakePlatform } from './helpers/fake-platform';
 import { makeFakePreloadStrategy } from './helpers/fake-preload-strategy';
 import { makeFakeShuffleStrategy } from './helpers/fake-shuffle-strategy';
 import { makeFakeTransitionStrategy } from './helpers/fake-transition-strategy';
 import { makeFakeTranslator } from './helpers/fake-translator';
 import { makeFakeUrlResolver } from './helpers/fake-url-resolver';
+import { MockPlayerBase } from './helpers/mock-player-base';
 
 // ── MockPlayer (same minimal shape used in base-player.test.ts) ───────────────
 

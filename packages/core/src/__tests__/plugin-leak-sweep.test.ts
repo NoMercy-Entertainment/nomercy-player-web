@@ -18,13 +18,12 @@ import {
 	composeMixins,
 	playerCoreMethods,
 } from '../index';
-import { MockPlayerBase } from './helpers/mock-player-base';
 // Plugin classes — the kit ones. Some throw on `use()` (stubbed); harness
 // catches and skips them so we get a roll-up rather than a per-plugin
 // brittle suite.
 import { AudioGraphPlugin } from '../plugins/audio-graph';
-
 import { CanvasPlugin } from '../plugins/canvas';
+
 import { EmbedPlugin } from '../plugins/embed';
 import { EqualizerPlugin } from '../plugins/equalizer/index';
 import { KeyHandlerPlugin } from '../plugins/key-handler';
@@ -35,6 +34,7 @@ import { SpectrumPlugin } from '../plugins/spectrum';
 import { TabLeaderPlugin } from '../plugins/tab-leader';
 import { VisualizationPlugin } from '../plugins/visualization';
 import { assertNoListenerLeak } from '../testing/leak-harness';
+import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
 	declare setup: (config: any) => this;
