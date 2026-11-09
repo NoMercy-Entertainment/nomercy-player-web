@@ -244,12 +244,22 @@ test.describe('crossfade (NMMusicPlayer.crossfadeTo)', () => {
 
 			let sawTransition = false;
 			let sawCrossfadeStart = false;
+			let crossfadeDone = false;
 			let crossfadeError = '';
+			let onCrossfadeStart = (): void => {};
+			const crossfadeStarted = new Promise<void>((resolve) => {
+				onCrossfadeStart = resolve;
+				setTimeout(resolve, 10_000);
+			});
 			player.on('transitionStart', () => {
 				sawTransition = true;
 			});
 			player.on('crossfadeStart', () => {
 				sawCrossfadeStart = true;
+				onCrossfadeStart();
+			});
+			player.on('crossfadeComplete', () => {
+				crossfadeDone = true;
 			});
 			player.on('error', (e: any) => {
 				crossfadeError = String(e?.error?.code ?? e?.error?.message ?? '');
@@ -258,7 +268,8 @@ test.describe('crossfade (NMMusicPlayer.crossfadeTo)', () => {
 			player.queue([trackA, trackB]);
 			player.item(trackA.id, { autoplay: true });
 
-			await new Promise<void>(r => setTimeout(r, 700));
+			// The window opens on the player's own signal, not after a fixed delay.
+			await crossfadeStarted;
 			const ctx = player.audioContext();
 			if (!ctx || ctx.state !== 'running') {
 				return {
@@ -267,8 +278,7 @@ test.describe('crossfade (NMMusicPlayer.crossfadeTo)', () => {
 				};
 			}
 
-			function readBandEnergy(loHz: number, hiHz: number): number {
-				const analyser = graph.analyserSource();
+			function readBandEnergy(analyser: AnalyserNode, loHz: number, hiHz: number): number {
 				const buf = new Uint8Array(analyser.frequencyBinCount);
 				analyser.getByteFrequencyData(buf);
 				const sr = analyser.context.sampleRate;
@@ -280,17 +290,23 @@ test.describe('crossfade (NMMusicPlayer.crossfadeTo)', () => {
 				return sum / Math.max(1, hi - lo + 1);
 			}
 
+			// The graph analyser taps the outgoing source before its gain, so it never
+			// hears the incoming element. Read the outgoing tone scaled by its live
+			// gain, and the incoming tone on the secondary chain's post-gain analyser.
+			const wa = player.backend() as any;
+
 			// An overlap is the one thing a cut cannot produce: both tones loud at
-			// the same instant. Comparing the incoming band against a baseline
-			// depends on sampling before the window opens, which is a race; this
-			// does not.
+			// the same instant.
 			let bestOverlap = 0;
 			let peak440 = 0;
 			let peak880 = 0;
-			for (let i = 0; i < 60; i++) {
+			const deadline = performance.now() + 10_000;
+			const isDone = (): boolean => crossfadeDone;
+			while (!isDone() && performance.now() < deadline) {
 				await new Promise<void>(r => setTimeout(r, 80));
-				const e440 = readBandEnergy(400, 480);
-				const e880 = readBandEnergy(840, 920);
+				const secondary = wa._secondaryAnalyser as AnalyserNode | undefined;
+				const e440 = readBandEnergy(graph.analyserSource(), 400, 480) * (wa.gainNode?.gain.value ?? 1);
+				const e880 = secondary ? readBandEnergy(secondary, 840, 920) : 0;
 				peak440 = Math.max(peak440, e440);
 				peak880 = Math.max(peak880, e880);
 				bestOverlap = Math.max(bestOverlap, Math.min(e440, e880));
