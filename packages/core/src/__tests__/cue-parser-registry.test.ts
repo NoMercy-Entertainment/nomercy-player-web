@@ -17,44 +17,17 @@
 
 import type { ICueParser } from '../adapters/cue-parser/ICueParser';
 import type { PlayerTestInternals } from '../testing/player-test-internals';
-import type { BaseEventMap } from '../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { EventEmitter } from '../adapters/event-bus/default';
-import {
-	initPlayerCoreState,
-	playerCoreMethods,
-	resolvePlayerConstructor,
-} from '../base-player';
+import { playerCoreMethods } from '../base-player';
 import { composeMixins } from '../core/compose';
+import { MockPlayerBase } from './helpers/mock-player-base';
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = <HTMLElement>{};
-	get id(): string { return this.playerId; }
-
+class MockPlayer extends MockPlayerBase {
 	declare setup: (config: any) => this;
 	declare ready: () => Promise<void>;
 	declare dispose: () => void;
 	declare registerCueParser: (parser: ICueParser, prepend?: boolean) => void;
 	declare unregisterCueParser: (id: string) => void;
-
-	constructor(id?: string | number) {
-		super();
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this;
-		}
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _resetRegistry(): void {
-		_instances.clear();
-	}
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
