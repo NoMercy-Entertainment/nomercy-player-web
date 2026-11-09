@@ -19,23 +19,15 @@
  *
  * Run: `node scripts/generate-e2e-fixtures.mjs` (also exposed as `pretest:e2e`).
  */
-import { spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ensureFfmpeg } from '../../../scripts/ensure-ffmpeg.mjs';
+import { ensureFfmpeg, runFfmpeg } from '../../../scripts/ensure-ffmpeg.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const mediaDir = join(here, '..', 'e2e', 'media');
 
-function run(ffmpeg, args) {
-	const result = spawnSync(ffmpeg, ['-y', '-loglevel', 'error', ...args], {
-		encoding: 'utf8',
-		cwd: mediaDir,
-	});
-	if (result.status !== 0)
-		throw new Error(`ffmpeg failed: ${args.join(' ')}\n${result.stderr}`);
-}
+const run = (ffmpeg, args) => runFfmpeg(ffmpeg, args, mediaDir);
 
 const SAMPLE_VTT = `WEBVTT
 
