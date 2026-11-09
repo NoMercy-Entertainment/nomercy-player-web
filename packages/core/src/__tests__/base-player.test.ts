@@ -14,39 +14,27 @@
  * reaches a downstream library.
  */
 
-import type { BaseEventMap, BasePlaylistItem, PluginCtorWithId } from '../types';
+import type { BasePlaylistItem, PluginCtorWithId } from '../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	Logger,
 	playerCoreMethods,
 	PlayerError,
 	Plugin,
 	pluginError,
-	resolvePlayerConstructor,
 	ResourceError,
 	StateError,
 	stateError,
 } from '../index';
+import { MockPlayerBase } from './helpers/mock-player-base';
 
 /**
  * Minimal player class that mirrors the shape both NMMusicPlayer and
  * NMVideoPlayer take: extends EventEmitter, owns a registry, calls
  * `initPlayerCoreState`, composes `playerCoreMethods` onto its prototype.
  */
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = <HTMLElement>{};
-
-	get id(): string {
-		return this.playerId;
-	}
-
-	declare options: any;
+class MockPlayer extends MockPlayerBase {
 	declare setup: (config: any) => this;
 	declare ready: () => Promise<void>;
 	declare dispose: () => Promise<void>;
@@ -118,23 +106,6 @@ class MockPlayer extends EventEmitter<BaseEventMap> {
 	declare removePluginById: (id: string) => void;
 	declare plugins: () => ReadonlyArray<any>;
 	declare enabledPlugins: () => ReadonlyArray<any>;
-
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this;
-		}
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _resetRegistry(): void {
-		_instances.clear();
-	}
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
