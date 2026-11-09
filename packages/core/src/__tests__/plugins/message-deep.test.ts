@@ -27,26 +27,15 @@
  *  - opts.durationMs is honoured by displayMessage when not overridden
  */
 
-import type { BaseEventMap } from '../../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	playerCoreMethods,
-	resolvePlayerConstructor,
 } from '../../index';
 import { MessagePlugin } from '../../plugins/message';
+import { MockPlayerBase } from '../helpers/mock-player-base';
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = {} as HTMLElement;
-
-	get id(): string { return this.playerId; }
-
-	declare options: (config?: unknown) => unknown;
+class MockPlayer extends MockPlayerBase {
 	declare setup: (config: unknown) => this;
 	declare ready: () => Promise<void>;
 	declare dispose: () => void;
@@ -65,19 +54,6 @@ class MockPlayer extends EventEmitter<BaseEventMap> {
 	declare time: { (): number; (seconds: number, opts?: unknown): Promise<void> };
 	declare volume: { (): number; (level: number): void };
 	declare experimental: unknown;
-
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing')
-			return resolved.instance as unknown as this;
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _reset(): void { _instances.clear(); }
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
@@ -94,11 +70,11 @@ function makePlayer(divId: string): MockPlayer {
 describe('MessagePlugin — deep behavioral coverage', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
-		MockPlayer._reset();
+		MockPlayer._resetRegistry();
 	});
 	afterEach(() => {
 		vi.useRealTimers();
-		MockPlayer._reset();
+		MockPlayer._resetRegistry();
 		document.body.innerHTML = '';
 	});
 

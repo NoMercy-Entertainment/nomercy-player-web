@@ -15,30 +15,18 @@
  * analyser kept drawing bands. Web music sounded dead for good.
  */
 
-import type { BaseEventMap } from '../../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LifecycleRegistry } from '../../adapters/lifecycle-registry/default';
 import {
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	playerCoreMethods,
-	resolvePlayerConstructor,
 } from '../../index';
 import { VolumeMemoryPlugin } from '../../plugins/volume-memory';
+import { MockPlayerBase } from '../helpers/mock-player-base';
 
-const _instances = new Map<string, MockPlayer>();
 const STORAGE_KEY = 'nmplayer-volume-memory-volume';
 
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = <HTMLElement>{};
-
-	get id(): string {
-		return this.playerId;
-	}
-
-	declare options: any;
+class MockPlayer extends MockPlayerBase {
 	declare setup: (config: any) => this;
 	declare ready: () => Promise<void>;
 	declare dispose: () => void;
@@ -47,18 +35,6 @@ class MockPlayer extends EventEmitter<BaseEventMap> {
 	declare volume: (level?: number) => any;
 	declare mute: () => Promise<void>;
 	declare unmute: () => Promise<void>;
-
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this;
-		}
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
@@ -85,12 +61,12 @@ function stored(): { level?: number; muted?: boolean } {
 
 describe('VolumeMemoryPlugin', () => {
 	beforeEach(() => {
-		_instances.clear();
+		MockPlayer._resetRegistry();
 		localStorage.clear();
 	});
 
 	afterEach(() => {
-		_instances.clear();
+		MockPlayer._resetRegistry();
 		document.body.innerHTML = '';
 		localStorage.clear();
 	});

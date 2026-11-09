@@ -24,31 +24,22 @@
  */
 
 import type { StubPlayer } from '../testing/stub-player';
-import type { BaseEventMap, PluginCtorWithId, Translations } from '../types';
+import type { PluginCtorWithId, Translations } from '../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LAZY_TRANSLATIONS_MARKER } from '../adapters/translator/loaders/translations-glob';
 import {
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	playerCoreMethods,
 	Plugin,
-	resolvePlayerConstructor,
 	StateError,
 } from '../index';
+import { MockPlayerBase } from './helpers/mock-player-base';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Minimal MockPlayer
 // ─────────────────────────────────────────────────────────────────────────────
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = {} as HTMLElement;
-	get id(): string { return this.playerId; }
-
-	declare options: Record<string, unknown>;
+class MockPlayer extends MockPlayerBase {
 	declare setup: (config: Record<string, unknown>) => this;
 	declare ready: () => Promise<void>;
 	declare dispose: () => Promise<void>;
@@ -124,19 +115,6 @@ class MockPlayer extends EventEmitter<BaseEventMap> {
 	declare removePluginById: (id: string, opts?: { cascade?: boolean }) => void;
 	declare plugins: () => ReadonlyArray<Plugin>;
 	declare enabledPlugins: () => ReadonlyArray<Plugin>;
-
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing')
-			return resolved.instance as unknown as this;
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _resetRegistry(): void { _instances.clear(); }
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);

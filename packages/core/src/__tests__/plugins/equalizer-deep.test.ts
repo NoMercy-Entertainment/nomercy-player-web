@@ -28,48 +28,25 @@
  */
 
 import type { EqBand, EqPreset } from '../../plugins/equalizer/index';
-import type { BaseEventMap } from '../../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LifecycleRegistry } from '../../adapters/lifecycle-registry/default';
 import {
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	playerCoreMethods,
-	resolvePlayerConstructor,
 } from '../../index';
 import { EqualizerPlugin } from '../../plugins/equalizer/index';
 import { DEFAULT_BANDS } from '../../plugins/equalizer/presets';
+import { MockPlayerBase } from '../helpers/mock-player-base';
 
 // ─── MockPlayer (same pattern as existing tests) ─────────────────────────────
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = {} as HTMLElement;
-
-	get id(): string { return this.playerId; }
-
+class MockPlayer extends MockPlayerBase {
 	declare options: (config?: unknown) => unknown;
 	declare setup: (config: unknown) => this;
 	declare ready: () => Promise<void>;
 	declare dispose: () => void;
 	declare addPlugin: (PluginClass: unknown, opts?: unknown) => this;
 	declare getPlugin: (PluginClass: unknown) => unknown;
-
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing')
-			return resolved.instance as unknown as this;
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _reset(): void { _instances.clear(); }
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
@@ -174,9 +151,9 @@ function wireEqPlugin(
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('EqualizerPlugin — deep behavioral coverage', () => {
-	beforeEach(() => MockPlayer._reset());
+	beforeEach(() => MockPlayer._resetRegistry());
 	afterEach(() => {
-		MockPlayer._reset();
+		MockPlayer._resetRegistry();
 		document.body.innerHTML = '';
 	});
 

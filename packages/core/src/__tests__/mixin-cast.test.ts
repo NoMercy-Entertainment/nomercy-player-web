@@ -21,29 +21,21 @@
  * on each transition.
  */
 
-import type { BaseEventMap, PluginCtorWithId } from '../types';
+import type { PluginCtorWithId } from '../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BrowserPolicyError } from '../errors';
 import {
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	playerCoreMethods,
-	resolvePlayerConstructor,
 } from '../index';
 import { CastState } from '../types';
+import { MockPlayerBase } from './helpers/mock-player-base';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MockPlayer
 // ─────────────────────────────────────────────────────────────────────────────
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = {} as HTMLElement;
-	get id(): string { return this.playerId; }
-
+class MockPlayer extends MockPlayerBase {
 	declare options: Record<string, unknown>;
 	declare setup: (config: Record<string, unknown>) => this;
 	declare ready: () => Promise<void>;
@@ -123,19 +115,6 @@ class MockPlayer extends EventEmitter<BaseEventMap> {
 
 	// video element for AirPlay/RemotePlayback tests
 	videoElement?: HTMLVideoElement & { webkitShowPlaybackTargetPicker?: () => void; remote?: { prompt: () => Promise<void> } };
-
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing')
-			return resolved.instance as unknown as this;
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _resetRegistry(): void { _instances.clear(); }
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);

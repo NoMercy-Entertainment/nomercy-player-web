@@ -19,30 +19,21 @@
  * normalizeLanguage. This file covers every OTHER uncovered method.
  */
 
-import type { AudioTrack, BaseEventMap, BasePlaylistItem, Chapter, PluginCtorWithId, QualityLevel, SidecarSubtitleInput, SubtitleStyle, SubtitleTrack } from '../types';
+import type { AudioTrack, BasePlaylistItem, Chapter, PluginCtorWithId, QualityLevel, SidecarSubtitleInput, SubtitleStyle, SubtitleTrack } from '../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	AudioTrackState,
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	playerCoreMethods,
 	QualityState,
-	resolvePlayerConstructor,
 } from '../index';
+import { MockPlayerBase } from './helpers/mock-player-base';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MockPlayer — minimal full-mixin player reusing the canonical pattern
 // ─────────────────────────────────────────────────────────────────────────────
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = {} as HTMLElement;
-
-	get id(): string { return this.playerId; }
-
+class MockPlayer extends MockPlayerBase {
 	declare options: Record<string, unknown>;
 	declare setup: (config: Record<string, unknown>) => this;
 	declare ready: () => Promise<void>;
@@ -132,19 +123,6 @@ class MockPlayer extends EventEmitter<BaseEventMap> {
 	declare previousChapter: (opts?: unknown) => void;
 	declare chapter: { (): Chapter | null; (idx: number): void };
 	declare resolveItemTrackUrls: <T extends BasePlaylistItem>(item: T) => Promise<T>;
-
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing')
-			return resolved.instance as unknown as this;
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _resetRegistry(): void { _instances.clear(); }
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);

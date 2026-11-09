@@ -35,37 +35,25 @@
  */
 
 import type { NetworkType } from '../adapters/platform/IPlatform';
-import type { BaseEventMap, PluginCtorWithId, SubtitleCueChange } from '../types';
+import type { PluginCtorWithId, SubtitleCueChange } from '../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createCueList } from '../core/cues/cue';
 import { CueTracker } from '../core/cues/tracker';
 import {
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	playerCoreMethods,
-	resolvePlayerConstructor,
 	ShuffleState,
 } from '../index';
 import { CastSenderPlugin } from '../plugins/cast-sender';
 import { StubPlayer } from '../testing/stub-player';
 import { makeFakePlatform } from './helpers/fake-platform';
+import { MockPlayerBase } from './helpers/mock-player-base';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared MockPlayer — mirrors the pattern used in base-player.test.ts
 // ─────────────────────────────────────────────────────────────────────────────
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = {} as HTMLElement;
-
-	get id(): string {
-		return this.playerId;
-	}
-
-	declare options: any;
+class MockPlayer extends MockPlayerBase {
 	declare setup: (config: any) => this;
 	declare ready: () => Promise<void>;
 	declare dispose: () => void;
@@ -117,23 +105,6 @@ class MockPlayer extends EventEmitter<BaseEventMap> {
 	declare addPlugin: <P>(PluginClass: new () => P, opts?: any) => this;
 	declare getPlugin: (PluginClass: any) => any;
 	declare plugins: () => ReadonlyArray<any>;
-
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this;
-		}
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _resetRegistry(): void {
-		_instances.clear();
-	}
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);

@@ -18,16 +18,14 @@
  */
 
 import type { IPreloadStrategy, ITransitionStrategy } from '../adapters/preload/default';
-import type { BaseEventMap, BasePlaylistItem, PluginCtorWithId } from '../types';
+import type { BasePlaylistItem, PluginCtorWithId } from '../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	playerCoreMethods,
-	resolvePlayerConstructor,
 } from '../index';
 import { makeFakeLogger } from './helpers/fake-logger';
+import { MockPlayerBase } from './helpers/mock-player-base';
 import { makeFakePlatform } from './helpers/fake-platform';
 import { makeFakePreloadStrategy } from './helpers/fake-preload-strategy';
 import { makeFakeShuffleStrategy } from './helpers/fake-shuffle-strategy';
@@ -37,15 +35,7 @@ import { makeFakeUrlResolver } from './helpers/fake-url-resolver';
 
 // ── MockPlayer (same minimal shape used in base-player.test.ts) ───────────────
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = <HTMLElement>{};
-
-	get id(): string { return this.playerId; }
-
-	declare options: any;
+class MockPlayer extends MockPlayerBase {
 	declare setup: (config: any) => this;
 	declare ready: () => Promise<void>;
 	declare dispose: () => void;
@@ -136,23 +126,6 @@ class MockPlayer extends EventEmitter<BaseEventMap> {
 	declare load: (url: string, opts?: any) => Promise<void>;
 	declare pushDispatch: (name: string) => void;
 	declare popDispatch: () => string | undefined;
-
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this;
-		}
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _resetRegistry(): void {
-		_instances.clear();
-	}
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);

@@ -17,27 +17,15 @@
  */
 
 import type { PlayerTestInternals } from '../testing/player-test-internals';
-import type { BaseEventMap, PlayerPhase } from '../types';
+import type { PlayerPhase } from '../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	playerCoreMethods,
-	resolvePlayerConstructor,
 } from '../index';
+import { MockPlayerBase } from './helpers/mock-player-base';
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = <HTMLElement>{};
-
-	get id(): string {
-		return this.playerId;
-	}
-
-	declare options: any;
+class MockPlayer extends MockPlayerBase {
 	declare setup: (config: any) => this;
 	declare ready: () => Promise<void>;
 	declare phase: () => string;
@@ -47,22 +35,6 @@ class MockPlayer extends EventEmitter<BaseEventMap> {
 	declare rewind: (secs?: number, opts?: any) => Promise<void>;
 	declare forward: (secs?: number, opts?: any) => Promise<void>;
 	declare restart: (opts?: any) => Promise<void>;
-
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this;
-		}
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _resetRegistry(): void {
-		_instances.clear();
-	}
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);

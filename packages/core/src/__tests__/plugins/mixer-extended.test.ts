@@ -22,17 +22,14 @@
  */
 
 import type { MixerOptions } from '../../plugins/mixer';
-import type { BaseEventMap } from '../../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LifecycleRegistry } from '../../adapters/lifecycle-registry/default';
 import {
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	playerCoreMethods,
-	resolvePlayerConstructor,
 } from '../../index';
 import { MixerPlugin } from '../../plugins/mixer';
+import { MockPlayerBase } from '../helpers/mock-player-base';
 
 // ── Mock AudioContext ─────────────────────────────────────────────────────────
 
@@ -74,37 +71,11 @@ function makeAudioGraphPlugin(ctx: AudioContext): any {
 
 // ── MockPlayer ────────────────────────────────────────────────────────────────
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = <HTMLElement>{};
-
-	get id(): string {
-		return this.playerId;
-	}
-
-	declare options: any;
+class MockPlayer extends MockPlayerBase {
 	declare setup: (config: any) => this;
 	declare ready: () => Promise<void>;
 	declare dispose: () => void;
 	declare getPlugin: (PluginClass: any) => any;
-
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this;
-		}
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _resetRegistry(): void {
-		_instances.clear();
-	}
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);

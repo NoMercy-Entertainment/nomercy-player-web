@@ -13,16 +13,12 @@
  */
 
 import type { Plugin } from '../index';
-import type { BaseEventMap } from '../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	playerCoreMethods,
-
-	resolvePlayerConstructor,
 } from '../index';
+import { MockPlayerBase } from './helpers/mock-player-base';
 // Plugin classes — the kit ones. Some throw on `use()` (stubbed); harness
 // catches and skips them so we get a roll-up rather than a per-plugin
 // brittle suite.
@@ -40,39 +36,13 @@ import { TabLeaderPlugin } from '../plugins/tab-leader';
 import { VisualizationPlugin } from '../plugins/visualization';
 import { assertNoListenerLeak } from '../testing/leak-harness';
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = <HTMLElement>{};
-
-	get id(): string {
-		return this.playerId;
-	}
-
-	declare options: any;
+class MockPlayer extends MockPlayerBase {
 	declare setup: (config: any) => this;
 	declare ready: () => Promise<void>;
 	declare dispose: () => Promise<void>;
 	declare addPlugin: (PluginClass: any, opts?: any) => this;
 	declare removePlugin: (PluginClass: any) => void;
 	declare getPlugin: (PluginClass: any) => any;
-
-	constructor(id?: string | number) {
-		super();
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this;
-		}
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _resetRegistry(): void {
-		_instances.clear();
-	}
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
