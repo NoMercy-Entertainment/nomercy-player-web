@@ -20,27 +20,17 @@
  * away in one pass.
  */
 
-import type { BaseEventMap, PluginCtorWithId, Translations } from '../types';
+import type { PluginCtorWithId, Translations } from '../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	playerCoreMethods,
 	Plugin,
-	resolvePlayerConstructor,
 	translationsFromGlob,
 } from '../index';
+import { MockPlayerBase } from './helpers/mock-player-base';
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = <HTMLElement>{};
-
-	get id(): string { return this.playerId; }
-
-	declare options: any;
+class MockPlayer extends MockPlayerBase {
 	declare setup: (config: any) => this;
 	declare ready: () => Promise<void>;
 	declare dispose: () => void;
@@ -52,20 +42,6 @@ class MockPlayer extends EventEmitter<BaseEventMap> {
 	};
 
 	declare language: (lang: string) => Promise<void>;
-
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this;
-		}
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _resetRegistry(): void { _instances.clear(); }
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
