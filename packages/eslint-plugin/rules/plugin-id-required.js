@@ -25,7 +25,7 @@
 
 /**
  * @param {import('estree').Node | undefined} superClass
- * @returns {boolean}
+ * @returns {boolean} True when the heritage names `Plugin`.
  */
 function extendsPlugin(superClass) {
 	if (!superClass)
@@ -44,7 +44,7 @@ function extendsPlugin(superClass) {
  * quoted string-literal `'id'` form.
  *
  * @param {import('estree').Node} member
- * @returns {boolean}
+ * @returns {boolean} True when the member key is `id`.
  */
 function keyIsId(member) {
 	const key = member.key;
@@ -61,7 +61,7 @@ function keyIsId(member) {
  * getter (`static get id() {...}`).
  *
  * @param {import('estree').Node} classNode
- * @returns {boolean}
+ * @returns {boolean} True when the class declares its own `static id`.
  */
 function declaresStaticId(classNode) {
 	return classNode.body.body.some((member) => {

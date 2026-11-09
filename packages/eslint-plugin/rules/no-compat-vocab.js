@@ -21,7 +21,7 @@ const DEFAULT_COMMENT_SUBSTRINGS = ['@deprecated', 'compatible alias', 'compat a
 
 /**
  * @param {string} text
- * @returns {string}
+ * @returns {string} The text with every regular expression metacharacter escaped.
  */
 function escapeRegExp(text) {
 	return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

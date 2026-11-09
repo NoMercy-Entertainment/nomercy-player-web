@@ -48,7 +48,7 @@ const OBSERVERS = new Set([
  * `this.lifecycle.observe(...)` call — the sanctioned, already-tracked wrap.
  *
  * @param {import('estree').NewExpression & { parent?: any }} node
- * @returns {boolean}
+ * @returns {boolean} True when the observer is passed straight to `this.lifecycle.observe`.
  */
 function isLifecycleObserveArgument(node) {
 	const call = node.parent;

@@ -24,7 +24,7 @@
 
 /**
  * @param {import('estree').Node | undefined} superClass
- * @returns {boolean}
+ * @returns {boolean} True when the heritage names `Plugin`.
  */
 function extendsPlugin(superClass) {
 	if (!superClass)
@@ -47,7 +47,7 @@ function extendsPlugin(superClass) {
  * True when `node` sits inside the body of a class that `extends Plugin`.
  *
  * @param {import('eslint').Rule.Node} node
- * @returns {boolean}
+ * @returns {boolean} True when an enclosing class extends `Plugin`.
  */
 export function inPluginSubclass(node) {
 	let current = node.parent;

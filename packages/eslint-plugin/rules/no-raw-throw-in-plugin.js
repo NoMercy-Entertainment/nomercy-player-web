@@ -43,7 +43,7 @@ const GLOBAL_RECEIVERS = new Set(['window', 'globalThis', 'self']);
  * `window.Error`), or null when it is not a banned raw constructor.
  *
  * @param {import('estree').Node} callee
- * @returns {string | null}
+ * @returns {string | null} The banned constructor name, or null when the callee is allowed.
  */
 function rawErrorCtorName(callee) {
 	if (callee.type === 'Identifier' && RAW_ERROR_CTORS.has(callee.name))

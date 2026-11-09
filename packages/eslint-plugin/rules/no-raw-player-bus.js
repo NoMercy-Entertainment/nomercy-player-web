@@ -31,7 +31,7 @@ const BUS_METHODS = new Set(['on', 'once', 'off', 'emit']);
  * string-literal (`foo['on']`) — or null when it is neither.
  *
  * @param {import('estree').MemberExpression} node
- * @returns {string | null}
+ * @returns {string | null} The member name, or null when it is neither form.
  */
 function memberName(node) {
 	if (!node.computed)
@@ -45,7 +45,7 @@ function memberName(node) {
  * True when `node` reads `this.player` (dot or computed string-literal form).
  *
  * @param {import('estree').Node} node
- * @returns {boolean}
+ * @returns {boolean} True when the node is a `this.player` read.
  */
 function isThisPlayer(node) {
 	return node.type === 'MemberExpression'
