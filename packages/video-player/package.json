@@ -1,0 +1,178 @@
+{
+	"name": "@nomercy-entertainment/nomercy-video-player",
+	"type": "module",
+	"version": "2.8.3",
+	"packageManager": "yarn@4.18.1",
+	"description": "Headless, event-driven HTML5 video player with HLS streaming, subtitle rendering (VTT/ASS/SSA), and a plugin system. No UI — you build your own.",
+	"author": {
+		"name": "NoMercy Entertainment",
+		"email": "info@nomercy.tv",
+		"url": "https://nomercy.tv"
+	},
+	"contributors": [
+		"Stoney Eagle <45034970+StoneyEagle@users.noreply.github.com>"
+	],
+	"license": "Apache-2.0",
+	"homepage": "https://docs.nomercy.tv/nomercy-video-player/",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/NoMercy-Entertainment/nomercy-video-player.git"
+	},
+	"bugs": {
+		"url": "https://github.com/NoMercy-Entertainment/nomercy-video-player/issues"
+	},
+	"keywords": [
+		"video",
+		"player",
+		"video-player",
+		"headless",
+		"hls",
+		"hls-player",
+		"html5",
+		"typescript",
+		"plugin",
+		"streaming",
+		"subtitles",
+		"ass",
+		"ssa",
+		"vtt",
+		"adaptive",
+		"playlist",
+		"media",
+		"no-ui",
+		"event-driven"
+	],
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./plugins": {
+			"types": "./dist/plugins/index.d.ts",
+			"import": "./dist/plugins/index.js"
+		},
+		"./adapters": {
+			"types": "./dist/adapters/index.d.ts",
+			"import": "./dist/adapters/index.js"
+		},
+		"./plugins/cast-sender": {
+			"types": "./dist/plugins/cast-sender/index.d.ts",
+			"import": "./dist/plugins/cast-sender/index.js"
+		},
+		"./plugins/desktop-ui": {
+			"types": "./dist/plugins/desktop-ui/index.d.ts",
+			"import": "./dist/plugins/desktop-ui/index.js"
+		},
+		"./plugins/drm": {
+			"types": "./dist/plugins/drm/index.d.ts",
+			"import": "./dist/plugins/drm/index.js"
+		},
+		"./plugins/key-handler": {
+			"types": "./dist/plugins/key-handler/index.d.ts",
+			"import": "./dist/plugins/key-handler/index.js"
+		},
+		"./plugins/live-transcoding": {
+			"types": "./dist/plugins/live-transcoding/index.d.ts",
+			"import": "./dist/plugins/live-transcoding/index.js"
+		},
+		"./plugins/media-session": {
+			"types": "./dist/plugins/media-session/index.d.ts",
+			"import": "./dist/plugins/media-session/index.js"
+		},
+		"./plugins/octopus": {
+			"types": "./dist/plugins/octopus/index.d.ts",
+			"import": "./dist/plugins/octopus/index.js"
+		},
+		"./plugins/subtitle-overlay": {
+			"types": "./dist/plugins/subtitle-overlay/index.d.ts",
+			"import": "./dist/plugins/subtitle-overlay/index.js"
+		},
+		"./plugins/touch-zones": {
+			"types": "./dist/plugins/touch-zones/index.d.ts",
+			"import": "./dist/plugins/touch-zones/index.js"
+		},
+		"./plugins/twitch": {
+			"types": "./dist/plugins/twitch/index.d.ts",
+			"import": "./dist/plugins/twitch/index.js"
+		},
+		"./plugins/tv-key-handler": {
+			"types": "./dist/plugins/tv-key-handler/index.d.ts",
+			"import": "./dist/plugins/tv-key-handler/index.js"
+		},
+		"./streams/native": {
+			"types": "./dist/streams/native.d.ts",
+			"import": "./dist/streams/native.js"
+		},
+		"./streams/hls": {
+			"types": "./dist/streams/hls.d.ts",
+			"import": "./dist/streams/hls.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"CHANGELOG.md",
+		"CODE_OF_CONDUCT.md",
+		"CONTRIBUTING.md",
+		"MIGRATION.md",
+		"RELEASING.md",
+		"SECURITY.md",
+		"dist"
+	],
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"scripts": {
+		"build": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && node node_modules/@nomercy-entertainment/nomercy-player-core/scripts/resolve-translation-globs.mjs && node node_modules/@nomercy-entertainment/nomercy-player-core/scripts/copy-dist-assets.mjs && node node_modules/@nomercy-entertainment/nomercy-player-core/scripts/inline-css-assets.mjs",
+		"build:iife": "vite build --config vite.iife.config.ts",
+		"build:all": "yarn build && yarn build:iife",
+		"dev": "tsc -p tsconfig.build.json --watch",
+		"typecheck": "tsc --noEmit",
+		"lint": "eslint . --max-warnings 0",
+		"lint:fix": "eslint . --fix --max-warnings 0",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:ui": "vitest --ui --watch",
+		"test:coverage": "vitest run --coverage",
+		"test:e2e": "node scripts/generate-e2e-fixtures.mjs && playwright test",
+		"test:e2e:report": "playwright show-report reports/playwright",
+		"prepublishOnly": "yarn build:all"
+	},
+	"dependencies": {
+		"@nomercy-entertainment/nomercy-player-core": "2.6.1",
+		"@nomercy-entertainment/nomercy-subtitle-octopus": "^0.2.0"
+	},
+	"devDependencies": {
+		"@antfu/eslint-config": "^9.0.0",
+		"@nomercy-entertainment/eslint-plugin-player": "^0.3.0",
+		"@playwright/test": "^1.60.0",
+		"@types/node": "^25.9.0",
+		"@vitest/coverage-v8": "^4.1.11",
+		"@vitest/ui": "^4.1.11",
+		"eslint": "^10.4.0",
+		"eslint-plugin-format": "^2.0.1",
+		"happy-dom": "^21.0.4",
+		"hls.js": "^1.6.16",
+		"playwright": "^1.60.0",
+		"prettier": "^3.3.3",
+		"prettier-eslint": "^16.4.2",
+		"tsc-alias": "^1.8.17",
+		"typescript": "^6.0.3",
+		"vite": "^8.0.13",
+		"vite-plugin-dts": "^5.0.0",
+		"vitest": "^4.1.11"
+	},
+	"resolutions": {
+		"brace-expansion": "^5.0.6",
+		"js-yaml": "^4.3.2",
+		"katex": "^0.18.2",
+		"minimatch": "10.2.4",
+		"tinypool@2.1.0": "2.1.2"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}
