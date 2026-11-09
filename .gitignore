@@ -7,4 +7,5 @@ node_modules
 !.yarn/versions
 .pnp.*
 *.log
+scripts/screenshots/
 .DS_Store
