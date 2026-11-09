@@ -7,15 +7,9 @@
 // -----------------------------------------------------------------------------
 
 /**
- * Shared hls.js stub for plugin tests that instantiate NMVideoPlayer but do
- * not exercise HLS-specific behaviour. Aliased via vitest.config.ts so every
- * test file that imports (directly or transitively) from 'hls.js' gets this
- * module instead of the real peer dependency, which is not installed in the
- * video-player package's own node_modules.
- *
- * Tests that need to interact with HLS internals (html5-backend-core,
- * backend-load) use inline `vi.mock('hls.js', ...)` which takes precedence
- * over this alias.
+ * hls.js stub for tests that build a player without exercising HLS itself.
+ * `playerVitestConfig({ hlsMock: true })` aliases every `hls.js` import to it.
+ * A test that needs HLS internals uses an inline `vi.mock('hls.js', ...)`.
  */
 
 type HlsListener = (event: string, data: unknown) => void;

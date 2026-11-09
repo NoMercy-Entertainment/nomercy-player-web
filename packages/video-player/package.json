@@ -146,6 +146,7 @@
 		"@nomercy-entertainment/nomercy-subtitle-octopus": "^0.2.0"
 	},
 	"devDependencies": {
+		"@nomercy-entertainment/test-support": "workspace:*",
 		"hls.js": "^1.6.16"
 	},
 	"publishConfig": {

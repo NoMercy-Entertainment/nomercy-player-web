@@ -557,6 +557,7 @@ __metadata:
   resolution: "@nomercy-entertainment/nomercy-music-player@workspace:packages/music-player"
   dependencies:
     "@nomercy-entertainment/nomercy-player-core": "workspace:*"
+    "@nomercy-entertainment/test-support": "workspace:*"
     hls.js: "npm:^1.6.16"
   languageName: unknown
   linkType: soft
@@ -582,7 +583,14 @@ __metadata:
   dependencies:
     "@nomercy-entertainment/nomercy-player-core": "workspace:*"
     "@nomercy-entertainment/nomercy-subtitle-octopus": "npm:^0.2.0"
+    "@nomercy-entertainment/test-support": "workspace:*"
     hls.js: "npm:^1.6.16"
+  languageName: unknown
+  linkType: soft
+
+"@nomercy-entertainment/test-support@workspace:*, @nomercy-entertainment/test-support@workspace:packages/test-support":
+  version: 0.0.0-use.local
+  resolution: "@nomercy-entertainment/test-support@workspace:packages/test-support"
   languageName: unknown
   linkType: soft
 

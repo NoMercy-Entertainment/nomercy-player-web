@@ -43,7 +43,7 @@ export function playerVitestConfig(options: PlayerVitestOptions) {
 		...(options.hlsMock
 			? [{
 					find: 'hls.js',
-					replacement: path('src/__tests__/__mocks__/hls.js.ts'),
+					replacement: fileURLToPath(new URL('../packages/test-support/src/hls.js.ts', import.meta.url)),
 				}]
 			: []),
 		...(options.coreSource ? coreSourceAliases() : []),

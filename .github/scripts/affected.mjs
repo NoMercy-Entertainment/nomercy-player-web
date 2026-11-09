@@ -38,7 +38,8 @@ if (base === 'all' || /^0+$/.test(base)) {
   } else {
     const touched = new Set(files.map(f => f.split('/')[1]).filter(d => dirs.includes(d)));
     // Every package is linted by the plugin from the root config, so it reaches all of them.
-    selected = touched.has('eslint-plugin') ? new Set(dirs) : new Set(touched);
+    // The shared test helpers reach every package's tests, so a change there runs them all.
+    selected = touched.has('eslint-plugin') || touched.has('test-support') ? new Set(dirs) : new Set(touched);
     for (const d of dirs) {
       if ([...reach(d)].some(dep => touched.has(dep))) selected.add(d);
     }
@@ -46,7 +47,7 @@ if (base === 'all' || /^0+$/.test(base)) {
   }
 }
 
-const include = dirs.filter(d => selected.has(d)).map((d) => {
+const include = dirs.filter(d => selected.has(d) && !manifests[d].private).map((d) => {
   const s = manifests[d].scripts ?? {};
   return {
     short: SHORT[d] ?? d,
