@@ -42,6 +42,15 @@ import { SpectrumPlugin } from '../../plugins/spectrum';
  * The float frequency buffer uses a known peak at bin 10 (-20 dB) so the
  * peakHz tests can assert a deterministic value without real FFT math.
  */
+interface CollectedFrame {
+  frame: VisualizationFrame;
+  energy: {
+    bass: number;
+    mid: number;
+    treble: number;
+  };
+}
+
 const PEAK_BIN = 10;
 const PEAK_DB = -20;
 
@@ -432,15 +441,6 @@ describe('SpectrumPlugin — deep behavioral coverage', () => {
           mid: 0.2,
           treble: 0.1,
         },
-      };
-    }
-
-    interface CollectedFrame {
-      frame: VisualizationFrame;
-      energy: {
-        bass: number;
-        mid: number;
-        treble: number;
       };
     }
 
