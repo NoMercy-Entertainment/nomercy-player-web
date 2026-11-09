@@ -222,6 +222,8 @@
 		"typecheck": "run -T tsc --noEmit",
 		"test": "run -T vitest run",
 		"test:watch": "run -T vitest",
+		"prepack": "node ../../scripts/pack-files.mjs copy",
+		"postpack": "node ../../scripts/pack-files.mjs clean",
 		"prepublishOnly": "yarn build"
 	},
 	"dependencies": {

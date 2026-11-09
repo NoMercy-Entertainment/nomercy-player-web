@@ -36,6 +36,8 @@
 	],
 	"scripts": {
 		"test": "node --test",
+		"prepack": "node ../../scripts/pack-files.mjs copy",
+		"postpack": "node ../../scripts/pack-files.mjs clean",
 		"check:duplicates": "node scripts/check-duplicate-symbols.mjs",
 		"check:exports": "node scripts/check-package-exports.mjs"
 	},

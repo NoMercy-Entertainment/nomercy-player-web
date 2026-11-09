@@ -12,7 +12,7 @@ Please include:
 
 - A description of the issue and its impact
 - Steps to reproduce, with a minimal proof of concept
-- The kit version (`@nomercy-entertainment/nomercy-player-core`) and any consumer package versions you tested against
+- The package and its version (for example `@nomercy-entertainment/nomercy-player-core`) and any consumer package versions you tested against
 - Your preferred contact for follow-up
 
 We aim to acknowledge reports within 48 hours and to coordinate a fix and disclosure timeline with you.
@@ -25,7 +25,7 @@ Only the latest `2.x` pre-release / release line receives security updates. v1 p
 
 In scope:
 
-- The kit itself (`@nomercy-entertainment/nomercy-player-core`)
+- Every package in this repository, including the kit (`@nomercy-entertainment/nomercy-player-core`)
 - Adapter ports + built-in plugins shipped from this package
 - Cross-package vulnerabilities in `nomercy-video-player` or `nomercy-music-player` rooted in the kit
 

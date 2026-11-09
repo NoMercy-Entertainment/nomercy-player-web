@@ -137,6 +137,8 @@
 		"test:coverage": "run -T vitest run --coverage",
 		"test:e2e": "node scripts/generate-e2e-fixtures.mjs && run -T playwright test",
 		"test:e2e:report": "run -T playwright show-report reports/playwright",
+		"prepack": "node ../../scripts/pack-files.mjs copy",
+		"postpack": "node ../../scripts/pack-files.mjs clean",
 		"prepublishOnly": "yarn build:all"
 	},
 	"dependencies": {

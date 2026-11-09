@@ -43,6 +43,8 @@
     "typecheck": "run -T tsc --noEmit",
     "lint": "eslint --fix .",
     "test": "jest --config jest.config.cjs",
+    "prepack": "node ../../scripts/pack-files.mjs copy",
+    "postpack": "node ../../scripts/pack-files.mjs clean",
     "prepublishOnly": "yarn build"
   },
   "devDependencies": {
