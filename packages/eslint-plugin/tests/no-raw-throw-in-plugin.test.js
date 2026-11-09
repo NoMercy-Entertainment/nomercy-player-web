@@ -6,9 +6,9 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
+import { describe, it } from 'node:test';
 import tsParser from '@typescript-eslint/parser';
 import { RuleTester } from 'eslint';
-import { describe, it } from 'node:test';
 import rule from '../rules/no-raw-throw-in-plugin.js';
 
 RuleTester.describe = describe;
@@ -36,20 +36,32 @@ ruleTester.run('no-raw-throw-in-plugin', rule, {
 	invalid: [
 		{
 			code: 'class P extends Plugin { use() { throw new Error(\'boom\'); } }',
-			errors: [{ messageId: 'rawThrow', data: { ctor: 'Error' } }],
+			errors: [{
+				messageId: 'rawThrow',
+				data: { ctor: 'Error' },
+			}],
 		},
 		{
 			code: 'class P extends Plugin<NMVideoPlayer> { use() { throw new TypeError(\'bad\'); } }',
-			errors: [{ messageId: 'rawThrow', data: { ctor: 'TypeError' } }],
+			errors: [{
+				messageId: 'rawThrow',
+				data: { ctor: 'TypeError' },
+			}],
 		},
 		{
 			code: 'class P extends core.Plugin { use() { throw new RangeError(\'r\'); } }',
-			errors: [{ messageId: 'rawThrow', data: { ctor: 'RangeError' } }],
+			errors: [{
+				messageId: 'rawThrow',
+				data: { ctor: 'RangeError' },
+			}],
 		},
 		// Namespaced constructor is still a raw throw.
 		{
 			code: 'class P extends Plugin { use() { throw new window.Error(\'x\'); } }',
-			errors: [{ messageId: 'rawThrow', data: { ctor: 'Error' } }],
+			errors: [{
+				messageId: 'rawThrow',
+				data: { ctor: 'Error' },
+			}],
 		},
 	],
 });

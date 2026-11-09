@@ -16,7 +16,12 @@
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, extname, join, resolve } from 'node:path';
+import {
+	dirname,
+	extname,
+	join,
+	resolve,
+} from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from '@typescript-eslint/typescript-estree';
 
@@ -49,7 +54,10 @@ function collectSymbols(srcDir) {
 		const code = readFileSync(file, 'utf8');
 		let ast;
 		try {
-			ast = parse(code, { range: true, jsx: false });
+			ast = parse(code, {
+				range: true,
+				jsx: false,
+			});
 		}
 		catch {
 			continue;
@@ -101,8 +109,13 @@ const duplicates = [];
 for (const [name, video] of videoSymbols) {
 	const music = musicSymbols.get(name);
 	// Ignore trivial bodies (single literal / identifier) — not worth hoisting.
-	if (music && music.body === video.body && video.body.length > 12)
-		duplicates.push({ name, video: video.file, music: music.file });
+	if (music && music.body === video.body && video.body.length > 12) {
+		duplicates.push({
+			name,
+			video: video.file,
+			music: music.file,
+		});
+	}
 }
 
 if (duplicates.length > 0) {

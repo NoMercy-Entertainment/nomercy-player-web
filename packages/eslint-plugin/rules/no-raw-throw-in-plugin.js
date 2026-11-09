@@ -55,8 +55,9 @@ function rawErrorCtorName(callee) {
 		&& GLOBAL_RECEIVERS.has(callee.object.name)
 		&& callee.property.type === 'Identifier'
 		&& RAW_ERROR_CTORS.has(callee.property.name)
-	)
+	) {
 		return callee.property.name;
+	}
 	return null;
 }
 
@@ -69,7 +70,7 @@ export default {
 		},
 		schema: [],
 		messages: {
-			rawThrow: "throw new {{ctor}}(...) inside a plugin skips the structured error surface — use this.throw({...}) or this.report({...}).",
+			rawThrow: 'throw new {{ctor}}(...) inside a plugin skips the structured error surface — use this.throw({...}) or this.report({...}).',
 		},
 	},
 

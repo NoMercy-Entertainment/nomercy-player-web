@@ -62,7 +62,7 @@ export default {
 		},
 		schema: [],
 		messages: {
-			rawBus: "this.player.{{method}}(...) inside a plugin bypasses scoping and auto-dispose — use this.{{method}}(...) instead.",
+			rawBus: 'this.player.{{method}}(...) inside a plugin bypasses scoping and auto-dispose — use this.{{method}}(...) instead.',
 		},
 	},
 

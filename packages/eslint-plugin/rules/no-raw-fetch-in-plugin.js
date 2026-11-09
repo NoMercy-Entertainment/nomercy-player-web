@@ -34,7 +34,7 @@ export default {
 		},
 		schema: [],
 		messages: {
-			rawFetch: "Global {{form}} inside a plugin sends no auth and never aborts on dispose — use this.fetch(url, options?) instead.",
+			rawFetch: 'Global {{form}} inside a plugin sends no auth and never aborts on dispose — use this.fetch(url, options?) instead.',
 		},
 	},
 

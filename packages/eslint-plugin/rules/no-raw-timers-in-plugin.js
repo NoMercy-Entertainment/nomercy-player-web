@@ -76,9 +76,9 @@ export default {
 		},
 		schema: [],
 		messages: {
-			rawTimer: "Raw {{raw}}(...) inside a plugin has no auto-cleanup — use this.{{helper}}(...) instead.",
-			rawListener: "Raw addEventListener(...) inside a plugin has no auto-cleanup — use this.listen(target, event, handler) instead.",
-			rawObserver: "Raw new {{observer}}(...) inside a plugin never disconnects on dispose — wrap it: this.lifecycle.observe(new {{observer}}(...)).",
+			rawTimer: 'Raw {{raw}}(...) inside a plugin has no auto-cleanup — use this.{{helper}}(...) instead.',
+			rawListener: 'Raw addEventListener(...) inside a plugin has no auto-cleanup — use this.listen(target, event, handler) instead.',
+			rawObserver: 'Raw new {{observer}}(...) inside a plugin never disconnects on dispose — wrap it: this.lifecycle.observe(new {{observer}}(...)).',
 		},
 	},
 
@@ -127,7 +127,10 @@ export default {
 					context.report({
 						node: callee,
 						messageId: 'rawTimer',
-						data: { raw: callee.name, helper: GLOBAL_TIMERS.get(callee.name) },
+						data: {
+							raw: callee.name,
+							helper: GLOBAL_TIMERS.get(callee.name),
+						},
 					});
 					return;
 				}
@@ -138,7 +141,10 @@ export default {
 					if (method === 'addEventListener') {
 						if (!inPluginSubclass(node))
 							return;
-						context.report({ node: callee, messageId: 'rawListener' });
+						context.report({
+							node: callee,
+							messageId: 'rawListener',
+						});
 						return;
 					}
 					if (
@@ -151,7 +157,10 @@ export default {
 						context.report({
 							node: callee,
 							messageId: 'rawTimer',
-							data: { raw: method, helper: GLOBAL_TIMERS.get(method) },
+							data: {
+								raw: method,
+								helper: GLOBAL_TIMERS.get(method),
+							},
 						});
 					}
 				}

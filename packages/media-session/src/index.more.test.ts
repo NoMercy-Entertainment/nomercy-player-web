@@ -1,11 +1,11 @@
 import MediaSession from './index';
 
-type MockMediaSession = {
-	setActionHandler: jest.Mock;
-	setPositionState: jest.Mock;
+interface MockMediaSession {
+	setActionHandler: ReturnType<typeof vi.fn>;
+	setPositionState: ReturnType<typeof vi.fn>;
 	metadata: any;
 	playbackState: MediaSessionPlaybackState | '';
-};
+}
 
 const SIZES = [96, 128, 192, 256, 384, 512] as const;
 
@@ -24,15 +24,15 @@ function installMediaMetadata() {
 
 function installNavigator(): MockMediaSession {
 	const ms: MockMediaSession = {
-		setActionHandler: jest.fn(),
-		setPositionState: jest.fn(),
+		setActionHandler: vi.fn(),
+		setPositionState: vi.fn(),
 		metadata: null,
 		playbackState: '',
 	};
 
 	// @ts-ignore
 	// noinspection JSConstantReassignment
-	global.navigator = {} as Navigator;
+	vi.stubGlobal('navigator', {});
 
 	// @ts-ignore
 	// noinspection JSConstantReassignment
@@ -67,7 +67,7 @@ describe('MediaSession (extended)', () => {
 	});
 
 	describe('buildArtworkList (via setMetadata)', () => {
-		test('a string artwork expands to the 6 SIZES with png type and encoded src', () => {
+		it('a string artwork expands to the 6 SIZES with png type and encoded src', () => {
 			mediaSession.setMetadata({
 				title: '',
 				artist: '',
@@ -88,7 +88,7 @@ describe('MediaSession (extended)', () => {
 			});
 		});
 
-		test('a string artwork src is URI-encoded (space becomes %20)', () => {
+		it('a string artwork src is URI-encoded (space becomes %20)', () => {
 			mediaSession.setMetadata({
 				title: '',
 				artist: '',
@@ -99,11 +99,11 @@ describe('MediaSession (extended)', () => {
 			const artwork = ms.metadata.artwork as MediaImage[];
 
 			expect(artwork[0].src).toBe(
-				'https://example.com/my%20image.jpg?width=96&type=png&aspect_ratio=1'
+				'https://example.com/my%20image.jpg?width=96&type=png&aspect_ratio=1',
 			);
 		});
 
-		test('an empty string artwork yields an empty list', () => {
+		it('an empty string artwork yields an empty list', () => {
 			mediaSession.setMetadata({
 				title: '',
 				artist: '',
@@ -114,9 +114,13 @@ describe('MediaSession (extended)', () => {
 			expect(ms.metadata.artwork).toEqual([]);
 		});
 
-		test('an array artwork passes through unchanged (same reference)', () => {
+		it('an array artwork passes through unchanged (same reference)', () => {
 			const artwork: MediaImage[] = [
-				{ src: 'x', sizes: '1x1', type: 'image/jpeg' },
+				{
+					src: 'x',
+					sizes: '1x1',
+					type: 'image/jpeg',
+				},
 			];
 
 			mediaSession.setMetadata({
@@ -129,7 +133,7 @@ describe('MediaSession (extended)', () => {
 			expect(ms.metadata.artwork).toBe(artwork);
 		});
 
-		test('an undefined artwork yields an empty list', () => {
+		it('an undefined artwork yields an empty list', () => {
 			mediaSession.setMetadata({
 				title: '',
 				artist: '',
@@ -142,7 +146,7 @@ describe('MediaSession (extended)', () => {
 	});
 
 	describe('setActionHandler', () => {
-		test('always registers play/pause/stop/previoustrack/nexttrack and skips seek/skipad without deps', () => {
+		it('always registers play/pause/stop/previoustrack/nexttrack and skips seek/skipad without deps', () => {
 			mediaSession.setActionHandler({});
 
 			const names = registeredNames(ms);
@@ -154,7 +158,7 @@ describe('MediaSession (extended)', () => {
 					'stop',
 					'previoustrack',
 					'nexttrack',
-				])
+				]),
 			);
 			expect(names).not.toContain('seekbackward');
 			expect(names).not.toContain('seekforward');
@@ -162,7 +166,7 @@ describe('MediaSession (extended)', () => {
 			expect(names).not.toContain('skipad');
 		});
 
-		test('omitted callbacks fall back to a callable no-op handler', () => {
+		it('omitted callbacks fall back to a callable no-op handler', () => {
 			mediaSession.setActionHandler({});
 
 			const playHandler = handlerFor(ms, 'play');
@@ -172,18 +176,21 @@ describe('MediaSession (extended)', () => {
 			expect(playHandler({ action: 'play' })).toBeUndefined();
 		});
 
-		test('previoustrack/nexttrack use the provided callbacks', () => {
-			const previous = jest.fn();
-			const next = jest.fn();
+		it('previoustrack/nexttrack use the provided callbacks', () => {
+			const previous = vi.fn();
+			const next = vi.fn();
 
-			mediaSession.setActionHandler({ previous, next });
+			mediaSession.setActionHandler({
+				previous,
+				next,
+			});
 
 			expect(ms.setActionHandler).toHaveBeenCalledWith('previoustrack', previous);
 			expect(ms.setActionHandler).toHaveBeenCalledWith('nexttrack', next);
 		});
 
-		test('seek actions are NOT registered when only seek is provided', () => {
-			mediaSession.setActionHandler({ seek: jest.fn() });
+		it('seek actions are NOT registered when only seek is provided', () => {
+			mediaSession.setActionHandler({ seek: vi.fn() });
 
 			const names = registeredNames(ms);
 
@@ -192,8 +199,8 @@ describe('MediaSession (extended)', () => {
 			expect(names).not.toContain('seekto');
 		});
 
-		test('seek actions are NOT registered when only getPosition is provided', () => {
-			mediaSession.setActionHandler({ getPosition: jest.fn().mockReturnValue(0) });
+		it('seek actions are NOT registered when only getPosition is provided', () => {
+			mediaSession.setActionHandler({ getPosition: vi.fn().mockReturnValue(0) });
 
 			const names = registeredNames(ms);
 
@@ -202,10 +209,10 @@ describe('MediaSession (extended)', () => {
 			expect(names).not.toContain('seekto');
 		});
 
-		test('seek actions ARE registered when both seek and getPosition are functions', () => {
+		it('seek actions ARE registered when both seek and getPosition are functions', () => {
 			mediaSession.setActionHandler({
-				seek: jest.fn(),
-				getPosition: jest.fn().mockReturnValue(0),
+				seek: vi.fn(),
+				getPosition: vi.fn().mockReturnValue(0),
 			});
 
 			const names = registeredNames(ms);
@@ -215,11 +222,14 @@ describe('MediaSession (extended)', () => {
 			expect(names).toContain('seekto');
 		});
 
-		test('seekbackward uses a 30s default delta and details.seekTime when present', () => {
-			const seek = jest.fn();
-			const getPosition = jest.fn().mockReturnValue(100);
+		it('seekbackward uses a 30s default delta and details.seekTime when present', () => {
+			const seek = vi.fn();
+			const getPosition = vi.fn().mockReturnValue(100);
 
-			mediaSession.setActionHandler({ seek, getPosition });
+			mediaSession.setActionHandler({
+				seek,
+				getPosition,
+			});
 
 			const back = handlerFor(ms, 'seekbackward');
 
@@ -230,11 +240,14 @@ describe('MediaSession (extended)', () => {
 			expect(seek).toHaveBeenLastCalledWith(90);
 		});
 
-		test('seekforward uses a 30s default delta and details.seekTime when present', () => {
-			const seek = jest.fn();
-			const getPosition = jest.fn().mockReturnValue(100);
+		it('seekforward uses a 30s default delta and details.seekTime when present', () => {
+			const seek = vi.fn();
+			const getPosition = vi.fn().mockReturnValue(100);
 
-			mediaSession.setActionHandler({ seek, getPosition });
+			mediaSession.setActionHandler({
+				seek,
+				getPosition,
+			});
 
 			const forward = handlerFor(ms, 'seekforward');
 
@@ -245,11 +258,14 @@ describe('MediaSession (extended)', () => {
 			expect(seek).toHaveBeenLastCalledWith(105);
 		});
 
-		test('seekto forwards details.seekTime directly to seek', () => {
-			const seek = jest.fn();
-			const getPosition = jest.fn().mockReturnValue(100);
+		it('seekto forwards details.seekTime directly to seek', () => {
+			const seek = vi.fn();
+			const getPosition = vi.fn().mockReturnValue(100);
 
-			mediaSession.setActionHandler({ seek, getPosition });
+			mediaSession.setActionHandler({
+				seek,
+				getPosition,
+			});
 
 			const seekTo = handlerFor(ms, 'seekto');
 
@@ -257,8 +273,8 @@ describe('MediaSession (extended)', () => {
 			expect(seek).toHaveBeenLastCalledWith(42);
 		});
 
-		test('skipad is registered with the exact skipAd callback when provided', () => {
-			const skipAd = jest.fn();
+		it('skipad is registered with the exact skipAd callback when provided', () => {
+			const skipAd = vi.fn();
 
 			mediaSession.setActionHandler({ skipAd });
 
@@ -266,7 +282,7 @@ describe('MediaSession (extended)', () => {
 			expect(handlerFor(ms, 'skipad')).toBe(skipAd);
 		});
 
-		test('skipad is NOT registered when skipAd is absent', () => {
+		it('skipad is NOT registered when skipAd is absent', () => {
 			mediaSession.setActionHandler({});
 
 			expect(registeredNames(ms)).not.toContain('skipad');
@@ -286,7 +302,7 @@ describe('MediaSession (extended)', () => {
 			'skipad',
 		];
 
-		test('with no argument clears all 9 actions to null', () => {
+		it('with no argument clears all 9 actions to null', () => {
 			mediaSession.clearActionHandler();
 
 			expect(ms.setActionHandler.mock.calls).toHaveLength(9);
@@ -295,13 +311,13 @@ describe('MediaSession (extended)', () => {
 			});
 		});
 
-		test('with a single action name clears only that action', () => {
+		it('with a single action name clears only that action', () => {
 			mediaSession.clearActionHandler('play');
 
 			expect(ms.setActionHandler.mock.calls).toEqual([['play', null]]);
 		});
 
-		test('with an array clears exactly those actions', () => {
+		it('with an array clears exactly those actions', () => {
 			mediaSession.clearActionHandler(['pause', 'stop']);
 
 			expect(ms.setActionHandler.mock.calls).toEqual([
@@ -312,7 +328,7 @@ describe('MediaSession (extended)', () => {
 	});
 
 	describe('setPlaybackState', () => {
-		test('assigns the given state to navigator.mediaSession.playbackState', () => {
+		it('assigns the given state to navigator.mediaSession.playbackState', () => {
 			mediaSession.setPlaybackState('paused');
 			expect(ms.playbackState).toBe('paused');
 
@@ -322,7 +338,7 @@ describe('MediaSession (extended)', () => {
 	});
 
 	describe('setMetadata', () => {
-		test('resets metadata to null before assigning the new MediaMetadata', () => {
+		it('resets metadata to null before assigning the new MediaMetadata', () => {
 			const assigned: any[] = [];
 			let current: any = { stale: true };
 
@@ -348,7 +364,7 @@ describe('MediaSession (extended)', () => {
 			expect(current).toBeInstanceOf(MediaMetadataMock);
 		});
 
-		test('assigns a MediaMetadata carrying title/artist/album/artwork', () => {
+		it('assigns a MediaMetadata carrying title/artist/album/artwork', () => {
 			mediaSession.setMetadata({
 				title: 'T',
 				artist: 'A',
@@ -358,20 +374,31 @@ describe('MediaSession (extended)', () => {
 
 			expect(ms.metadata).toBeInstanceOf(MediaMetadataMock);
 			expect(ms.metadata).toEqual(
-				expect.objectContaining({ title: 'T', artist: 'A', album: 'Al' })
+				expect.objectContaining({
+					title: 'T',
+					artist: 'A',
+					album: 'Al',
+				}),
 			);
 			expect(ms.metadata.artwork).toHaveLength(SIZES.length);
 		});
 
-		test('maps chapters into chapterInfo with title/startTime/artwork', () => {
+		it('maps chapters into chapterInfo with title/startTime/artwork', () => {
 			mediaSession.setMetadata({
 				title: 'T',
 				artist: 'A',
 				album: 'Al',
 				artwork: undefined,
 				chapters: [
-					{ title: 'Intro', startTime: 0, artwork: 'https://example.com/c.jpg' },
-					{ title: 'Part 2', startTime: 60 },
+					{
+						title: 'Intro',
+						startTime: 0,
+						artwork: 'https://example.com/c.jpg',
+					},
+					{
+						title: 'Part 2',
+						startTime: 60,
+					},
 				],
 			});
 
@@ -393,7 +420,7 @@ describe('MediaSession (extended)', () => {
 			});
 		});
 
-		test('defaults chapters to an empty chapterInfo when omitted', () => {
+		it('defaults chapters to an empty chapterInfo when omitted', () => {
 			mediaSession.setMetadata({
 				title: 'T',
 				artist: 'A',
@@ -406,7 +433,7 @@ describe('MediaSession (extended)', () => {
 	});
 
 	describe('setPositionState', () => {
-		test('forwards the state object to navigator.mediaSession.setPositionState', () => {
+		it('forwards the state object to navigator.mediaSession.setPositionState', () => {
 			const state = {
 				duration: 300,
 				playbackRate: 1.5,
@@ -430,7 +457,7 @@ describe('MediaSession when mediaSession is not supported', () => {
 
 		// @ts-ignore
 		// noinspection JSConstantReassignment
-		global.navigator = {} as Navigator;
+		vi.stubGlobal('navigator', {});
 
 		mediaSession = new MediaSession();
 	});
@@ -438,11 +465,11 @@ describe('MediaSession when mediaSession is not supported', () => {
 	afterEach(() => {
 		// @ts-ignore
 		// noinspection JSConstantReassignment
-		global.navigator = savedNavigator;
+		vi.stubGlobal('navigator', savedNavigator);
 	});
 
-	test('every method is a no-op that throws nothing and sets nothing', () => {
-		expect(() => mediaSession.setActionHandler({ play: jest.fn() })).not.toThrow();
+	it('every method is a no-op that throws nothing and sets nothing', () => {
+		expect(() => mediaSession.setActionHandler({ play: vi.fn() })).not.toThrow();
 		expect(() => mediaSession.clearActionHandler()).not.toThrow();
 		expect(() => mediaSession.clearActionHandler('play')).not.toThrow();
 		expect(() => mediaSession.setPlaybackState('playing')).not.toThrow();
@@ -452,11 +479,13 @@ describe('MediaSession when mediaSession is not supported', () => {
 				artist: 'A',
 				album: 'Al',
 				artwork: 'https://example.com/a.jpg',
-			})
-		).not.toThrow();
+			})).not.toThrow();
 		expect(() =>
-			mediaSession.setPositionState({ duration: 1, playbackRate: 1, position: 0 })
-		).not.toThrow();
+			mediaSession.setPositionState({
+				duration: 1,
+				playbackRate: 1,
+				position: 0,
+			})).not.toThrow();
 
 		expect('mediaSession' in global.navigator).toBe(false);
 		expect((global.navigator as any).playbackState).toBeUndefined();

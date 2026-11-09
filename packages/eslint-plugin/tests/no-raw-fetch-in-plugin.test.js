@@ -6,9 +6,9 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
+import { describe, it } from 'node:test';
 import tsParser from '@typescript-eslint/parser';
 import { RuleTester } from 'eslint';
-import { describe, it } from 'node:test';
 import rule from '../rules/no-raw-fetch-in-plugin.js';
 
 RuleTester.describe = describe;
@@ -38,19 +38,31 @@ ruleTester.run('no-raw-fetch-in-plugin', rule, {
 	invalid: [
 		{
 			code: 'class P extends Plugin { use() { fetch(\'/api/x\'); } }',
-			errors: [{ messageId: 'rawFetch', data: { form: 'fetch(...)' } }],
+			errors: [{
+				messageId: 'rawFetch',
+				data: { form: 'fetch(...)' },
+			}],
 		},
 		{
 			code: 'class P extends Plugin<NMVideoPlayer> { async use() { await fetch(\'/media.m3u8\'); } }',
-			errors: [{ messageId: 'rawFetch', data: { form: 'fetch(...)' } }],
+			errors: [{
+				messageId: 'rawFetch',
+				data: { form: 'fetch(...)' },
+			}],
 		},
 		{
 			code: 'class P extends Plugin { use() { window.fetch(\'/api/x\'); } }',
-			errors: [{ messageId: 'rawFetch', data: { form: 'window.fetch(...)' } }],
+			errors: [{
+				messageId: 'rawFetch',
+				data: { form: 'window.fetch(...)' },
+			}],
 		},
 		{
 			code: 'class P extends core.Plugin { use() { globalThis.fetch(\'/api/x\'); } }',
-			errors: [{ messageId: 'rawFetch', data: { form: 'globalThis.fetch(...)' } }],
+			errors: [{
+				messageId: 'rawFetch',
+				data: { form: 'globalThis.fetch(...)' },
+			}],
 		},
 	],
 });

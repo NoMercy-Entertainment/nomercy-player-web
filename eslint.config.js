@@ -16,8 +16,6 @@ export default antfu({
 		'.github/**',
 		// Loading this file through itself rebuilds the whole config cache on every save.
 		'eslint.config.js',
-		'packages/media-session/**',
-		'packages/eslint-plugin/**',
 	],
 	typescript: {
 		overrides: {
@@ -137,6 +135,17 @@ export default antfu({
 	// The v1 shim exists to carry real @deprecated JSDoc for v1 callers.
 	files: ['packages/{video-player,music-player}/src/plugins/v1-compat.ts'],
 	rules: { 'player/no-compat-vocab': 'off' },
+}, {
+	// Its tests assign to `global` and suppress types to build the MediaSession fakes.
+	files: ['packages/media-session/src/*.test.ts'],
+	rules: {
+		'no-restricted-globals': 'off',
+		'ts/ban-ts-comment': 'off',
+	},
+}, {
+	// This package tests with node:test; the plugin must not depend on vitest.
+	files: ['packages/eslint-plugin/**/*.js'],
+	rules: { 'test/no-import-node-test': 'off' },
 }, {
 	// The logger is the one place that calls console directly.
 	files: ['packages/core/src/adapters/logger/default.ts'],

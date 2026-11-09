@@ -6,9 +6,9 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
+import { describe, it } from 'node:test';
 import tsParser from '@typescript-eslint/parser';
 import { RuleTester } from 'eslint';
-import { describe, it } from 'node:test';
 import rule from '../rules/no-history-comments.js';
 
 RuleTester.describe = describe;

@@ -1,4 +1,4 @@
-﻿import MediaSession from './index';
+import MediaSession from './index';
 
 describe('MediaSession', () => {
 	let mediaSession: MediaSession;
@@ -7,8 +7,8 @@ describe('MediaSession', () => {
 		// Mock global.navigator
 		// @ts-ignore
 		// noinspection JSConstantReassignment
-		global.navigator = {} as Navigator;
-		
+		vi.stubGlobal('navigator', {});
+
 		// Mocking MediaMetadata
 		// @ts-ignore
 		global.MediaMetadata = class {
@@ -21,8 +21,8 @@ describe('MediaSession', () => {
 		// @ts-ignore
 		// noinspection JSConstantReassignment
 		global.navigator.mediaSession = {
-			setActionHandler: jest.fn(),
-			setPositionState: jest.fn(),
+			setActionHandler: vi.fn(),
+			setPositionState: vi.fn(),
 			metadata: null,
 			playbackState: '',
 		};
@@ -32,7 +32,7 @@ describe('MediaSession', () => {
 		mediaSession = new MediaSession();
 	});
 
-	test('should set metadata correctly', () => {
+	it('should set metadata correctly', () => {
 		const metadata = {
 			title: 'Test Song',
 			artist: 'Test Artist',
@@ -48,17 +48,17 @@ describe('MediaSession', () => {
 				artist: 'Test Artist',
 				album: 'Test Album',
 				artwork: expect.any(Array),
-			})
+			}),
 		);
 	});
 
-	test('should set playback state correctly', () => {
+	it('should set playback state correctly', () => {
 		mediaSession.setPlaybackState('playing');
 
 		expect((navigator as any).mediaSession.playbackState).toBe('playing');
 	});
 
-	test('should set position state correctly', () => {
+	it('should set position state correctly', () => {
 		const positionState = {
 			duration: 200,
 			playbackRate: 1,
@@ -68,11 +68,11 @@ describe('MediaSession', () => {
 		mediaSession.setPositionState(positionState);
 
 		expect((navigator as any).mediaSession.setPositionState).toHaveBeenCalledWith(
-			positionState
+			positionState,
 		);
 	});
 
-	test('buildArtworkList output snapshot', () => {
+	it('buildArtworkList output snapshot', () => {
 		mediaSession.setMetadata({
 			title: '',
 			artist: '',
@@ -83,11 +83,11 @@ describe('MediaSession', () => {
 		expect((navigator as any).mediaSession.metadata.artwork).toMatchSnapshot();
 	});
 
-	test('should set action handlers correctly', () => {
-		const playHandler = jest.fn();
-		const pauseHandler = jest.fn();
-		const seekHandler = jest.fn();
-		const getPositionMock = jest.fn().mockReturnValue(30);
+	it('should set action handlers correctly', () => {
+		const playHandler = vi.fn();
+		const pauseHandler = vi.fn();
+		const seekHandler = vi.fn();
+		const getPositionMock = vi.fn().mockReturnValue(30);
 
 		mediaSession.setActionHandler({
 			play: playHandler,
@@ -98,17 +98,17 @@ describe('MediaSession', () => {
 
 		expect((navigator as any).mediaSession.setActionHandler).toHaveBeenCalledWith(
 			'play',
-			playHandler
+			playHandler,
 		);
 
 		expect((navigator as any).mediaSession.setActionHandler).toHaveBeenCalledWith(
 			'pause',
-			pauseHandler
+			pauseHandler,
 		);
 
 		expect((navigator as any).mediaSession.setActionHandler).toHaveBeenCalledWith(
 			'seekto',
-			expect.any(Function)
+			expect.any(Function),
 		);
 	});
 });

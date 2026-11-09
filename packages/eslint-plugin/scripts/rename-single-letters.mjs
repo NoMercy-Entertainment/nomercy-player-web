@@ -36,7 +36,7 @@ const GENERIC_TYPES = new Set(['Map', 'ReadonlyMap', 'WeakMap', 'Set', 'WeakSet'
 function deriveFromTypeName(typeName) {
 	if (!typeName || typeName === '__type' || typeName === '__object' || typeName === '__function')
 		return null;
-	if (GENERIC_TYPES.has(typeName) || /global/iu.test(typeName) || /^webkit/u.test(typeName))
+	if (GENERIC_TYPES.has(typeName) || /global/iu.test(typeName) || typeName.startsWith('webkit'))
 		return null;
 	let base = typeName;
 	if (/^I[A-Z]/u.test(base))
@@ -105,7 +105,10 @@ const project = new Project({
 });
 
 const proposals = [];
-const skipped = { noName: 0, collision: 0 };
+const skipped = {
+	noName: 0,
+	collision: 0,
+};
 
 for (const sourceFile of project.getSourceFiles()) {
 	const path = sourceFile.getFilePath();
@@ -140,7 +143,8 @@ for (const sourceFile of project.getSourceFiles()) {
 			current,
 			proposed,
 			scopeKey: `${path}::${scopeKeyFor(candidate)}`,
-			where: `${path.split(/[\\/]/u).slice(-2).join('/')}:${nameNode.getStartLineNumber()}`,
+			where: `${path.split(/[\\/]/u).slice(-2)
+				.join('/')}:${nameNode.getStartLineNumber()}`,
 		});
 	}
 }

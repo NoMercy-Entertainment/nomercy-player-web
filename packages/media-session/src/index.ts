@@ -11,25 +11,28 @@ interface MetadataOptions extends Omit<MediaMetadataInit, 'artwork'> {
 	chapters?: ChapterOptions[];
 }
 
-type ActionHandlerName =
-	| 'play'
-	| 'pause'
-	| 'stop'
-	| 'previoustrack'
-	| 'nexttrack'
-	| 'seekbackward'
-	| 'seekforward'
-	| 'seekto'
-	| 'skipad';
+type ActionHandlerName
+	= | 'play'
+		| 'pause'
+		| 'stop'
+		| 'previoustrack'
+		| 'nexttrack'
+		| 'seekbackward'
+		| 'seekforward'
+		| 'seekto'
+		| 'skipad';
 
 const SIZES = [96, 128, 192, 256, 384, 512] as const;
 
 function buildArtworkList(artwork: MediaImage[] | string | undefined): MediaImage[] {
-	if (typeof artwork === 'undefined') return [];
+	if (typeof artwork === 'undefined')
+		return [];
 
-	if (Array.isArray(artwork)) return artwork;
+	if (Array.isArray(artwork))
+		return artwork;
 
-	if (typeof artwork !== 'string' || !artwork) return [];
+	if (typeof artwork !== 'string' || !artwork)
+		return [];
 
 	return SIZES.map(w => ({
 		src: encodeURI(`${artwork}?width=${w}&type=png&aspect_ratio=1`),
@@ -41,11 +44,15 @@ function buildArtworkList(artwork: MediaImage[] | string | undefined): MediaImag
 const noop: MediaSessionActionHandler = () => {};
 
 export default class MediaSession {
-
 	setActionHandler({
-		play, pause, stop,
-		previous, next, seek,
-		getPosition, skipAd,
+		play,
+		pause,
+		stop,
+		previous,
+		next,
+		seek,
+		getPosition,
+		skipAd,
 	}: {
 		play?: MediaSessionActionHandler;
 		pause?: MediaSessionActionHandler;
@@ -56,35 +63,36 @@ export default class MediaSession {
 		getPosition?: () => number;
 		skipAd?: MediaSessionActionHandler;
 	}) {
-		if (!('mediaSession' in navigator)) return;
+		if (!('mediaSession' in navigator))
+			return;
 
 		navigator.mediaSession.setActionHandler(
 			'previoustrack',
-			previous ?? noop
+			previous ?? noop,
 		);
 
 		navigator.mediaSession.setActionHandler(
 			'nexttrack',
-			next ?? noop
+			next ?? noop,
 		);
 
 		if (
-			typeof seek === 'function' &&
-			typeof getPosition === 'function'
+			typeof seek === 'function'
+			&& typeof getPosition === 'function'
 		) {
 			navigator.mediaSession.setActionHandler(
 				'seekbackward',
-				(details) => seek(getPosition() - (details.seekTime ?? 30))
+				details => seek(getPosition() - (details.seekTime ?? 30)),
 			);
 
 			navigator.mediaSession.setActionHandler(
 				'seekforward',
-				(details) => seek(getPosition() + (details.seekTime ?? 30))
+				details => seek(getPosition() + (details.seekTime ?? 30)),
 			);
 
 			navigator.mediaSession.setActionHandler(
 				'seekto',
-				(details) => seek(details.seekTime as number)
+				details => seek(details.seekTime as number),
 			);
 		}
 
@@ -94,49 +102,60 @@ export default class MediaSession {
 
 		navigator.mediaSession.setActionHandler(
 			'pause',
-			pause ?? noop
+			pause ?? noop,
 		);
 
 		if (typeof skipAd === 'function') {
 			navigator.mediaSession.setActionHandler(
 				'skipad' as MediaSessionAction,
-				skipAd
+				skipAd,
 			);
 		}
 	}
 
 	clearActionHandler(actions?: ActionHandlerName | ActionHandlerName[]) {
-		if (!('mediaSession' in navigator)) return;
+		if (!('mediaSession' in navigator))
+			return;
 
 		const allActions: ActionHandlerName[] = [
-			'play', 'pause', 'stop',
-			'previoustrack', 'nexttrack',
-			'seekbackward', 'seekforward', 'seekto',
+			'play',
+			'pause',
+			'stop',
+			'previoustrack',
+			'nexttrack',
+			'seekbackward',
+			'seekforward',
+			'seekto',
 			'skipad',
 		];
 
-		const targets = actions === undefined
-			? allActions
-			: Array.isArray(actions)
-				? actions
-				: [actions];
+		const requested = Array.isArray(actions) ? actions : [actions];
+		const targets = actions === undefined ? allActions : requested;
 
 		for (const action of targets) {
 			navigator.mediaSession.setActionHandler(
 				action as MediaSessionAction,
-				null
+				null,
 			);
 		}
 	}
 
 	setPlaybackState(playbackState: MediaSessionPlaybackState) {
-		if (!('mediaSession' in navigator)) return;
+		if (!('mediaSession' in navigator))
+			return;
 
 		navigator.mediaSession.playbackState = playbackState;
 	}
 
-	setMetadata({ title, artist, album, artwork, chapters }: MetadataOptions) {
-		if (!('mediaSession' in navigator)) return;
+	setMetadata({
+		title,
+		artist,
+		album,
+		artwork,
+		chapters,
+	}: MetadataOptions) {
+		if (!('mediaSession' in navigator))
+			return;
 
 		const artworkList = buildArtworkList(artwork);
 
@@ -161,7 +180,8 @@ export default class MediaSession {
 		playbackRate: number;
 		position: number;
 	}) {
-		if (!('mediaSession' in navigator)) return;
+		if (!('mediaSession' in navigator))
+			return;
 
 		navigator.mediaSession.setPositionState(state);
 	}

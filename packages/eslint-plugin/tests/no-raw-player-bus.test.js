@@ -6,9 +6,9 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
+import { describe, it } from 'node:test';
 import tsParser from '@typescript-eslint/parser';
 import { RuleTester } from 'eslint';
-import { describe, it } from 'node:test';
 import rule from '../rules/no-raw-player-bus.js';
 
 RuleTester.describe = describe;
@@ -39,7 +39,10 @@ ruleTester.run('no-raw-player-bus', rule, {
 	invalid: [
 		{
 			code: 'class P extends Plugin { use() { this.player.on(\'play\', () => {}); } }',
-			errors: [{ messageId: 'rawBus', data: { method: 'on' } }],
+			errors: [{
+				messageId: 'rawBus',
+				data: { method: 'on' },
+			}],
 		},
 		{
 			code: 'class P extends Plugin { use() { this.player.emit(\'x\', {}); } }',
@@ -56,11 +59,17 @@ ruleTester.run('no-raw-player-bus', rule, {
 		// Computed access must not bypass the ban.
 		{
 			code: 'class P extends Plugin { use() { this.player[\'on\'](\'play\', () => {}); } }',
-			errors: [{ messageId: 'rawBus', data: { method: 'on' } }],
+			errors: [{
+				messageId: 'rawBus',
+				data: { method: 'on' },
+			}],
 		},
 		{
 			code: 'class P extends Plugin { use() { this[\'player\'].on(\'play\', () => {}); } }',
-			errors: [{ messageId: 'rawBus', data: { method: 'on' } }],
+			errors: [{
+				messageId: 'rawBus',
+				data: { method: 'on' },
+			}],
 		},
 	],
 });

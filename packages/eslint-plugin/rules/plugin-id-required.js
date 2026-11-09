@@ -84,7 +84,7 @@ export default {
 		},
 		schema: [],
 		messages: {
-			missingId: "A plugin (class extending Plugin) must declare its own `static override readonly id` — inheriting the base default 'plugin' collides and breaks storage/mount namespacing.",
+			missingId: 'A plugin (class extending Plugin) must declare its own `static override readonly id` — inheriting the base default \'plugin\' collides and breaks storage/mount namespacing.',
 		},
 	},
 
