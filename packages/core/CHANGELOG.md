@@ -1,0 +1,485 @@
+# Changelog — @nomercy-entertainment/nomercy-player-core
+
+## [Unreleased]
+
+## [2.6.1] — 2026-11-09
+
+### Fixed
+
+- `play()` emits `pause` when the browser refuses a play that already announced itself (autoplay policy), so the state and the play button return to paused instead of showing a stuck playing state.
+- Native sidecar subtitle fallback: when the subtitle renderer cannot take a sidecar track, the native text track is used.
+
+## [2.6.0] — 2026-11-01
+
+### Added
+
+- `next()` skips an item whose media answers 404 or 410 and loads the following one, emitting `itemSkipped` with `{ item, status }`; at the end of the queue it stops with `queue:exhausted` and never loops.
+- `next()` calls `player.refreshAuth()` once and retries the same item when the media answers 401, up to `auth.retryAfterRefresh` times (default 1).
+
+### Changed
+
+- `next()` raises `fatal` and rejects, without skipping, when the media answers 500 or another 5xx from a live server; 502, 503, 504 and 520-530 keep the retry ladder so a restarting server still recovers.
+
+## [2.5.0] — 2026-11-01
+
+### Changed
+
+- Version-only release to keep the trio at one version with video-player 2.5.0 and music-player 2.5.0. Dev dependency `happy-dom` 21.0.4 clears GHSA-834v-8h66-3h79 and GHSA-c8p4-j97h-3vg8.
+
+## [2.4.0] — 2026-10-28
+
+### Added
+
+- `AuthConfig.mediaOrigins`: the origins that receive `bearerToken` on a media request (manifest, segments, element `src`). Any other origin gets no `Authorization`. `mediaAuthorization` still takes precedence when set. The players ask an internal `_mediaAuthorization(url)`.
+
+### Changed
+
+- `player.auth()` returns a snapshot with no callable that returns the bearer token. An app that passes its own `mediaAuthorization` callback keeps working unchanged.
+
+## [2.3.0] — 2026-10-26
+
+### Added
+
+- `GpuSurface`: an opt-in WebGL2 canvas for a visualization, under a parent the caller gives. It never throws; without WebGL2 it reports `unsupported`, and it reports a lost and a restored context.
+- `FrameDataTexture`: a single-channel byte texture that holds per-frame rows (frequency, waveform), each resampled to a fixed width.
+- `VisualizationPlugin`: `createGpuSurface()`, `gpuSurface()`, `setActive()` and `isActive()`, and the `pauseWhenHidden` and `pauseWhenOffscreen` options, so a visualization does no work while nobody can see it. New events `gpu:contextlost` and `gpu:contextrestored`.
+
+### Changed
+
+- The test plugin ids carry no vendor prefix.
+
+## [2.2.9] — 2026-10-23
+
+### Fixed
+
+- A plugin's English translations always load, so a language without a plugin locale file shows English text instead of the raw key (for example `plugin.desktop-ui.message.buffering`).
+
+## [2.2.7] — 2026-10-19
+
+### Changed
+
+- Version-only release to keep the trio at one version for music-player 2.2.7.
+
+## [2.2.6] — 2026-10-18
+
+### Added
+
+- `setup({ fetch })` and `setup({ idGenerator })` inject the transport and the id source.
+- `player.on`, `once` and `off` accept a plugin class, and `listen()` types the handler event from the target and name.
+- The `createElement` builder gets `insertBefore` and `insertAfter`.
+
+### Fixed
+
+- Playback: native HLS reaches ready and reports element errors; a load that is interrupted restores the user volume; `load()` takes its race epoch before it awaits; `seekToIndex` loads the item it moves to; user `next()` skips past repeat one; rewind, forward and restart honor a `beforeSeek` time change.
+- Subtitles and chapters: the selected subtitle stays on the same track when the list changes; a sidecar fetch that a newer pick replaced is dropped; language-less stream tracks hide next to sidecars; chapter gaps under 2 s are absorbed.
+- Preload: asset fetches use auth and the URL resolver; a failed next-item fetch emits `preloadError`.
+- Auth and network: the 401 retry sends the token the refresh handler stored; the last attempt skips the retry event and backoff; request-building errors arrive as `AuthError` or `NetworkError`; the network guards work where `navigator` is missing.
+- Setup and plugins: the pipeline stops after dispose; plugins added after the plugin stage register before `ready`; late registrations are dropped after dispose; `ready()` rejects when setup failed; `once()` keeps one wrapper per handler and event.
+- Audio: the equalizer applies band Q and type, and a preset can override a built-in; the audio graph leaves a backend-owned context alone on dispose; the tab leader pauses a non-leader tab on play; media-session artwork that resolves late is dropped; visualization frames carry playback seconds.
+- Other: the cast sender starts the receiver at the local position; storage drops its stale copy on remove; the toast hides when the queue ends; the key handler ignores keys while Meta is held; one wake lock controller per player; child loggers follow the parent; the test `StubPlayer` selection, auth and reset behave like the real player.
+
+## [2.2.5] — 2026-10-08
+
+### Changed
+
+- Version alignment with the trio; no code change.
+
+## [2.2.4] — 2026-10-08
+
+### Fixed
+
+- The volume memory plugin now saves the volume you chose, not the 0 it reads while muted. A saved muted level of 0 no longer makes the player silent after a reload.
+
+## [2.2.3] — 2026-09-25
+
+### Fixed
+
+- Streams added with `registerStream()` are now used for playback.
+- A stream added before `setup()` now takes priority over the built-in ones.
+- Silent actions no longer trigger `before*` listeners.
+- A custom logger in the config is now kept.
+- Fatal lifecycle errors now arrive as fatal.
+- Key bindings get the keyboard event, and `Space` now works as a key name.
+- `StubPlayer.reset()` now resets everything.
+- The listener leak check now fails when it cannot count listeners.
+
+### Removed
+
+- `Plugin.criticalSeverity`, which was never used.
+
+## [2.2.1] — 2026-09-04
+
+### Fixed
+
+- A browser that declines playback without a user gesture rejects `play()`. That rejection was left to escape from two detached call sites — `item()`'s autoplay continuation and `_loadAndPlay` behind `next()`/`previous()` — where nothing awaited it, so it surfaced as an uncaught `NotAllowedError` in the consumer's console. Both now catch. Play failures still reach listeners through the `error` event.
+- `play()` set `_playState` to `PLAYING` before calling the backend and left it there when the backend refused. The player then reported `PLAYING` over a silent element, so any UI rendering from state drew a Pause button and the viewer's first click paused what had never started. It now reverts to `PAUSED`, restores the prior phase, and emits `playPrevented` before rethrowing, so an awaiting caller still sees the rejection.
+
+### Added
+
+- `PreventedReason` gained `'backend-refused'`, carried on `playPrevented` when the backend rejects rather than a listener cancelling.
+
+## [2.1.0] — 2026-08-20
+
+### Added
+
+- `volumeMemoryPlugin` / `VolumeMemoryPlugin`: remembers a consumer's last volume and mute state across sessions/instances. Landed after the `2.0.4` tag was cut, so `2.0.4` never actually shipped it — this release is the first to publish it for real.
+
+### Changed
+
+- `cycleAudioTracks` lifted to the shared kit surface, closing the remaining `2.1.x` follow-ups from the audio-track work.
+
+## [2.0.3] — 2026-07-31
+
+### Fixed
+
+- `item(target)` called between `setup()` and `ready()` addressed a queue the configured `playlist` had not seeded yet, so the cursor never moved and the choice was silently lost — a deep link naming a start item opened on the first item instead. The choice is now parked and applied the moment the pipeline seeds the queue.
+
+### Added
+
+- Screen-aware quality decisions: `detectDisplayHdr()`, `HdrOnSdrFallback` and the `hdrOnSdr` config field, plus `sizeAbrCeiling()` for capping the ladder to the space the picture is drawn in.
+
+## [2.0.1] — 2026-07-18
+
+First published stable of the v2 line (2.0.0 was withdrawn before release, so 2.0.1 is the first stable on npm). The core now publishes under the `latest` dist-tag, so a plain `npm install @nomercy-entertainment/nomercy-player-core` resolves `2.0.1` instead of the stale `2.0.0-rc.2` that predated `publishConfig.tag`. This promotes the `2.0.0-rc.33` surface to stable with no runtime or signature changes; consumers already installing `@rc` are running the same code.
+
+## [2.0.0-rc.33] — 2026-07-16
+
+### Fixed
+
+- `bandwidth()` now returns the live estimate instead of permanently reporting `0`. The getter read a `_bandwidthEstimate` cache field that nothing ever wrote, while `bandwidthEstimator(fn)` wrote a same-looking `_bandwidthEstimator` field that nothing ever read — the two names never met. The dead cache field is gone; `bandwidth()` resolves on every read, honoring a consumer's `bandwidthEstimator()` override first, else the backend's optional `bandwidthEstimate?()` capability. Return type and unit (bits per second) are unchanged — additive fix, no signature change. Unblocks network-aware live-transcode step-down: consumers report this value upstream so the media server can drop encode quality on a degraded link.
+
+## [2.0.0-rc.32] — 2026-07-14
+
+### Fixed
+
+- `subtitle(idx)` now resolves against the same deduped track list `subtitles()` returns. Both readers previously built their counts differently — `subtitle(idx)` compared the requested index against the backend's raw `subtitleTracks().length` while `subtitles()` built its list from the deduped count — so a backend track displaced by a same-language sidecar shifted every subsequent selection by one, silencing one track while selecting its neighbour. A backend-origin pick is now remapped to its raw backend index by id (falling back to language+label+url) before `setSubtitleTrack` is called.
+
+## [2.0.0-rc.31] — 2026-07-11
+
+### Fixed
+
+- `PlayState.LOADING` and `PlayState.ERROR` are now reachable — the enum documented six states but `playState()` could only ever return four. `playState()` reports `LOADING` while a `load()` is in flight (every load, including the initial auto-load and re-loads out of `ERROR`), settling to `PAUSED` when media mounts without playback or staying with whatever a raced `play()` / `pause()` / `stop()` set; a failed load restores the state it displaced. A `fatal` dispatch — the kit's unrecoverable-failure channel — flips the state to `ERROR` before the listener chain runs; non-fatal `error` / `warning` / `info` events never touch it, and the next successful `load()` clears `ERROR` through `LOADING` again. Additive against the published type contract: consumers switching on `playState()` now actually see the two states the enum always promised.
+
+## [2.0.0-rc.29] — 2026-07-05
+
+### Fixed
+
+- The typed `subtitles: [{ url, label, language, ... }]` playlist-item field is now actually read: `subtitles()` lists those tracks (typed field first, v1/server wire `tracks: [{ kind: 'subtitles', file }]` after, URL-deduped across both) and `subtitle(idx)` activates them through the same deduped list, so the public track list and index-based selection can never disagree. Previously only the wire `tracks` shape was consulted and items using the documented typed field silently exposed no subtitle tracks.
+- `chapters()` no longer requires the item to ALSO carry a non-empty wire `tracks` array before returning the item's `chapters` — the accidental gate meant a typed-field-only item reported no chapters.
+
+## [2.0.0-rc.28] — 2026-07-05
+
+### Changed
+
+- The `time` event now carries the full `TimeState` snapshot — `time`, `position`, `duration`, `buffered`, `remaining`, `percentage` — instead of `{ time }` alone, so listeners paint clocks and progress bars straight from the payload without re-deriving time math from getters inside the handler. `TimeState` itself gains the `time` field (alias of `position`, the classic name every existing `({ time }) => …` listener already destructures), and `timeData()` returns the same widened shape. Existing listeners are unaffected; code that *emits* `time` manually (tests, harnesses) must now build the full payload — `player.timeData()` or the new internal `_timeStateAt(position)` used by the per-library `timeupdate` bridges (the internal position slot syncs *from* the event, so payloads are built from the backend's fresh position).
+
+## [2.0.0-rc.27] — 2026-07-04
+
+### Fixed
+
+- The built-in activity tracker now hides the controls immediately when the pointer leaves the container while playing (`mouseleave` → the same maybe-hide rule the desktop UI runs), instead of waiting out the full inactivity countdown. Paused players keep their controls up on mouse-out, unchanged.
+
+## [2.0.0-rc.26] — 2026-07-04
+
+### Added
+
+- Player-owned activity tracking. The player now watches its own container for pointer, touch, and key input, emits `activity { active }` on the bus, and the existing container-class rules keep `.active` / `.inactive` on `.nomercyplayer` in sync — any UI (a hand-built plugin, plain CSS) inherits show/hide behavior from the classes with zero wiring, matching the v1 contract where the player owned autohide. Hiding only happens while playing; pausing keeps controls up; a `play` subscription re-arms the countdown after resumes the DOM cannot see (MediaSession, remote commands). New public surface: `bumpActivity()` (mark the viewer active now, e.g. after interactions the DOM can't observe), `activityTracking()` / `activityTracking(false)` (a UI plugin with its own richer activity state machine takes over as sole emitter — the video `DesktopUiPlugin` does this), and the `inactivityMs` config knob (default 4000, `0` disables). Pair this release with the video/music releases of the same day: an older `DesktopUiPlugin` running against this core would double-emit activity until its own release adds the takeover call.
+
+## [2.0.0-rc.25] — 2026-07-04
+
+### Added
+
+- The kit's own translation bundle is now wired into the default translator. `core.*` keys (network, auth, browser-policy, media, DRM, state, and accessibility announcements) resolve out of the box in 79 locales — previously the bundle shipped but was never loaded, so `t('core.network.timeout')` returned the raw key for any consumer who did not manually pass `enTranslations`. English is seeded eagerly as the synchronous fallback; other kit languages lazy-load on demand (the active BCP-47 chain only, never all 79 at once). Consumer-supplied `translations` and `loadTranslations` still win on same-key collisions.
+
+### Changed
+
+- **Breaking vs rc.24 (types only):** `subtitle()`, `subtitles()`, and `subtitleStyle()` are no longer declared on the shared `IPlayer` interface — they are video-only capability members on `IVideoPlayer` in `nomercy-video-player`. They were meaningless for audio and always threw `NotImplementedError` on the music player, so the shared type promised an API that never worked there. Runtime behavior is unchanged for video consumers; the shared mixin still carries the implementation. Music code that referenced these members could never have worked and now fails at compile time instead of at runtime.
+- Visualization and canvas render failures now surface through the structured plugin error contract instead of `console.error`. A throwing visualization renderer reports `visualization:render/failed` and the plugin instance disables itself on first failure (no error storm from the rAF loop); a throwing canvas renderer reports `canvas:render/renderer-failed` and only that renderer is dropped — other renderers on the shared canvas keep running.
+
+### Fixed
+
+- `addPlugin(X).ready()` no longer resolves before a post-setup plugin registration has actually finished. Plugins that carry lazy translation bundles added awaited work inside registration that `ready()` did not track, so `getPluginById()` could return `undefined` immediately after the await. Registration promises are now drained by `ready()`, and a throwing lazy translation loader surfaces as `plugin:failed` instead of vanishing silently (it previously sat outside the failure-handling try/catch).
+- The plugin conformance harness (`testing/describePlugin`) now loads a plugin's static translations with the same prototype-chain-walk and lazy-load semantics as the real registration pipeline, so `this.t()` resolves under conformance tests instead of returning the raw key.
+- MIGRATION.md corrections: the per-package guide links pointed at directories that no longer exist, the "no APIs were removed" claim contradicted the music package's documented port removals, and the extension-points table listed ports (`ISimilarityEngine`, `ILyricSource`, `INowPlayingArt`) that are not part of the public surface. The table now reflects the real exported subpaths.
+- Stopped shipping the embedded `./eslint-plugin` subpath export. The lint rules are dev tooling, not part of the player runtime contract; freezing them into the package's public surface for the whole 2.x line would have made their removal a semver-major change. They move to the standalone `@nomercy-entertainment/eslint-plugin-player` package (see RELEASING.md for the publish-day sequencing).
+
+## [2.0.0-rc.24] — 2026-07-04
+
+### Fixed
+
+- `perceptualGain()` — the shared position→gain volume curve — replaced the −60 dB…0 dB broadcast fader law with the consumer power taper `gain = position²`. The old law put the 50% slider at −30 dB (gain 0.0316), leaving everything below ~70% barely audible. Now 50% → 0.25 (−12 dB), 60% → 0.36 (−8.9 dB), endpoints exact (0 → silence, 1 → unity), and the sub-1% hard-floor snap is gone. Both libraries inherit the fix (`MediaElementBackend` + the music WebAudio/HTML5 backends); crossfade ramps read already-curved live gains and are unaffected.
+
+## [2.0.0-rc.23] — 2026-07-03
+
+### Added
+
+- `plugins?: ReadonlyArray<PluginSpec>` on `BasePlayerConfig` — declarative plugin registration via `setup({ plugins: [...] })`. Each entry is a bare class ref or `{ plugin, opts }`. Sugar over calling `addPlugin()` before `setup()`, not a second registration path: same `pluginsRegistering` pipeline stage, same `core:plugin/duplicate-id` / `-missing-dep` / `-version-mismatch` / `-incompatible-core-version` validation, same timing. Fixes the pre-setup addPlugin() window being easy to miss (a re-render or late framework lifecycle hook silently no-ops registration). `nomercy-video-player` and `nomercy-music-player` inherit this for free — both already spread the full config through their `setup()` wrappers, no changes needed in either package.
+
+### Fixed
+
+- `EventEmitter.on()` (and `.once()`) now `console.warn`s when a consumer subscribes to a renamed-away event name (currently `'current'`, renamed to `'item'`), naming the replacement. The bare-`string` overload needed for `plugin:<id>:<event>` namespaced events can't be narrowed to reject only known-stale names without breaking `Plugin.on()`'s internal implementation, so this is a runtime backstop, not a type fix. Diagnostic only — a listener on the renamed event still never fires, same as before.
+
+## [2.0.0-rc.22] — 2026-07-03
+
+### Added
+
+- `controls?: boolean` on `BasePlayerConfig`. Renders the browser's native
+  media controls on the backing element (`<audio controls>` / `<video
+  controls>`) — useful when no UI plugin is loaded. Default `false`. Previously
+  declared only on video's own config type; now shared so both libraries in
+  the trio honor it identically. `nomercy-video-player` drops its duplicate
+  declaration (inherits this one) and `nomercy-music-player` now reads it too
+  — see their rc.22 changelogs. Additive, non-breaking.
+
+## [2.0.0-rc.21] — 2026-07-02
+
+> This entry was corrected after publish to disclose the M1 change below — the original rc.21 release notes only covered the `baseUrl` fix. The published rc.21 tarball is unchanged; this is a documentation correction so the history is accurate.
+
+### Breaking
+
+- `volume()`, `mute()`, `unmute()`, `subtitle()`, `audioTrack()`, `playbackRate()`, `repeatState()`, `shuffleState()`, and `dispose()` setters now return `Promise<void>` instead of `void`. Each dispatches its own dedicated `before*` hook (see Added) ahead of the mutation. Code that read state synchronously right after calling one of these must now `await` the call first. Callers that never inspected the return value are unaffected. `nomercy-video-player` and `nomercy-music-player` need a matching release to stay structurally compatible with `IPlayer` — see their rc.22 changelogs.
+
+### Added
+
+- Ten cancellable `before*` hooks on `BaseEventMap`, the M1 Connect-plugin slice: `beforeVolume`, `beforeMute`, `beforeRepeat`, `beforeShuffle`, `beforePlaybackRate`, `beforeLanguage`, `beforeSubtitle`, `beforeAudioTrack`, `beforeDispose`, `beforeTransfer`. Each fires before its action applies; a listener may call `preventDefault()` to cancel (the matching `<action>Prevented` event fires instead) or hand `delay()` a promise the dispatch awaits before proceeding. `beforeVolume` and `beforePlaybackRate` fire unconditionally, independent of `setup({ mutationGuards })`, so a Connect plugin can rely on them without opting the whole player into the generic mutation-guard surface.
+
+### Fixed
+
+- `baseUrl` now prepends to relative media paths as a raw string prefix, keeping its own path segment, the same way `baseImageUrl` already did. Previously media resolution used `new URL(path, baseUrl)`, which dropped the base path when the path started with a slash (the shape the media server sends), so `baseUrl` plus a root-relative item path resolved to a 404. Setting `baseUrl` and giving items relative paths now works as intended.
+
+## [2.0.0-rc.20] — 2026-07-02
+
+### Changed
+
+- Backend layer de-duplicated. The hls.js `xhrSetup` Authorization closure (previously copy-pasted across every backend) is now `createAuthorizationXhrSetup` in core; the DOM play-state bridge (previously reimplemented per library and drifted) is now `bridgeBackendPlayState`; `destroyHlsInstance` is the single HLS teardown path. Internal only; no public export, signature, or event-shape change.
+
+## [2.0.0-rc.15] — 2026-06-29
+
+### Security
+
+- `auth()` now returns a **redacted** frozen snapshot: `bearerToken` and
+  `accessToken` are stripped before the object leaves the player. The raw auth
+  config is only reachable via the internal `_rawAuth()` path used by the fetch
+  pipeline. Consumer code and custom URL resolvers receive the redacted view.
+  The encapsulation guarantee is proven by tests in `base-player-auth-lock.test.ts`.
+
+### Changed
+
+- `setup()` now self-applies the `.nomercyplayer` CSS class to the container
+  element. Consumers no longer need to add `class="nomercyplayer"` manually,
+  though leaving it in place is harmless.
+
+### Added
+
+- `describePlugin` conformance kit exported via the `./testing` subpath. Wraps
+  every plugin test with a fresh `StubPlayer` + plugin pair, automatic
+  teardown, and a zero-listener-leak assertion. See `TESTING.md` for the guide
+  and the worked example at
+  `src/__tests__/testing/consumer-plugin.example.test.ts`.
+- `playbackRate` event added to `BaseEventMap`. Fires on every playback-rate
+  change with payload `{ rate: number }`.
+
+## [2.0.0-rc.14] — 2026-06-28
+
+### Security
+
+- `auth()` and the URL-resolver context now redact bearer and access tokens
+  before the object is visible to consumer or plugin code. `_rawAuth()` is the
+  internal-only token path used by the fetch pipeline.
+
+### Changed
+
+- `setup()` self-applies the `.nomercyplayer` CSS class to the container
+  element so consumers no longer need to add it manually.
+
+### Added
+
+- `describePlugin` conformance kit exported via the `./testing` subpath, with a
+  consumer `TESTING.md` guide and a worked example.
+- `playbackRate` event added to `BaseEventMap`, firing on every playback-rate
+  change with payload `{ rate: number }`.
+- Mixin test coverage added.
+
+## [2.0.0-rc.13] — 2026-06-28
+
+Version aligned with the player trio (no core code change).
+
+## [2.0.0-rc.12] — 2026-06-28
+
+Version aligned with the player trio (no core code change).
+
+## [2.0.0-rc.11] — 2026-06-28
+
+Version aligned with the player trio (no core code change).
+
+## [2.0.0-rc.10] — 2026-06-28
+
+Version aligned with the player trio for the video autohide fix (no core code
+change).
+
+## [2.0.0-rc.9] — 2026-06-28
+
+### Changed
+
+- `hls.js` is now a real `dependency` of core. The HLS engine lives here;
+  `nomercy-music-player` and `nomercy-video-player` receive it transitively.
+
+## [2.0.0-rc.8] — 2026-06-28
+
+### Fixed
+
+- The published ESM dist now carries explicit `.js` extensions on every
+  relative import via a `tsc-alias` post-build pass, making the package
+  importable by a raw Node ESM consumer.
+
+## [2.0.0-rc.7] — 2026-06-28
+
+### Fixed
+
+- `KIT_VERSION` is inlined at build time instead of read from a JSON import,
+  so the package loads cleanly under Node ESM.
+- `KIT_VERSION` is single-sourced from `package.json`; the semver prerelease
+  comparator is also corrected.
+
+## [2.0.0-rc.6] — 2026-06-28
+
+### Fixed
+
+- Cast play/pause inversion corrected; equalizer-restore no-op resolved.
+- `time()` setter is now guarded against out-of-range values.
+- `playbackRate` is clamped to the `[0.25, 2]` range.
+
+## [2.0.0-rc.5] — 2026-06-14
+
+### Changed
+
+- The cast-sender plugin's translations use a typesafe key schema: `en.ts`
+  exports the canonical `CastSenderTranslationKey`, and every language file is
+  `satisfies Record<CastSenderTranslationKey, string>` for full coverage,
+  replacing the loose `Record<string, string>`. All supported languages ship.
+
+### Fixed
+
+- The README and the package `homepage` point at the live docs route
+  (`docs.nomercy.tv/nomercy-player-core/`) instead of the dead `/player/` path.
+
+## [2.0.0-rc.4] — 2026-06-14
+
+### Changed
+
+- The GitHub repository was renamed from `nomercy-player-kit` to
+  `nomercy-player-core` to match the published package name. Repository URLs,
+  contributing/releasing docs, and the README point at the new location.
+
+### Fixed
+
+- Every source file now carries the correct `Apache-2.0` license header. One
+  file previously declared `GPL-3.0-only`, which contradicted the package
+  license; the header tool gained Apache-2.0 support to stamp the house header.
+
+## [2.0.0-rc.3] — 2026-06-14
+
+### Fixed
+
+- The published `dist` now carries explicit `.js` extensions on every relative
+  import and export. `tsc` under `moduleResolution: Bundler` emitted
+  extensionless specifiers, which resolve in bundlers but break Node's ESM
+  loader for consumers that pull the package from `node_modules`. A `tsc-alias`
+  post-build pass rewrites both `.js` and `.d.ts` specifiers.
+
+### Added
+
+- The build scripts (`resolve-translation-globs`, `copy-dist-assets`,
+  `inline-css-assets`) ship in the package so the music and video libraries can
+  run the shared post-build steps from the installed core instead of a sibling
+  checkout.
+
+## [2.0.0-rc.2] — 2026-06-14
+
+### Changed
+
+- API-unification consolidation. `url` is now a field on the `BasePlaylistItem`
+  base type as the canonical media source, so `load()` no longer needs an
+  intersection constraint and call sites no longer cast to read it.
+- The base event map is generic over the item type; the queue-item selection
+  event is shared across both player libraries.
+
+### Added
+
+- Perceptual volume curve, the `play-queue` and `shuffle-strategy` adapters, and
+  the auth-token URL helper.
+
+### Fixed
+
+- The audio-graph reconciles a single shared `AudioContext`; the analyser tap is
+  wired correctly across backends.
+
+## [2.0.0-beta.1] — 2026-05-30
+
+### Breaking
+
+- `currentSubtitle()`, `currentAudioTrack()`, and `currentQuality()` no longer
+  return a bare index number. The getter forms now return `CurrentSubtitleSelection |
+  null`, `CurrentAudioTrackSelection | null`, and `CurrentQualitySelection | 'auto'`
+  respectively. Read `.index` for the number and `.track` for the full metadata.
+  Setter overloads (`currentSubtitle(idx)` etc.) are unchanged.
+
+### Added
+
+- `player.t(PluginClass, key, vars?)` — class-typed overload. Prepends
+  `plugin.<id>.` automatically so plugin code never hand-rolls the namespace.
+- `CurrentSubtitleSelection`, `CurrentAudioTrackSelection`, `CurrentQualitySelection`
+  interfaces exported from the main entry.
+- `ICapabilitiesProbe.supportedCodecs()` implemented in `browserPlatform` via a
+  `MediaSource.isTypeSupported` sweep (H.264 baseline/main/high, H.265, VP8, VP9,
+  AV1, AAC, Opus, Vorbis, FLAC).
+- `./plugins/cast-sender` added to the `exports` map (was built but not exported).
+
+### Fixed
+
+- `KIT_VERSION` bumped to `2.0.0-beta.1` to reflect the breaking change above.
+- `hls.js` dependency pinned to `^1.6.0` (was `>=1.6.0` — would have accepted a future 2.x).
+- README subpath examples corrected: `cues/parsers/vtt` → `adapters/cue-parser/vtt`;
+  platform sub-port subpaths that do not exist as individual exports removed from the table;
+  empty `testing` import example replaced with real named exports.
+- `contributors` email updated to GitHub noreply address.
+
+---
+
+## [2.0.0-beta.0] — 2026-05-16
+
+First public pre-release of the shared player core extracted from the monolithic v1 players.
+
+### Added
+
+- Plugin runtime with full lifecycle (`use`, `dispose`, `enable`, `disable`, event forwarding)
+- Event system (`EventEmitter`) with typed `EventMap` generic, `on`/`once`/`off`/`emit`
+- 28 named adapter ports replacing all hardcoded concrete dependencies in v1:
+  `auth`, `class-manager`, `clock`, `cue-parser`, `drm`, `element-factory`, `event-bus`,
+  `fetch`, `id-generator`, `language-matcher`, `lifecycle-registry`, `logger`, `media-list`,
+  `platform` (+ capabilities / fullscreen / network / pip / visibility / wake-lock),
+  `preload`, `realtime`, `retry-policy`, `storage`, `stream`, `subtitle-renderer`,
+  `translator`, `url-resolver`
+- 11 built-in plugins: `audio-graph`, `canvas`, `embed`, `equalizer`, `key-handler`,
+  `media-session`, `message`, `mixer`, `spectrum`, `tab-leader`, `visualization`
+- Subpath exports for all adapters and plugins — consumers who import subpaths get
+  tree-shaken bundles; barrel imports still work unchanged
+- `composeMixins` / `playerCoreMethods` — mixin system that composes shared player
+  logic onto `NMVideoPlayer` and `NMMusicPlayer` prototypes without inheritance
+- `CrossfadeTransitionStrategy`, `GaplessTransitionStrategy`, `DefaultPreloadStrategy`
+- `authFetch` — auth-aware fetch wrapper shared by `Plugin.fetch` and setup-time loads
+- VTT and LRC cue parsers
+- `nomercyTranslationsPlugin` — Vite plugin for i18n glob bundling
+- Full TypeScript declaration + declaration-map output (every subpath has `.d.ts`)
+- `testing` subpath with stub player for unit tests
+
+### Architecture
+
+The 12-wave restructure (W1–W12, 2026-05-15) extracted all adapter implementations from
+the original monolithic root files into `src/adapters/` and `src/plugins/` folders, each
+with their own `index.ts` barrel. Breaking changes relative to the v1 monolithic model are
+limited to internal imports — the public `index.ts` barrel export surface is unchanged.
+
+---
+
+See `MIGRATION.md` for the full v1→v2 migration guide.
