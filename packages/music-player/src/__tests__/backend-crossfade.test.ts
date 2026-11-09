@@ -15,60 +15,15 @@
  * stub on globalThis before each test and remove it after.
  */
 
+import type { MockGainNode } from '@nomercy-entertainment/test-support/web-audio';
 import type { IAudioBackend } from '../adapters/audio-backend/IAudioBackend';
 import { perceptualGain } from '@nomercy-entertainment/nomercy-player-core';
+import { MockAudioContext } from '@nomercy-entertainment/test-support/web-audio';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AudioElementBackend } from '../adapters/audio-backend/html5-audio';
 import { WebAudioBackend } from '../adapters/audio-backend/web-audio';
 
 // ── Web Audio stubs ───────────────────────────────────────────────────────────
-
-function makeMockGain(initial = 1): {
-	value: number;
-	setTargetAtTime: ReturnType<typeof vi.fn>;
-	setValueAtTime: ReturnType<typeof vi.fn>;
-	linearRampToValueAtTime: ReturnType<typeof vi.fn>;
-	cancelScheduledValues: ReturnType<typeof vi.fn>;
-} {
-	let _v = initial;
-	const gain = {
-		get value(): number { return _v; },
-		set value(level: number) { _v = level; },
-		setTargetAtTime: vi.fn((target: number) => { _v = target; }),
-		setValueAtTime: vi.fn((target: number) => { _v = target; }),
-		linearRampToValueAtTime: vi.fn((target: number) => { _v = target; }),
-		cancelScheduledValues: vi.fn(),
-	};
-	return gain;
-}
-
-class MockGainNode {
-	gain = makeMockGain(1);
-	connect = vi.fn();
-	disconnect = vi.fn();
-}
-
-class MockSourceNode {
-	connect = vi.fn();
-	disconnect = vi.fn();
-}
-
-class MockAudioContext {
-	static lastInstance: MockAudioContext | null = null;
-
-	state: AudioContextState = 'running';
-	currentTime = 0;
-	destination = {} as AudioDestinationNode;
-
-	createGain = vi.fn(() => new MockGainNode());
-	createAnalyser = vi.fn(() => ({ fftSize: 2048, connect: vi.fn(), disconnect: vi.fn() }));
-	createMediaElementSource = vi.fn(() => new MockSourceNode());
-	resume = vi.fn(() => Promise.resolve());
-
-	constructor() {
-		MockAudioContext.lastInstance = this;
-	}
-}
 
 function installAudioContext(): void {
 	(globalThis as any).AudioContext = MockAudioContext;

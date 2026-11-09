@@ -25,8 +25,10 @@
  * before `beforeCrossfade` dispatch and before any buffer is touched.
  */
 
+import type { MockGainNode } from '@nomercy-entertainment/test-support/web-audio';
 import type { CrossfadeCurve, IAudioBackend } from '../adapters/audio-backend/IAudioBackend';
 import type { MusicPlayerConfig, MusicPlaylistItem } from '../types';
+import { MockAudioContext } from '@nomercy-entertainment/test-support/web-audio';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AudioElementBackend } from '../adapters/audio-backend/html5-audio';
 import { WebAudioBackend } from '../adapters/audio-backend/web-audio';
@@ -63,54 +65,6 @@ function stubPlay(el: HTMLAudioElement): void {
 }
 
 // ── Web Audio stubs (established class-based pattern) ─────────────────────────
-
-function makeMockGain(initial = 1): {
-	value: number;
-	setValueAtTime: ReturnType<typeof vi.fn>;
-	linearRampToValueAtTime: ReturnType<typeof vi.fn>;
-	setValueCurveAtTime: ReturnType<typeof vi.fn>;
-	setTargetAtTime: ReturnType<typeof vi.fn>;
-	cancelScheduledValues: ReturnType<typeof vi.fn>;
-} {
-	let level = initial;
-	return {
-		get value(): number { return level; },
-		set value(next: number) { level = next; },
-		setValueAtTime: vi.fn((target: number) => { level = target; }),
-		linearRampToValueAtTime: vi.fn((target: number) => { level = target; }),
-		setValueCurveAtTime: vi.fn((curve: Float32Array) => { level = curve[curve.length - 1]!; }),
-		setTargetAtTime: vi.fn((target: number) => { level = target; }),
-		cancelScheduledValues: vi.fn(),
-	};
-}
-
-class MockGainNode {
-	gain = makeMockGain(1);
-	connect = vi.fn();
-	disconnect = vi.fn();
-}
-
-class MockSourceNode {
-	connect = vi.fn();
-	disconnect = vi.fn();
-}
-
-class MockAudioContext {
-	static lastInstance: MockAudioContext | null = null;
-
-	state: AudioContextState = 'running';
-	currentTime = 0;
-	destination = {} as AudioDestinationNode;
-
-	createGain = vi.fn(() => new MockGainNode());
-	createAnalyser = vi.fn(() => ({ fftSize: 2048, connect: vi.fn(), disconnect: vi.fn() }));
-	createMediaElementSource = vi.fn(() => new MockSourceNode());
-	resume = vi.fn(() => Promise.resolve());
-
-	constructor() {
-		MockAudioContext.lastInstance = this;
-	}
-}
 
 function installAudioContext(): void {
 	(globalThis as unknown as { AudioContext: typeof MockAudioContext }).AudioContext = MockAudioContext;

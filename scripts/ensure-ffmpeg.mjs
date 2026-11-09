@@ -118,6 +118,16 @@ function extractArchive(archivePath, ext) {
 		throw new Error(`tar extraction failed: ${result.stderr}`);
 }
 
+/** Runs ffmpeg with the given arguments in `cwd` and throws with its stderr on failure. */
+export function runFfmpeg(ffmpeg, args, cwd) {
+	const result = spawnSync(ffmpeg, ['-y', '-loglevel', 'error', ...args], {
+		encoding: 'utf8',
+		cwd,
+	});
+	if (result.status !== 0)
+		throw new Error(`ffmpeg failed: ${args.join(' ')}\n${result.stderr}`);
+}
+
 /** Returns an absolute path to a runnable NoMercy ffmpeg, downloading it on first use. */
 export async function ensureFfmpeg() {
 	const fromEnv = process.env.NOMERCY_FFMPEG;

@@ -22,65 +22,13 @@
  *   - `dispose()` disconnects and releases all nodes.
  */
 
+import type { MockAnalyserNode, MockGainNode, MockSourceNode } from '@nomercy-entertainment/test-support/web-audio-recording';
+import { MockAudioContext } from '@nomercy-entertainment/test-support/web-audio-recording';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Html5VideoBackend } from '../adapters/video-backend/html5';
 
 // ── Web Audio stubs ─────────────────────────────────────────────────────────
-
-class MockDestinationNode {
-	label = 'destination';
-}
-
-class MockGainNode {
-	_connections: unknown[] = [];
-	gain = { value: 1 };
-
-	connect(target: unknown): void {
-		this._connections.push(target);
-	}
-
-	disconnect(): void {
-		this._connections = [];
-	}
-}
-
-class MockAnalyserNode {
-	fftSize = 2048;
-	_connections: unknown[] = [];
-
-	connect(target: unknown): void {
-		this._connections.push(target);
-	}
-
-	disconnect(): void {
-		this._connections = [];
-	}
-}
-
-class MockSourceNode {
-	_connections: unknown[] = [];
-
-	connect(target: unknown): void {
-		this._connections.push(target);
-	}
-
-	disconnect(): void {
-		this._connections = [];
-	}
-}
-
-class MockAudioContext {
-	state: AudioContextState = 'running';
-	currentTime = 0;
-	destination = new MockDestinationNode() as unknown as AudioDestinationNode;
-	sampleRate = 44100;
-
-	createGain = vi.fn((): MockGainNode => new MockGainNode());
-	createAnalyser = vi.fn((): MockAnalyserNode => new MockAnalyserNode());
-	createMediaElementSource = vi.fn((): MockSourceNode => new MockSourceNode());
-	resume = vi.fn(() => Promise.resolve());
-}
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 

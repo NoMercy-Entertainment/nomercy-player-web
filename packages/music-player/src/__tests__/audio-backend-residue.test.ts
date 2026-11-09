@@ -20,6 +20,7 @@
  *    constructor resolution, element reuse from the container, load error path
  */
 
+import { MockAnalyserNode, MockSourceNode } from '@nomercy-entertainment/test-support/web-audio';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AudioElementBackend } from '../adapters/audio-backend/html5-audio';
 import { WebAudioBackend } from '../adapters/audio-backend/web-audio';
@@ -46,17 +47,6 @@ function makeMockGain(): {
 
 class MockGainNode {
 	gain = makeMockGain();
-	connect = vi.fn();
-	disconnect = vi.fn();
-}
-
-class MockAnalyserNode {
-	fftSize = 2048;
-	connect = vi.fn();
-	disconnect = vi.fn();
-}
-
-class MockSourceNode {
 	connect = vi.fn();
 	disconnect = vi.fn();
 }

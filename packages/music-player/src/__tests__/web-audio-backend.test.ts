@@ -16,6 +16,7 @@
  */
 
 import { BrowserPolicyError } from '@nomercy-entertainment/nomercy-player-core';
+import { MockAnalyserNode, MockSourceNode } from '@nomercy-entertainment/test-support/web-audio';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WebAudioBackend } from '../adapters/audio-backend/web-audio';
 import { NMMusicPlayer } from '../index';
@@ -28,17 +29,6 @@ import { NMMusicPlayer } from '../index';
 
 class MockGainNode {
 	gain = { value: 1, setTargetAtTime: vi.fn() };
-	connect = vi.fn();
-	disconnect = vi.fn();
-}
-
-class MockAnalyserNode {
-	fftSize = 2048;
-	connect = vi.fn();
-	disconnect = vi.fn();
-}
-
-class MockSourceNode {
 	connect = vi.fn();
 	disconnect = vi.fn();
 }

@@ -33,6 +33,7 @@
  */
 
 import { AudioGraphPlugin, perceptualGain } from '@nomercy-entertainment/nomercy-player-core';
+import { MockSourceNode } from '@nomercy-entertainment/test-support/web-audio';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WebAudioBackend } from '../adapters/audio-backend/web-audio';
 import { NMMusicPlayer } from '../index';
@@ -48,11 +49,6 @@ class MockGainNode {
 		linearRampToValueAtTime: vi.fn((level: number) => { this.gain.value = level; }),
 	};
 
-	connect = vi.fn();
-	disconnect = vi.fn();
-}
-
-class MockSourceNode {
 	connect = vi.fn();
 	disconnect = vi.fn();
 }
