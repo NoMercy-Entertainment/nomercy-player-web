@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { Node, Project, SyntaxKind } from 'ts-morph';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const packageDir = resolve(process.argv[2] ?? join(here, '../../nomercy-music-player'));
+const packageDir = resolve(process.argv[2] ?? join(here, '../../music-player'));
 const apply = process.argv.includes('--apply');
 
 const ALLOW = new Set(['x', 'y', 'z', 'i', 'j', 'k']);

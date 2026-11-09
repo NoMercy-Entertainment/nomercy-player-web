@@ -20,7 +20,7 @@ export default defineConfig({
 		headless: true,
 	},
 	webServer: {
-		command: 'node node_modules/vite/bin/vite.js --port 5503 --force',
+		command: 'yarn vite --port 5503 --force',
 		port: 5503,
 		reuseExistingServer: !process.env.CI,
 	},

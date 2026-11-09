@@ -21,8 +21,8 @@ import { fileURLToPath } from 'node:url';
 import { parse } from '@typescript-eslint/typescript-estree';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const videoSrc = resolve(process.argv[2] ?? join(here, '../../nomercy-video-player/src'));
-const musicSrc = resolve(process.argv[3] ?? join(here, '../../nomercy-music-player/src'));
+const videoSrc = resolve(process.argv[2] ?? join(here, '../../video-player/src'));
+const musicSrc = resolve(process.argv[3] ?? join(here, '../../music-player/src'));
 
 function walk(dir) {
 	const files = [];

@@ -22,9 +22,9 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_PACKAGES = [
-	resolve(here, '../../nomercy-player-core'),
-	resolve(here, '../../nomercy-video-player'),
-	resolve(here, '../../nomercy-music-player'),
+	resolve(here, '../../core'),
+	resolve(here, '../../video-player'),
+	resolve(here, '../../music-player'),
 ];
 
 function collectStringTargets(node, out) {
