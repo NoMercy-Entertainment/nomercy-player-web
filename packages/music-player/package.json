@@ -1,0 +1,148 @@
+{
+	"name": "@nomercy-entertainment/nomercy-music-player",
+	"type": "module",
+	"version": "2.6.1",
+	"packageManager": "yarn@4.18.1",
+	"description": "Headless, plugin-driven music player engine. HLS-ready, crossfade-capable, externally-orchestratable, leak-tested.",
+	"author": {
+		"name": "NoMercy Entertainment",
+		"email": "info@nomercy.tv",
+		"url": "https://nomercy.tv"
+	},
+	"contributors": [
+		"Stoney Eagle <45034970+StoneyEagle@users.noreply.github.com>"
+	],
+	"license": "Apache-2.0",
+	"homepage": "https://docs.nomercy.tv/nomercy-music-player/",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/NoMercy-Entertainment/nomercy-music-player.git"
+	},
+	"bugs": {
+		"url": "https://github.com/NoMercy-Entertainment/nomercy-music-player/issues"
+	},
+	"keywords": [
+		"music",
+		"player",
+		"audio",
+		"hls",
+		"crossfade",
+		"plugin",
+		"NoMercy"
+	],
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./adapters": {
+			"types": "./dist/adapters/index.d.ts",
+			"import": "./dist/adapters/index.js"
+		},
+		"./adapters/audio-backend": {
+			"types": "./dist/adapters/audio-backend/index.d.ts",
+			"import": "./dist/adapters/audio-backend/index.js"
+		},
+		"./adapters/similarity-engine": {
+			"types": "./dist/adapters/similarity-engine/index.d.ts",
+			"import": "./dist/adapters/similarity-engine/index.js"
+		},
+		"./plugins": {
+			"types": "./dist/plugins/index.d.ts",
+			"import": "./dist/plugins/index.js"
+		},
+		"./plugins/auto-advance": {
+			"types": "./dist/plugins/auto-advance/index.d.ts",
+			"import": "./dist/plugins/auto-advance/index.js"
+		},
+		"./plugins/cast-sender": {
+			"types": "./dist/plugins/cast-sender/index.d.ts",
+			"import": "./dist/plugins/cast-sender/index.js"
+		},
+		"./plugins/key-handler": {
+			"types": "./dist/plugins/key-handler/index.d.ts",
+			"import": "./dist/plugins/key-handler/index.js"
+		},
+		"./plugins/lyrics": {
+			"types": "./dist/plugins/lyrics/index.d.ts",
+			"import": "./dist/plugins/lyrics/index.js"
+		},
+		"./plugins/media-session": {
+			"types": "./dist/plugins/media-session/index.d.ts",
+			"import": "./dist/plugins/media-session/index.js"
+		},
+		"./plugins/scrobble": {
+			"types": "./dist/plugins/scrobble/index.d.ts",
+			"import": "./dist/plugins/scrobble/index.js"
+		},
+		"./streams/native": {
+			"types": "./dist/streams/native.d.ts",
+			"import": "./dist/streams/native.js"
+		},
+		"./streams/hls": {
+			"types": "./dist/streams/hls.d.ts",
+			"import": "./dist/streams/hls.js"
+		},
+		"./types": {
+			"types": "./dist/types.d.ts",
+			"import": "./dist/types.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"CHANGELOG.md",
+		"CODE_OF_CONDUCT.md",
+		"CONTRIBUTING.md",
+		"MIGRATION.md",
+		"RELEASING.md",
+		"SECURITY.md",
+		"dist"
+	],
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"scripts": {
+		"build": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && node node_modules/@nomercy-entertainment/nomercy-player-core/scripts/resolve-translation-globs.mjs && node node_modules/@nomercy-entertainment/nomercy-player-core/scripts/copy-dist-assets.mjs",
+		"build:iife": "vite build --config vite.iife.config.ts",
+		"build:all": "yarn build && yarn build:iife",
+		"dev": "tsc -p tsconfig.build.json --watch",
+		"typecheck": "tsc --noEmit",
+		"lint": "eslint . --max-warnings 0",
+		"lint:fix": "eslint . --fix --max-warnings 0",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:e2e": "node scripts/generate-e2e-fixtures.mjs && playwright test",
+		"test:e2e:report": "playwright show-report reports/playwright",
+		"prepublishOnly": "yarn build:all"
+	},
+	"dependencies": {
+		"@nomercy-entertainment/nomercy-player-core": "2.6.1"
+	},
+	"devDependencies": {
+		"@antfu/eslint-config": "^9.0.0",
+		"@nomercy-entertainment/eslint-plugin-player": "^0.3.0",
+		"@playwright/test": "^1.60.0",
+		"@types/node": "^25.9.0",
+		"@vitest/coverage-v8": "^4.1.11",
+		"@vitest/ui": "^4.1.11",
+		"eslint": "^10.4.0",
+		"happy-dom": "^21.0.4",
+		"hls.js": "^1.6.16",
+		"playwright": "^1.60.0",
+		"tsc-alias": "^1.8.17",
+		"typescript": "^6.0.3",
+		"vite": "^8.0.13",
+		"vite-plugin-dts": "^5.0.0",
+		"vitest": "^4.1.11"
+	},
+	"resolutions": {
+		"katex": "^0.18.2"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}

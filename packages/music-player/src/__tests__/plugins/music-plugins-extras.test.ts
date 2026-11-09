@@ -1,0 +1,273 @@
+// -----------------------------------------------------------------------------
+//  Copyright (c) NoMercy Entertainment
+//
+//  Licensed under the Apache License, Version 2.0. See LICENSE for details.
+//
+//  SPDX-License-Identifier: Apache-2.0
+// -----------------------------------------------------------------------------
+
+/**
+ * Tests for the remaining music v2 plugins — keyHandler/mediaSession
+ * subclassing and castSender graceful-degrade.
+ *
+ * All plugins must load and dispose cleanly on a JSDOM machine with no Cast
+ * SDK, no EME, and no real WebSocket server. The tests pin the guard paths so
+ * a regression in any plugin's `use()` / `dispose()` never silently leaks
+ * listeners or throws.
+ */
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { NMMusicPlayer } from '../../index';
+import { CastSenderPlugin } from '../../plugins/cast-sender';
+import { KeyHandlerPlugin } from '../../plugins/key-handler';
+import { MediaSessionPlugin } from '../../plugins/media-session';
+
+describe('NMMusicPlayer — remaining plugin stubs', () => {
+	beforeEach(() => {
+		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+		const div = document.createElement('div');
+		div.id = 'extras';
+		document.body.appendChild(div);
+	});
+
+	afterEach(() => {
+		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+		document.body.innerHTML = '';
+	});
+
+	const setup = (): NMMusicPlayer => new NMMusicPlayer('extras').setup({});
+
+	describe('keyHandlerPlugin', () => {
+		it('inherits kit defaults AND adds music-specific n/p/r/s bindings', async () => {
+			const musicPlayer = setup();
+			musicPlayer.addPlugin(KeyHandlerPlugin);
+			await musicPlayer.ready();
+			const instance = musicPlayer.getPlugin(KeyHandlerPlugin);
+			expect(instance).toBeInstanceOf(KeyHandlerPlugin);
+			if (!instance)
+				throw new Error('KeyHandlerPlugin not registered');
+			const bindings = instance.bindings();
+			// Kit defaults — must still be present.
+			expect(bindings.has(' ')).toBe(true);
+			expect(bindings.has('m')).toBe(true);
+			expect(bindings.has('ArrowLeft')).toBe(true);
+			expect(bindings.has('ArrowRight')).toBe(true);
+			expect(bindings.has('ArrowUp')).toBe(true);
+			expect(bindings.has('ArrowDown')).toBe(true);
+			// Music-specific — added by our subclass.
+			expect(bindings.has('n')).toBe(true);
+			expect(bindings.has('p')).toBe(true);
+			expect(bindings.has('r')).toBe(true);
+			expect(bindings.has('s')).toBe(true);
+		});
+	});
+
+	describe('mediaSessionPlugin', () => {
+		it('getMetadata returns music-specific text fields from a MusicPlaylistItem', async () => {
+			const musicPlayer = setup();
+			musicPlayer.addPlugin(MediaSessionPlugin);
+			await musicPlayer.ready();
+			const instance = musicPlayer.getPlugin(MediaSessionPlugin);
+			const meta = (instance as unknown as { getMetadata: (item: any) => any }).getMetadata({
+				id: 'a',
+				name: 'Track A',
+				cover: 'https://example.com/a.jpg',
+				artist: 'Artist One, Artist Two',
+				album: 'Album X',
+			});
+			expect(meta.title).toBe('Track A');
+			expect(meta.artist).toBe('Artist One, Artist Two');
+			expect(meta.album).toBe('Album X');
+			// getMetadata() returns text fields only; artwork is resolved and
+			// injected by the base _pushMetadata() via the kit's urlResolver.
+			expect(meta.artwork).toBeUndefined();
+		});
+	});
+
+	describe('castSenderPlugin', () => {
+		it('isConnected() is false before connect() and connect() throws BrowserPolicyError without Cast SDK', async () => {
+			const musicPlayer = setup();
+			musicPlayer.addPlugin(CastSenderPlugin);
+			await musicPlayer.ready();
+			const instance = musicPlayer.getPlugin(CastSenderPlugin);
+			expect(instance).toBeInstanceOf(CastSenderPlugin);
+			if (!instance)
+				throw new Error('CastSenderPlugin not registered');
+			expect(instance.isConnected()).toBe(false);
+			await expect(instance.connect()).rejects.toMatchObject({
+				name: 'BrowserPolicyError',
+				code: 'core:policy/castUnavailable',
+			});
+		});
+
+		it('forwards player current → loadMedia with a properly-shaped MusicTrackMediaMetadata', async () => {
+			const loadMedia = vi.fn().mockResolvedValue(undefined);
+			const requestSession = vi.fn().mockResolvedValue(undefined);
+			const sessionStub = { loadMedia, getCastDevice: () => ({ friendlyName: 'Couch' }) };
+			class StubRemote {
+				isConnected = true;
+				isPaused = false;
+				isMuted = false;
+				currentTime = 0;
+				duration = 0;
+				volumeLevel = 1;
+				mediaInfo: { contentId?: string } | null = null;
+			}
+			const addEventListener = vi.fn();
+			const removeEventListener = vi.fn();
+			class StubController {
+				addEventListener = addEventListener;
+				removeEventListener = removeEventListener;
+				playOrPause = vi.fn();
+				stop = vi.fn();
+				seek = vi.fn();
+				setVolumeLevel = vi.fn();
+				muteOrUnmute = vi.fn();
+				constructor(_remote: StubRemote) {}
+			}
+			class MediaInfoCtor { constructor(public contentId: string, public contentType: string) {} }
+			class LoadRequestCtor { constructor(public media: unknown) {} }
+			class MusicTrackMetaCtor {}
+			(globalThis as any).cast = {
+				framework: {
+					CastContext: { getInstance: () => ({ requestSession, getCurrentSession: () => sessionStub, endCurrentSession: vi.fn() }) },
+					RemotePlayer: StubRemote,
+					RemotePlayerController: StubController,
+					RemotePlayerEventType: {
+						IS_CONNECTED_CHANGED: 'isConnectedChanged',
+						IS_PAUSED_CHANGED: 'isPausedChanged',
+						CURRENT_TIME_CHANGED: 'currentTimeChanged',
+						IS_MEDIA_LOADED_CHANGED: 'isMediaLoadedChanged',
+						MEDIA_INFO_CHANGED: 'mediaInfoChanged',
+						VOLUME_LEVEL_CHANGED: 'volumeLevelChanged',
+						IS_MUTED_CHANGED: 'isMutedChanged',
+					},
+				},
+			};
+			(globalThis as any).chrome = {
+				cast: {
+					media: {
+						MediaInfo: MediaInfoCtor,
+						LoadRequest: LoadRequestCtor,
+						MusicTrackMediaMetadata: MusicTrackMetaCtor,
+						GenericMediaMetadata: class {},
+						StreamType: { BUFFERED: 'BUFFERED', LIVE: 'LIVE' },
+					},
+				},
+			};
+
+			try {
+				const musicPlayer = setup();
+				musicPlayer.addPlugin(CastSenderPlugin);
+				await musicPlayer.ready();
+				const instance = musicPlayer.getPlugin(CastSenderPlugin);
+				if (!instance)
+					throw new Error('CastSenderPlugin not registered');
+
+				const trackItem = {
+					id: 't1',
+					name: 'Song A',
+					url: 'https://cdn/song-a.mp3',
+					cover: 'https://cdn/cover.jpg',
+					artist: 'Artist X',
+					album: 'Album Y',
+				};
+				(musicPlayer as unknown as { item(): typeof trackItem }).item = () => trackItem;
+
+				await instance.connect();
+				expect(instance.isConnected()).toBe(true);
+
+				musicPlayer.emit('item', { item: trackItem, index: 0 });
+				await new Promise(resolve => setTimeout(resolve, 0));
+
+				expect(loadMedia).toHaveBeenCalled();
+				const call = loadMedia.mock.calls[0]?.[0] as { media?: any };
+				const media = call?.media;
+				expect(media).toBeDefined();
+				expect(media.contentId).toBe('https://cdn/song-a.mp3');
+				expect(media.contentType).toBe('audio/mpeg');
+				expect(media.streamType).toBe('BUFFERED');
+				expect(media.metadata).toBeInstanceOf(MusicTrackMetaCtor);
+				expect(media.metadata.title).toBe('Song A');
+				expect(media.metadata.artist).toBe('Artist X');
+				expect(media.metadata.albumName).toBe('Album Y');
+				expect(media.metadata.images?.[0]?.url).toBe('https://cdn/cover.jpg');
+			}
+			finally {
+				delete (globalThis as any).cast;
+				delete (globalThis as any).chrome;
+			}
+		});
+
+		it('mirrors receiver IS_PAUSED_CHANGED back as a player pause with {source:cast, silent:true}', async () => {
+			const requestSession = vi.fn().mockResolvedValue(undefined);
+			const handlers: Record<string, (castEvent: { value: unknown }) => void> = {};
+			class StubRemote {
+				isConnected = true;
+				isPaused = false;
+				isMuted = false;
+				currentTime = 12.5;
+				duration = 0;
+				volumeLevel = 1;
+				mediaInfo: { contentId?: string } | null = null;
+			}
+			class StubController {
+				addEventListener = (event: string, handler: (castEvent: { value: unknown }) => void): void => {
+					handlers[event] = handler;
+				};
+
+				removeEventListener = vi.fn();
+				playOrPause = vi.fn();
+				stop = vi.fn();
+				seek = vi.fn();
+				setVolumeLevel = vi.fn();
+				muteOrUnmute = vi.fn();
+				constructor(_remote: StubRemote) {}
+			}
+			let stubRemoteRef: StubRemote | null = null as StubRemote | null;
+			(globalThis as any).cast = {
+				framework: {
+					CastContext: { getInstance: () => ({ requestSession, getCurrentSession: () => ({ loadMedia: vi.fn().mockResolvedValue(undefined) }), endCurrentSession: vi.fn() }) },
+					RemotePlayer: class extends StubRemote { constructor() { super(); stubRemoteRef = this; } },
+					RemotePlayerController: StubController,
+					RemotePlayerEventType: {
+						IS_CONNECTED_CHANGED: 'isConnectedChanged',
+						IS_PAUSED_CHANGED: 'isPausedChanged',
+						CURRENT_TIME_CHANGED: 'currentTimeChanged',
+						IS_MEDIA_LOADED_CHANGED: 'isMediaLoadedChanged',
+						MEDIA_INFO_CHANGED: 'mediaInfoChanged',
+						VOLUME_LEVEL_CHANGED: 'volumeLevelChanged',
+						IS_MUTED_CHANGED: 'isMutedChanged',
+					},
+				},
+			};
+			(globalThis as any).chrome = { cast: { media: { MediaInfo: class { constructor() {} }, LoadRequest: class { constructor() {} }, MusicTrackMediaMetadata: class {}, GenericMediaMetadata: class {}, StreamType: { BUFFERED: 'BUFFERED', LIVE: 'LIVE' } } } };
+
+			try {
+				const musicPlayer = setup();
+				musicPlayer.addPlugin(CastSenderPlugin);
+				await musicPlayer.ready();
+				const instance = musicPlayer.getPlugin(CastSenderPlugin);
+				if (!instance)
+					throw new Error('CastSenderPlugin not registered');
+				(musicPlayer as unknown as { item(): undefined }).item = () => undefined;
+
+				await instance.connect();
+
+				const seenPause: unknown[] = [];
+				musicPlayer.on('pause', (data: unknown) => { seenPause.push(data); });
+
+				if (stubRemoteRef)
+					(stubRemoteRef as StubRemote).isPaused = true;
+				handlers['isPausedChanged']?.({ value: true });
+
+				expect(seenPause.length).toBeGreaterThan(0);
+				expect(seenPause[0]).toMatchObject({ source: 'cast', silent: true });
+			}
+			finally {
+				delete (globalThis as any).cast;
+				delete (globalThis as any).chrome;
+			}
+		});
+	});
+});

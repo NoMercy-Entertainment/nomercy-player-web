@@ -1,0 +1,34 @@
+// -----------------------------------------------------------------------------
+//  Copyright (c) NoMercy Entertainment
+//
+//  Licensed under the Apache License, Version 2.0. See LICENSE for details.
+//
+//  SPDX-License-Identifier: Apache-2.0
+// -----------------------------------------------------------------------------
+
+import { runIPlayerContract } from '@nomercy-entertainment/nomercy-player-core/testing';
+import { afterEach, beforeEach } from 'vitest';
+import { NMMusicPlayer, nmplayer } from '../../index';
+
+/**
+ * Validates that `NMMusicPlayer` satisfies the `IPlayer` **behavior** contract.
+ * Same suite `StubPlayer` and `NMVideoPlayer` run against themselves. This is
+ * the first line of regression defence for the cross-cutting player surface
+ * (events, phase, baseUrl, audioContext, experimental, i18n, cue parsers).
+ */
+beforeEach(() => {
+	(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+	const div = document.createElement('div');
+	div.id = 'contract-music';
+	document.body.appendChild(div);
+});
+
+afterEach(() => {
+	document.body.innerHTML = '';
+	(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+});
+
+runIPlayerContract({
+	create: () => nmplayer('contract-music').setup({}),
+	label: 'NMMusicPlayer',
+});
