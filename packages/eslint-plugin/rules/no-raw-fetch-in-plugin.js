@@ -25,6 +25,20 @@
 
 import { inPluginSubclass } from './_in-plugin-subclass.js';
 
+const PLUGIN_FOLDER = /[\\/]src[\\/](?:[^\\/]+[\\/])*plugins[\\/]/;
+const TEST_PATH = /[\\/]__tests__[\\/]|\.(?:test|spec)\.[cm]?[jt]sx?$/;
+
+/**
+ * True for a non-test file under a package's `src/**\/plugins/` folder, so helper
+ * modules of a plugin are covered, not only code inside the `Plugin` subclass.
+ *
+ * @param {string} filename
+ * @returns {boolean} True when the file is plugin-folder code.
+ */
+function inPluginFolder(filename) {
+  return PLUGIN_FOLDER.test(filename) && !TEST_PATH.test(filename);
+}
+
 /** @type {import('eslint').Rule.RuleModule} */
 export default {
   meta: {
@@ -61,7 +75,7 @@ export default {
           return;
         }
 
-        if (!inPluginSubclass(node))
+        if (!inPluginSubclass(node) && !inPluginFolder(context.filename))
           return;
 
         context.report({

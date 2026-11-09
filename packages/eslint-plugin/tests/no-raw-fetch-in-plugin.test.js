@@ -24,6 +24,19 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-raw-fetch-in-plugin', rule, {
   valid: [
+    // Outside a plugins folder, and tests inside one, stay free.
+    {
+      code: 'export async function load(url) { return fetch(url); }',
+      filename: 'packages/core/src/adapters/fetch/default.ts',
+    },
+    {
+      code: 'export async function load(url) { return fetch(url); }',
+      filename: 'packages/video-player/src/plugins/twitch/__tests__/gql.test.ts',
+    },
+    {
+      code: 'export async function load(url) { return fetch(url); }',
+      filename: 'packages/core/src/core/plugin/fetch.ts',
+    },
     // The sanctioned auth-aware helper.
     'class P extends Plugin { use() { this.fetch(\'/api/x\'); } }',
     'class P extends Plugin<NMVideoPlayer> { async use() { await this.fetch(\'/i18n/en.json\', { responseType: \'json\' }); } }',
@@ -36,6 +49,23 @@ ruleTester.run('no-raw-fetch-in-plugin', rule, {
     'class P extends Plugin { use() { class H { go() { fetch(\'/x\'); } } } }',
   ],
   invalid: [
+    // Helper modules inside a plugin folder are covered without a Plugin subclass.
+    {
+      code: 'export async function load(url) { return fetch(url); }',
+      filename: 'packages/video-player/src/plugins/twitch/gql.ts',
+      errors: [{
+        messageId: 'rawFetch',
+        data: { form: 'fetch(...)' },
+      }],
+    },
+    {
+      code: 'export function load(url) { return globalThis.fetch(url); }',
+      filename: 'C:\\repo\\packages\\music-player\\src\\plugins\\lyrics\\helpers\\get.ts',
+      errors: [{
+        messageId: 'rawFetch',
+        data: { form: 'globalThis.fetch(...)' },
+      }],
+    },
     {
       code: 'class P extends Plugin { use() { fetch(\'/api/x\'); } }',
       errors: [{
