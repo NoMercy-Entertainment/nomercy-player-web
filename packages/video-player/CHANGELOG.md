@@ -8,7 +8,7 @@
 
 ### Added
 
-- `VttSpriteThumbnailSource` takes optional `fetchers`, so a sprite server that needs auth can be reached with a token.
+- `VttSpriteThumbnailSource.useFetchers(fetchers)` sets the fetchers, so a sprite server that needs auth can be reached with a token.
 
 ## [2.8.3] — 2026-11-09
 

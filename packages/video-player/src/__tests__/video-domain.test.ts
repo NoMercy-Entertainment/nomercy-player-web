@@ -94,7 +94,9 @@ describe('VttSpriteThumbnailSource', () => {
 
   it('loads the VTT through the fetchers it was built with', async () => {
     const fetchText = vi.fn(async () => '');
-    const src = new VttSpriteThumbnailSource({ fetchText });
+    const src = new VttSpriteThumbnailSource();
+
+    src.useFetchers({ fetchText });
 
     await src.load({ id: '3', previewSpriteUrl: 'https://media.example/sprite.vtt' } as any);
 

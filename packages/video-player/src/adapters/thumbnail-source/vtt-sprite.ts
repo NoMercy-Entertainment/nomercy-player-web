@@ -27,10 +27,10 @@ import { loadSpriteSet, lookupCue } from '../../plugins/desktop-ui/helpers/sprit
  */
 export class VttSpriteThumbnailSource implements IThumbnailSource {
   private _cache: SpriteSet | null = null;
-  private readonly _fetchers: SpriteFetchers | undefined;
+  private _fetchers: SpriteFetchers | undefined;
 
-  /** Pass `fetchers` when the sprite server needs auth; without them the VTT is fetched with no token. */
-  constructor(fetchers?: SpriteFetchers) {
+  /** Call with `fetchers` when the sprite server needs auth; without them the VTT is fetched with no token. */
+  useFetchers(fetchers: SpriteFetchers): void {
     this._fetchers = fetchers;
   }
 
