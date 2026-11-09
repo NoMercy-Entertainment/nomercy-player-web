@@ -165,4 +165,5 @@ jobs:
 
       - name: Dry run stopped before npm publish
         if: env.DRY_RUN == 'true'
-        run: echo "dry run: would run npm publish $TGZ --provenance --access public --tag ${{ steps.pkg.outputs.disttag }}"
+        run: |
+          echo "dry run: would run npm publish $TGZ --provenance --access public --tag ${{ steps.pkg.outputs.disttag }}"
