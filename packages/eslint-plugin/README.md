@@ -1,6 +1,37 @@
-# @nomercy-entertainment/eslint-plugin-player
+# eslint-plugin-player
 
-The player trio (core, video, music) shares one code standard. This plugin makes the mechanical parts of that standard enforceable, so a violation fails lint at write time instead of surfacing in review weeks later. It encodes only the rules that a machine can judge without guessing. Naming intent, comment usefulness, and architecture stay with the code-quality reviewer.
+[![npm](https://img.shields.io/npm/v/@nomercy-entertainment/eslint-plugin-player)](https://www.npmjs.com/package/@nomercy-entertainment/eslint-plugin-player)
+[![license](https://img.shields.io/npm/l/@nomercy-entertainment/eslint-plugin-player)](https://www.apache.org/licenses/LICENSE-2.0)
+
+ESLint rules for code that builds on the NoMercy players. Use them in a plugin or a player package to keep it on the paths that scope, authenticate and clean up for you.
+
+The player trio (core, video, music) shares one code standard. This plugin makes the mechanical parts of that standard enforceable, so a violation fails lint at write time instead of surfacing in review weeks later. It encodes only the rules that a machine can judge without guessing.
+
+## Install
+
+The plugin needs ESLint 9 or newer and a flat config.
+
+```bash
+npm install --save-dev @nomercy-entertainment/eslint-plugin-player
+```
+
+## Use
+
+Spread the `recommended` preset into your flat config. It registers the plugin as `player` and turns every rule on at `error`.
+
+```js
+// eslint.config.js
+import player from '@nomercy-entertainment/eslint-plugin-player';
+
+export default [
+  {
+    files: ['src/**/*.ts'],
+    ...player.configs.recommended,
+  },
+];
+```
+
+Each rule's name starts with `player/`, for example `player/no-raw-fetch-in-plugin`.
 
 ## Compatibility
 
@@ -23,29 +54,12 @@ Every rule ships in the `recommended` preset at `error`.
 | `player/no-raw-fetch-in-plugin` | The global `fetch` (bare, `window.fetch`, `globalThis.fetch`) inside a plugin. Sends no auth and never aborts on dispose; use `this.fetch(url, options?)` which runs the player's auth pipeline and aborts on teardown. A public URL that must not carry auth takes an `eslint-disable` with a reason. |
 | `player/plugin-id-required` | A concrete class extending `Plugin` with no own `static id`. Inheriting the base default `'plugin'` collides and breaks storage/mount namespacing. `abstract` intermediate bases are exempt. |
 
-## Wiring
+## Relax rules in tests
 
-The trio configs consume it from the sibling package:
+Test files legitimately cast mocks, throw raw errors, use raw timers and fetch, and build ad-hoc plugin classes. Turn those rules off for them.
 
 ```js
-import player from '../eslint-plugin-player/index.js';
-
-export default antfu({ /* ... */ }, {
-  files: ['src/**/*.ts'],
-  plugins: { player },
-  rules: {
-    'player/no-single-letter-ident': 'error',
-    'player/no-compat-vocab': 'error',
-    'player/no-history-comments': 'error',
-    'player/no-object-literal-cast': 'error',
-    'player/no-unknown-cast': 'error',
-    'player/no-raw-player-bus': 'error',
-    'player/no-raw-timers-in-plugin': 'error',
-    'player/no-raw-throw-in-plugin': 'error',
-    'player/no-raw-fetch-in-plugin': 'error',
-    'player/plugin-id-required': 'error',
-  },
-}, {
+{
   files: ['src/**/*.test.ts', 'src/__tests__/**/*.ts'],
   rules: {
     'player/no-object-literal-cast': 'off',
@@ -56,32 +70,15 @@ export default antfu({ /* ... */ }, {
     'player/no-raw-fetch-in-plugin': 'off',
     'player/plugin-id-required': 'off',
   },
-});
+}
 ```
-
-Test files relax the two cast rules (mock construction legitimately casts) and the boundary rules (test-fixture plugins throw raw errors, use raw timers, fetch, and build ad-hoc plugin classes to drive the real paths).
 
 ## The boundary rules
 
 `no-raw-player-bus`, `no-raw-timers-in-plugin`, `no-raw-throw-in-plugin`, and `no-raw-fetch-in-plugin` are the mechanical half of the `this`-versus-`this.player` boundary: a plugin extends `this` and reaches the player through `this.player`, but its own lifecycle helpers (`this.on`, `this.timeout`, `this.throw`, `this.fetch`, `this.lifecycle.observe`, ...) are the sanctioned surface because they scope, auth, and auto-clean. Reaching past them to the raw player bus, raw timers or observers, a raw `throw`, or the global `fetch` leaks a listener/observer, drops an error off the structured path, or sends an unauthenticated request that never aborts on teardown. All fire only inside a class that `extends Plugin`, so core mixins — where `this` already *is* the player — never trigger them. A genuinely-needed exception (a third-party emitter that is not an `EventTarget`, a deliberate re-emit of a dynamically-named player event, a public URL that must not carry auth) takes an `eslint-disable-next-line` with a one-line reason, the same escape hatch `no-unknown-cast` uses.
 
-## Cross-file checks
+## License
 
-Two things eslint cannot see (it lints one file at a time) ship as scripts for CI:
+[Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-| Script | Asserts |
-|--------|---------|
-| `scripts/check-package-exports.mjs` | Every `exports` target resolves to a real file, and no subpath reaches into `src/`. |
-| `scripts/check-duplicate-symbols.mjs` | No exported constant, type, or enum is byte-identical in both video and music. Identical bodies are shared code that belongs in core. |
-
-```sh
-yarn check:exports
-yarn check:duplicates
-```
-
-## Tests
-
-```sh
-yarn install
-yarn test
-```
+Source: [packages/eslint-plugin in nomercy-player-web](https://github.com/NoMercy-Entertainment/nomercy-player-web/tree/master/packages/eslint-plugin).

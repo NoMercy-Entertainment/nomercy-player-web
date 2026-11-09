@@ -1,5 +1,5 @@
 [![npm](https://img.shields.io/npm/v/@nomercy-entertainment/nomercy-music-player/latest?label=latest)](https://www.npmjs.com/package/@nomercy-entertainment/nomercy-music-player)
-[![license](https://img.shields.io/npm/l/@nomercy-entertainment/nomercy-music-player)](./LICENSE)
+[![license](https://img.shields.io/npm/l/@nomercy-entertainment/nomercy-music-player)](https://www.apache.org/licenses/LICENSE-2.0)
 [![bundlephobia](https://img.shields.io/bundlephobia/minzip/@nomercy-entertainment/nomercy-music-player)](https://bundlephobia.com/package/@nomercy-entertainment/nomercy-music-player)
 
 Full documentation: https://docs.nomercy.tv/nomercy-music-player/
@@ -42,8 +42,8 @@ const player = nmplayer('main')
       {
         id: 'bent-wyre-01',
         name: 'Ants Of The Beat',
-        url: '/B/bent%20wyre/%5B2025%5D%20If%20Only%20Life%20Was%20This%20Easy%20Volume%205%20-%20The%20Beat%20Misdirect/01%20Ants%20Of%20The%20Beat.mp3',
-        artistTracks: [{ id: 1, name: 'bent wyre' }],
+        url: '/B/bent.wyre/If.Only.Life.Was.This.Easy.Volume.5.The.Beat.Misdirect.(2025)/01.Ants.Of.The.Beat.mp3',
+        artist: 'bent wyre',
       },
     ],
   });
@@ -65,7 +65,7 @@ You can also swap any built-in behavior. Pass your own storage, URL resolver, sh
 
 ## Upgrading from v1
 
-See [MIGRATION.md](./MIGRATION.md) for the full breaking-change list, including renamed methods, changed event payloads, and the `item.path` to `item.url` rename that breaks silently if missed. Group listening queue serialization is particularly sensitive to this change.
+See [MIGRATION.md](https://github.com/NoMercy-Entertainment/nomercy-player-web/blob/master/packages/music-player/MIGRATION.md) for the full breaking-change list, including renamed methods, changed event payloads, and the `item.path` to `item.url` rename that breaks silently if missed. Group listening queue serialization is particularly sensitive to this change.
 
 ## Documentation
 
@@ -81,4 +81,4 @@ The [docs site](https://docs.nomercy.tv/nomercy-music-player/) is the full refer
 
 Apache-2.0
 
-Repository: [github.com/NoMercy-Entertainment/nomercy-music-player](https://github.com/NoMercy-Entertainment/nomercy-music-player)
+Source: [packages/music-player in nomercy-player-web](https://github.com/NoMercy-Entertainment/nomercy-player-web/tree/master/packages/music-player). Version history: [CHANGELOG.md](https://github.com/NoMercy-Entertainment/nomercy-player-web/blob/master/packages/music-player/CHANGELOG.md).

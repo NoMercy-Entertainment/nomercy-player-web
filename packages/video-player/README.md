@@ -1,5 +1,5 @@
 [![npm](https://img.shields.io/npm/v/@nomercy-entertainment/nomercy-video-player/latest?label=latest)](https://www.npmjs.com/package/@nomercy-entertainment/nomercy-video-player)
-[![license](https://img.shields.io/npm/l/@nomercy-entertainment/nomercy-video-player)](./LICENSE)
+[![license](https://img.shields.io/npm/l/@nomercy-entertainment/nomercy-video-player)](https://www.apache.org/licenses/LICENSE-2.0)
 [![bundlephobia](https://img.shields.io/bundlephobia/minzip/@nomercy-entertainment/nomercy-video-player)](https://bundlephobia.com/package/@nomercy-entertainment/nomercy-video-player)
 
 Full documentation: https://docs.nomercy.tv/nomercy-video-player/
@@ -64,7 +64,7 @@ You can also swap any built-in behavior. Pass your own storage, URL resolver, lo
 
 ## Upgrading from v1
 
-See [MIGRATION.md](./MIGRATION.md) for the full breaking-change list, including renamed methods, changed event payloads, and the `item.file` to `item.url` rename that breaks silently if missed.
+See [MIGRATION.md](https://github.com/NoMercy-Entertainment/nomercy-player-web/blob/master/packages/video-player/MIGRATION.md) for the full breaking-change list, including renamed methods, changed event payloads, and the `item.file` to `item.url` rename that breaks silently if missed.
 
 ## Documentation
 
@@ -80,4 +80,4 @@ The [docs site](https://docs.nomercy.tv/nomercy-video-player/) is the full refer
 
 Apache-2.0
 
-Repository: [github.com/NoMercy-Entertainment/nomercy-video-player](https://github.com/NoMercy-Entertainment/nomercy-video-player)
+Source: [packages/video-player in nomercy-player-web](https://github.com/NoMercy-Entertainment/nomercy-player-web/tree/master/packages/video-player). Version history: [CHANGELOG.md](https://github.com/NoMercy-Entertainment/nomercy-player-web/blob/master/packages/video-player/CHANGELOG.md).

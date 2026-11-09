@@ -1,5 +1,5 @@
 [![npm](https://img.shields.io/npm/v/@nomercy-entertainment/nomercy-player-core/latest?label=latest)](https://www.npmjs.com/package/@nomercy-entertainment/nomercy-player-core)
-[![license](https://img.shields.io/npm/l/@nomercy-entertainment/nomercy-player-core)](./LICENSE)
+[![license](https://img.shields.io/npm/l/@nomercy-entertainment/nomercy-player-core)](https://www.apache.org/licenses/LICENSE-2.0)
 [![bundlephobia](https://img.shields.io/bundlephobia/minzip/@nomercy-entertainment/nomercy-player-core)](https://bundlephobia.com/package/@nomercy-entertainment/nomercy-player-core)
 
 Full documentation: https://docs.nomercy.tv/nomercy-player-core/
@@ -30,44 +30,58 @@ npm install @nomercy-entertainment/nomercy-player-core
 
 ## Quick start
 
-The core is the player engine. Compose its method mixins onto a class and you have a working player: the queue, transport, loading pipeline, time and volume, the typed event bus, auth, and the plugin system are all there. A library on top of the core adds only the medium-specific piece, the backend that turns a source into sound or picture.
+The core is the player engine. Compose its method bundle onto a class and you have a player with the queue, transport, loading pipeline, time and volume, the typed event bus, auth, and the plugin system. A library on top of the core adds only the medium-specific piece, the backend that turns a source into sound or picture.
 
 ```ts
 import {
   composeMixins,
+  EventEmitter,
   initPlayerCoreState,
-  lifecycleMethods,
   playerCoreMethods,
-  queueMethods,
-  timeMethods,
-  transportMethods,
-  volumeMethods,
+  resolvePlayerConstructor,
+  type BaseEventMap,
+  type BasePlayerConfig,
+  type PlayerPhase,
+  type PluginCtorWithId,
 } from '@nomercy-entertainment/nomercy-player-core';
 
-class MyPlayer {
-  constructor(id: string) {
-    initPlayerCoreState(this, { className: 'MyPlayer' });
-    this.setup({ playlist: [{ id, url: '...' }] });
+const instances = new Map<string, CorePlayer>();
+
+class CorePlayer extends EventEmitter<BaseEventMap> {
+  playerId = '';
+  container: HTMLElement = {} as HTMLElement;
+
+  // composeMixins adds these at runtime, so declare what you call.
+  declare setup: (config: BasePlayerConfig) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => Promise<void>;
+  declare phase: () => PlayerPhase;
+  declare addPlugin: (PluginClass: PluginCtorWithId) => this;
+
+  constructor(id?: string | number) {
+    super();
+    const resolved = resolvePlayerConstructor(id, instances, 'CorePlayer');
+    if (resolved.kind === 'existing') {
+      return resolved.instance as unknown as this;
+    }
+
+    initPlayerCoreState(this, { className: 'CorePlayer' });
+    this.playerId = resolved.id;
+    this.container = resolved.div;
+    instances.set(resolved.id, this);
   }
 }
 
-composeMixins(
-  MyPlayer.prototype,
-  playerCoreMethods,
-  lifecycleMethods,
-  queueMethods,
-  transportMethods,
-  timeMethods,
-  volumeMethods,
-);
+composeMixins(CorePlayer.prototype, ...playerCoreMethods);
 
-const player = new MyPlayer('intro');
-player.on('ready', () => player.play());
-player.queue();
-player.time(30);
+const player = new CorePlayer('player'); // needs <div id="player"> in the page
+player.setup({ logLevel: 'info' });
+await player.ready();
+console.log(player.phase()); // 'ready'
+await player.dispose();
 ```
 
-That player drives the full core surface. The only thing it does not do on its own is render a medium, which is what `nomercy-video-player` and `nomercy-music-player` add. Reach for the core directly when you are building a new player package like those, not when you just want to play video or audio.
+This class has no media backend, so playback methods have nothing to drive. That backend is what `nomercy-video-player` and `nomercy-music-player` add. Reach for the core directly when you are building a new player package like those, not when you just want to play video or audio.
 
 Two extension points put you in control of the rest. **Adapters** replace any cross-cutting concern through `setup()`, no subclassing. Override only what you want; everything else keeps its default:
 
@@ -105,10 +119,12 @@ The [docs site](https://docs.nomercy.tv/nomercy-player-core/) is the full refere
 - [Introduction](https://docs.nomercy.tv/nomercy-player-core/introduction) and [Quick Start](https://docs.nomercy.tv/nomercy-player-core/quickstart), composing the core into a player
 - The Guided Tour over the [lifecycle](https://docs.nomercy.tv/nomercy-player-core/tour/lifecycle), the [event bus](https://docs.nomercy.tv/nomercy-player-core/tour/event-bus), the [adapter ports](https://docs.nomercy.tv/nomercy-player-core/tour/adapters), and the [plugin base](https://docs.nomercy.tv/nomercy-player-core/tour/plugin-base)
 - [Build a Player](https://docs.nomercy.tv/nomercy-player-core/build/compose-methods) and [Recipe: use authFetch](https://docs.nomercy.tv/nomercy-player-core/recipes/auth-fetch)
-- The full [type reference](https://docs.nomercy.tv/nomercy-player-core/reference/composition) and [Testing your plugins](./TESTING.md) with the `describePlugin` conformance helper the kit ships
+- The full [type reference](https://docs.nomercy.tv/nomercy-player-core/reference/composition) and [Testing your plugins](https://github.com/NoMercy-Entertainment/nomercy-player-web/blob/master/TESTING.md) with the `describePlugin` conformance helper the kit ships
+
+Upgrading from an earlier version: [MIGRATION.md](https://github.com/NoMercy-Entertainment/nomercy-player-web/blob/master/packages/core/MIGRATION.md).
 
 ## License
 
-Apache-2.0
+[Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-Repository: [github.com/NoMercy-Entertainment/nomercy-player-core](https://github.com/NoMercy-Entertainment/nomercy-player-core)
+Source: [packages/core in nomercy-player-web](https://github.com/NoMercy-Entertainment/nomercy-player-web/tree/master/packages/core). Version history: [CHANGELOG.md](https://github.com/NoMercy-Entertainment/nomercy-player-web/blob/master/packages/core/CHANGELOG.md).
