@@ -48,7 +48,10 @@ async function loadFixture(page: import('@playwright/test').Page): Promise<void>
 async function setupSingleItem(page: import('@playwright/test').Page): Promise<void> {
 	await page.evaluate(() => {
 		(window as any).player.setup({
-			playlist: [{ id: 'availability-src', file: '/e2e/media/sample.mp4' }],
+			playlist: [{
+				id: 'availability-src',
+				file: '/e2e/media/sample.mp4',
+			}],
 			muted: true,
 			autoPlay: false,
 		});
@@ -186,7 +189,10 @@ test.describe('Render: transport gates — disabled attributes', () => {
 		// Load with autoPlay:false so currentTime stays at 0.
 		await page.evaluate(() => {
 			(window as any).player.setup({
-				playlist: [{ id: 'rewind-src', file: '/e2e/media/sample.mp4' }],
+				playlist: [{
+					id: 'rewind-src',
+					file: '/e2e/media/sample.mp4',
+				}],
 				muted: true,
 				autoPlay: false,
 			});
@@ -218,7 +224,10 @@ test.describe('Render: transport gates — disabled attributes', () => {
 		// Pause immediately after metadata arrives to stop at a known state.
 		await page.evaluate(() => {
 			(window as any).player.setup({
-				playlist: [{ id: 'rewind-src2', file: '/e2e/media/sample.mp4' }],
+				playlist: [{
+					id: 'rewind-src2',
+					file: '/e2e/media/sample.mp4',
+				}],
 				muted: true,
 				autoPlay: true,
 			});
@@ -274,8 +283,14 @@ test.describe('Render: transport gates — disabled attributes', () => {
 		await page.evaluate(() => {
 			(window as any).player.setup({
 				playlist: [
-					{ id: 'multi-a', file: '/e2e/media/sample.mp4' },
-					{ id: 'multi-b', file: '/e2e/media/sample.mp4' },
+					{
+						id: 'multi-a',
+						file: '/e2e/media/sample.mp4',
+					},
+					{
+						id: 'multi-b',
+						file: '/e2e/media/sample.mp4',
+					},
 				],
 				muted: true,
 				autoPlay: false,

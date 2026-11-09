@@ -6,7 +6,12 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
-import type { ActionOptions, LoadOptions, PluginCtorWithId, Translations } from '@nomercy-entertainment/nomercy-player-core';
+import type {
+	ActionOptions,
+	LoadOptions,
+	PluginCtorWithId,
+	Translations,
+} from '@nomercy-entertainment/nomercy-player-core';
 import type { NMVideoPlayer } from '../index';
 import type { Stretching, VideoPlayerConfig, VideoPlaylistItem } from '../types';
 import { NotImplementedError, Plugin, SetupState } from '@nomercy-entertainment/nomercy-player-core';
@@ -540,7 +545,10 @@ export class V1VideoCompatPlugin extends Plugin<NMVideoPlayer> {
 
 		player.playVideo = (target: VideoPlaylistItem | string | number, opts?: LoadOptions): void => {
 			warn('playVideo');
-			player.item(target, { ...opts, autoplay: true });
+			player.item(target, {
+				...opts,
+				autoplay: true,
+			});
 		};
 
 		function load(items: VideoPlaylistItem[]): void;
@@ -594,7 +602,11 @@ export class V1VideoCompatPlugin extends Plugin<NMVideoPlayer> {
 					existing.episodes += 1;
 					continue;
 				}
-				counts.set(item.season, { season: item.season, episodes: 1, seasonName: item.seasonName });
+				counts.set(item.season, {
+					season: item.season,
+					episodes: 1,
+					seasonName: item.seasonName,
+				});
 			}
 			return Array.from(counts.values());
 		};
@@ -704,7 +716,10 @@ export class V1VideoCompatPlugin extends Plugin<NMVideoPlayer> {
 
 		player.loadSource = (url: string, opts?: LoadOptions): Promise<void> => {
 			warn('loadSource');
-			return player.load({ id: url, url }, opts);
+			return player.load({
+				id: url,
+				url,
+			}, opts);
 		};
 
 		player.registerPlugin = <P extends Plugin<any, any, any>>(PluginClass: PluginCtorWithId & (new () => P), opts?: P['opts']): NMVideoPlayer<VideoPlaylistItem> => {

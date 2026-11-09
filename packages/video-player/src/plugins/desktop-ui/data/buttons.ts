@@ -310,24 +310,57 @@ export const EDGE_STYLE = {
 export type EdgeStyle = typeof EDGE_STYLE[keyof typeof EDGE_STYLE];
 
 export const edgeStyles: readonly { name: string; value: EdgeStyle }[] = Object.freeze([
-	{ name: 'None', value: EDGE_STYLE.NONE },
-	{ name: 'Depressed', value: EDGE_STYLE.DEPRESSED },
-	{ name: 'Drop Shadow', value: EDGE_STYLE.DROP_SHADOW },
-	{ name: 'Text Shadow', value: EDGE_STYLE.TEXT_SHADOW },
-	{ name: 'Raised', value: EDGE_STYLE.RAISED },
-	{ name: 'Uniform', value: EDGE_STYLE.UNIFORM },
+	{
+		name: 'None',
+		value: EDGE_STYLE.NONE,
+	},
+	{
+		name: 'Depressed',
+		value: EDGE_STYLE.DEPRESSED,
+	},
+	{
+		name: 'Drop Shadow',
+		value: EDGE_STYLE.DROP_SHADOW,
+	},
+	{
+		name: 'Text Shadow',
+		value: EDGE_STYLE.TEXT_SHADOW,
+	},
+	{
+		name: 'Raised',
+		value: EDGE_STYLE.RAISED,
+	},
+	{
+		name: 'Uniform',
+		value: EDGE_STYLE.UNIFORM,
+	},
 ]);
 
 export const fontFamilies: readonly { name: string; value: string }[] = Object.freeze([
-	{ name: 'ReithSans', value: 'ReithSans, sans-serif' },
-	{ name: 'Arial', value: 'Arial, sans-serif' },
-	{ name: 'Courier New', value: 'Courier New, monospace' },
+	{
+		name: 'ReithSans',
+		value: 'ReithSans, sans-serif',
+	},
+	{
+		name: 'Arial',
+		value: 'Arial, sans-serif',
+	},
+	{
+		name: 'Courier New',
+		value: 'Courier New, monospace',
+	},
 	// serif, not sans-serif. Georgia IS a serif face, so the fallback has to be
 	// one too: a browser with Georgia installed never reaches it and the wrong
 	// generic is invisible here, but a client without the face — Android has no
 	// Georgia — then draws the one font every other choice already draws.
-	{ name: 'Georgia', value: 'Georgia, serif' },
-	{ name: 'Verdana', value: 'Verdana, sans-serif' },
+	{
+		name: 'Georgia',
+		value: 'Georgia, serif',
+	},
+	{
+		name: 'Verdana',
+		value: 'Verdana, sans-serif',
+	},
 ]);
 
 export const defaultSubtitleStyles: SubtitleStyle = Object.freeze({

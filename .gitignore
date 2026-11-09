@@ -1,11 +1,36 @@
+# Dependencies
 node_modules
+.pnp.*
 .yarn/*
 !.yarn/releases
 !.yarn/patches
 !.yarn/plugins
 !.yarn/sdks
 !.yarn/versions
-.pnp.*
+
+# Build and test output
+dist
+coverage
+test-results/
+playwright-report/
+reports/
+*.tsbuildinfo
+
+# e2e fixtures and the ffmpeg the generator downloads
+.cache/
+packages/*/e2e/media/
+
+# Files copied in only while a package is packed (scripts/pack-files.mjs)
+packages/*/LICENSE
+packages/*/CODE_OF_CONDUCT.md
+packages/*/CONTRIBUTING.md
+packages/*/RELEASING.md
+packages/*/SECURITY.md
+
+# Editors, logs and local scratch
+.idea
+.vscode
+.DS_Store
 *.log
 scripts/screenshots/
-.DS_Store
+nm-probe*.mjs

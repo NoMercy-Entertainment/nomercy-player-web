@@ -6,7 +6,12 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
-import type { IStreamFactory, IStreamSource, StreamFactoryOptions, StreamSourceState } from '@nomercy-entertainment/nomercy-player-core';
+import type {
+	IStreamFactory,
+	IStreamSource,
+	StreamFactoryOptions,
+	StreamSourceState,
+} from '@nomercy-entertainment/nomercy-player-core';
 import { postGql } from './gql';
 import { parseTwitchUrl } from './url';
 

@@ -17,7 +17,8 @@ function decodeNameRecord(bytes: Uint8Array, platformId: number): string {
 	// string as platform 1, which decodes to "P i x e l a d e" — the NUL-padded
 	// form. Stripping NULs recovers the real family name either way.
 	const decoder = new TextDecoder(platformId === 1 ? 'windows-1252' : 'utf-16be');
-	return decoder.decode(bytes).replace(/\0/gu, '').trim();
+	return decoder.decode(bytes).replace(/\0/gu, '')
+		.trim();
 }
 
 function readTableDirectory(view: DataView, offset: number): number | null {

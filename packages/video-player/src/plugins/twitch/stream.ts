@@ -26,14 +26,21 @@ export async function lookUpLiveStream(channel: string, clientId?: string, signa
 	if (!data?.user?.stream || !token)
 		return undefined;
 
-	const query = new URLSearchParams({ allow_source: 'true', player: 'twitchweb', sig: token.signature, token: token.value });
+	const query = new URLSearchParams({
+		allow_source: 'true',
+		player: 'twitchweb',
+		sig: token.signature,
+		token: token.value,
+	});
 
 	return `${USHER_URL}/api/channel/hls/${channel}.m3u8?${query}`;
 }
 
 /** Wraps the address for the proxy. The `.m3u8` ending is what makes the player treat it as HLS. */
 export function proxiedUrl(proxyUrl: string, target: string): string {
-	const encoded = btoa(target).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/u, '');
+	const encoded = btoa(target).replaceAll('+', '-')
+		.replaceAll('/', '_')
+		.replace(/=+$/u, '');
 
 	return `${proxyUrl}/${encoded}/index.m3u8`;
 }

@@ -21,9 +21,27 @@ test('season rail lists Extras after the last season', async ({ page }) => {
 	await page.evaluate(() => {
 		(window as any).player.setup({
 			playlist: [
-				{ id: 's1e1', title: 'S1E1', file: '/e2e/media/sample.mp4', season: 1, episode: 1 },
-				{ id: 's2e1', title: 'S2E1', file: '/e2e/media/sample.mp4', season: 2, episode: 1 },
-				{ id: 's0e1', title: 'Special', file: '/e2e/media/sample.mp4', season: 0, episode: 1 },
+				{
+					id: 's1e1',
+					title: 'S1E1',
+					file: '/e2e/media/sample.mp4',
+					season: 1,
+					episode: 1,
+				},
+				{
+					id: 's2e1',
+					title: 'S2E1',
+					file: '/e2e/media/sample.mp4',
+					season: 2,
+					episode: 1,
+				},
+				{
+					id: 's0e1',
+					title: 'Special',
+					file: '/e2e/media/sample.mp4',
+					season: 0,
+					episode: 1,
+				},
 			],
 			muted: true,
 			autoPlay: false,

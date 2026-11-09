@@ -374,8 +374,7 @@ describe('DesktopUiPlugin — progressive breakpoint system', () => {
 						'playlist',
 						'volume',
 					],
-				}),
-			).not.toThrow();
+				})).not.toThrow();
 		});
 
 		it('zero-config consumer: no layout:breakpoint event before any resize fires', async () => {

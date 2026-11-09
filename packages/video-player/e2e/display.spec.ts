@@ -77,7 +77,11 @@ test.describe('Aspect ratio', () => {
 			const before = p.aspect();
 			p.cycleAspectRatio();
 			const after = p.aspect();
-			return { before, after, different: before !== after };
+			return {
+				before,
+				after,
+				different: before !== after,
+			};
 		});
 		expect(result.different).toBe(true);
 	});

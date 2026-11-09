@@ -116,45 +116,45 @@ import { LocalStorageBackend } from '@nomercy-entertainment/nomercy-player-core/
 
 Full subpath table:
 
-| Subpath | What it exports |
-|---------|----------------|
-| `@nomercy-entertainment/nomercy-player-core/adapters/storage` | `IStorage`, `LocalStorageBackend`, `MemoryStorageBackend`, `IndexedDBBackend` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/stream` | `IStreamSource`, `IStreamRegistry`, `StreamRegistry` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/platform` | `IPlatform`, `browserPlatform`, `IWakeLock`, `INetworkMonitor`, `IVisibilityMonitor`, `ICapabilitiesProbe`, `IFullscreenController`, `IPipController` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/realtime` | `IRealtimeChannel`, `nativeWebSocketAdapter` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/translator` | `ITranslator`, `DefaultTranslator`, `createNetworkTranslationLoader`, `translationsFromGlob` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/language-matcher` | `ILanguageMatcher`, `bcp47FallbackChain` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/preload` | `IPreloadStrategy`, `ITransitionStrategy`, `DefaultPreloadStrategy`, `GaplessTransitionStrategy`, `CrossfadeTransitionStrategy` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/cue-parser` | `ICueParser`, `CueParserRegistry` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/subtitle-renderer` | `ISubtitleRenderer`, `buildSubtitleFragment` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/logger` | `ILogger`, `Logger` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/retry-policy` | `IRetryPolicy`, `DEFAULT_RETRY_POLICY` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/event-bus` | `IEventBus`, `EventEmitter` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/media-list` | `IMediaList`, `MediaList` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/lifecycle-registry` | `ILifecycleRegistry`, `LifecycleRegistry` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/fetch` | `IFetch`, `defaultFetch` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/clock` | `IClock` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/id-generator` | `IIdGenerator` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/element-factory` | `createElement`, `createButton`, `createSVG`, `addClasses`, `removeClasses`, `AddClasses`, `AppendTo`, `CreateElement` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/url-resolver` | `IUrlResolver` |
-| `@nomercy-entertainment/nomercy-player-core/plugins/audio-graph` | `AudioGraphPlugin`, `audioGraphPlugin` |
-| `@nomercy-entertainment/nomercy-player-core/plugins/canvas` | `CanvasPlugin`, `canvasPlugin` |
-| `@nomercy-entertainment/nomercy-player-core/plugins/cast-sender` | `CastSenderPlugin`, `castSenderPlugin` |
-| `@nomercy-entertainment/nomercy-player-core/plugins/embed` | `EmbedPlugin`, `embedPlugin` |
-| `@nomercy-entertainment/nomercy-player-core/plugins/equalizer` | `EqualizerPlugin`, `equalizerPlugin` |
-| `@nomercy-entertainment/nomercy-player-core/plugins/key-handler` | `KeyHandlerPlugin`, `keyHandlerPlugin` |
-| `@nomercy-entertainment/nomercy-player-core/plugins/media-session` | `MediaSessionPlugin`, `mediaSessionPlugin` |
-| `@nomercy-entertainment/nomercy-player-core/plugins/message` | `MessagePlugin`, `messagePlugin` |
-| `@nomercy-entertainment/nomercy-player-core/plugins/mixer` | `MixerPlugin`, `mixerPlugin` |
-| `@nomercy-entertainment/nomercy-player-core/plugins/spectrum` | `SpectrumPlugin`, `spectrumPlugin` |
-| `@nomercy-entertainment/nomercy-player-core/plugins/tab-leader` | `TabLeaderPlugin`, `tabLeaderPlugin` |
-| `@nomercy-entertainment/nomercy-player-core/plugins/visualization` | `VisualizationPlugin` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/cue-parser/vtt` | `parseVtt`, `parseVttSprite`, `parseVttSubtitles` |
-| `@nomercy-entertainment/nomercy-player-core/adapters/cue-parser/lrc` | `parseLrc` |
-| `@nomercy-entertainment/nomercy-player-core/streams/hls` | HLS stream source |
-| `@nomercy-entertainment/nomercy-player-core/streams/native` | Native stream source |
-| `@nomercy-entertainment/nomercy-player-core/testing` | Test helpers and mock adapters |
-| `@nomercy-entertainment/nomercy-player-core/vite-plugin` | Vite build plugin |
+| Subpath                                                                  | What it exports                                                                                                                                       |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@nomercy-entertainment/nomercy-player-core/adapters/storage`            | `IStorage`, `LocalStorageBackend`, `MemoryStorageBackend`, `IndexedDBBackend`                                                                         |
+| `@nomercy-entertainment/nomercy-player-core/adapters/stream`             | `IStreamSource`, `IStreamRegistry`, `StreamRegistry`                                                                                                  |
+| `@nomercy-entertainment/nomercy-player-core/adapters/platform`           | `IPlatform`, `browserPlatform`, `IWakeLock`, `INetworkMonitor`, `IVisibilityMonitor`, `ICapabilitiesProbe`, `IFullscreenController`, `IPipController` |
+| `@nomercy-entertainment/nomercy-player-core/adapters/realtime`           | `IRealtimeChannel`, `nativeWebSocketAdapter`                                                                                                          |
+| `@nomercy-entertainment/nomercy-player-core/adapters/translator`         | `ITranslator`, `DefaultTranslator`, `createNetworkTranslationLoader`, `translationsFromGlob`                                                          |
+| `@nomercy-entertainment/nomercy-player-core/adapters/language-matcher`   | `ILanguageMatcher`, `bcp47FallbackChain`                                                                                                              |
+| `@nomercy-entertainment/nomercy-player-core/adapters/preload`            | `IPreloadStrategy`, `ITransitionStrategy`, `DefaultPreloadStrategy`, `GaplessTransitionStrategy`, `CrossfadeTransitionStrategy`                       |
+| `@nomercy-entertainment/nomercy-player-core/adapters/cue-parser`         | `ICueParser`, `CueParserRegistry`                                                                                                                     |
+| `@nomercy-entertainment/nomercy-player-core/adapters/subtitle-renderer`  | `ISubtitleRenderer`, `buildSubtitleFragment`                                                                                                          |
+| `@nomercy-entertainment/nomercy-player-core/adapters/logger`             | `ILogger`, `Logger`                                                                                                                                   |
+| `@nomercy-entertainment/nomercy-player-core/adapters/retry-policy`       | `IRetryPolicy`, `DEFAULT_RETRY_POLICY`                                                                                                                |
+| `@nomercy-entertainment/nomercy-player-core/adapters/event-bus`          | `IEventBus`, `EventEmitter`                                                                                                                           |
+| `@nomercy-entertainment/nomercy-player-core/adapters/media-list`         | `IMediaList`, `MediaList`                                                                                                                             |
+| `@nomercy-entertainment/nomercy-player-core/adapters/lifecycle-registry` | `ILifecycleRegistry`, `LifecycleRegistry`                                                                                                             |
+| `@nomercy-entertainment/nomercy-player-core/adapters/fetch`              | `IFetch`, `defaultFetch`                                                                                                                              |
+| `@nomercy-entertainment/nomercy-player-core/adapters/clock`              | `IClock`                                                                                                                                              |
+| `@nomercy-entertainment/nomercy-player-core/adapters/id-generator`       | `IIdGenerator`                                                                                                                                        |
+| `@nomercy-entertainment/nomercy-player-core/adapters/element-factory`    | `createElement`, `createButton`, `createSVG`, `addClasses`, `removeClasses`, `AddClasses`, `AppendTo`, `CreateElement`                                |
+| `@nomercy-entertainment/nomercy-player-core/adapters/url-resolver`       | `IUrlResolver`                                                                                                                                        |
+| `@nomercy-entertainment/nomercy-player-core/plugins/audio-graph`         | `AudioGraphPlugin`, `audioGraphPlugin`                                                                                                                |
+| `@nomercy-entertainment/nomercy-player-core/plugins/canvas`              | `CanvasPlugin`, `canvasPlugin`                                                                                                                        |
+| `@nomercy-entertainment/nomercy-player-core/plugins/cast-sender`         | `CastSenderPlugin`, `castSenderPlugin`                                                                                                                |
+| `@nomercy-entertainment/nomercy-player-core/plugins/embed`               | `EmbedPlugin`, `embedPlugin`                                                                                                                          |
+| `@nomercy-entertainment/nomercy-player-core/plugins/equalizer`           | `EqualizerPlugin`, `equalizerPlugin`                                                                                                                  |
+| `@nomercy-entertainment/nomercy-player-core/plugins/key-handler`         | `KeyHandlerPlugin`, `keyHandlerPlugin`                                                                                                                |
+| `@nomercy-entertainment/nomercy-player-core/plugins/media-session`       | `MediaSessionPlugin`, `mediaSessionPlugin`                                                                                                            |
+| `@nomercy-entertainment/nomercy-player-core/plugins/message`             | `MessagePlugin`, `messagePlugin`                                                                                                                      |
+| `@nomercy-entertainment/nomercy-player-core/plugins/mixer`               | `MixerPlugin`, `mixerPlugin`                                                                                                                          |
+| `@nomercy-entertainment/nomercy-player-core/plugins/spectrum`            | `SpectrumPlugin`, `spectrumPlugin`                                                                                                                    |
+| `@nomercy-entertainment/nomercy-player-core/plugins/tab-leader`          | `TabLeaderPlugin`, `tabLeaderPlugin`                                                                                                                  |
+| `@nomercy-entertainment/nomercy-player-core/plugins/visualization`       | `VisualizationPlugin`                                                                                                                                 |
+| `@nomercy-entertainment/nomercy-player-core/adapters/cue-parser/vtt`     | `parseVtt`, `parseVttSprite`, `parseVttSubtitles`                                                                                                     |
+| `@nomercy-entertainment/nomercy-player-core/adapters/cue-parser/lrc`     | `parseLrc`                                                                                                                                            |
+| `@nomercy-entertainment/nomercy-player-core/streams/hls`                 | HLS stream source                                                                                                                                     |
+| `@nomercy-entertainment/nomercy-player-core/streams/native`              | Native stream source                                                                                                                                  |
+| `@nomercy-entertainment/nomercy-player-core/testing`                     | Test helpers and mock adapters                                                                                                                        |
+| `@nomercy-entertainment/nomercy-player-core/vite-plugin`                 | Vite build plugin                                                                                                                                     |
 
 ---
 
@@ -168,26 +168,26 @@ Core removed nothing: every kit-level export present in v1 continues to resolve 
 
 The 38 named ports are the primary extension surface. Each port is an interface you implement and inject via `setup()`.
 
-| Port group | What you can customize |
-|------------|----------------------|
-| `IStorage` | Where plugin state is persisted — localStorage, IndexedDB, remote API, memory |
-| `IPlatform` and sub-ports | Platform behaviour for native shells — Capacitor, Tauri, Electron — or custom fullscreen and PiP controllers |
-| `IRealtimeChannel` | WebSocket transport — swap for SignalR, Socket.IO, or a mock |
-| `ITranslator` / `ITranslationLoader` | i18n engine and where translation files come from |
-| `IPreloadStrategy` / `ITransitionStrategy` | When the next item preloads and how transitions between items play out |
-| `ICueParser` | Custom subtitle or lyric formats registered via `player.registerCueParser()` |
-| `ISubtitleRenderer` | How cues are rendered — DOM text, canvas, or a custom renderer |
-| `ILogger` | Log destination and filtering |
-| `IRetryPolicy` | Network retry timing and max-attempts |
-| `IClock` | Monotonic time source — swap for a server-synced clock in group-sync scenarios |
-| `IUrlResolver` | URL rewriting — CDN signing, auth params, proxy routing |
-| `IAudioBackend` (music, `./adapters/audio-backend`) | Audio element behaviour — web-audio or html5-audio, or a custom WS-backed backend |
-| `IPlaylistGenerator` (music, `./plugins/auto-advance`) | Queue ordering — linear, tag-aware shuffle, or server-driven |
-| `IScrobbler` (music, `./plugins/scrobble`) | Playback reporting — Last.fm, ListenBrainz, or custom |
-| `IVideoBackend` (video) | Video element behaviour — Html5VideoBackend or a custom MSE/WebCodecs backend |
-| `IThumbnailSource` (video) | Seek thumbnail frames — VTT sprite or a server-generated endpoint |
-| `IChapterSource` (video) | Chapter markers — VTT file or a server metadata endpoint |
-| `ISubtitleStyleStore` (video) | Subtitle style persistence — storage-backed or custom |
+| Port group                                             | What you can customize                                                                                       |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `IStorage`                                             | Where plugin state is persisted — localStorage, IndexedDB, remote API, memory                                |
+| `IPlatform` and sub-ports                              | Platform behaviour for native shells — Capacitor, Tauri, Electron — or custom fullscreen and PiP controllers |
+| `IRealtimeChannel`                                     | WebSocket transport — swap for SignalR, Socket.IO, or a mock                                                 |
+| `ITranslator` / `ITranslationLoader`                   | i18n engine and where translation files come from                                                            |
+| `IPreloadStrategy` / `ITransitionStrategy`             | When the next item preloads and how transitions between items play out                                       |
+| `ICueParser`                                           | Custom subtitle or lyric formats registered via `player.registerCueParser()`                                 |
+| `ISubtitleRenderer`                                    | How cues are rendered — DOM text, canvas, or a custom renderer                                               |
+| `ILogger`                                              | Log destination and filtering                                                                                |
+| `IRetryPolicy`                                         | Network retry timing and max-attempts                                                                        |
+| `IClock`                                               | Monotonic time source — swap for a server-synced clock in group-sync scenarios                               |
+| `IUrlResolver`                                         | URL rewriting — CDN signing, auth params, proxy routing                                                      |
+| `IAudioBackend` (music, `./adapters/audio-backend`)    | Audio element behaviour — web-audio or html5-audio, or a custom WS-backed backend                            |
+| `IPlaylistGenerator` (music, `./plugins/auto-advance`) | Queue ordering — linear, tag-aware shuffle, or server-driven                                                 |
+| `IScrobbler` (music, `./plugins/scrobble`)             | Playback reporting — Last.fm, ListenBrainz, or custom                                                        |
+| `IVideoBackend` (video)                                | Video element behaviour — Html5VideoBackend or a custom MSE/WebCodecs backend                                |
+| `IThumbnailSource` (video)                             | Seek thumbnail frames — VTT sprite or a server-generated endpoint                                            |
+| `IChapterSource` (video)                               | Chapter markers — VTT file or a server metadata endpoint                                                     |
+| `ISubtitleStyleStore` (video)                          | Subtitle style persistence — storage-backed or custom                                                        |
 
 ---
 
@@ -195,12 +195,12 @@ The 38 named ports are the primary extension surface. Each port is an interface 
 
 Understanding where code lives makes extension points obvious.
 
-| Layer | Package | Knows about |
-|-------|---------|-------------|
-| 1. Backend | `IVideoBackend` / `IAudioBackend` impls | `<video>` / `<audio>` / MediaSource / AudioContext / MediaKeys |
-| 2. Kit | `@nomercy-entertainment/nomercy-player-core` | Generic contracts only — zero NoMercy specifics |
-| 3. Per-library | `nomercy-video-player` / `nomercy-music-player` | Generic video and music behaviour — zero NoMercy specifics |
-| 4. Built-in plugin | Plugins inside kit and library packages | Domain-generic UI and features |
-| 5. Consumer plugin | App code / `nomercy-plugins/` | All NoMercy-specific glue — server endpoints, sync protocols, radio |
+| Layer              | Package                                         | Knows about                                                         |
+| ------------------ | ----------------------------------------------- | ------------------------------------------------------------------- |
+| 1. Backend         | `IVideoBackend` / `IAudioBackend` impls         | `<video>` / `<audio>` / MediaSource / AudioContext / MediaKeys      |
+| 2. Kit             | `@nomercy-entertainment/nomercy-player-core`    | Generic contracts only — zero NoMercy specifics                     |
+| 3. Per-library     | `nomercy-video-player` / `nomercy-music-player` | Generic video and music behaviour — zero NoMercy specifics          |
+| 4. Built-in plugin | Plugins inside kit and library packages         | Domain-generic UI and features                                      |
+| 5. Consumer plugin | App code / `nomercy-plugins/`                   | All NoMercy-specific glue — server endpoints, sync protocols, radio |
 
 Layers 1–4 have zero knowledge of NoMercy server endpoints, the NoMercy plugin system, or NoMercy Connect protocols. All of that lives at layer 5 in consumer plugins. This boundary is what makes it possible to use layers 2–4 independently of any NoMercy infrastructure.

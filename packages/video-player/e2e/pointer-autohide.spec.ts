@@ -44,7 +44,10 @@ async function loadFixture(page: import('@playwright/test').Page): Promise<void>
 	// backend.load() → play() so the inactivity timer arms.
 	await page.evaluate(() => {
 		(window as any).player.setup({
-			playlist: [{ id: 'autohide-src', file: '/e2e/media/sample.mp4' }],
+			playlist: [{
+				id: 'autohide-src',
+				file: '/e2e/media/sample.mp4',
+			}],
 			muted: true,
 			autoPlay: true,
 		});
@@ -76,8 +79,7 @@ async function loadFixture(page: import('@playwright/test').Page): Promise<void>
 
 function isActive(page: import('@playwright/test').Page): Promise<boolean> {
 	return page.evaluate(() =>
-		(window as any).player.container.classList.contains('active'),
-	);
+		(window as any).player.container.classList.contains('active'));
 }
 
 // ── tests ──────────────────────────────────────────────────────────────────────

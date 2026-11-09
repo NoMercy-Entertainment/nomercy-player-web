@@ -173,7 +173,13 @@ export function buildChapterMarkers(
 			onChapterClick(ch.index);
 		});
 
-		refs.push({ left, right, buffer, hover, progress });
+		refs.push({
+			left,
+			right,
+			buffer,
+			hover,
+			progress,
+		});
 	}
 
 	return refs;

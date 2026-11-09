@@ -17,7 +17,10 @@ export async function postGql<Data>(query: string, variables: object, clientId: 
 	const response = await fetch(GQL_URL, {
 		method: 'POST',
 		headers: { 'Client-Id': clientId },
-		body: JSON.stringify({ query, variables }),
+		body: JSON.stringify({
+			query,
+			variables,
+		}),
 		signal,
 	});
 	const { data }: { data?: Data } = await response.json();

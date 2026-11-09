@@ -22,7 +22,12 @@
 
 import type { IVideoPlayer, VideoPlayerConfig, VideoPlaylistItem } from '@nomercy-entertainment/nomercy-video-player';
 import type { ActivityState } from './activity';
-import type { MenuFrameRefs, MenuRenderState, SubMenuId, SubtitleMenuAction } from './menus';
+import type {
+	MenuFrameRefs,
+	MenuRenderState,
+	SubMenuId,
+	SubtitleMenuAction,
+} from './menus';
 import {
 	renderAspectRatioPane,
 	renderAudioPane,

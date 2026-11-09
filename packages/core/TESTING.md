@@ -48,11 +48,11 @@ describePlugin(PlaybackTrackerPlugin, (ctx) => {
 
 For every `it` block inside `describePlugin`:
 
-| Assertion | What it checks |
-|---|---|
-| `use()` completes | No throw during setup |
-| `dispose()` completes | No throw during teardown |
-| Zero listener leak | Listener count returns to baseline after `dispose()` |
+| Assertion             | What it checks                                       |
+| --------------------- | ---------------------------------------------------- |
+| `use()` completes     | No throw during setup                                |
+| `dispose()` completes | No throw during teardown                             |
+| Zero listener leak    | Listener count returns to baseline after `dispose()` |
 
 These three always run. You do not write them yourself.
 

@@ -39,7 +39,12 @@ function parseOffset(value: string | null): number {
 
 /** Builds a VOD source, adding the `v` prefix the SDK expects. */
 function video(id: string, start: string | null, length = 0): TwitchSource {
-	return { type: 'video', video: id.startsWith('v') ? id : `v${id}`, start: parseOffset(start), length };
+	return {
+		type: 'video',
+		video: id.startsWith('v') ? id : `v${id}`,
+		start: parseOffset(start),
+		length,
+	};
 }
 
 /** Reads `player.twitch.tv/?video=` and `?channel=` links. */
@@ -50,14 +55,24 @@ function parsePlayerUrl(url: URL): TwitchSource | undefined {
 
 	const channel = url.searchParams.get('channel');
 
-	return channel ? { type: 'channel', channel } : undefined;
+	return channel
+		? {
+				type: 'channel',
+				channel,
+			}
+		: undefined;
 }
 
 /** Reads `clips.twitch.tv/<slug>` and its `/embed?clip=` form. */
 function parseClipHostUrl(url: URL, path: readonly string[]): TwitchSource | undefined {
 	const slug = path[0] === 'embed' ? url.searchParams.get('clip') : path[0];
 
-	return slug ? { type: 'clip', slug } : undefined;
+	return slug
+		? {
+				type: 'clip',
+				slug,
+			}
+		: undefined;
 }
 
 /** Reads VOD, clip and channel links on the main site. */
@@ -66,10 +81,18 @@ function parseWebUrl(url: URL, path: readonly string[]): TwitchSource | undefine
 
 	if (first === 'videos' && second)
 		return video(second, url.searchParams.get('t'));
-	if (second === 'clip' && third)
-		return { type: 'clip', slug: third };
-	if (first && !second && !RESERVED_PATHS.has(first))
-		return { type: 'channel', channel: first };
+	if (second === 'clip' && third) {
+		return {
+			type: 'clip',
+			slug: third,
+		};
+	}
+	if (first && !second && !RESERVED_PATHS.has(first)) {
+		return {
+			type: 'channel',
+			channel: first,
+		};
+	}
 
 	return undefined;
 }

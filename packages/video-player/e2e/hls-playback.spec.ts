@@ -41,7 +41,10 @@ async function loadFixture(page: import('@playwright/test').Page): Promise<void>
 async function loadHls(page: import('@playwright/test').Page): Promise<void> {
 	await page.evaluate(() => {
 		(window as any).player.setup({
-			playlist: [{ id: 'hls-test', file: '/e2e/media/stream.m3u8' }],
+			playlist: [{
+				id: 'hls-test',
+				file: '/e2e/media/stream.m3u8',
+			}],
 			muted: true,
 			autoPlay: true,
 		});
@@ -81,7 +84,10 @@ test.describe('HLS playback advances', () => {
 				const t = (window as any).player.videoElement?.currentTime ?? 0;
 				return t > 0;
 			},
-			{ timeout: 8_000, polling: 100 },
+			{
+				timeout: 8_000,
+				polling: 100,
+			},
 		);
 
 		const currentTime = await page.evaluate(() => (window as any).player.videoElement.currentTime);

@@ -50,7 +50,22 @@ import type {
 } from '@nomercy-entertainment/nomercy-player-core';
 import type { BackendEventPayload, IVideoBackend, VideoBackendKind } from './adapters/video-backend/IVideoBackend';
 import type { SubtitleChoice } from './player/track-language-memory';
-import type { AudioTrackState, IVideoPlayer, PlayState, QualityState, RepeatState, SegmentBoundaryPayload, SegmentOptions, ShuffleState, Stretching, VideoEventMap, VideoPlayerConfig, VideoPlaylistItem, VideoRect, VolumeState } from './types';
+import type {
+	AudioTrackState,
+	IVideoPlayer,
+	PlayState,
+	QualityState,
+	RepeatState,
+	SegmentBoundaryPayload,
+	SegmentOptions,
+	ShuffleState,
+	Stretching,
+	VideoEventMap,
+	VideoPlayerConfig,
+	VideoPlaylistItem,
+	VideoRect,
+	VolumeState,
+} from './types';
 import {
 	bridgeBackendPlayState,
 	BrowserPolicyError,
@@ -70,7 +85,13 @@ import { VideoPreloadStrategy } from './player/preload';
 import { pickStartItem } from './player/start-selection';
 import { matchSubtitleTrack, SUBTITLES_OFF, TrackLanguageMemory } from './player/track-language-memory';
 import { titleTokenTranslations } from './plugins/desktop-ui/i18n/token-bundle';
-import { FullscreenState, paintedRect, PipState, SubtitleState, TheaterState } from './types';
+import {
+	FullscreenState,
+	paintedRect,
+	PipState,
+	SubtitleState,
+	TheaterState,
+} from './types';
 
 export type { IChapterSource } from './adapters/chapter-source/IChapterSource';
 export { VttChapterSource } from './adapters/chapter-source/vtt-chapters';
@@ -136,7 +157,12 @@ export {
 } from './types';
 
 export type { QualityLevel } from './types';
-export type { AudioTrack, Chapter, SidecarSubtitleInput, SubtitleTrack } from '@nomercy-entertainment/nomercy-player-core';
+export type {
+	AudioTrack,
+	Chapter,
+	SidecarSubtitleInput,
+	SubtitleTrack,
+} from '@nomercy-entertainment/nomercy-player-core';
 
 const _instances: Map<string, NMVideoPlayer<BasePlaylistItem>> = new Map();
 
@@ -757,7 +783,10 @@ export class NMVideoPlayer<T extends VideoPlaylistItem = VideoPlaylistItem>
 			if (this._phase === 'starting') {
 				const from = this._phase;
 				this._phase = 'playing';
-				this.emit('phase', { from, to: 'playing' });
+				this.emit('phase', {
+					from,
+					to: 'playing',
+				});
 			}
 			this.emit('firstFrame', undefined);
 		});
@@ -765,7 +794,10 @@ export class NMVideoPlayer<T extends VideoPlaylistItem = VideoPlaylistItem>
 			const from = this._phase;
 			if (from !== 'ended') {
 				this._phase = 'ended';
-				this.emit('phase', { from, to: 'ended' });
+				this.emit('phase', {
+					from,
+					to: 'ended',
+				});
 			}
 			this.emit('ended', undefined);
 		});
@@ -1161,7 +1193,11 @@ export class NMVideoPlayer<T extends VideoPlaylistItem = VideoPlaylistItem>
 				return;
 			}
 
-			const payload: SegmentBoundaryPayload = { startSec, endSec, onEnd };
+			const payload: SegmentBoundaryPayload = {
+				startSec,
+				endSec,
+				onEnd,
+			};
 
 			this.emit('segmentBoundary', payload);
 
@@ -1457,7 +1493,10 @@ composeMixins(NMVideoPlayer.prototype, ...playerCoreMethods);
 				// "preselected" item 0 and resume never ran.
 				const preselected = this._currentEpoch ? this.item() : undefined;
 				if (preselected) {
-					this.item(preselected, { autoplay: wantsAutoplay, source: 'auto-play' });
+					this.item(preselected, {
+						autoplay: wantsAutoplay,
+						source: 'auto-play',
+					});
 					return;
 				}
 
@@ -1466,7 +1505,11 @@ composeMixins(NMVideoPlayer.prototype, ...playerCoreMethods);
 				// old firstFrame-then-seek approach downloaded and decoded
 				// the start of the stream just to discard it.
 				const { index, resumeTime } = pickStartItem(items);
-				this.item(index, { autoplay: wantsAutoplay, source: 'auto-play', startAt: resumeTime });
+				this.item(index, {
+					autoplay: wantsAutoplay,
+					source: 'auto-play',
+					startAt: resumeTime,
+				});
 			})
 			.catch(() => { /* setup failed — error surfaced via the 'error' event */ });
 

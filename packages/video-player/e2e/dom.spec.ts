@@ -102,8 +102,14 @@ test.describe('Localization', () => {
 		const result = await page.evaluate(() => {
 			const p = (window as any).player;
 			p.addTranslations([
-				{ key: 'play', value: 'Reproducir' },
-				{ key: 'pause', value: 'Pausa' },
+				{
+					key: 'play',
+					value: 'Reproducir',
+				},
+				{
+					key: 'pause',
+					value: 'Pausa',
+				},
 			]);
 			return {
 				play: p.localize('play'),

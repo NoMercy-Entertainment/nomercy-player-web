@@ -66,7 +66,10 @@ export const transportStateMethods = {
 		const ranges = this.player.seekable?.();
 		if (!ranges || ranges.length === 0)
 			return null;
-		return { start: ranges.start(0), end: ranges.end(ranges.length - 1) };
+		return {
+			start: ranges.start(0),
+			end: ranges.end(ranges.length - 1),
+		};
 	},
 
 	applyLive(this: DesktopUiInternals): void {

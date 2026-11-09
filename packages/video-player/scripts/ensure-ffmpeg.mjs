@@ -22,7 +22,12 @@
  * Usage: `const ffmpeg = await ensureFfmpeg()` then spawn `ffmpeg` with args.
  */
 import { spawnSync } from 'node:child_process';
-import { createWriteStream, existsSync, mkdirSync, rmSync } from 'node:fs';
+import {
+	createWriteStream,
+	existsSync,
+	mkdirSync,
+	rmSync,
+} from 'node:fs';
 import { chmod } from 'node:fs/promises';
 import { arch, platform } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -40,16 +45,41 @@ const cacheDir = join(here, '..', '.cache', 'ffmpeg', FFMPEG_VERSION);
 function resolvePlatformSlug() {
 	const os = platform();
 	const cpu = arch();
-	if (os === 'win32' && cpu === 'x64')
-		return { slug: 'windows-x86_64', ext: 'zip', exe: 'ffmpeg.exe' };
-	if (os === 'linux' && cpu === 'x64')
-		return { slug: 'linux-x86_64', ext: 'tar.gz', exe: 'ffmpeg' };
-	if (os === 'linux' && cpu === 'arm64')
-		return { slug: 'linux-aarch64', ext: 'tar.gz', exe: 'ffmpeg' };
-	if (os === 'darwin' && cpu === 'arm64')
-		return { slug: 'darwin-arm64', ext: 'tar.gz', exe: 'ffmpeg' };
-	if (os === 'darwin' && cpu === 'x64')
-		return { slug: 'darwin-x86_64', ext: 'tar.gz', exe: 'ffmpeg' };
+	if (os === 'win32' && cpu === 'x64') {
+		return {
+			slug: 'windows-x86_64',
+			ext: 'zip',
+			exe: 'ffmpeg.exe',
+		};
+	}
+	if (os === 'linux' && cpu === 'x64') {
+		return {
+			slug: 'linux-x86_64',
+			ext: 'tar.gz',
+			exe: 'ffmpeg',
+		};
+	}
+	if (os === 'linux' && cpu === 'arm64') {
+		return {
+			slug: 'linux-aarch64',
+			ext: 'tar.gz',
+			exe: 'ffmpeg',
+		};
+	}
+	if (os === 'darwin' && cpu === 'arm64') {
+		return {
+			slug: 'darwin-arm64',
+			ext: 'tar.gz',
+			exe: 'ffmpeg',
+		};
+	}
+	if (os === 'darwin' && cpu === 'x64') {
+		return {
+			slug: 'darwin-x86_64',
+			ext: 'tar.gz',
+			exe: 'ffmpeg',
+		};
+	}
 	throw new Error(`No NoMercy ffmpeg artifact for ${os}/${cpu}. Set NOMERCY_FFMPEG to a binary path.`);
 }
 

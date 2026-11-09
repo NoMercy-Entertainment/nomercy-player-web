@@ -135,7 +135,10 @@ export class LiveTranscodingPlugin<T extends VideoPlaylistItem = VideoPlaylistIt
 		switch (msg.type) {
 			case 'started':
 				this.currentJobId = msg.jobId ?? this.currentJobId;
-				this.emit('job:started', { jobId: this.currentJobId ?? '', sourceUrl: String(msg.sourceUrl ?? '') });
+				this.emit('job:started', {
+					jobId: this.currentJobId ?? '',
+					sourceUrl: String(msg.sourceUrl ?? ''),
+				});
 				break;
 			case 'progress':
 				if (typeof msg.transcodedSeconds === 'number') {

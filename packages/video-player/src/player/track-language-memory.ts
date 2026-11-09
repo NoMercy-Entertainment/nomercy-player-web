@@ -104,7 +104,14 @@ export interface SubtitleDescriptor {
 }
 
 function descriptorOf(track: SubtitleTrack): SubtitleDescriptor | null {
-	return track.language ? { language: track.language, type: track.type, format: formatOf(track), explicit: true } : null;
+	return track.language
+		? {
+				language: track.language,
+				type: track.type,
+				format: formatOf(track),
+				explicit: true,
+			}
+		: null;
 }
 
 /** The file's format, taken from its URL — the manifest does not carry one. */

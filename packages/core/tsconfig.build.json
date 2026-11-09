@@ -1,10 +1,3 @@
 {
-	"extends": "./tsconfig.json",
-	"compilerOptions": {
-		"stripInternal": true
-	},
-	"tsc-alias": {
-		"resolveFullPaths": true
-	},
-	"exclude": ["dist", "node_modules", "**/__tests__/**"]
+	"extends": ["./tsconfig.json", "../../tsconfig.build.base.json"]
 }

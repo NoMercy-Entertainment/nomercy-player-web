@@ -133,9 +133,16 @@ export class TwitchPlugin extends Plugin<NMVideoPlayer, TwitchPluginOptions, Twi
 		const stream = await lookUpLiveStream(channel, this.opts?.clientId, this.abortable().signal);
 
 		if (!stream) {
-			this.announceChannelGone({ channel, reason: 'offline' });
+			this.announceChannelGone({
+				channel,
+				reason: 'offline',
+			});
 
-			return this.throw({ code: 'plugin:twitch/stream-unavailable', message: 'Twitch has no stream for this link', context: { channel } });
+			return this.throw({
+				code: 'plugin:twitch/stream-unavailable',
+				message: 'Twitch has no stream for this link',
+				context: { channel },
+			});
 		}
 
 		this.rawChannel = channel;
@@ -155,8 +162,12 @@ export class TwitchPlugin extends Plugin<NMVideoPlayer, TwitchPluginOptions, Twi
 	}
 
 	private announceRawStreamEnd(): void {
-		if (this.rawChannel)
-			this.announceChannelGone({ channel: this.rawChannel, reason: 'stream-ended' });
+		if (this.rawChannel) {
+			this.announceChannelGone({
+				channel: this.rawChannel,
+				reason: 'stream-ended',
+			});
+		}
 
 		this.rawChannel = undefined;
 	}
@@ -197,10 +208,17 @@ export class TwitchPlugin extends Plugin<NMVideoPlayer, TwitchPluginOptions, Twi
 		try {
 			item.title = await lookUpTitle(source, this.opts?.clientId, this.abortable().signal) ?? item.title;
 			// eslint-disable-next-line player/no-raw-player-bus -- the UI drew this item before its title was known, and only `item` redraws it.
-			this.player.emit('item', { item, index: this.itemIndex });
+			this.player.emit('item', {
+				item,
+				index: this.itemIndex,
+			});
 		}
 		catch (cause) {
-			this.report({ code: 'plugin:twitch/title-unavailable', message: 'The Twitch title lookup failed', cause });
+			this.report({
+				code: 'plugin:twitch/title-unavailable',
+				message: 'The Twitch title lookup failed',
+				cause,
+			});
 		}
 	}
 
@@ -209,7 +227,10 @@ export class TwitchPlugin extends Plugin<NMVideoPlayer, TwitchPluginOptions, Twi
 		const key = reason === 'offline' ? 'offline' : 'ended';
 
 		// eslint-disable-next-line player/no-raw-player-bus -- display-message is the player's own message event, as in key-handler.
-		this.player.emit('display-message', { text: this.t(`channel.${key}`, { channel }), ms: MESSAGE_MS });
+		this.player.emit('display-message', {
+			text: this.t(`channel.${key}`, { channel }),
+			ms: MESSAGE_MS,
+		});
 		this.emit(`channel:${key}`, { channel });
 	}
 
@@ -225,7 +246,11 @@ export class TwitchPlugin extends Plugin<NMVideoPlayer, TwitchPluginOptions, Twi
 			});
 		}
 
-		this.emit('clip:resolved', { slug, title: clip.title, duration: clip.duration });
+		this.emit('clip:resolved', {
+			slug,
+			title: clip.title,
+			duration: clip.duration,
+		});
 
 		return clip.url;
 	}

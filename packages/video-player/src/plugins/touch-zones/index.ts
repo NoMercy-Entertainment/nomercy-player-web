@@ -200,16 +200,88 @@ export class TouchZonesPlugin<T extends VideoPlaylistItem = VideoPlaylistItem> e
 		}
 
 		if (this._isMobile) {
-			this.buildSeekBack(this.root, { x: { start: 1, end: 2 }, y: { start: 2, end: 7 } });
-			this.buildPlayback(this.root, { x: { start: 2, end: 3 }, y: { start: 3, end: 6 } });
-			this.buildSeekForward(this.root, { x: { start: 3, end: 4 }, y: { start: 2, end: 7 } });
-			this.buildVolUp(this.root, { x: { start: 2, end: 3 }, y: { start: 1, end: 3 } });
-			this.buildVolDown(this.root, { x: { start: 2, end: 3 }, y: { start: 5, end: 7 } });
+			this.buildSeekBack(this.root, {
+				x: {
+					start: 1,
+					end: 2,
+				},
+				y: {
+					start: 2,
+					end: 7,
+				},
+			});
+			this.buildPlayback(this.root, {
+				x: {
+					start: 2,
+					end: 3,
+				},
+				y: {
+					start: 3,
+					end: 6,
+				},
+			});
+			this.buildSeekForward(this.root, {
+				x: {
+					start: 3,
+					end: 4,
+				},
+				y: {
+					start: 2,
+					end: 7,
+				},
+			});
+			this.buildVolUp(this.root, {
+				x: {
+					start: 2,
+					end: 3,
+				},
+				y: {
+					start: 1,
+					end: 3,
+				},
+			});
+			this.buildVolDown(this.root, {
+				x: {
+					start: 2,
+					end: 3,
+				},
+				y: {
+					start: 5,
+					end: 7,
+				},
+			});
 		}
 		else {
-			this.buildSeekBack(this.root, { x: { start: 1, end: 2 }, y: { start: 1, end: 7 } });
-			this.buildPlayback(this.root, { x: { start: 2, end: 3 }, y: { start: 1, end: 7 } });
-			this.buildSeekForward(this.root, { x: { start: 3, end: 4 }, y: { start: 1, end: 7 } });
+			this.buildSeekBack(this.root, {
+				x: {
+					start: 1,
+					end: 2,
+				},
+				y: {
+					start: 1,
+					end: 7,
+				},
+			});
+			this.buildPlayback(this.root, {
+				x: {
+					start: 2,
+					end: 3,
+				},
+				y: {
+					start: 1,
+					end: 7,
+				},
+			});
+			this.buildSeekForward(this.root, {
+				x: {
+					start: 3,
+					end: 4,
+				},
+				y: {
+					start: 1,
+					end: 7,
+				},
+			});
 		}
 	}
 

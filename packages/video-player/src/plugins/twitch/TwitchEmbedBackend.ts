@@ -152,7 +152,11 @@ export class TwitchEmbedBackend extends MediaElementBackend<HTMLVideoElement, Ba
 		this.container = container;
 		container.append(this.element, this.mount);
 		this.menuWatcher = new MutationObserver(() => this.makeRoomForMenu());
-		this.menuWatcher.observe(container, { attributes: true, attributeFilter: ['class'], subtree: true });
+		this.menuWatcher.observe(container, {
+			attributes: true,
+			attributeFilter: ['class'],
+			subtree: true,
+		});
 	}
 
 	/** Twitch pauses when anything covers the embed, so it shrinks to sit between the visible control bars. */
@@ -187,7 +191,12 @@ export class TwitchEmbedBackend extends MediaElementBackend<HTMLVideoElement, Ba
 			return;
 
 		const player = new sdk.Player(this.mount, {
-			...(source.type === 'video' ? { video: source.video, time: clockParam(source.start) } : { channel: source.channel }),
+			...(source.type === 'video'
+				? {
+						video: source.video,
+						time: clockParam(source.start),
+					}
+				: { channel: source.channel }),
 			width: '100%',
 			height: '100%',
 			autoplay: true,
@@ -298,7 +307,13 @@ export class TwitchEmbedBackend extends MediaElementBackend<HTMLVideoElement, Ba
 	/** Twitch draws its own captions inside the embed and never lists them, so one on/off track stands for them. */
 	subtitleTracks(): SubtitleTrack[] {
 		return this.player
-			? [{ id: 'twitch-captions', label: this.captionsLabel(), kind: 'captions', url: '', default: false }]
+			? [{
+					id: 'twitch-captions',
+					label: this.captionsLabel(),
+					kind: 'captions',
+					url: '',
+					default: false,
+				}]
 			: [];
 	}
 
@@ -312,7 +327,18 @@ export class TwitchEmbedBackend extends MediaElementBackend<HTMLVideoElement, Ba
 
 	/** The renditions Twitch offers, tallest first. */
 	qualityLevels(): QualityLevel[] {
-		return this.renditions().map(({ name, height, width, bitrate }, index) => ({ index, label: name, height, width, bitrate }));
+		return this.renditions().map(({
+			name,
+			height,
+			width,
+			bitrate,
+		}, index) => ({
+			index,
+			label: name,
+			height,
+			width,
+			bitrate,
+		}));
 	}
 
 	/** Holds one rendition. `auto` means the highest, because Twitch's own auto drops to a blurry one. */
@@ -360,7 +386,10 @@ export class TwitchEmbedBackend extends MediaElementBackend<HTMLVideoElement, Ba
 			return;
 
 		this.endedOnce = true;
-		this.onChannelGone?.({ channel: this.channel, reason: this.hasPlayed ? 'stream-ended' : 'offline' });
+		this.onChannelGone?.({
+			channel: this.channel,
+			reason: this.hasPlayed ? 'stream-ended' : 'offline',
+		});
 		this.unload();
 		this.signal('ended');
 	}
@@ -416,7 +445,11 @@ export class TwitchEmbedBackend extends MediaElementBackend<HTMLVideoElement, Ba
 			return;
 
 		this.reportedDuration = duration;
-		this.emit('loadedmetadata', { url: this.loadedUrl, kind: this.kind, duration });
+		this.emit('loadedmetadata', {
+			url: this.loadedUrl,
+			kind: this.kind,
+			duration,
+		});
 	}
 
 	private tick(): void {

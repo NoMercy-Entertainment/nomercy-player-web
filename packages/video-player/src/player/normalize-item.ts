@@ -17,7 +17,12 @@
  */
 
 import type { BasePlaylistItem } from '@nomercy-entertainment/nomercy-player-core';
-import type { ChapterRef, FontTrackRef, VideoPlaylistItem, WatchProgress } from '../types';
+import type {
+	ChapterRef,
+	FontTrackRef,
+	VideoPlaylistItem,
+	WatchProgress,
+} from '../types';
 import { parseDurationSeconds } from '@nomercy-entertainment/nomercy-player-core';
 
 export interface LegacyTrackEntry {
@@ -119,7 +124,10 @@ function normalizeTracks(tracks: LegacyTrackEntry[] | undefined): LegacyTrackEnt
 	if (!tracks)
 		return undefined;
 	return tracks.map(track => track.kind === 'subtitles' && track.type === undefined
-		? { ...track, type: track.label }
+		? {
+				...track,
+				type: track.label,
+			}
 		: track);
 }
 

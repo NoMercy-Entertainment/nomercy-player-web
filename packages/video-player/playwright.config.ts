@@ -6,22 +6,6 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
-import { defineConfig } from '@playwright/test';
+import { playerPlaywrightConfig } from '../../config/playwright';
 
-export default defineConfig({
-	testDir: 'e2e',
-	timeout: 30_000,
-	// Self-hosted CI runners are shared; fewer workers and one retry there only.
-	workers: process.env.CI ? 2 : undefined,
-	retries: process.env.CI ? 1 : 0,
-	reporter: [['html', { outputFolder: 'reports/playwright' }]],
-	use: {
-		baseURL: 'http://localhost:5503',
-		headless: true,
-	},
-	webServer: {
-		command: 'yarn vite --port 5503 --force',
-		port: 5503,
-		reuseExistingServer: !process.env.CI,
-	},
-});
+export default playerPlaywrightConfig({ port: 5503 });

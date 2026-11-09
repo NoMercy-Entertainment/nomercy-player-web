@@ -29,7 +29,13 @@
  * former `static readonly` members on the plugin class.
  */
 
-import type { Breakpoint, ButtonPriorityList, DesktopUiButtonOptions, DesktopUiOptions, LayoutBreakpointPayload } from '../index';
+import type {
+	Breakpoint,
+	ButtonPriorityList,
+	DesktopUiButtonOptions,
+	DesktopUiOptions,
+	LayoutBreakpointPayload,
+} from '../index';
 
 // ── Re-exported constants (previously static class members) ───────────────────
 
@@ -98,11 +104,31 @@ export const DEFAULT_PRIORITY: ButtonPriorityList = [
  * - xl (> 1024): all buttons visible
  */
 export const DEFAULT_BREAKPOINTS: ReadonlyArray<Breakpoint> = [
-	{ name: 'xs', maxWidth: 320, hideAfterRank: 1 },
-	{ name: 'sm', maxWidth: 480, hideAfterRank: 4 },
-	{ name: 'md', maxWidth: 720, hideAfterRank: 8 },
-	{ name: 'lg', maxWidth: 1024, hideAfterRank: 13 },
-	{ name: 'xl', maxWidth: Infinity, hideAfterRank: Infinity },
+	{
+		name: 'xs',
+		maxWidth: 320,
+		hideAfterRank: 1,
+	},
+	{
+		name: 'sm',
+		maxWidth: 480,
+		hideAfterRank: 4,
+	},
+	{
+		name: 'md',
+		maxWidth: 720,
+		hideAfterRank: 8,
+	},
+	{
+		name: 'lg',
+		maxWidth: 1024,
+		hideAfterRank: 13,
+	},
+	{
+		name: 'xl',
+		maxWidth: Infinity,
+		hideAfterRank: Infinity,
+	},
 ];
 
 // ── Mutable state bag ─────────────────────────────────────────────────────────
@@ -162,11 +188,31 @@ export function resolveBreakpoints(opts: DesktopUiOptions | undefined): Readonly
 	const stages = opts?.collapseStages;
 	if (stages) {
 		return [
-			{ name: 'xs', maxWidth: 320, hideAfterRank: 1 },
-			{ name: 'sm', maxWidth: 480, hideAfterRank: stages[0] },
-			{ name: 'md', maxWidth: 720, hideAfterRank: stages[1] },
-			{ name: 'lg', maxWidth: 1024, hideAfterRank: stages[2] },
-			{ name: 'xl', maxWidth: Infinity, hideAfterRank: Infinity },
+			{
+				name: 'xs',
+				maxWidth: 320,
+				hideAfterRank: 1,
+			},
+			{
+				name: 'sm',
+				maxWidth: 480,
+				hideAfterRank: stages[0],
+			},
+			{
+				name: 'md',
+				maxWidth: 720,
+				hideAfterRank: stages[1],
+			},
+			{
+				name: 'lg',
+				maxWidth: 1024,
+				hideAfterRank: stages[2],
+			},
+			{
+				name: 'xl',
+				maxWidth: Infinity,
+				hideAfterRank: Infinity,
+			},
 		];
 	}
 

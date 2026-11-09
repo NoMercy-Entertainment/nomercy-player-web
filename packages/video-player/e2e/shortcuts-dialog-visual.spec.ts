@@ -38,8 +38,7 @@ test.describe('DesktopUiPlugin — keybinds dialog CSS (no @media gate)', () => 
 		await expect(overlay).toBeVisible();
 
 		const bg = await overlay.evaluate((el: HTMLElement) =>
-			window.getComputedStyle(el).backgroundColor,
-		);
+			window.getComputedStyle(el).backgroundColor);
 		expect(bg, 'scrim rgba(0,0,0,0.85) must be applied — not trapped behind @media (hover:none)')
 			.not
 			.toBe('rgba(0, 0, 0, 0)');
@@ -51,8 +50,7 @@ test.describe('DesktopUiPlugin — keybinds dialog CSS (no @media gate)', () => 
 		await expect(card).toBeVisible();
 
 		const bg = await card.evaluate((el: HTMLElement) =>
-			window.getComputedStyle(el).backgroundColor,
-		);
+			window.getComputedStyle(el).backgroundColor);
 		expect(bg, 'card dark background must be applied').not.toBe('rgba(0, 0, 0, 0)');
 		expect(bg).not.toBe('transparent');
 	});
@@ -62,8 +60,7 @@ test.describe('DesktopUiPlugin — keybinds dialog CSS (no @media gate)', () => 
 		await expect(grid).toBeVisible();
 
 		const columns = await grid.evaluate((el: HTMLElement) =>
-			window.getComputedStyle(el).gridTemplateColumns,
-		);
+			window.getComputedStyle(el).gridTemplateColumns);
 		const colCount = columns.trim().split(/\s+/).length;
 		expect(colCount, 'keybinds-grid must have 3 columns').toBe(3);
 	});
@@ -73,8 +70,7 @@ test.describe('DesktopUiPlugin — keybinds dialog CSS (no @media gate)', () => 
 		await expect(kbd).toBeVisible();
 
 		const bg = await kbd.evaluate((el: HTMLElement) =>
-			window.getComputedStyle(el).backgroundColor,
-		);
+			window.getComputedStyle(el).backgroundColor);
 		expect(bg, 'kbd keys must have styled background').not.toBe('rgba(0, 0, 0, 0)');
 		expect(bg).not.toBe('transparent');
 	});

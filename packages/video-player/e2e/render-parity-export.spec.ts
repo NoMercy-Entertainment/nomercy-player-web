@@ -59,7 +59,10 @@ test('export what the web chrome renders at each breakpoint', async ({ page }) =
 	// run of this export found nothing at all and still passed.
 	await page.evaluate(() => {
 		(window as any).player.setup({
-			playlist: [{ id: 'render-parity', file: '/e2e/media/sample.mp4' }],
+			playlist: [{
+				id: 'render-parity',
+				file: '/e2e/media/sample.mp4',
+			}],
 			muted: true,
 			autoPlay: false,
 		});
@@ -77,7 +80,10 @@ test('export what the web chrome renders at each breakpoint', async ({ page }) =
 	// no such step. Orientation was the variable being measured, and width was
 	// along for the ride.
 	for (const width of WIDTHS) {
-		await page.setViewportSize({ width, height: Math.round((width * 9) / 16) });
+		await page.setViewportSize({
+			width,
+			height: Math.round((width * 9) / 16),
+		});
 
 		// The player is a fixed-size div in the fixture, so it has to be told to
 		// fill the viewport or every width samples the same 640px layout — which
@@ -143,8 +149,15 @@ test('export what the web chrome renders at each breakpoint', async ({ page }) =
 				// rather than dropped, so the row count stays the same at every
 				// width and a missing control is distinguishable from a control
 				// this export forgot to look for.
-				if (!el)
-					return [{ id: name, visible: false, disabled: false, contentHidden: false, x: -1 }];
+				if (!el) {
+					return [{
+						id: name,
+						visible: false,
+						disabled: false,
+						contentHidden: false,
+						x: -1,
+					}];
+				}
 
 				const box = el.getBoundingClientRect();
 				return [{
@@ -168,7 +181,10 @@ test('export what the web chrome renders at each breakpoint', async ({ page }) =
 	// One portrait sample, wide enough that nothing is dropped for want of room,
 	// so the row records the orientation rule on its own rather than tangled
 	// with the fit rule.
-	await page.setViewportSize({ width: 900, height: 1600 });
+	await page.setViewportSize({
+		width: 900,
+		height: 1600,
+	});
 	await page.evaluate(() => {
 		const el = document.getElementById('player');
 		if (el) {

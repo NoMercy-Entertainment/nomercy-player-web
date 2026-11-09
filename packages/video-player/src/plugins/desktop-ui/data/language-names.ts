@@ -36,7 +36,10 @@ export function languageDisplayName(code: string | undefined, locale: string): s
 		return null;
 	const bcp47 = ISO3_QUIRKS[code] ?? code;
 	try {
-		const name = new Intl.DisplayNames([locale, 'en'], { type: 'language', fallback: 'none' }).of(bcp47);
+		const name = new Intl.DisplayNames([locale, 'en'], {
+			type: 'language',
+			fallback: 'none',
+		}).of(bcp47);
 		// Intl echoes unrecognised tags back unchanged — treat that as a miss.
 		return (name && name !== bcp47 && name !== code) ? name : null;
 	}

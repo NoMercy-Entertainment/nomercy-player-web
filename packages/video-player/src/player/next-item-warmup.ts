@@ -78,9 +78,10 @@ export class NextItemWarmup {
 			if (generation !== this._generation)
 				return;
 			await backend.warm?.(url, { segments });
-		}).catch(() => {
+		})
+			.catch(() => {
 			// Warming is an optimization: a failure leaves the normal load path untouched.
-		});
+			});
 	}
 
 	/** The cursor moved. Warm data for the item that just became current is kept for its `load()`; anything else is dropped. */

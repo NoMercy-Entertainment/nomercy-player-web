@@ -105,7 +105,10 @@ export async function loadSpriteSet(vttUrl: string, fetchers?: SpriteFetchers): 
 		const resolvedUrl = fetchers?.fetchImageUrl ? await fetchers.fetchImageUrl(rawUrl) : null;
 		const spriteUrl = resolvedUrl ?? rawUrl;
 		await preloadImage(spriteUrl);
-		return { cues, spriteUrl };
+		return {
+			cues,
+			spriteUrl,
+		};
 	}
 	catch {
 		return null;

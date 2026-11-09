@@ -50,7 +50,10 @@ async function loadFixture(page: import('@playwright/test').Page): Promise<void>
 
 	await page.evaluate(() => {
 		(window as any).player.setup({
-			playlist: [{ id: 'checkmark-src', file: '/e2e/media/sample.mp4' }],
+			playlist: [{
+				id: 'checkmark-src',
+				file: '/e2e/media/sample.mp4',
+			}],
 			muted: true,
 			autoPlay: false,
 		});
@@ -86,7 +89,8 @@ test.describe('Render: speed menu checkmark on active row', () => {
 		await loadFixture(page);
 
 		// Speed button must be visible — skip if it is not in the button set.
-		const settingsBtnVisible = await page.locator('[id="settings"]').isVisible().catch(() => false);
+		const settingsBtnVisible = await page.locator('[id="settings"]').isVisible()
+			.catch(() => false);
 		if (!settingsBtnVisible) {
 			test.skip();
 			return;
@@ -134,7 +138,8 @@ test.describe('Render: speed menu checkmark on active row', () => {
 	test('clicking a different speed row moves .is-active to that row', async ({ page }) => {
 		await loadFixture(page);
 
-		const settingsBtnVisible = await page.locator('[id="settings"]').isVisible().catch(() => false);
+		const settingsBtnVisible = await page.locator('[id="settings"]').isVisible()
+			.catch(() => false);
 		if (!settingsBtnVisible) {
 			test.skip();
 			return;
@@ -165,7 +170,8 @@ test.describe('Render: aspect-ratio menu checkmark on active row', () => {
 	test('active aspect-ratio row has checkmark SVG; uniform is default active', async ({ page }) => {
 		await loadFixture(page);
 
-		const settingsBtnVisible = await page.locator('[id="settings"]').isVisible().catch(() => false);
+		const settingsBtnVisible = await page.locator('[id="settings"]').isVisible()
+			.catch(() => false);
 		if (!settingsBtnVisible) {
 			test.skip();
 			return;
@@ -199,7 +205,8 @@ test.describe('Render: aspect-ratio menu checkmark on active row', () => {
 	test('selecting "fill" moves checkmark to the fill row', async ({ page }) => {
 		await loadFixture(page);
 
-		const settingsBtnVisible = await page.locator('[id="settings"]').isVisible().catch(() => false);
+		const settingsBtnVisible = await page.locator('[id="settings"]').isVisible()
+			.catch(() => false);
 		if (!settingsBtnVisible) {
 			test.skip();
 			return;

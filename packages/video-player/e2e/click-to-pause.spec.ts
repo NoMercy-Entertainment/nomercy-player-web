@@ -42,7 +42,10 @@ async function loadFixture(page: Page, config: Record<string, unknown>): Promise
 
 	await page.evaluate((playerConfig) => {
 		(window as any).player.setup({
-			playlist: [{ id: 'click-src', file: '/e2e/media/sample.mp4' }],
+			playlist: [{
+				id: 'click-src',
+				file: '/e2e/media/sample.mp4',
+			}],
 			muted: true,
 			autoPlay: true,
 			...playerConfig,
@@ -108,7 +111,10 @@ async function loadWithTouchZones(page: Page, config: Record<string, unknown>): 
 		(window as any).player.addPlugin(mod.TouchZonesPlugin, { doubleTapThreshold: 300 });
 
 		(window as any).player.setup({
-			playlist: [{ id: 'tap-src', file: '/e2e/media/sample.mp4' }],
+			playlist: [{
+				id: 'tap-src',
+				file: '/e2e/media/sample.mp4',
+			}],
 			muted: true,
 			autoPlay: true,
 			...playerConfig,
@@ -141,7 +147,12 @@ async function tapTheCenterZone(page: Page): Promise<void> {
 			return null;
 
 		const rect = center.getBoundingClientRect();
-		return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+		return {
+			x: rect.x,
+			y: rect.y,
+			width: rect.width,
+			height: rect.height,
+		};
 	});
 
 	expect(box, 'center touch zone (grid column 2/3) must exist').not.toBeNull();

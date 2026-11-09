@@ -6622,6 +6622,16 @@ __metadata:
 "nomercy-player-web@workspace:.":
   version: 0.0.0-use.local
   resolution: "nomercy-player-web@workspace:."
+  dependencies:
+    "@antfu/eslint-config": "npm:^9.0.0"
+    "@nomercy-entertainment/eslint-plugin-player": "workspace:*"
+    "@playwright/test": "npm:^1.60.0"
+    "@types/node": "npm:^25.9.0"
+    eslint: "npm:^10.4.0"
+    eslint-plugin-format: "npm:^2.0.1"
+    typescript: "npm:^6.0.3"
+    vite: "npm:^8.0.13"
+    vitest: "npm:^4.1.11"
   languageName: unknown
   linkType: soft
 

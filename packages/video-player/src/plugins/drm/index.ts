@@ -93,7 +93,10 @@ export class DrmPlugin<T extends VideoPlaylistItem = VideoPlaylistItem> extends 
 			throw new DrmError({
 				code: 'core:drm/license-url-missing',
 				severity: 'error',
-				scope: { kind: 'plugin', id: DrmPlugin.id },
+				scope: {
+					kind: 'plugin',
+					id: DrmPlugin.id,
+				},
 				message: 'DrmPlugin: licenseUrl is required.',
 				suggestion: 'Pass `licenseUrl` to addPlugin(DrmPlugin, { licenseUrl: \'https://...\' }).',
 			});
@@ -106,7 +109,10 @@ export class DrmPlugin<T extends VideoPlaylistItem = VideoPlaylistItem> extends 
 		// the signer, and forward the signer's URL + headers to the kit fetch
 		// helper. License servers expect POST with the challenge as the body.
 		if (this.opts?.customSignRequest && typeof Request !== 'undefined') {
-			const req = new Request(url, { method: 'POST', body: transformedChallenge as BodyInit });
+			const req = new Request(url, {
+				method: 'POST',
+				body: transformedChallenge as BodyInit,
+			});
 			const signed = await this.opts.customSignRequest(req);
 			const signedHeaders: Record<string, string> = {};
 			signed.headers.forEach((value, name) => { signedHeaders[name] = value; });
@@ -142,7 +148,10 @@ export class DrmPlugin<T extends VideoPlaylistItem = VideoPlaylistItem> extends 
 	private openSession(keys: MediaKeys, event: MediaEncryptedEvent): void {
 		const session = keys.createSession();
 		const fail = (err: unknown): void => {
-			this.emit('key:error', { sessionId: session.sessionId, error: err instanceof Error ? err : new Error(String(err)) });
+			this.emit('key:error', {
+				sessionId: session.sessionId,
+				error: err instanceof Error ? err : new Error(String(err)),
+			});
 		};
 		this.listen(session, 'message', (message) => {
 			this.exchangeLicense(session, (message as MediaKeyMessageEvent).message).catch(fail);

@@ -22,7 +22,13 @@
  * the access-modifier change is TypeScript-only and carries no cost.
  */
 
-import type { ILogger, IStorage, LifecycleRegistry, ResolvedUrl, UrlCategory } from '@nomercy-entertainment/nomercy-player-core';
+import type {
+	ILogger,
+	IStorage,
+	LifecycleRegistry,
+	ResolvedUrl,
+	UrlCategory,
+} from '@nomercy-entertainment/nomercy-player-core';
 import type { IVideoPlayer, VideoPlaylistItem } from '@nomercy-entertainment/nomercy-video-player';
 
 import type { ActivityState } from './helpers/activity';

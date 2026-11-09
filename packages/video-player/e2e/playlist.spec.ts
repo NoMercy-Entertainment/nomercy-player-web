@@ -58,9 +58,18 @@ test.describe('Loading a playlist', () => {
 		const result = await page.evaluate(() => {
 			const p = (window as any).player;
 			p.load([
-				{ file: 'video1.mp4', title: 'Video 1' },
-				{ file: 'video2.mp4', title: 'Video 2' },
-				{ file: 'video3.mp4', title: 'Video 3' },
+				{
+					file: 'video1.mp4',
+					title: 'Video 1',
+				},
+				{
+					file: 'video2.mp4',
+					title: 'Video 2',
+				},
+				{
+					file: 'video3.mp4',
+					title: 'Video 3',
+				},
 			]);
 			return {
 				length: p.playlist().length,
@@ -77,8 +86,14 @@ test.describe('Loading a playlist', () => {
 		const has = await page.evaluate(() => {
 			const p = (window as any).player;
 			p.load([
-				{ file: 'a.mp4', title: 'A' },
-				{ file: 'b.mp4', title: 'B' },
+				{
+					file: 'a.mp4',
+					title: 'A',
+				},
+				{
+					file: 'b.mp4',
+					title: 'B',
+				},
 			]);
 			return p.hasPlaylists();
 		});
@@ -89,8 +104,14 @@ test.describe('Loading a playlist', () => {
 		const result = await page.evaluate(() => {
 			const p = (window as any).player;
 			p.load([
-				{ file: 'a.mp4', title: 'First' },
-				{ file: 'b.mp4', title: 'Second' },
+				{
+					file: 'a.mp4',
+					title: 'First',
+				},
+				{
+					file: 'b.mp4',
+					title: 'Second',
+				},
 			]);
 			// load() sets the playlist but doesn't select an item
 			// playlistIndex() will be -1 until playVideo() is called
@@ -103,8 +124,14 @@ test.describe('Loading a playlist', () => {
 		const title = await page.evaluate(() => {
 			const p = (window as any).player;
 			p.load([
-				{ file: 'a.mp4', title: 'First' },
-				{ file: 'b.mp4', title: 'Second' },
+				{
+					file: 'a.mp4',
+					title: 'First',
+				},
+				{
+					file: 'b.mp4',
+					title: 'Second',
+				},
 			]);
 			return p.playlist()[0]?.title;
 		});
@@ -115,8 +142,14 @@ test.describe('Loading a playlist', () => {
 		const length = await page.evaluate(() => {
 			const p = (window as any).player;
 			p.load([
-				{ file: 'a.mp4', title: 'A' },
-				{ file: 'b.mp4', title: 'B' },
+				{
+					file: 'a.mp4',
+					title: 'A',
+				},
+				{
+					file: 'b.mp4',
+					title: 'B',
+				},
 			]);
 			return p.playlist().length;
 		});
@@ -144,8 +177,16 @@ test.describe('Track filtering', () => {
 				file: 'video.mp4',
 				title: 'Test',
 				tracks: [
-					{ kind: 'subtitles', file: 'subs.vtt', label: 'English', language: 'en' },
-					{ kind: 'chapters', file: 'ch.vtt' },
+					{
+						kind: 'subtitles',
+						file: 'subs.vtt',
+						label: 'English',
+						language: 'en',
+					},
+					{
+						kind: 'chapters',
+						file: 'ch.vtt',
+					},
 				],
 			}]);
 			// Access tracks via playlist array directly
@@ -168,9 +209,27 @@ test.describe('Seasons', () => {
 		const result = await page.evaluate(() => {
 			const p = (window as any).player;
 			p.load([
-				{ file: '1.mp4', title: 'S1E1', season: 1, episode: 1, seasonName: 'Season 1' },
-				{ file: '2.mp4', title: 'S1E2', season: 1, episode: 2, seasonName: 'Season 1' },
-				{ file: '3.mp4', title: 'S2E1', season: 2, episode: 1, seasonName: 'Season 2' },
+				{
+					file: '1.mp4',
+					title: 'S1E1',
+					season: 1,
+					episode: 1,
+					seasonName: 'Season 1',
+				},
+				{
+					file: '2.mp4',
+					title: 'S1E2',
+					season: 1,
+					episode: 2,
+					seasonName: 'Season 1',
+				},
+				{
+					file: '3.mp4',
+					title: 'S2E1',
+					season: 2,
+					episode: 1,
+					seasonName: 'Season 2',
+				},
 			]);
 			return p.seasons();
 		});
@@ -188,8 +247,14 @@ test.describe('Playlist events', () => {
 			const p = (window as any).player;
 			let itemEmitted = false;
 			p.on('item', () => { itemEmitted = true; });
-			p.load([{ file: 'v.mp4', title: 'T' }]);
-			return { itemEmitted, length: p.playlist().length };
+			p.load([{
+				file: 'v.mp4',
+				title: 'T',
+			}]);
+			return {
+				itemEmitted,
+				length: p.playlist().length,
+			};
 		});
 		// load() only assigns the array, doesn't emit item
 		expect(result.itemEmitted).toBe(false);
@@ -205,7 +270,10 @@ test.describe('Playlist events', () => {
 			const p = (window as any).player;
 			let received = false;
 			p.on('playlist', () => { received = true; });
-			p.load([{ file: 'a.mp4', title: 'A' }]);
+			p.load([{
+				file: 'a.mp4',
+				title: 'A',
+			}]);
 			return received;
 		});
 		expect(result).toBe(true);

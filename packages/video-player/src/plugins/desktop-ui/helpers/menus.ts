@@ -225,13 +225,41 @@ function buildMainMenu(
 	// Category buttons: language, subtitles, subtitle settings,
 	// quality, speed, aspect ratio, playlist.
 	const cats: { id: SubMenuId; labelKey: string; iconKey: keyof typeof fluentIcons }[] = [
-		{ id: 'language', labelKey: 'plugin.desktop-ui.menu.audio', iconKey: 'language' },
-		{ id: 'subtitles', labelKey: 'plugin.desktop-ui.menu.subtitles', iconKey: 'subtitles' },
-		{ id: 'subtitleSettings', labelKey: 'plugin.desktop-ui.menu.subtitleSettings', iconKey: 'subtitleSettings' },
-		{ id: 'quality', labelKey: 'plugin.desktop-ui.menu.quality', iconKey: 'quality' },
-		{ id: 'speed', labelKey: 'plugin.desktop-ui.menu.speed', iconKey: 'speed' },
-		{ id: 'aspectRatio', labelKey: 'plugin.desktop-ui.menu.aspectRatio', iconKey: 'aspectFit' },
-		{ id: 'playlist', labelKey: 'plugin.desktop-ui.menu.playlist', iconKey: 'playlist' },
+		{
+			id: 'language',
+			labelKey: 'plugin.desktop-ui.menu.audio',
+			iconKey: 'language',
+		},
+		{
+			id: 'subtitles',
+			labelKey: 'plugin.desktop-ui.menu.subtitles',
+			iconKey: 'subtitles',
+		},
+		{
+			id: 'subtitleSettings',
+			labelKey: 'plugin.desktop-ui.menu.subtitleSettings',
+			iconKey: 'subtitleSettings',
+		},
+		{
+			id: 'quality',
+			labelKey: 'plugin.desktop-ui.menu.quality',
+			iconKey: 'quality',
+		},
+		{
+			id: 'speed',
+			labelKey: 'plugin.desktop-ui.menu.speed',
+			iconKey: 'speed',
+		},
+		{
+			id: 'aspectRatio',
+			labelKey: 'plugin.desktop-ui.menu.aspectRatio',
+			iconKey: 'aspectFit',
+		},
+		{
+			id: 'playlist',
+			labelKey: 'plugin.desktop-ui.menu.playlist',
+			iconKey: 'playlist',
+		},
 	];
 	for (const cat of cats) {
 		const label = player.t(cat.labelKey);
@@ -425,7 +453,10 @@ function buildSubMenuPane(
 		.get();
 
 	const paneActions: MenuActions = id === 'subtitleSettings'
-		? { ...actions, backToMain: () => (pickerBack.get(pane) ?? actions.backToMain)() }
+		? {
+				...actions,
+				backToMain: () => (pickerBack.get(pane) ?? actions.backToMain)(),
+			}
 		: actions;
 
 	buildSubMenuHeader(
@@ -626,16 +657,46 @@ function appendAction(
  * when the method is present.
  */
 const SETTING_ROWS: Array<{ labelKey: string; property: keyof SubtitleStyle | '' }> = [
-	{ labelKey: 'plugin.desktop-ui.menu.subtitle.font', property: 'fontFamily' },
-	{ labelKey: 'plugin.desktop-ui.menu.subtitle.textSize', property: 'fontSize' },
-	{ labelKey: 'plugin.desktop-ui.menu.subtitle.textColor', property: 'textColor' },
-	{ labelKey: 'plugin.desktop-ui.menu.subtitle.textOpacity', property: 'textOpacity' },
-	{ labelKey: 'plugin.desktop-ui.menu.subtitle.edgeStyle', property: 'edgeStyle' },
-	{ labelKey: 'plugin.desktop-ui.menu.subtitle.backgroundColor', property: 'backgroundColor' },
-	{ labelKey: 'plugin.desktop-ui.menu.subtitle.backgroundOpacity', property: 'backgroundOpacity' },
-	{ labelKey: 'plugin.desktop-ui.menu.subtitle.areaColor', property: 'areaColor' },
-	{ labelKey: 'plugin.desktop-ui.menu.subtitle.areaOpacity', property: 'windowOpacity' },
-	{ labelKey: 'plugin.desktop-ui.menu.reset', property: '' },
+	{
+		labelKey: 'plugin.desktop-ui.menu.subtitle.font',
+		property: 'fontFamily',
+	},
+	{
+		labelKey: 'plugin.desktop-ui.menu.subtitle.textSize',
+		property: 'fontSize',
+	},
+	{
+		labelKey: 'plugin.desktop-ui.menu.subtitle.textColor',
+		property: 'textColor',
+	},
+	{
+		labelKey: 'plugin.desktop-ui.menu.subtitle.textOpacity',
+		property: 'textOpacity',
+	},
+	{
+		labelKey: 'plugin.desktop-ui.menu.subtitle.edgeStyle',
+		property: 'edgeStyle',
+	},
+	{
+		labelKey: 'plugin.desktop-ui.menu.subtitle.backgroundColor',
+		property: 'backgroundColor',
+	},
+	{
+		labelKey: 'plugin.desktop-ui.menu.subtitle.backgroundOpacity',
+		property: 'backgroundOpacity',
+	},
+	{
+		labelKey: 'plugin.desktop-ui.menu.subtitle.areaColor',
+		property: 'areaColor',
+	},
+	{
+		labelKey: 'plugin.desktop-ui.menu.subtitle.areaOpacity',
+		property: 'windowOpacity',
+	},
+	{
+		labelKey: 'plugin.desktop-ui.menu.reset',
+		property: '',
+	},
 ];
 
 /**
@@ -769,7 +830,8 @@ function renderSubtitlePropertyPane(
 	const currentValue = readSubtitleStyle(player)[property];
 
 	for (const action of actions) {
-		const id = `subtitleSetting-action-${property}-${String(action.value).replace(/\W+/g, '-').toLowerCase()}`;
+		const id = `subtitleSetting-action-${property}-${String(action.value).replace(/\W+/g, '-')
+			.toLowerCase()}`;
 		const btn = createButton(id, action.label, () => {});
 		btn.classList.add('language-button');
 		const isActive = action.value === currentValue;
@@ -924,7 +986,8 @@ function buildPlaylistCard(
 	onPick: () => void,
 	opts: PlaylistRenderOptions,
 ): HTMLButtonElement {
-	const safe = String(item.id ?? index).replace(/\W+/g, '-').toLowerCase();
+	const safe = String(item.id ?? index).replace(/\W+/g, '-')
+		.toLowerCase();
 	const resolvedTitle = item.title ?? `Item ${index + 1}`;
 	const btn = createButton(`playlist-${safe}`, resolvedTitle, () => {});
 	btn.classList.add('playlist-menu-button');
@@ -1007,7 +1070,10 @@ function buildPlaylistCard(
 	btn.appendChild(right);
 
 	listen(btn, 'click', () => {
-		player.item?.(index, { source: 'user', autoplay: true });
+		player.item?.(index, {
+			source: 'user',
+			autoplay: true,
+		});
 		onPick();
 	});
 
@@ -1088,10 +1154,22 @@ export const ASPECT_RATIO_VALUE = {
 export type AspectRatioValue = typeof ASPECT_RATIO_VALUE[keyof typeof ASPECT_RATIO_VALUE];
 
 const ASPECT_RATIO_OPTIONS: Array<{ value: AspectRatioValue; labelKey: string }> = [
-	{ value: ASPECT_RATIO_VALUE.UNIFORM, labelKey: 'plugin.desktop-ui.menu.original' },
-	{ value: ASPECT_RATIO_VALUE.FILL, labelKey: 'plugin.desktop-ui.menu.stretch' },
-	{ value: ASPECT_RATIO_VALUE.EXACTFIT, labelKey: 'plugin.desktop-ui.menu.crop' },
-	{ value: ASPECT_RATIO_VALUE.NONE, labelKey: 'plugin.desktop-ui.menu.native' },
+	{
+		value: ASPECT_RATIO_VALUE.UNIFORM,
+		labelKey: 'plugin.desktop-ui.menu.original',
+	},
+	{
+		value: ASPECT_RATIO_VALUE.FILL,
+		labelKey: 'plugin.desktop-ui.menu.stretch',
+	},
+	{
+		value: ASPECT_RATIO_VALUE.EXACTFIT,
+		labelKey: 'plugin.desktop-ui.menu.crop',
+	},
+	{
+		value: ASPECT_RATIO_VALUE.NONE,
+		labelKey: 'plugin.desktop-ui.menu.native',
+	},
 ];
 
 export function renderAspectRatioPane(

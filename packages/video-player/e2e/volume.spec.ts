@@ -142,7 +142,10 @@ test.describe('Mute', () => {
 			p.toggleMute();
 			await new Promise(resolve => setTimeout(resolve, 0));
 			const after = p.muted();
-			return { before, after };
+			return {
+				before,
+				after,
+			};
 		});
 		expect(result.before).toBe(false);
 		expect(result.after).toBe(true);

@@ -6,7 +6,14 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
-import type { HlsConfig, Loader, LoaderCallbacks, LoaderConfiguration, LoaderContext, LoaderStats } from 'hls.js';
+import type {
+	HlsConfig,
+	Loader,
+	LoaderCallbacks,
+	LoaderConfiguration,
+	LoaderContext,
+	LoaderStats,
+} from 'hls.js';
 
 export type HlsLoaderConstructor = new (config: HlsConfig) => Loader<LoaderContext>;
 
@@ -75,7 +82,12 @@ function pickVariant(master: string, preferredHeight: number | undefined): Maste
 			continue;
 		const attrs = parseAttributes(line);
 		const height = Number(attrs.RESOLUTION?.split('x')[1] ?? 0);
-		variants.push({ uri: uri.trim(), height, bandwidth: Number(attrs.BANDWIDTH ?? 0), audioGroup: attrs.AUDIO });
+		variants.push({
+			uri: uri.trim(),
+			height,
+			bandwidth: Number(attrs.BANDWIDTH ?? 0),
+			audioGroup: attrs.AUDIO,
+		});
 	}
 	if (variants.length === 0)
 		return undefined;
@@ -141,7 +153,10 @@ export class HlsWarmCache {
 		this._url = masterUrl;
 		this._bytes = 0;
 		const entries: WarmEntries = new Map();
-		const source: WarmedSource = { entries, levelUrl: undefined };
+		const source: WarmedSource = {
+			entries,
+			levelUrl: undefined,
+		};
 		this._source = source;
 
 		const doFetch = opts.fetch ?? globalThis.fetch.bind(globalThis);
@@ -157,8 +172,12 @@ export class HlsWarmCache {
 					return undefined;
 				const data = await response.arrayBuffer();
 				this._bytes += data.byteLength;
-				return { data, fetchMs: performance.now() - startedAt };
-			}).catch(() => undefined);
+				return {
+					data,
+					fetchMs: performance.now() - startedAt,
+				};
+			})
+				.catch(() => undefined);
 		};
 		const register = (url: string): Promise<WarmEntry | undefined> => {
 			const pending = grab(url);
@@ -260,7 +279,10 @@ export function createWarmLoader(Base: HlsLoaderConstructor, entries: WarmEntrie
 				stats.loading.first = now - entry.fetchMs;
 				stats.loading.end = now;
 				const data = context.responseType === 'arraybuffer' ? entry.data : new TextDecoder().decode(entry.data);
-				callbacks.onSuccess({ url: context.url, data }, stats, context, null);
+				callbacks.onSuccess({
+					url: context.url,
+					data,
+				}, stats, context, null);
 			});
 		}
 

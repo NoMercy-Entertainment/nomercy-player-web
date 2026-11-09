@@ -22,13 +22,24 @@ import type { VideoPlaylistItem } from '@nomercy-entertainment/nomercy-video-pla
 
 import type { DesktopUiInternals } from '../internals';
 
-import { clampPopOffset, getScrubTime, loadSpriteSet, paintSpriteAt, resolveSpriteUrl } from '../helpers/sprite';
+import {
+	clampPopOffset,
+	getScrubTime,
+	loadSpriteSet,
+	paintSpriteAt,
+	resolveSpriteUrl,
+} from '../helpers/sprite';
 
 export const spriteMethods = {
 	getScrubTime(this: DesktopUiInternals, event: Event): { scrubTime: number; scrubTimePlayer: number } {
 		const win = this._isLive() ? this._liveWindow() : null;
 		const scrub = getScrubTime(event, this.sliderRefs.sliderBar, win ? win.end - win.start : this.resolveDuration());
-		return win ? { ...scrub, scrubTimePlayer: scrub.scrubTimePlayer + win.start } : scrub;
+		return win
+			? {
+					...scrub,
+					scrubTimePlayer: scrub.scrubTimePlayer + win.start,
+				}
+			: scrub;
 	},
 
 	clampPopOffset(this: DesktopUiInternals, pct: number): number {

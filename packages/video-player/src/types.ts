@@ -151,7 +151,14 @@ export enum SubtitleState {
 }
 
 /** Re-exported from kit — canonical definition lives in nomercy-player-core. */
-export { AudioTrackState, PlayState, QualityState, RepeatState, ShuffleState, VolumeState } from '@nomercy-entertainment/nomercy-player-core';
+export {
+	AudioTrackState,
+	PlayState,
+	QualityState,
+	RepeatState,
+	ShuffleState,
+	VolumeState,
+} from '@nomercy-entertainment/nomercy-player-core';
 
 /**
  * The displayed video content rectangle relative to the player container.
@@ -217,7 +224,13 @@ export function containedRect(
 	const y = Math.round((containerH - height) / 2);
 	const scale = width / videoW;
 
-	return { x, y, width, height, scale };
+	return {
+		x,
+		y,
+		width,
+		height,
+		scale,
+	};
 }
 
 /** The painted picture clipped to the player box, per `aspectRatio()` mode (the subtitle box). */

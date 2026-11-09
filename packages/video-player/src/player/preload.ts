@@ -37,33 +37,57 @@ export class VideoPreloadStrategy extends DefaultPreloadStrategy {
 		const assets: PreloadAsset[] = [];
 
 		if (videoItem.url) {
-			assets.push({ url: videoItem.url, category: 'media', mode: 'metadata' });
+			assets.push({
+				url: videoItem.url,
+				category: 'media',
+				mode: 'metadata',
+			});
 		}
 
 		const posterUrl = videoItem.image ?? videoItem.poster ?? videoItem.thumbnail;
 		if (posterUrl) {
-			assets.push({ url: posterUrl, category: 'poster', mode: 'auto' });
+			assets.push({
+				url: posterUrl,
+				category: 'poster',
+				mode: 'auto',
+			});
 		}
 
 		if (videoItem.previewSpriteUrl) {
-			assets.push({ url: videoItem.previewSpriteUrl, category: 'sprite', mode: 'metadata' });
+			assets.push({
+				url: videoItem.previewSpriteUrl,
+				category: 'sprite',
+				mode: 'metadata',
+			});
 		}
 
 		for (const subtitle of videoItem.subtitles ?? []) {
 			if (subtitle.url) {
-				assets.push({ url: subtitle.url, category: 'subtitle', mode: 'auto' });
+				assets.push({
+					url: subtitle.url,
+					category: 'subtitle',
+					mode: 'auto',
+				});
 			}
 		}
 
 		for (const track of videoItem.tracks ?? []) {
 			if (track.kind === 'chapters' && track.file) {
-				assets.push({ url: track.file, category: 'chapter', mode: 'auto' });
+				assets.push({
+					url: track.file,
+					category: 'chapter',
+					mode: 'auto',
+				});
 			}
 		}
 
 		for (const font of videoItem.fonts ?? []) {
 			if (font.file) {
-				assets.push({ url: font.file, category: 'font', mode: 'auto' });
+				assets.push({
+					url: font.file,
+					category: 'font',
+					mode: 'auto',
+				});
 			}
 		}
 

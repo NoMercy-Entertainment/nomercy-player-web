@@ -210,7 +210,11 @@ test.describe('Speed controls', () => {
 	test('speeds() returns array of available rates', async ({ page }) => {
 		const result = await page.evaluate(() => {
 			const speeds = (window as any).player.speeds();
-			return { isArray: Array.isArray(speeds), length: speeds.length, includes1: speeds.includes(1) };
+			return {
+				isArray: Array.isArray(speeds),
+				length: speeds.length,
+				includes1: speeds.includes(1),
+			};
 		});
 		expect(result.isArray).toBe(true);
 		expect(result.length).toBeGreaterThan(0);
@@ -299,7 +303,10 @@ test.describe('Dispose', () => {
 		const result = await page.evaluate(async () => {
 			await (window as any).player.dispose();
 			const el = document.getElementById('player');
-			return { exists: !!el, empty: el?.innerHTML === '' };
+			return {
+				exists: !!el,
+				empty: el?.innerHTML === '',
+			};
 		});
 		expect(result.exists).toBe(true);
 		expect(result.empty).toBe(true);

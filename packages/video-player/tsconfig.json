@@ -1,23 +1,15 @@
 {
+	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
-		"target": "ES2022",
-		"lib": ["ES2022", "DOM"],
-		"rootDir": "src",
-		"module": "ES2022",
-		"moduleResolution": "bundler",
+		// Self-imports must become relative paths in the published output (tsc-alias).
 		"paths": {
 			"@nomercy-entertainment/nomercy-video-player": ["./src/index.ts"]
 		},
-		"types": ["vitest/globals", "vite/client", "node"],
-		"strict": true,
-		"declaration": true,
-		"outDir": "dist",
-		"esModuleInterop": true,
-		"forceConsistentCasingInFileNames": true,
-		"skipLibCheck": true
-	},
-	"include": [
-		"src/**/*"
-	],
-	"exclude": ["node_modules", "dist"]
+		// Phase 2 turns these on: 143 and 5 errors to fix first.
+		"noPropertyAccessFromIndexSignature": false,
+		"noUncheckedIndexedAccess": false,
+		// Video publishes no map files; enabling them changes the npm file list.
+		"declarationMap": false,
+		"sourceMap": false
+	}
 }

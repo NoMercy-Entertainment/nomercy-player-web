@@ -43,7 +43,10 @@ async function loadFixture(page: import('@playwright/test').Page): Promise<void>
 async function loadMp4(page: import('@playwright/test').Page): Promise<void> {
 	await page.evaluate(() => {
 		(window as any).player.setup({
-			playlist: [{ id: 'mp4-test', file: '/e2e/media/sample.mp4' }],
+			playlist: [{
+				id: 'mp4-test',
+				file: '/e2e/media/sample.mp4',
+			}],
 			muted: true,
 			autoPlay: true,
 		});
@@ -98,7 +101,10 @@ test.describe('Real MP4 decode — playback advances', () => {
 				return t > before + 0.05;
 			},
 			timeBefore,
-			{ timeout: 5_000, polling: 100 },
+			{
+				timeout: 5_000,
+				polling: 100,
+			},
 		);
 
 		const timeAfter = await page.evaluate(() => (window as any).player.videoElement.currentTime);
@@ -140,10 +146,16 @@ test.describe('Real MP4 decode — VideoPlaybackQuality', () => {
 		const result = await page.evaluate(() => {
 			const el = (window as any).player.videoElement;
 			if (typeof el.getVideoPlaybackQuality !== 'function') {
-				return { supported: false, totalVideoFrames: -1 };
+				return {
+					supported: false,
+					totalVideoFrames: -1,
+				};
 			}
 			const q = el.getVideoPlaybackQuality();
-			return { supported: true, totalVideoFrames: q.totalVideoFrames };
+			return {
+				supported: true,
+				totalVideoFrames: q.totalVideoFrames,
+			};
 		});
 
 		// getVideoPlaybackQuality is supported in headless Chromium.

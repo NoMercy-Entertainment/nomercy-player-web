@@ -145,7 +145,11 @@ export function buildCenter(
 	centerBtn.appendChild(centerIconHolder);
 	centerWrap.appendChild(centerBtn);
 
-	return { centerWrap, centerBtn, spinner };
+	return {
+		centerWrap,
+		centerBtn,
+		spinner,
+	};
 }
 
 // ── Bottom bar ────────────────────────────────────────────────────────────────
@@ -182,7 +186,13 @@ export function buildBottomBar(
 
 	const rowRefs = buildBottomRow(player, bottomRow, opts, listen, translate);
 
-	return { bottomBar, topRow, bottomRow, sliderRefs, ...rowRefs };
+	return {
+		bottomBar,
+		topRow,
+		bottomRow,
+		sliderRefs,
+		...rowRefs,
+	};
 }
 
 // ── Bottom row ────────────────────────────────────────────────────────────────
@@ -334,7 +344,15 @@ export function buildBottomRow(
 	fsBtn.hidden = !show('fullscreen');
 	parent.appendChild(fsBtn);
 
-	collapseAllTriggers({ settingsBtn, speedBtn, qualityBtn, subsBtn, audioBtn, playlistBtn, aspectRatioBtn });
+	collapseAllTriggers({
+		settingsBtn,
+		speedBtn,
+		qualityBtn,
+		subsBtn,
+		audioBtn,
+		playlistBtn,
+		aspectRatioBtn,
+	});
 
 	applyButtonOrder(parent, opts, {
 		playBtn,
@@ -476,25 +494,52 @@ export function buildShortcutsOverlay(
 			{
 				title: translate('shortcuts.group.playback'),
 				entries: [
-					{ keys: ['Space'], label: translate('shortcuts.playPause') },
-					{ keys: ['S'], label: translate('shortcuts.stop') },
-					{ keys: ['E'], label: translate('shortcuts.frameAdvance') },
+					{
+						keys: ['Space'],
+						label: translate('shortcuts.playPause'),
+					},
+					{
+						keys: ['S'],
+						label: translate('shortcuts.stop'),
+					},
+					{
+						keys: ['E'],
+						label: translate('shortcuts.frameAdvance'),
+					},
 				],
 			},
 			{
 				title: translate('shortcuts.group.speed'),
 				entries: [
-					{ keys: [']'], label: translate('shortcuts.speedUp') },
-					{ keys: ['['], label: translate('shortcuts.speedDown') },
-					{ keys: ['='], label: translate('shortcuts.normalSpeed') },
+					{
+						keys: [']'],
+						label: translate('shortcuts.speedUp'),
+					},
+					{
+						keys: ['['],
+						label: translate('shortcuts.speedDown'),
+					},
+					{
+						keys: ['='],
+						label: translate('shortcuts.normalSpeed'),
+					},
 				],
 			},
 			{
 				title: translate('shortcuts.group.volume'),
 				entries: [
-					{ keys: ['↑'], label: translate('shortcuts.volumeUp') },
-					{ keys: ['↓'], label: translate('shortcuts.volumeDown') },
-					{ keys: ['M'], label: translate('shortcuts.mute') },
+					{
+						keys: ['↑'],
+						label: translate('shortcuts.volumeUp'),
+					},
+					{
+						keys: ['↓'],
+						label: translate('shortcuts.volumeDown'),
+					},
+					{
+						keys: ['M'],
+						label: translate('shortcuts.mute'),
+					},
 				],
 			},
 		],
@@ -502,29 +547,68 @@ export function buildShortcutsOverlay(
 			{
 				title: translate('shortcuts.group.seeking'),
 				entries: [
-					{ keys: ['←'], label: translate('shortcuts.seekBack5') },
-					{ keys: ['→'], label: translate('shortcuts.seekForward5') },
-					{ keys: ['Shift', '← / →'], label: translate('shortcuts.seek3s') },
-					{ keys: ['Alt', '← / →'], label: translate('shortcuts.seek10s') },
-					{ keys: ['Ctrl', '← / →'], label: translate('shortcuts.seek60s') },
+					{
+						keys: ['←'],
+						label: translate('shortcuts.seekBack5'),
+					},
+					{
+						keys: ['→'],
+						label: translate('shortcuts.seekForward5'),
+					},
+					{
+						keys: ['Shift', '← / →'],
+						label: translate('shortcuts.seek3s'),
+					},
+					{
+						keys: ['Alt', '← / →'],
+						label: translate('shortcuts.seek10s'),
+					},
+					{
+						keys: ['Ctrl', '← / →'],
+						label: translate('shortcuts.seek60s'),
+					},
 				],
 			},
 			{
 				title: translate('shortcuts.group.quickSeek'),
 				entries: [
-					{ keys: ['3'], label: translate('shortcuts.seek30s') },
-					{ keys: ['6'], label: translate('shortcuts.seek60sKey') },
-					{ keys: ['9'], label: translate('shortcuts.seek90s') },
-					{ keys: ['1'], label: translate('shortcuts.seek120s') },
+					{
+						keys: ['3'],
+						label: translate('shortcuts.seek30s'),
+					},
+					{
+						keys: ['6'],
+						label: translate('shortcuts.seek60sKey'),
+					},
+					{
+						keys: ['9'],
+						label: translate('shortcuts.seek90s'),
+					},
+					{
+						keys: ['1'],
+						label: translate('shortcuts.seek120s'),
+					},
 				],
 			},
 			{
 				title: translate('shortcuts.group.navigation'),
 				entries: [
-					{ keys: ['N'], label: translate('shortcuts.next') },
-					{ keys: ['P'], label: translate('shortcuts.previous') },
-					{ keys: ['Shift', 'N'], label: translate('shortcuts.nextChapter') },
-					{ keys: ['Shift', 'P'], label: translate('shortcuts.previousChapter') },
+					{
+						keys: ['N'],
+						label: translate('shortcuts.next'),
+					},
+					{
+						keys: ['P'],
+						label: translate('shortcuts.previous'),
+					},
+					{
+						keys: ['Shift', 'N'],
+						label: translate('shortcuts.nextChapter'),
+					},
+					{
+						keys: ['Shift', 'P'],
+						label: translate('shortcuts.previousChapter'),
+					},
 				],
 			},
 		],
@@ -532,21 +616,51 @@ export function buildShortcutsOverlay(
 			{
 				title: translate('shortcuts.group.tracksAndSubtitles'),
 				entries: [
-					{ keys: ['V'], label: translate('shortcuts.cycleSubs') },
-					{ keys: ['B'], label: translate('shortcuts.cycleAudio') },
-					{ keys: ['A'], label: translate('shortcuts.cycleAspect') },
-					{ keys: ['+'], label: translate('shortcuts.subSizeUp') },
-					{ keys: ['–'], label: translate('shortcuts.subSizeDown') },
+					{
+						keys: ['V'],
+						label: translate('shortcuts.cycleSubs'),
+					},
+					{
+						keys: ['B'],
+						label: translate('shortcuts.cycleAudio'),
+					},
+					{
+						keys: ['A'],
+						label: translate('shortcuts.cycleAspect'),
+					},
+					{
+						keys: ['+'],
+						label: translate('shortcuts.subSizeUp'),
+					},
+					{
+						keys: ['–'],
+						label: translate('shortcuts.subSizeDown'),
+					},
 				],
 			},
 			{
 				title: translate('shortcuts.group.display'),
 				entries: [
-					{ keys: ['F'], label: translate('shortcuts.fullscreen') },
-					{ keys: ['F11'], label: translate('shortcuts.fullscreen') },
-					{ keys: ['Esc'], label: translate('shortcuts.exitFullscreen') },
-					{ keys: ['T'], label: translate('shortcuts.showTime') },
-					{ keys: ['?'], label: translate('shortcuts.help') },
+					{
+						keys: ['F'],
+						label: translate('shortcuts.fullscreen'),
+					},
+					{
+						keys: ['F11'],
+						label: translate('shortcuts.fullscreen'),
+					},
+					{
+						keys: ['Esc'],
+						label: translate('shortcuts.exitFullscreen'),
+					},
+					{
+						keys: ['T'],
+						label: translate('shortcuts.showTime'),
+					},
+					{
+						keys: ['?'],
+						label: translate('shortcuts.help'),
+					},
 				],
 			},
 		],

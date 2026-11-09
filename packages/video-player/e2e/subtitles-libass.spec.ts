@@ -69,7 +69,10 @@ test.describe('SubtitleOverlayPlugin — DOM cue rendering', () => {
 		// listens to this event and renders .subtitle-area nodes.
 		await page.evaluate(() => {
 			(window as any).player.emit('subtitleCue', {
-				cues: [{ text: 'First cue line', line: undefined }],
+				cues: [{
+					text: 'First cue line',
+					line: undefined,
+				}],
 			});
 		});
 
@@ -84,13 +87,17 @@ test.describe('SubtitleOverlayPlugin — DOM cue rendering', () => {
 
 		await page.evaluate(() => {
 			(window as any).player.emit('subtitleCue', {
-				cues: [{ text: 'First cue line', line: undefined }],
+				cues: [{
+					text: 'First cue line',
+					line: undefined,
+				}],
 			});
 		});
 
 		await page.waitForSelector('.subtitle-text', { timeout: 3_000 });
 
-		const text = await page.locator('.subtitle-text').first().textContent();
+		const text = await page.locator('.subtitle-text').first()
+			.textContent();
 		expect(text).toContain('First cue line');
 	});
 
@@ -100,8 +107,14 @@ test.describe('SubtitleOverlayPlugin — DOM cue rendering', () => {
 		await page.evaluate(() => {
 			(window as any).player.emit('subtitleCue', {
 				cues: [
-					{ text: 'Top cue', line: 10 },
-					{ text: 'Bottom cue', line: 85 },
+					{
+						text: 'Top cue',
+						line: 10,
+					},
+					{
+						text: 'Bottom cue',
+						line: 85,
+					},
 				],
 			});
 		});
@@ -118,7 +131,10 @@ test.describe('SubtitleOverlayPlugin — DOM cue rendering', () => {
 		// Show a cue.
 		await page.evaluate(() => {
 			(window as any).player.emit('subtitleCue', {
-				cues: [{ text: 'Temp cue', line: undefined }],
+				cues: [{
+					text: 'Temp cue',
+					line: undefined,
+				}],
 			});
 		});
 		await page.waitForSelector('.subtitle-area', { timeout: 3_000 });
@@ -179,7 +195,10 @@ test.describe('OctopusPlugin — libass WASM initialization', () => {
 		// Load a real MP4 with autoPlay:true so videoElement is created.
 		await page.evaluate(() => {
 			(window as any).player.setup({
-				playlist: [{ id: 'octopus-src', file: '/e2e/media/sample.mp4' }],
+				playlist: [{
+					id: 'octopus-src',
+					file: '/e2e/media/sample.mp4',
+				}],
 				muted: true,
 				autoPlay: true,
 			});
@@ -204,7 +223,10 @@ test.describe('OctopusPlugin — libass WASM initialization', () => {
 				player.addPlugin(OctopusPlugin);
 			}
 			catch (e: unknown) {
-				return { threw: true, message: (e as Error).message ?? String(e) };
+				return {
+					threw: true,
+					message: (e as Error).message ?? String(e),
+				};
 			}
 
 			// Give the async WASM worker time to spin up.
@@ -212,7 +234,11 @@ test.describe('OctopusPlugin — libass WASM initialization', () => {
 
 			// Check whether a canvas was mounted by the libass renderer.
 			const canvas = player.container.querySelector('canvas');
-			return { threw: false, canvasPresent: !!canvas, message: null };
+			return {
+				threw: false,
+				canvasPresent: !!canvas,
+				message: null,
+			};
 		});
 
 		if (!addResult.canvasPresent) {

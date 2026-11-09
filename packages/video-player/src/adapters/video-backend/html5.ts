@@ -6,10 +6,24 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
-import type { AudioTrack, HdrOnSdrFallback, IStreamSource, QualityLevel, SubtitleTrack } from '@nomercy-entertainment/nomercy-player-core';
+import type {
+	AudioTrack,
+	HdrOnSdrFallback,
+	IStreamSource,
+	QualityLevel,
+	SubtitleTrack,
+} from '@nomercy-entertainment/nomercy-player-core';
 import type { HtmlPreloadMode } from '../../types';
 import type { HlsLoaderConstructor } from './hls-warm-cache';
-import type { BackendEventPayload, BackendState, IVideoBackend, LiveSyncOptions, StreamResolver, SubtitleCue, SubtitleCueChange } from './IVideoBackend';
+import type {
+	BackendEventPayload,
+	BackendState,
+	IVideoBackend,
+	LiveSyncOptions,
+	StreamResolver,
+	SubtitleCue,
+	SubtitleCueChange,
+} from './IVideoBackend';
 import {
 	abrCeiling,
 	appendAuthTokenParam,
@@ -398,7 +412,11 @@ export class Html5VideoBackend
 			this._state = 'ready';
 			performance.mark('nm:backend:load:end');
 			// index.ts sets the player duration only from this event, so a custom source must emit it too.
-			const reportMetadata = (): void => this.emit('loadedmetadata', { url, kind: this.kind, duration: this.element.duration });
+			const reportMetadata = (): void => this.emit('loadedmetadata', {
+				url,
+				kind: this.kind,
+				duration: this.element.duration,
+			});
 			if (this.element.readyState >= 1 /* HAVE_METADATA */)
 				reportMetadata();
 			else
@@ -414,7 +432,10 @@ export class Html5VideoBackend
 				throw new MediaFormatError({
 					code: 'core:media/hls-unsupported',
 					severity: 'error',
-					scope: { kind: 'backend', id: 'html5' },
+					scope: {
+						kind: 'backend',
+						id: 'html5',
+					},
 					message: 'Html5VideoBackend: HLS playback unsupported in this environment.',
 					suggestion: 'Use a Chromium-based browser, Safari, or Firefox 119+ for HLS support.',
 				});
@@ -484,7 +505,11 @@ export class Html5VideoBackend
 		}
 
 		this._state = 'ready';
-		this.emit('loadedmetadata', { url, kind: this.kind, duration: this.element.duration });
+		this.emit('loadedmetadata', {
+			url,
+			kind: this.kind,
+			duration: this.element.duration,
+		});
 	}
 
 	private _textTrackWatch: { list: TextTrackList; handler: () => void } | undefined;
@@ -502,7 +527,10 @@ export class Html5VideoBackend
 		const handler = (): void => this.emit('subtitleTracks', { tracks: this.subtitleTracks() });
 		list.addEventListener('addtrack', handler);
 		list.addEventListener('removetrack', handler);
-		this._textTrackWatch = { list, handler };
+		this._textTrackWatch = {
+			list,
+			handler,
+		};
 	}
 
 	private _liveSync: LiveSyncOptions = {};
@@ -862,7 +890,10 @@ export class Html5VideoBackend
 	 * to know whether the source was an HLS-fed VTT or a native track.
 	 */
 	private emitEmptySubtitleCue(): void {
-		const change: SubtitleCueChange = { cues: [], language: undefined };
+		const change: SubtitleCueChange = {
+			cues: [],
+			language: undefined,
+		};
 		this.emit('subtitleCue', change);
 	}
 
@@ -876,7 +907,10 @@ export class Html5VideoBackend
 		}
 		// CEA-608/708 gives one cue per screen row at its grid position; a viewer reads them as one block at the bottom.
 		const cues = tt.kind === 'captions' ? mergeCaptionRows(rows) : rows.map(normaliseVttCue);
-		const change: SubtitleCueChange = { cues, language: tt.language || undefined };
+		const change: SubtitleCueChange = {
+			cues,
+			language: tt.language || undefined,
+		};
 		this.emit('subtitleCue', change);
 	}
 
@@ -924,7 +958,8 @@ export class Html5VideoBackend
 			seen.add(codec);
 
 			// A video contentType may not list the audio codec of a muxed CODECS value, or decodingInfo reports it unsupported.
-			const videoCodec = codec.split(',').map(part => part.trim()).find(part => VIDEO_CODEC_RE.test(part));
+			const videoCodec = codec.split(',').map(part => part.trim())
+				.find(part => VIDEO_CODEC_RE.test(part));
 			if (!videoCodec) {
 				this._capabilityCache.set(codec, true);
 				continue;
@@ -1100,7 +1135,10 @@ export class Html5VideoBackend
 	private wireElementEvents(): void {
 		const track = (event: keyof HTMLVideoElementEventMap, handler: EventListener): void => {
 			this.element.addEventListener(event, handler);
-			this.domHandlers.push({ event, handler });
+			this.domHandlers.push({
+				event,
+				handler,
+			});
 		};
 
 		track('loadstart', event => this.emit('loadstart', event));
@@ -1240,7 +1278,11 @@ export class Html5VideoBackend
 		this._watchForConnectivityReturn();
 
 		this._recoveringFromOutage = true;
-		this.emit('stream:recovering', { details: data.details, attempt: attempt + 1, maxAttempts: limit });
+		this.emit('stream:recovering', {
+			details: data.details,
+			attempt: attempt + 1,
+			maxAttempts: limit,
+		});
 		this._retryTimer = setTimeout(() => {
 			this._retryTimer = undefined;
 			if (!this.hls)
@@ -1284,7 +1326,16 @@ export class Html5VideoBackend
 	private _escalateHlsError(details: string, message: string, status?: number): void {
 		this._hadError = true;
 		this._state = 'error';
-		this.emit('stream:error', status === undefined ? { details, fatal: true } : { details, fatal: true, status });
+		this.emit('stream:error', status === undefined
+			? {
+					details,
+					fatal: true,
+				}
+			: {
+					details,
+					fatal: true,
+					status,
+				});
 		// Construct a synthetic error event so the `error` channel stays
 		// typed as `Event` (BackendEventPayload contract). Consumers that
 		// want the typed PlayerError should listen on `stream:error`.
@@ -1333,7 +1384,10 @@ export class Html5VideoBackend
 					});
 					return;
 				}
-				this.emit('stream:error', { details: data.details, fatal: false });
+				this.emit('stream:error', {
+					details: data.details,
+					fatal: false,
+				});
 				return;
 			}
 
@@ -1348,13 +1402,21 @@ export class Html5VideoBackend
 					return;
 				}
 				this._mediaRecoveryStartMs = now;
-				this.emit('stream:recovering', { details: data.details, attempt: 1, maxAttempts: 1 });
+				this.emit('stream:recovering', {
+					details: data.details,
+					attempt: 1,
+					maxAttempts: 1,
+				});
 				try { this.hls?.recoverMediaError?.(); }
 				catch { this._escalateHlsError(data.details, `HLS recoverMediaError threw: ${data.details}`); }
 			}
 			else {
 				// MUX_ERROR or unknown fatal — destroy + reload.
-				this.emit('stream:recovering', { details: data.details, attempt: 1, maxAttempts: 1 });
+				this.emit('stream:recovering', {
+					details: data.details,
+					attempt: 1,
+					maxAttempts: 1,
+				});
 				// Capture the playback position BEFORE the teardown wipes it so
 				// the reload resumes where the error hit, not at 0.
 				const resumeAt = this.element.currentTime;
@@ -1693,7 +1755,10 @@ export class Html5VideoBackend
 					reject(new StreamError({
 						code: data.details,
 						severity: 'error',
-						scope: { kind: 'stream', id: 'hls' },
+						scope: {
+							kind: 'stream',
+							id: 'hls',
+						},
 						message: `HLS fatal: ${data.details}`,
 						context: data.status === undefined ? undefined : { httpStatus: data.status },
 					}));
@@ -1731,12 +1796,20 @@ function mergeCaptionRows(rows: VTTCue[]): SubtitleCue[] {
 	if (rows.length === 0)
 		return [];
 	const ordered = rows
-		.map(cue => ({ cue, line: typeof cue.line === 'number' ? cue.line : 0 }))
+		.map(cue => ({
+			cue,
+			line: typeof cue.line === 'number' ? cue.line : 0,
+		}))
 		.sort((upper, lower) => upper.line - lower.line)
 		.map(({ cue }) => normaliseVttCue(cue));
 	const text = ordered.map(cue => cue.text).join('\n');
 	const plainText = ordered.map(cue => cue.plainText).join('\n');
-	return [{ text, plainText, align: 'center', size: 100 }];
+	return [{
+		text,
+		plainText,
+		align: 'center',
+		size: 100,
+	}];
 }
 
 function normaliseVttCue(cue: VTTCue): SubtitleCue {
@@ -1790,5 +1863,12 @@ function normaliseVttCue(cue: VTTCue): SubtitleCue {
 	if (typeof rawPosition === 'number' && rawPosition >= 0 && rawPosition <= 100)
 		position = rawPosition;
 
-	return { text: safe, plainText: plain, line, align, size, position };
+	return {
+		text: safe,
+		plainText: plain,
+		line,
+		align,
+		size,
+		position,
+	};
 }

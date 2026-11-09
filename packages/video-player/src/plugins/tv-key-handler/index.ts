@@ -234,7 +234,10 @@ export class TvKeyHandlerPlugin<T extends VideoPlaylistItem = VideoPlaylistItem>
 		}
 
 		try {
-			this.player.emit('display-message', { text, ms });
+			this.player.emit('display-message', {
+				text,
+				ms,
+			});
 		}
 		catch { /* swallow — consumer may not listen */ }
 	}

@@ -60,11 +60,17 @@ test.describe('Fullscreen — real browser API', () => {
 			}
 			catch {
 				// If denied (sandbox policy), record that.
-				return { denied: true, isFullscreen: false };
+				return {
+					denied: true,
+					isFullscreen: false,
+				};
 			}
 
 			const isFullscreen = document.fullscreenElement === player.container;
-			return { denied: false, isFullscreen };
+			return {
+				denied: false,
+				isFullscreen,
+			};
 		});
 
 		if (entered.denied) {
@@ -89,7 +95,10 @@ test.describe('Fullscreen — real browser API', () => {
 			}
 
 			await document.exitFullscreen();
-			return { denied: false, elementAfterExit: document.fullscreenElement };
+			return {
+				denied: false,
+				elementAfterExit: document.fullscreenElement,
+			};
 		});
 
 		if (result.denied) {
@@ -155,7 +164,10 @@ test.describe('PiP — real browser API', () => {
 		// Load a source with autoPlay:true so videoElement is created and metadata loads.
 		await page.evaluate(() => {
 			(window as any).player.setup({
-				playlist: [{ id: 'pip-source', file: '/e2e/media/sample.mp4' }],
+				playlist: [{
+					id: 'pip-source',
+					file: '/e2e/media/sample.mp4',
+				}],
 				muted: true,
 				autoPlay: true,
 			});
@@ -208,7 +220,10 @@ test.describe('PiP — real browser API', () => {
 				await document.exitPictureInPicture().catch(() => {});
 			}
 
-			return { enterError, pipElementMatch };
+			return {
+				enterError,
+				pipElementMatch,
+			};
 		});
 
 		expect(result.enterError).toBeNull();

@@ -34,7 +34,8 @@ export function scaleAssFontSize(content: string, scale: number): string {
 			return line;
 
 		if (/^Format:/iu.test(trimmed)) {
-			sizeColumn = trimmed.slice('Format:'.length).split(',').findIndex(name => name.trim().toLowerCase() === 'fontsize');
+			sizeColumn = trimmed.slice('Format:'.length).split(',')
+				.findIndex(name => name.trim().toLowerCase() === 'fontsize');
 			return line;
 		}
 		if (sizeColumn < 0 || !/^Style:/iu.test(trimmed))
@@ -48,5 +49,6 @@ export function scaleAssFontSize(content: string, scale: number): string {
 		const indent = /^\s*/u.exec(fields[sizeColumn]!)![0];
 		fields[sizeColumn] = `${indent}${Math.round(size * scale * 100) / 100}`;
 		return `${line.slice(0, prefixLength)}${fields.join(',')}`;
-	}).join('\n');
+	})
+		.join('\n');
 }

@@ -63,7 +63,10 @@ test.describe('Render: touch zones root computed layout', () => {
 			(window as any).player.addPlugin(mod.TouchZonesPlugin);
 
 			(window as any).player.setup({
-				playlist: [{ id: 'grid-layout', file: '/e2e/media/sample.mp4' }],
+				playlist: [{
+					id: 'grid-layout',
+					file: '/e2e/media/sample.mp4',
+				}],
 				muted: true,
 				autoPlay: false,
 			});
@@ -87,7 +90,10 @@ test.describe('Render: touch zones root computed layout', () => {
 			const mod = await import('/src/plugins/touch-zones/index.ts');
 			(window as any).player.addPlugin(mod.TouchZonesPlugin);
 			(window as any).player.setup({
-				playlist: [{ id: 'grid-zidx', file: '/e2e/media/sample.mp4' }],
+				playlist: [{
+					id: 'grid-zidx',
+					file: '/e2e/media/sample.mp4',
+				}],
 				muted: true,
 				autoPlay: false,
 			});
@@ -112,7 +118,10 @@ test.describe('Render: touch zones root computed layout', () => {
 			const mod = await import('/src/plugins/touch-zones/index.ts');
 			(window as any).player.addPlugin(mod.TouchZonesPlugin);
 			(window as any).player.setup({
-				playlist: [{ id: 'overlay-zidx', file: '/e2e/media/sample.mp4' }],
+				playlist: [{
+					id: 'overlay-zidx',
+					file: '/e2e/media/sample.mp4',
+				}],
 				muted: true,
 				autoPlay: false,
 			});
@@ -146,7 +155,10 @@ test.describe('Render: touch zones root computed layout', () => {
 			const mod = await import('/src/plugins/touch-zones/index.ts');
 			(window as any).player.addPlugin(mod.TouchZonesPlugin);
 			(window as any).player.setup({
-				playlist: [{ id: 'bbox-src', file: '/e2e/media/sample.mp4' }],
+				playlist: [{
+					id: 'bbox-src',
+					file: '/e2e/media/sample.mp4',
+				}],
 				muted: true,
 				autoPlay: false,
 			});
@@ -184,7 +196,10 @@ test.describe('Render: touch zones root computed layout', () => {
 			const mod = await import('/src/plugins/touch-zones/index.ts');
 			(window as any).player.addPlugin(mod.TouchZonesPlugin);
 			(window as any).player.setup({
-				playlist: [{ id: 'desktop-zones', file: '/e2e/media/sample.mp4' }],
+				playlist: [{
+					id: 'desktop-zones',
+					file: '/e2e/media/sample.mp4',
+				}],
 				muted: true,
 				autoPlay: false,
 			});
@@ -208,7 +223,10 @@ test.describe('Render: touch zones root computed layout', () => {
 			const mod = await import('/src/plugins/touch-zones/index.ts');
 			(window as any).player.addPlugin(mod.TouchZonesPlugin);
 			(window as any).player.setup({
-				playlist: [{ id: 'col-grid', file: '/e2e/media/sample.mp4' }],
+				playlist: [{
+					id: 'col-grid',
+					file: '/e2e/media/sample.mp4',
+				}],
 				muted: true,
 				autoPlay: false,
 			});
@@ -246,7 +264,10 @@ test.describe('Render: touch zones mobile layout (5 zones)', () => {
 			...{
 				hasTouch: true,
 				isMobile: true,
-				viewport: { width: 390, height: 844 },
+				viewport: {
+					width: 390,
+					height: 844,
+				},
 			},
 		});
 		const page = await context.newPage();
@@ -263,7 +284,10 @@ test.describe('Render: touch zones mobile layout (5 zones)', () => {
 				const mod = await import('/src/plugins/touch-zones/index.ts');
 				(window as any).player.addPlugin(mod.TouchZonesPlugin);
 				(window as any).player.setup({
-					playlist: [{ id: 'mobile-zones', file: '/e2e/media/sample.mp4' }],
+					playlist: [{
+						id: 'mobile-zones',
+						file: '/e2e/media/sample.mp4',
+					}],
 					muted: true,
 					autoPlay: false,
 				});
@@ -287,7 +311,10 @@ test.describe('Render: touch zones mobile layout (5 zones)', () => {
 		const context = await browser.newContext({
 			hasTouch: true,
 			isMobile: true,
-			viewport: { width: 390, height: 844 },
+			viewport: {
+				width: 390,
+				height: 844,
+			},
 		});
 		const page = await context.newPage();
 
@@ -299,7 +326,10 @@ test.describe('Render: touch zones mobile layout (5 zones)', () => {
 				const mod = await import('/src/plugins/touch-zones/index.ts');
 				(window as any).player.addPlugin(mod.TouchZonesPlugin);
 				(window as any).player.setup({
-					playlist: [{ id: 'mobile-col', file: '/e2e/media/sample.mp4' }],
+					playlist: [{
+						id: 'mobile-col',
+						file: '/e2e/media/sample.mp4',
+					}],
 					muted: true,
 					autoPlay: false,
 				});

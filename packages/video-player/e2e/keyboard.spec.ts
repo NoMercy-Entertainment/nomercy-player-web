@@ -46,7 +46,10 @@ async function loadFixture(page: import('@playwright/test').Page): Promise<void>
 async function loadAndPlay(page: import('@playwright/test').Page): Promise<void> {
 	await page.evaluate(() => {
 		(window as any).player.setup({
-			playlist: [{ id: 'kb-src', file: '/e2e/media/sample.mp4' }],
+			playlist: [{
+				id: 'kb-src',
+				file: '/e2e/media/sample.mp4',
+			}],
 			muted: true,
 			autoPlay: true,
 		});

@@ -32,5 +32,10 @@ export function pickStartItem(items: ReadonlyArray<VideoPlaylistItem>): StartSel
 		return { index: Math.min(index + 1, items.length - 1) };
 
 	const resumeTime = mostRecent.progress!.time;
-	return resumeTime ? { index, resumeTime } : { index };
+	return resumeTime
+		? {
+				index,
+				resumeTime,
+			}
+		: { index };
 }

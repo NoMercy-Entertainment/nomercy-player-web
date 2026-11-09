@@ -12,15 +12,15 @@ warnings. New code should construct `NMMusicPlayer` directly.
 These v1 reads cannot be restored as properties because v2 owns the name as a
 method. Call the method instead:
 
-| v1 property read | v2 |
-| --- | --- |
-| `player.volume` | `player.volume()` (or `player.getVolume()`) |
-| `player.duration` | `player.duration()` (or `player.getDuration()`) |
-| `player.buffered` | `player.buffered()` (or `player.getBuffer()`) |
-| `player.playbackRate` | `player.playbackRate()` |
-| `player.volumeState` | `player.volumeState()` (values are now `muted`/`unmuted`) |
-| `player.isTransitioning` | `player.isTransitioning()` |
-| `player.baseUrl` | `player.baseUrl()` (or `player.setBaseUrl()`) |
+| v1 property read         | v2                                                        |
+| ------------------------ | --------------------------------------------------------- |
+| `player.volume`          | `player.volume()` (or `player.getVolume()`)               |
+| `player.duration`        | `player.duration()` (or `player.getDuration()`)           |
+| `player.buffered`        | `player.buffered()` (or `player.getBuffer()`)             |
+| `player.playbackRate`    | `player.playbackRate()`                                   |
+| `player.volumeState`     | `player.volumeState()` (values are now `muted`/`unmuted`) |
+| `player.isTransitioning` | `player.isTransitioning()`                                |
+| `player.baseUrl`         | `player.baseUrl()` (or `player.setBaseUrl()`)             |
 
 Two members have no runtime shim:
 
@@ -38,15 +38,15 @@ against your call sites before assuming "add the plugin and done". v1 `on('queue
 and `on('backlog')` listeners are safe: they fire on every real mutation, not just
 once at startup.
 
-| v1 surface | What the shim does | What to change |
-| --- | --- | --- |
-| `equalizerBands`, `equalizerPresets`, `equalizerSliderValues`, `equalizerPanning` | Returns the v1 default shapes, not live state. Writes do nothing. | Read and set bands through `getPlugin(EqualizerPlugin)`; set panning through `getPlugin(MixerPlugin)`. |
-| `setPreGain()`, `setPanner()`, `setFilter()`, `loadEqualizerSettings()`, `saveEqualizerSettings()` | Logs a deprecation and no-ops. | Use `EqualizerPlugin` and `MixerPlugin` directly. |
-| `fadeVolume(level)` | Sets the volume in one step. The v1 ramp is gone. | Use crossfade transitions for ramps, or ramp in your own UI. |
-| `isSeeking` | Always `false`. v2 has no distinct seeking phase. | Drive seek-in-progress state from your own UI gesture. |
-| `_audioElement1` / `_audioElement2` (and `.motion`) | Returns an inert stub. No visualizer access. | Read frequency data from `SpectrumPlugin` or the `AudioContext`. |
-| `getAudioElement()` | Returns `undefined`. v2 does not expose the element. | Use the plugin surfaces above. |
-| `siteTitle` / `setSiteTitle()` | Stored but does not touch `document.title`. | Set `document.title` yourself, or use `MediaSessionPlugin`. |
+| v1 surface                                                                                         | What the shim does                                                | What to change                                                                                         |
+| -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `equalizerBands`, `equalizerPresets`, `equalizerSliderValues`, `equalizerPanning`                  | Returns the v1 default shapes, not live state. Writes do nothing. | Read and set bands through `getPlugin(EqualizerPlugin)`; set panning through `getPlugin(MixerPlugin)`. |
+| `setPreGain()`, `setPanner()`, `setFilter()`, `loadEqualizerSettings()`, `saveEqualizerSettings()` | Logs a deprecation and no-ops.                                    | Use `EqualizerPlugin` and `MixerPlugin` directly.                                                      |
+| `fadeVolume(level)`                                                                                | Sets the volume in one step. The v1 ramp is gone.                 | Use crossfade transitions for ramps, or ramp in your own UI.                                           |
+| `isSeeking`                                                                                        | Always `false`. v2 has no distinct seeking phase.                 | Drive seek-in-progress state from your own UI gesture.                                                 |
+| `_audioElement1` / `_audioElement2` (and `.motion`)                                                | Returns an inert stub. No visualizer access.                      | Read frequency data from `SpectrumPlugin` or the `AudioContext`.                                       |
+| `getAudioElement()`                                                                                | Returns `undefined`. v2 does not expose the element.              | Use the plugin surfaces above.                                                                         |
+| `siteTitle` / `setSiteTitle()`                                                                     | Stored but does not touch `document.title`.                       | Set `document.title` yourself, or use `MediaSessionPlugin`.                                            |
 
 ## v2 API-consistency pass (post-rc.19)
 
@@ -67,24 +67,24 @@ player.on('crossfadeComplete', ({ item }) => { /* ... */ });
 Five `adapters/` ports were audited for real consumers. Two were dead —
 deleted outright, no replacement:
 
-| Removed | Why | Replacement |
-| --- | --- | --- |
-| `INowPlayingArt`, `MediaSessionArtProvider` (`./adapters/now-playing-art`) | Redundant — nothing in the player called it. `MediaSessionPlugin` already publishes now-playing metadata + artwork. | `getPlugin(MediaSessionPlugin)` |
-| `ILyricSource`, `LrcFileSource` (`./adapters/lyric-source`) | Redundant — nothing in the player called it. `LyricsPlugin` already resolves lyrics via `item.lyricsUrl` / `opts.getLyricsUrl`. | `getPlugin(LyricsPlugin)`, or pass `opts.getLyricsUrl` |
+| Removed                                                                    | Why                                                                                                                             | Replacement                                            |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `INowPlayingArt`, `MediaSessionArtProvider` (`./adapters/now-playing-art`) | Redundant — nothing in the player called it. `MediaSessionPlugin` already publishes now-playing metadata + artwork.             | `getPlugin(MediaSessionPlugin)`                        |
+| `ILyricSource`, `LrcFileSource` (`./adapters/lyric-source`)                | Redundant — nothing in the player called it. `LyricsPlugin` already resolves lyrics via `item.lyricsUrl` / `opts.getLyricsUrl`. | `getPlugin(LyricsPlugin)`, or pass `opts.getLyricsUrl` |
 
 Two were real but living in the wrong place — folded into the plugin that
 actually drives them:
 
-| Moved | From | To |
-| --- | --- | --- |
-| `IScrobbler`, `NoopScrobbler` | `./adapters/scrobbler` | `./plugins/scrobble` — now driven by a real `ScrobblePlugin`. Pass `addPlugin(ScrobblePlugin, { scrobbler: myScrobbler })`; the plugin calls `nowPlaying()` / `scrobble()` for you against real listened-time tracking. |
-| `IPlaylistGenerator`, `LinearPlaylistGenerator`, `SmartShuffleGenerator` | `./adapters/playlist-generator` | `./plugins/auto-advance` — now `AutoAdvancePlugin`'s `opts.generator`. `addPlugin(AutoAdvancePlugin, { generator: new SmartShuffleGenerator() })`. Omitting `generator` keeps the old linear-queue behavior. |
+| Moved                                                                    | From                            | To                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------ | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `IScrobbler`, `NoopScrobbler`                                            | `./adapters/scrobbler`          | `./plugins/scrobble` — now driven by a real `ScrobblePlugin`. Pass `addPlugin(ScrobblePlugin, { scrobbler: myScrobbler })`; the plugin calls `nowPlaying()` / `scrobble()` for you against real listened-time tracking. |
+| `IPlaylistGenerator`, `LinearPlaylistGenerator`, `SmartShuffleGenerator` | `./adapters/playlist-generator` | `./plugins/auto-advance` — now `AutoAdvancePlugin`'s `opts.generator`. `addPlugin(AutoAdvancePlugin, { generator: new SmartShuffleGenerator() })`. Omitting `generator` keeps the old linear-queue behavior.            |
 
 One is reserved, not yet wired to anything, and no longer advertised as a
 public API:
 
-| Kept, unexported | Status |
-| --- | --- |
+| Kept, unexported                                     | Status                                                                                                                                                                                                                                              |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ISimilarityEngine` (`./adapters/similarity-engine`) | The interface stays defined in `src/adapters/similarity-engine/` for a future radio-mode / "more like this" feature, but the `./adapters/similarity-engine` subpath export is gone — it had no scoped consumer and was masquerading as a wired API. |
 
 ## beta.0 → beta.1 breaking change

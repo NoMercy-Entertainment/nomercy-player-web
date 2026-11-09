@@ -29,7 +29,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const mediaDir = join(here, '..', 'e2e', 'media');
 
 function run(ffmpeg, args) {
-	const result = spawnSync(ffmpeg, ['-y', '-loglevel', 'error', ...args], { encoding: 'utf8', cwd: mediaDir });
+	const result = spawnSync(ffmpeg, ['-y', '-loglevel', 'error', ...args], {
+		encoding: 'utf8',
+		cwd: mediaDir,
+	});
 	if (result.status !== 0)
 		throw new Error(`ffmpeg failed: ${args.join(' ')}\n${result.stderr}`);
 }
@@ -60,8 +63,16 @@ Dialogue: 0,0:00:01.50,0:00:03.00,Default,,0,0,0,,Second ASS cue
 
 const EPISODE_SECONDS = 24;
 const EPISODE_RENDITIONS = [
-	{ dir: 'v0', size: '320x180', bandwidth: 400000 },
-	{ dir: 'v1', size: '640x360', bandwidth: 1200000 },
+	{
+		dir: 'v0',
+		size: '320x180',
+		bandwidth: 400000,
+	},
+	{
+		dir: 'v1',
+		size: '640x360',
+		bandwidth: 1200000,
+	},
 ];
 
 /** Two multi-rendition HLS episodes (ep1, ep2) with a VTT each, for the next-item warmup spec. */

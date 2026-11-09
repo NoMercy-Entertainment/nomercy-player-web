@@ -94,7 +94,12 @@ import type { IVideoPlayer, VideoPlaylistItem } from '@nomercy-entertainment/nom
 
 import type { ActivityState } from './helpers/activity';
 import type { MenuControlRefs, MenuControlState } from './helpers/menuControl';
-import type { MenuFrameRefs, SettingsToggleItem, SubMenuId, SubtitleMenuAction } from './helpers/menus';
+import type {
+	MenuFrameRefs,
+	SettingsToggleItem,
+	SubMenuId,
+	SubtitleMenuAction,
+} from './helpers/menus';
 import type { ChapterMarkerRef, SliderBarRefs } from './helpers/progressBar';
 import type { ResponsiveState } from './helpers/responsive';
 import type { SpriteSet } from './helpers/sprite';
@@ -103,7 +108,12 @@ import type { TopBarRefs } from './helpers/topBar';
 import { composeMixins, Plugin, translationsFromGlob } from '@nomercy-entertainment/nomercy-player-core';
 
 import { setActivity } from './helpers/activity';
-import { makeResponsiveState, wireNoHover, wireOrientation, wireResponsive } from './helpers/responsive';
+import {
+	makeResponsiveState,
+	wireNoHover,
+	wireOrientation,
+	wireResponsive,
+} from './helpers/responsive';
 import { activityMethods } from './mixins/activityMethods';
 import { chapterMethods } from './mixins/chapterMethods';
 import { domMethods } from './mixins/domMethods';

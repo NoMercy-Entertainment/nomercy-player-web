@@ -110,7 +110,10 @@ test.describe('Event emitter: off', () => {
 			p.on('off-test', handlerB);
 			p.off('off-test', handlerA);
 			p.emit('off-test');
-			return { aCalls, bCalls };
+			return {
+				aCalls,
+				bCalls,
+			};
 		});
 		expect(result.aCalls).toBe(0);
 		expect(result.bCalls).toBe(1);

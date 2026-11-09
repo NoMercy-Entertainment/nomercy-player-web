@@ -146,7 +146,10 @@ export class SubtitleOverlayPlugin extends Plugin<NMVideoPlayer, SubtitleOverlay
 				.addClasses(['subtitle-text'])
 				.appendTo(area)
 				.get();
-			this.areas.push({ area, text });
+			this.areas.push({
+				area,
+				text,
+			});
 			this.applyStyleTo(text, area);
 			if (this.currentLanguage)
 				text.setAttribute('data-language', this.currentLanguage);
@@ -215,7 +218,10 @@ export class SubtitleOverlayPlugin extends Plugin<NMVideoPlayer, SubtitleOverlay
 		// Snapshot current rendered rects — getBoundingClientRect()
 		// forces a layout flush, so do it once per area up front.
 		const placed: Array<{ area: HTMLDivElement; rect: DOMRect }> = this.areas
-			.map(areaEntry => ({ area: areaEntry.area, rect: areaEntry.area.getBoundingClientRect() }));
+			.map(areaEntry => ({
+				area: areaEntry.area,
+				rect: areaEntry.area.getBoundingClientRect(),
+			}));
 
 		const overlaps = (rectA: DOMRect, rectB: DOMRect): boolean =>
 			rectA.top < rectB.bottom && rectA.bottom > rectB.top;
@@ -440,10 +446,14 @@ function rgbToHex(rgb: string, opacity: number): string {
 		return '#00000000';
 	const [red, green, blue] = match.map(Number);
 	const alpha = Math.round(opacity * 255);
-	return `#${red!.toString(16).padStart(2, '0').toUpperCase()}`
-		+ `${green!.toString(16).padStart(2, '0').toUpperCase()}`
-		+ `${blue!.toString(16).padStart(2, '0').toUpperCase()}`
-		+ `${alpha.toString(16).padStart(2, '0').toUpperCase()}`;
+	return `#${red!.toString(16).padStart(2, '0')
+		.toUpperCase()}`
+		+ `${green!.toString(16).padStart(2, '0')
+			.toUpperCase()}`
+			+ `${blue!.toString(16).padStart(2, '0')
+				.toUpperCase()}`
+				+ `${alpha.toString(16).padStart(2, '0')
+					.toUpperCase()}`;
 }
 
 function normalizeHex(hex: string, opacity: number): string {
@@ -451,7 +461,9 @@ function normalizeHex(hex: string, opacity: number): string {
 		hex = `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`.toUpperCase();
 	}
 	if (hex.length === 7) {
-		const alpha = Math.round(opacity * 255).toString(16).padStart(2, '0').toUpperCase();
+		const alpha = Math.round(opacity * 255).toString(16)
+			.padStart(2, '0')
+			.toUpperCase();
 		return hex.toUpperCase() + alpha;
 	}
 	return hex.toUpperCase();
@@ -470,7 +482,8 @@ function getEdgeStyle(edgeStyle: string, opacity: number): string {
 		case 'raised': return `-1px -1px 2px ${black}`;
 		case 'uniform': return `0px 0px 4px ${black}`;
 		case 'textShadow':
-			return Array.from({ length: 7 }).fill(`${black} 0px 0px 4px`).join(', ');
+			return Array.from({ length: 7 }).fill(`${black} 0px 0px 4px`)
+				.join(', ');
 		default: return '';
 	}
 }

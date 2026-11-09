@@ -185,7 +185,10 @@ export const domMethods = {
 			return;
 
 		this.once('play', () => {
-			this.player.emit('display-message', { text: this.t('shortcuts.hintToast'), ms: 12000 });
+			this.player.emit('display-message', {
+				text: this.t('shortcuts.hintToast'),
+				ms: 12000,
+			});
 			sessionStorage.setItem('nmplayer-keybinds-hint-shown', '1');
 		});
 	},
