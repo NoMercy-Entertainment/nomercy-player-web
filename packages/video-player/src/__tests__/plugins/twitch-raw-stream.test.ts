@@ -7,9 +7,9 @@
 // -----------------------------------------------------------------------------
 
 import type { IUrlResolver, UrlResolverContext } from '@nomercy-entertainment/nomercy-player-core';
+import type { PostJson } from '../../plugins/twitch/gql';
 import { describePlugin, StubPlayer } from '@nomercy-entertainment/nomercy-player-core/testing';
 import { TwitchPlugin } from '../../plugins/twitch';
-import type { PostJson } from '../../plugins/twitch/gql';
 import { lookUpLiveStream, proxiedUrl } from '../../plugins/twitch/stream';
 
 const post: PostJson = async (url, options) => (await fetch(url, options)).json();

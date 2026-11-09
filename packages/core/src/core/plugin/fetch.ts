@@ -63,15 +63,21 @@ export function pluginFetch<T = string>(host: PluginFetchHost, url: string, opti
   const ctrl = host.lifecycle.abortable();
   const config = host.player.options ?? {};
   const authless = options?.auth === false;
-  const liveAuth = authless ? undefined : host.player._rawAuth?.();
-  const auth = authless ? undefined : (liveAuth ?? config.auth);
+  const liveAuth = authless
+    ? undefined
+    : host.player._rawAuth?.();
+  const auth = authless
+    ? undefined
+    : (liveAuth ?? config.auth);
   const scope = options?.scope ?? 'plugin';
   const fetchOpts: InternalFetchOptions<T> = {
     ...options,
     url,
     auth,
     fetch: config.fetch,
-    liveAuth: authless ? undefined : () => host.player._rawAuth?.() ?? config.auth,
+    liveAuth: authless
+      ? undefined
+      : () => host.player._rawAuth?.() ?? config.auth,
     signal: ctrl.signal,
     pluginId: host.id,
     scope,

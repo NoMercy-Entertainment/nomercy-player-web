@@ -8,8 +8,8 @@
 
 import type { QualityLevel, Translations } from '@nomercy-entertainment/nomercy-player-core';
 import type { NMVideoPlayer, VideoBackendKind, VideoPlaylistItem } from '@nomercy-entertainment/nomercy-video-player';
-import type { ChannelGone } from './TwitchEmbedBackend';
 import type { PostJson } from './gql';
+import type { ChannelGone } from './TwitchEmbedBackend';
 import type { TwitchSource } from './url';
 import { Plugin, translationsFromGlob } from '@nomercy-entertainment/nomercy-player-core';
 import { Html5VideoBackend } from '@nomercy-entertainment/nomercy-video-player';

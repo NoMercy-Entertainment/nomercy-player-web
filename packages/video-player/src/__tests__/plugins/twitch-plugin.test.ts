@@ -255,8 +255,13 @@ describePlugin(TwitchPlugin, () => {
 
       const [request] = vi.mocked(fetch).mock.calls[0] ?? [];
 
-      expect(request instanceof Request ? request.url : String(request)).toContain('gql.twitch.tv');
-      expect(request instanceof Request ? request.headers.get('Authorization') : 'no request').toBeNull();
+      expect(request instanceof Request
+        ? request.url
+        : String(request)).toContain('gql.twitch.tv');
+
+      expect(request instanceof Request
+        ? request.headers.get('Authorization')
+        : 'no request').toBeNull();
     });
 
     it('keeps a title the consumer chose', async () => {

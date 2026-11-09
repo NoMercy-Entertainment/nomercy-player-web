@@ -664,7 +664,12 @@ describe('Plugin base class', () => {
         const signRequest = vi.fn();
         const refresh = vi.fn();
 
-        (player as any).options = { auth: { bearerToken: 'tok', signRequest, refreshOnUnauthenticated: refresh } };
+        (player as any).options = { auth: {
+          bearerToken: 'tok',
+          signRequest,
+          refreshOnUnauthenticated: refresh,
+        } };
+
         fetchSpy.mockImplementation(async () => new Response('no', { status: 401 }));
 
         await expect(plugin.publicFetch('https://other.example/x', { auth: false })).rejects.toBeDefined();
@@ -701,7 +706,7 @@ describe('Plugin base class', () => {
         };
 
         void plugin.publicFetch('https://other.example/x', { auth: false }).catch(() => {});
-        await new Promise<void>(resolve => setTimeout(resolve, 0));
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
         lifecycle.dispose();
 
         expect(seen?.aborted).toBe(true);

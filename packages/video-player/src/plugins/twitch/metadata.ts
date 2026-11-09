@@ -6,8 +6,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
-import type { TwitchSource } from './url';
 import type { PostJson } from './gql';
+import type { TwitchSource } from './url';
 import { postGql } from './gql';
 
 const CLIP_TITLE = 'query TwitchClipTitle($slug: ID!) { clip(slug: $slug) { title } }';
