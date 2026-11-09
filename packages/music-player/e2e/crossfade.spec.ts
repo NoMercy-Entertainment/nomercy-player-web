@@ -187,32 +187,75 @@ test.describe('crossfade (NMMusicPlayer.crossfadeTo)', () => {
       };
     });
 
-    if ((result as { skipped: true; reason: string }).skipped) {
-      test.skip(true, `Skipped: ${(result as { skipped: true; reason: string }).reason}`);
+			let sawTransition = false;
+			let sawCrossfadeStart = false;
+			let crossfadeDone = false;
+			let crossfadeError = '';
+			let onCrossfadeStart = (): void => {};
+			const crossfadeStarted = new Promise<void>((resolve) => {
+				onCrossfadeStart = resolve;
+				setTimeout(resolve, 10_000);
+			});
+			player.on('transitionStart', () => {
+				sawTransition = true;
+			});
+			player.on('crossfadeStart', () => {
+				sawCrossfadeStart = true;
+				onCrossfadeStart();
+			});
+			player.on('crossfadeComplete', () => {
+				crossfadeDone = true;
+			});
+			player.on('error', (e: any) => {
+				crossfadeError = String(e?.error?.code ?? e?.error?.message ?? '');
+			});
 
       return;
     }
 
-    const {
-      energyBefore440,
-      energyBefore880,
-      energyDuring440,
-      energyDuring880,
-    } = result as {
-      skipped: false;
-      energyBefore440: number;
-      energyBefore880: number;
-      energyDuring440: number;
-      energyDuring880: number;
-    };
+			// The window opens on the player's own signal, not after a fixed delay.
+			await crossfadeStarted;
+			const ctx = player.audioContext();
+			if (!ctx || ctx.state !== 'running') {
+				return {
+					skipped: true,
+					reason: `AudioContext state: ${ctx?.state ?? 'null'}`,
+				};
+			}
 
-    // Before crossfade: 440 Hz tone must be present (primary active).
-    expect(energyBefore440).toBeGreaterThan(0);
+			function readBandEnergy(analyser: AnalyserNode, loHz: number, hiHz: number): number {
+				const buf = new Uint8Array(analyser.frequencyBinCount);
+				analyser.getByteFrequencyData(buf);
+				const sr = analyser.context.sampleRate;
+				const binHz = sr / analyser.fftSize;
+				const lo = Math.max(0, Math.floor(loHz / binHz));
+				const hi = Math.min(buf.length - 1, Math.ceil(hiHz / binHz));
+				let sum = 0;
+				for (let i = lo; i <= hi; i++) sum += buf[i] ?? 0;
+				return sum / Math.max(1, hi - lo + 1);
+			}
 
-    // Before crossfade: 880 Hz (the secondary track) must be WEAKER than the
-    // active 440 Hz primary — it is not yet mixed in. This is what makes the
-    // during-crossfade 880 Hz reading proof of movement, not a constant.
-    expect(energyBefore880).toBeLessThan(energyBefore440);
+			// The graph analyser taps the outgoing source before its gain, so it never
+			// hears the incoming element. Read the outgoing tone scaled by its live
+			// gain, and the incoming tone on the secondary chain's post-gain analyser.
+			const wa = player.backend() as any;
+
+			// An overlap is the one thing a cut cannot produce: both tones loud at
+			// the same instant.
+			let bestOverlap = 0;
+			let peak440 = 0;
+			let peak880 = 0;
+			const deadline = performance.now() + 10_000;
+			const isDone = (): boolean => crossfadeDone;
+			while (!isDone() && performance.now() < deadline) {
+				await new Promise<void>(r => setTimeout(r, 80));
+				const secondary = wa._secondaryAnalyser as AnalyserNode | undefined;
+				const e440 = readBandEnergy(graph.analyserSource(), 400, 480) * (wa.gainNode?.gain.value ?? 1);
+				const e880 = secondary ? readBandEnergy(secondary, 840, 920) : 0;
+				peak440 = Math.max(peak440, e440);
+				peak880 = Math.max(peak880, e880);
+				bestOverlap = Math.max(bestOverlap, Math.min(e440, e880));
+			}
 
     // During crossfade: 880 Hz energy must be non-zero — proves secondary
     // audio (trackB = 880 Hz tone) was decoded, loaded into a secondary
