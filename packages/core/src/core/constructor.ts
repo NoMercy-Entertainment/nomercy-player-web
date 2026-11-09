@@ -7,6 +7,7 @@
 // -----------------------------------------------------------------------------
 
 import { resourceError, stateError } from '../errors';
+import { initPlayerCoreState } from './state';
 
 /**
  * Discriminated result from {@link resolvePlayerConstructor}.
@@ -107,4 +108,32 @@ export function resolvePlayerConstructor<C>(
 		id,
 		div: element,
 	};
+}
+
+/** The instance fields {@link claimPlayerInstance} assigns. */
+export interface PlayerMountTarget {
+	playerId: string;
+	container: HTMLElement;
+}
+
+/** Runs the shared constructor steps; returns the registered player to hand back, or `undefined` when `player` was mounted. */
+export function claimPlayerInstance<C extends PlayerMountTarget>(
+	player: C,
+	id: string | number | undefined,
+	instances: Map<string, C>,
+	className: string,
+): C | undefined {
+	// Resolve before initPlayerCoreState: the existing-instance branch returns
+	// early, and re-initializing core state on a live instance corrupts it.
+	const resolved = resolvePlayerConstructor(id, instances, className);
+	if (resolved.kind === 'existing') {
+		return resolved.instance;
+	}
+
+	initPlayerCoreState(player, { className });
+	player.playerId = resolved.id;
+	player.container = resolved.div;
+	instances.set(resolved.id, player);
+
+	return undefined;
 }

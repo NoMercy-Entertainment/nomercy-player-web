@@ -8,74 +8,40 @@
 
 import type {
 	ActionOptions,
-	AriaLiveLevel,
 	AudioTrack,
-	AuthConfig,
 	BasePlaylistItem,
-	BufferState,
-	CanPlayResult,
-	CastState,
-	CastTarget,
-	Chapter,
-	CurrentAudioTrackSelection,
+	ComposedPlayerMethods,
 	CurrentQualitySelection,
 	CurrentSubtitleSelection,
-	DeviceCapabilities,
-	ICueParser,
-	IPlatform,
 	IPlayer,
-	IPreloadStrategy,
-	IStreamFactory,
 	IStreamSource,
-	ITransitionStrategy,
-	IUrlResolver,
 	TimeState as KitTimeState,
-	LoadOptions,
-	NetworkState,
-	PlaybackMetrics,
-	PlayerExperimental,
-	PlayerPhase,
-	Plugin,
-	PluginCtorWithId,
-	QualityLevel,
-	ResolvedUrl,
-	SetupState,
 	SidecarSubtitleInput,
 	SubtitleCueChange,
 	SubtitleStyle,
 	SubtitleTrack,
-	Translations,
-	UrlCategory,
-	VisibilityState,
 } from '@nomercy-entertainment/nomercy-player-core';
 import type { BackendEventPayload, IVideoBackend, VideoBackendKind } from './adapters/video-backend/IVideoBackend';
 import type { SubtitleChoice } from './player/track-language-memory';
 import type {
-	AudioTrackState,
 	IVideoPlayer,
-	PlayState,
-	QualityState,
-	RepeatState,
 	SegmentBoundaryPayload,
 	SegmentOptions,
-	ShuffleState,
 	Stretching,
 	VideoEventMap,
 	VideoPlayerConfig,
 	VideoPlaylistItem,
 	VideoRect,
-	VolumeState,
 } from './types';
 import {
 	bridgeBackendPlayState,
 	BrowserPolicyError,
+	claimPlayerInstance,
 	composeMixins,
 	EventEmitter,
 	GaplessTransitionStrategy,
-	initPlayerCoreState,
 	NotImplementedError,
 	playerCoreMethods,
-	resolvePlayerConstructor,
 } from '@nomercy-entertainment/nomercy-player-core';
 import { Html5VideoBackend } from './adapters/video-backend/html5';
 import { readItemImage } from './player/itemImage';
@@ -188,6 +154,8 @@ function _matchLanguage(candidates: Array<string | undefined>, target: string): 
 	return prefixMatch;
 }
 
+export interface NMVideoPlayer<T extends VideoPlaylistItem = VideoPlaylistItem> extends ComposedPlayerMethods<T> {}
+
 /**
  * Headless video player. Plugin-driven, event-driven, no UI in core.
  *
@@ -203,6 +171,7 @@ function _matchLanguage(candidates: Array<string | undefined>, target: string): 
  *    not the kit's internal string token — runtime impl comes from the mixin)
  *  - Video-specific stubs (fullscreen, pip, theater, subtitle toggles, etc.)
  */
+// eslint-disable-next-line ts/no-unsafe-declaration-merging -- composeMixins sets these members at runtime
 export class NMVideoPlayer<T extends VideoPlaylistItem = VideoPlaylistItem>
 	extends EventEmitter<VideoEventMap<T>>
 	implements IPlayer<VideoEventMap<T>>, IVideoPlayer<T> {
@@ -228,74 +197,11 @@ export class NMVideoPlayer<T extends VideoPlaylistItem = VideoPlaylistItem>
 	// so class methods can access them without casts.
 	private declare _phase: string;
 	private declare _playState: string;
-	/** Bumped only by `item(target)` navigations — distinguishes a real consumer preselection from the queue's default cursor. */
-	declare _currentEpoch: number | undefined;
 
-	// ── Type-only declarations for the methods composed in from the kit's
-	// `playerCoreMethods`. The bodies live in the kit; these declarations let
-	// consumers see the video-typed contract without runtime cost.
-
+	// The methods composed from `playerCoreMethods` are typed by
+	// `ComposedPlayerMethods`; only the video-typed entry point is declared here.
 	declare setup: (config: VideoPlayerConfig<T>) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => Promise<void>;
-	declare setupState: () => SetupState;
-	declare phase: () => PlayerPhase;
-	declare dispatching: () => ReadonlyArray<string>;
-	declare platform: () => IPlatform;
 
-	declare baseUrl: {
-		(): string | undefined;
-		(url: string): void;
-	};
-
-	declare audioContext: () => AudioContext | undefined;
-	declare experimental: PlayerExperimental;
-
-	declare t: {
-		(key: string, vars?: Record<string, string>): string;
-		(PluginClass: PluginCtorWithId, key: string, vars?: Record<string, string>): string;
-	};
-
-	declare language: {
-		(): string;
-		(lang: string): Promise<void>;
-	};
-
-	declare addTranslations: (bundle: Translations) => void;
-	declare registerTitleTokens: (tokens: Record<string, string>) => void;
-	declare translation: {
-		(lang: string, key: string): string | undefined;
-		(lang: string, key: string, value: string): void;
-	};
-
-	declare removeTranslations: (prefix: string, lang?: string) => void;
-
-	declare registerCueParser: (parser: ICueParser, prepend?: boolean) => void;
-	declare unregisterCueParser: (id: string) => void;
-	declare resolveCueParser: (url: string) => ICueParser | undefined;
-
-	declare play: (opts?: ActionOptions) => Promise<void>;
-	declare pause: (opts?: ActionOptions) => Promise<void>;
-	declare stop: (opts?: ActionOptions) => Promise<void>;
-	declare togglePlayback: (opts?: ActionOptions) => Promise<void>;
-	declare next: (opts?: LoadOptions) => Promise<void>;
-	declare previous: (opts?: LoadOptions) => Promise<void>;
-	declare rewind: (seconds?: number, opts?: ActionOptions) => Promise<void>;
-	declare forward: (seconds?: number, opts?: ActionOptions) => Promise<void>;
-	declare restart: (opts?: ActionOptions) => Promise<void>;
-
-	declare time: {
-		(): number;
-		(seconds: number, opts?: ActionOptions): Promise<void>;
-	};
-
-	declare duration: () => number;
-	declare buffered: () => number;
-	declare bufferedRanges: () => TimeRanges;
-	declare seekable: () => TimeRanges;
-	declare timeData: () => KitTimeState;
-	/** Seek to a position expressed as a percentage (0–100) of total duration. */
-	declare seekByPercentage: (pct: number, opts?: ActionOptions) => void;
 	/** @internal */
 	declare private _checkItemEndingSoon: (currentTime: number, duration: number) => void;
 	/** @internal */
@@ -303,108 +209,13 @@ export class NMVideoPlayer<T extends VideoPlaylistItem = VideoPlaylistItem>
 	/** @internal */
 	declare private _mediaIsStale: (() => boolean) | undefined;
 
-	declare playbackRate: {
-		(): number;
-		(rate: number): Promise<void>;
-	};
-
-	declare playbackRates: () => number[];
-
-	declare volume: {
-		(): number;
-		(level: number): Promise<void>;
-	};
-
-	declare mute: () => Promise<void>;
-	declare unmute: () => Promise<void>;
-	declare toggleMute: () => void;
-	declare volumeUp: (step?: number) => void;
-	declare volumeDown: (step?: number) => void;
-
-	declare bumpActivity: () => void;
-	declare activityTracking: {
-		(): boolean;
-		(enabled: boolean): void;
-	};
-
-	declare playState: () => PlayState;
-	declare volumeState: () => VolumeState;
-	declare repeatState: {
-		(): RepeatState;
-		(state: RepeatState): Promise<void>;
-	};
-
-	declare shuffleState: {
-		(): ShuffleState;
-		(state: ShuffleState | boolean): Promise<void>;
-	};
-
-	declare queue: {
-		(): ReadonlyArray<T>;
-		(items: T[], opts?: ActionOptions): void;
-	};
-
-	declare queueAppend: (item: T | T[], opts?: ActionOptions) => void;
-	declare queuePrepend: (item: T | T[], opts?: ActionOptions) => void;
-	declare queueInsert: (item: T | T[], index: number, opts?: ActionOptions) => void;
-	declare queueRemove: (id: string | number, opts?: ActionOptions) => void;
-	declare queueRemoveAt: (index: number, opts?: ActionOptions) => void;
-	declare queueMove: (from: number, to: number, opts?: ActionOptions) => void;
-	declare queueClear: (opts?: ActionOptions) => void;
-	declare queueShuffle: (opts?: ActionOptions) => void;
-	declare queueSort: (compare: (itemA: T, itemB: T) => number, opts?: ActionOptions) => void;
-	declare peekNext: () => T | undefined;
-	declare peekPrevious: () => T | undefined;
-	declare queueLength: () => number;
-	declare queueIndexOf: (id: string | number) => number;
-
-	declare item: {
-		(): T | undefined;
-		(target: T | string | number, opts?: LoadOptions): void;
-	};
-
-	declare index: () => number;
-	declare seekToIndex: (position: number, opts?: ActionOptions) => void;
-
-	declare playItem: (
-		target: BasePlaylistItem | string | number | ((item: BasePlaylistItem) => boolean),
-		opts?: LoadOptions,
-	) => void;
-
-	declare playNow: (
-		items: BasePlaylistItem[],
-		start?: BasePlaylistItem | string | number | ((item: BasePlaylistItem) => boolean),
-		opts?: LoadOptions,
-	) => void;
-
-	declare backlog: {
-		(): ReadonlyArray<T>;
-		(items: T[]): void;
-	};
-
-	declare backlogAppend: (item: T | T[]) => void;
-	declare backlogRemove: (id: string | number) => void;
-	declare backlogClear: () => void;
-
-	declare addPlugin: <P extends Plugin<any, any, any>>(PluginClass: PluginCtorWithId & (new () => P), opts?: P['opts']) => this;
-	declare getPlugin: <P extends object>(PluginClass: PluginCtorWithId & (new () => P)) => P | undefined;
-	declare getPluginById: <P extends object = object>(id: string) => P | undefined;
-	declare removePlugin: <P extends Plugin<any, any, any>>(PluginClass: PluginCtorWithId & (new () => P)) => void;
-	declare removePluginById: (id: string) => void;
-	declare plugins: () => ReadonlyArray<Plugin>;
-	declare enabledPlugins: () => ReadonlyArray<Plugin>;
-
 	constructor(id?: string | number) {
 		super();
-		const resolved = resolvePlayerConstructor(id, _instances, 'NMVideoPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this; /* mixin return-override: TS cannot narrow constructor return through the mixin chain */
+		// The registry stores the base generic; concrete T is narrowed at retrieval.
+		const existing = claimPlayerInstance(this as unknown as NMVideoPlayer<BasePlaylistItem>, id, _instances, 'NMVideoPlayer');
+		if (existing) {
+			return existing as unknown as this; /* mixin return-override: TS cannot narrow constructor return through the mixin chain */
 		}
-
-		initPlayerCoreState(this, { className: 'NMVideoPlayer' });
-		this.playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this as unknown as NMVideoPlayer<BasePlaylistItem> /* registry stores the base generic; concrete T is narrowed at retrieval */);
 
 		this.registerTitleTokens({
 			S: 'plugin.desktop-ui.token.season',
@@ -660,11 +471,7 @@ export class NMVideoPlayer<T extends VideoPlaylistItem = VideoPlaylistItem>
 	}
 
 	// ── Stream registration ── composed in via `streamRegistrationMethods` mixin.
-	declare registerStream: (factory: IStreamFactory, prepend?: boolean) => this;
 	declare resolveCustomStream: (url: string, contentType?: string) => IStreamSource | undefined;
-	declare unregisterStream: (id: string) => this;
-	declare streams: () => ReadonlyArray<string>;
-	declare getStreamFactory: (id: string) => IStreamFactory | undefined;
 
 	// ── Backend ──
 	private _backend: IVideoBackend | undefined;
@@ -912,25 +719,6 @@ export class NMVideoPlayer<T extends VideoPlaylistItem = VideoPlaylistItem>
 
 		return instance;
 	}
-
-	// ── Loading ── composed in via `loadingMethods` mixin.
-	declare load: (item: T, opts?: LoadOptions) => Promise<void>;
-	declare loadQueue: (url: string, parser?: (raw: string) => T[]) => Promise<void>;
-
-	// ── Shared state methods ── composed in via `playerStateMethods` mixin.
-	declare bufferState: () => BufferState;
-	declare networkState: () => NetworkState;
-	declare streamState: () => string;
-	declare visibilityState: () => VisibilityState;
-	declare qualityMode: {
-		(): QualityState;
-		(target: number | 'auto'): void;
-	};
-
-	declare audioTrackMode: {
-		(): AudioTrackState;
-		(idx: number): void;
-	};
 
 	// ── Video-specific state ──
 
@@ -1272,90 +1060,11 @@ export class NMVideoPlayer<T extends VideoPlaylistItem = VideoPlaylistItem>
 	/** Remove a sidecar subtitle track added via `addSubtitleTrack()`, by id. */
 	declare removeSubtitleTrack: (id: string, opts?: ActionOptions) => void;
 
-	declare audioTracks: () => AudioTrack[];
-	declare audioTrack: {
-		(): CurrentAudioTrackSelection | null;
-		(idx: number): Promise<void>;
-	};
-
 	/** Composed in via `mediaTracksMethods` — see that mixin for the full contract. */
 	declare cycleAudioTracks: () => void;
 
-	declare qualityLevels: {
-		(): QualityLevel[];
-		(opts: { includeUnsupported: true }): QualityLevel[];
-	};
-
-	declare quality: {
-		(): CurrentQualitySelection | 'auto';
-		(idx: number | 'auto'): void;
-	};
-
-	declare chapters: () => Chapter[];
-	declare chapter: {
-		(): Chapter | null;
-		(idx: number): void;
-	};
-
-	declare seekToChapter: (idx: number, opts?: ActionOptions) => void;
-	declare nextChapter: (opts?: ActionOptions) => void;
-	declare previousChapter: (opts?: ActionOptions) => void;
-
-	// ── Device capabilities ── composed in via `deviceMethods` mixin.
-	declare isTv: () => boolean;
-	declare isMobile: () => boolean;
-	declare isDesktop: () => boolean;
-	declare device: () => DeviceCapabilities;
-
-	// ── MediaCapabilities + ABR ── composed in via `abrMethods` mixin.
-	declare canPlay: (profile: { contentType: string; width?: number; height?: number; bitrate?: number; framerate?: number }) => Promise<CanPlayResult>;
-	declare bandwidth: () => number;
-	declare bandwidthEstimator: {
-		(): (() => number) | undefined;
-		(fn: () => number): void;
-	};
-
-	// ── Audio output device ── composed in via `audioOutputMethods` mixin.
-	declare audioOutputs: () => Promise<MediaDeviceInfo[]>;
-	declare selectAudioOutput: () => Promise<MediaDeviceInfo | null>;
-	declare audioOutput: {
-		(): Promise<string | null>;
-		(deviceId: string): Promise<void>;
-	};
-
-	// ── Cast / handoff ── composed in via `castMethods` mixin.
-	declare castState: () => CastState;
-	declare transferTo: (target: CastTarget) => Promise<void>;
-
-	// ── Auth runtime mutation ── composed in via `authMethods` mixin.
-	declare auth: {
-		(): Readonly<AuthConfig> | undefined;
-		(config: AuthConfig): void;
-		(partial: Partial<AuthConfig>): void;
-		(clear: null): void;
-	};
-
 	/** @internal */
 	declare _mediaAuthorization: (url: string) => string | undefined;
-
-	declare refreshAuth: () => Promise<void>;
-	declare resolveUrl: (url: string, category?: UrlCategory) => Promise<ResolvedUrl>;
-	declare urlResolver: {
-		(): IUrlResolver | undefined;
-		(resolver: IUrlResolver | undefined): void;
-	};
-
-	// ── Performance metrics / clock / accessibility ── composed in via `metricsMethods` mixin.
-	declare metrics: () => PlaybackMetrics;
-	declare recordMetric: (name: string, value: number) => void;
-	declare now: () => number;
-	declare announce: (text: string, level?: AriaLiveLevel) => void;
-
-	// ── Preload + transition strategies ── composed via `preloadStrategyMethods` mixin.
-	declare setPreloadStrategy: (strategy: IPreloadStrategy) => void;
-	declare setTransitionStrategy: (strategy: ITransitionStrategy) => void;
-	declare preloadStrategy: () => IPreloadStrategy;
-	declare transitionStrategy: () => ITransitionStrategy;
 
 	_disposeBackend(): void {
 		this._clearSegmentInternal();

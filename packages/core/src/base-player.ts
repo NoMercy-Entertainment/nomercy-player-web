@@ -15,9 +15,9 @@
  * Import paths that previously pointed here continue to resolve correctly.
  */
 
-export type { PlayerCtorResolution } from './core/constructor';
+export type { PlayerCtorResolution, PlayerMountTarget } from './core/constructor';
 
-export { resolvePlayerConstructor } from './core/constructor';
+export { claimPlayerInstance, resolvePlayerConstructor } from './core/constructor';
 
 export { playerCoreMethods } from './core/index';
 export { KIT_VERSION } from './core/kit-version';

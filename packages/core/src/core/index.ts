@@ -46,8 +46,8 @@ export {
 	resourceError,
 	stateError,
 } from '../errors';
-export { resolvePlayerConstructor } from './constructor';
-export type { PlayerCtorResolution } from './constructor';
+export { claimPlayerInstance, resolvePlayerConstructor } from './constructor';
+export type { PlayerCtorResolution, PlayerMountTarget } from './constructor';
 export { KIT_VERSION } from './kit-version';
 export { abrMethods } from './mixins/abr';
 export { activityMethods, wireActivityTracking } from './mixins/activity';
@@ -80,6 +80,7 @@ export { timeMethods } from './mixins/time';
 export { transportMethods } from './mixins/transport';
 
 export { volumeMethods } from './mixins/volume';
+export type { ComposedPlayerMethods } from './player-surface';
 export {
 	initPlayerCoreState,
 	setPlayerAudioContext,

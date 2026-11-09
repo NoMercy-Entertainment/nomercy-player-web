@@ -8,64 +8,30 @@
 
 import type {
 	ActionOptions,
-	AriaLiveLevel,
-	AudioTrack,
-	AuthConfig,
 	BasePlaylistItem,
 	BeforeDispatchOutcome,
-	BufferState,
-	CanPlayResult,
-	CastState,
-	CastTarget,
-	Chapter,
-	CurrentAudioTrackSelection,
-	CurrentQualitySelection,
-	DeviceCapabilities,
-	ICueParser,
-	IPlatform,
+	ComposedPlayerMethods,
 	IPlayer,
-	IPreloadStrategy,
-	IStreamFactory,
-	ITransitionStrategy,
-	IUrlResolver,
 	TimeState as KitTimeState,
-	LoadOptions,
-	NetworkState,
-	PlaybackMetrics,
-	PlayerExperimental,
 	PlayerPhase,
-	Plugin,
-	PluginCtorWithId,
-	QualityLevel,
-	ResolvedUrl,
-	SetupState,
-	Translations,
-	UrlCategory,
-	VisibilityState,
 } from '@nomercy-entertainment/nomercy-player-core';
 import type { BackendEventPayload, IAudioBackend } from './adapters/audio-backend/IAudioBackend';
 import type {
 	AudioBackendKind,
-	AudioTrackState,
 	CrossfadeOptions,
 	IMusicPlayer,
 	MusicEventMap,
 	MusicPlayerConfig,
 	MusicPlaylistItem,
-	QualityState,
-	RepeatState,
-	ShuffleState,
-	VolumeState,
 } from './types';
 import {
 	bridgeBackendPlayState,
+	claimPlayerInstance,
 	composeMixins,
 	CrossfadeTransitionStrategy,
 	EventEmitter,
-	initPlayerCoreState,
 	MediaFormatError,
 	playerCoreMethods,
-	resolvePlayerConstructor,
 	setPlayerAudioContext,
 	StateError,
 } from '@nomercy-entertainment/nomercy-player-core';
@@ -122,6 +88,8 @@ interface WireInternals {
 	_dispatchBefore: <TData>(beforeEvent: string, data: TData) => Promise<BeforeDispatchOutcome<TData>>;
 }
 
+export interface NMMusicPlayer<T extends MusicPlaylistItem = MusicPlaylistItem> extends ComposedPlayerMethods<T> {}
+
 /**
  * Headless music player. Plugin-driven, event-driven, no UI in core.
  *
@@ -137,6 +105,7 @@ interface WireInternals {
  *    the kit's internal string token — the runtime impl comes from the mixin)
  *  - Music-specific stubs (backends, crossfade, audio output devices, etc.)
  */
+// eslint-disable-next-line ts/no-unsafe-declaration-merging -- composeMixins sets these members at runtime
 export class NMMusicPlayer<T extends MusicPlaylistItem = MusicPlaylistItem>
 	extends EventEmitter<MusicEventMap<T>>
 	implements IPlayer<MusicEventMap<T>>, IMusicPlayer<T> {
@@ -157,180 +126,18 @@ export class NMMusicPlayer<T extends MusicPlaylistItem = MusicPlaylistItem>
 
 	declare options: MusicPlayerConfig<T>;
 
-	// Kit-managed state field — set by initPlayerCoreState, declared here so
-	// the setup wrapper can read it without a cast.
-	/** Bumped only by `item(target)` navigations — distinguishes a real consumer preselection from the queue's default cursor. */
-	declare _currentEpoch: number | undefined;
-
-	// ── Type-only declarations for the methods composed in from the kit's
-	// `playerCoreMethods`. The bodies live in the kit; these declarations let
-	// consumers see the music-typed contract without runtime cost.
-
+	// The methods composed from `playerCoreMethods` are typed by
+	// `ComposedPlayerMethods`; only the music-typed entry point is declared here.
 	declare setup: (config: MusicPlayerConfig<T>) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => Promise<void>;
-	declare setupState: () => SetupState;
-	declare phase: () => PlayerPhase;
-	declare dispatching: () => ReadonlyArray<string>;
-
-	declare baseUrl: {
-		(): string | undefined;
-		(url: string): void;
-	};
-
-	declare audioContext: () => AudioContext | undefined;
-	declare experimental: PlayerExperimental;
-
-	declare t: {
-		(key: string, vars?: Record<string, string>): string;
-		(PluginClass: PluginCtorWithId, key: string, vars?: Record<string, string>): string;
-	};
-
-	declare language: {
-		(): string;
-		(lang: string): Promise<void>;
-	};
-
-	declare addTranslations: (bundle: Translations) => void;
-	declare translation: {
-		(lang: string, key: string): string | undefined;
-		(lang: string, key: string, value: string): void;
-	};
-
-	declare removeTranslations: (prefix: string, lang?: string) => void;
-
-	declare registerCueParser: (parser: ICueParser, prepend?: boolean) => void;
-	declare unregisterCueParser: (id: string) => void;
-	declare resolveCueParser: (url: string) => ICueParser | undefined;
-
-	declare play: (opts?: ActionOptions) => Promise<void>;
-	declare pause: (opts?: ActionOptions) => Promise<void>;
-	declare stop: (opts?: ActionOptions) => Promise<void>;
-	declare togglePlayback: (opts?: ActionOptions) => Promise<void>;
-	declare next: (opts?: LoadOptions) => Promise<void>;
-	declare previous: (opts?: LoadOptions) => Promise<void>;
-	declare rewind: (seconds?: number, opts?: ActionOptions) => Promise<void>;
-	declare forward: (seconds?: number, opts?: ActionOptions) => Promise<void>;
-	declare restart: (opts?: ActionOptions) => Promise<void>;
-	declare registerTitleTokens: (tokens: Record<string, string>) => void;
-
-	declare time: {
-		(): number;
-		(seconds: number, opts?: ActionOptions): Promise<void>;
-	};
-
-	declare duration: () => number;
-	declare buffered: () => number;
-	declare bufferedRanges: () => TimeRanges;
-	declare seekable: () => TimeRanges;
-	declare timeData: () => KitTimeState;
-	/** Seek to a position expressed as a percentage (0–100) of total duration. */
-	declare seekByPercentage: (pct: number, opts?: ActionOptions) => void;
-
-	declare playbackRate: {
-		(): number;
-		(rate: number): Promise<void>;
-	};
-
-	declare playbackRates: () => number[];
-
-	declare volume: {
-		(): number;
-		(level: number): Promise<void>;
-	};
-
-	declare mute: () => Promise<void>;
-	declare unmute: () => Promise<void>;
-	declare toggleMute: () => void;
-	declare volumeUp: (step?: number) => void;
-	declare volumeDown: (step?: number) => void;
-
-	declare bumpActivity: () => void;
-	declare activityTracking: {
-		(): boolean;
-		(enabled: boolean): void;
-	};
-
-	declare playState: () => PlayState;
-	declare volumeState: () => VolumeState;
-	declare repeatState: {
-		(): RepeatState;
-		(state: RepeatState): Promise<void>;
-	};
-
-	declare shuffleState: {
-		(): ShuffleState;
-		(state: ShuffleState | boolean): Promise<void>;
-	};
-
-	declare queue: {
-		(): ReadonlyArray<T>;
-		(items: T[], opts?: ActionOptions): void;
-	};
-
-	declare queueAppend: (item: T | T[], opts?: ActionOptions) => void;
-	declare queuePrepend: (item: T | T[], opts?: ActionOptions) => void;
-	declare queueInsert: (item: T | T[], index: number, opts?: ActionOptions) => void;
-	declare queueRemove: (id: string | number, opts?: ActionOptions) => void;
-	declare queueRemoveAt: (index: number, opts?: ActionOptions) => void;
-	declare queueMove: (from: number, to: number, opts?: ActionOptions) => void;
-	declare queueClear: (opts?: ActionOptions) => void;
-	declare queueShuffle: (opts?: ActionOptions) => void;
-	declare queueSort: (compare: (itemA: T, itemB: T) => number, opts?: ActionOptions) => void;
-	declare peekNext: () => T | undefined;
-	declare peekPrevious: () => T | undefined;
-	declare queueLength: () => number;
-	declare queueIndexOf: (id: string | number) => number;
-
-	declare item: {
-		(): T | undefined;
-		(target: T | string | number, opts?: LoadOptions): void;
-	};
-
-	declare index: () => number;
-	declare seekToIndex: (position: number, opts?: ActionOptions) => void;
-
-	declare playItem: (
-		target: BasePlaylistItem | string | number | ((item: BasePlaylistItem) => boolean),
-		opts?: LoadOptions,
-	) => void;
-
-	declare playNow: (
-		items: BasePlaylistItem[],
-		start?: BasePlaylistItem | string | number | ((item: BasePlaylistItem) => boolean),
-		opts?: LoadOptions,
-	) => void;
-
-	declare backlog: {
-		(): ReadonlyArray<T>;
-		(items: T[]): void;
-	};
-
-	declare backlogAppend: (item: T | T[]) => void;
-	declare backlogRemove: (id: string | number) => void;
-	declare backlogClear: () => void;
-
-	declare addPlugin: <P extends Plugin<any, any, any>>(PluginClass: PluginCtorWithId & (new () => P), opts?: P['opts']) => this;
-	declare getPlugin: <P extends object>(PluginClass: PluginCtorWithId & (new () => P)) => P | undefined;
-	declare getPluginById: <P extends object = object>(id: string) => P | undefined;
-	declare removePlugin: <P extends Plugin<any, any, any>>(PluginClass: PluginCtorWithId & (new () => P)) => void;
-	declare removePluginById: (id: string) => void;
-	declare plugins: () => ReadonlyArray<Plugin>;
-	declare enabledPlugins: () => ReadonlyArray<Plugin>;
 
 	constructor(id?: string | number) {
 		super();
-		// Resolve before initPlayerCoreState: the existing-instance branch returns
-		// early, and re-initializing core state on a live instance corrupts it.
-		const resolved = resolvePlayerConstructor(id, _instances, 'NMMusicPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this; // polymorphic return: resolved instance IS this subclass
+		// The registry stores the base item type; a subclass is assignment-compatible.
+		const existing = claimPlayerInstance(this as unknown as NMMusicPlayer<MusicPlaylistItem>, id, _instances, 'NMMusicPlayer');
+		if (existing) {
+			return existing as unknown as this; // polymorphic return: resolved instance IS this subclass
 		}
 
-		initPlayerCoreState(this, { className: 'NMMusicPlayer' });
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this as unknown as NMMusicPlayer<MusicPlaylistItem>); // registry stores the base item type; subclass is assignment-compatible
 		this._wireAutomaticCrossfade();
 	}
 
@@ -338,12 +145,6 @@ export class NMMusicPlayer<T extends MusicPlaylistItem = MusicPlaylistItem>
 	static _resetRegistry(): void {
 		_instances.clear();
 	}
-
-	// ── Stream registration ── composed in via `streamRegistrationMethods` mixin.
-	declare registerStream: (factory: IStreamFactory, prepend?: boolean) => this;
-	declare unregisterStream: (id: string) => this;
-	declare streams: () => ReadonlyArray<string>;
-	declare getStreamFactory: (id: string) => IStreamFactory | undefined;
 
 	// ── Backend ──
 	// The active audio backend. `_isTransitioning` flips true during a crossfade
@@ -557,10 +358,6 @@ export class NMMusicPlayer<T extends MusicPlaylistItem = MusicPlaylistItem>
 		});
 	}
 
-	// ── Loading ── composed in via `loadingMethods` mixin.
-	declare load: (item: T, opts?: LoadOptions) => Promise<void>;
-	declare loadQueue: (url: string, parser?: (raw: string) => T[]) => Promise<void>;
-
 	// ── Crossfade — dual-element implementation ──
 	/**
 	 * Fade the active element out while a second element fades in, then swap
@@ -673,106 +470,8 @@ export class NMMusicPlayer<T extends MusicPlaylistItem = MusicPlaylistItem>
 		return this._isTransitioning;
 	}
 
-	// ── Shared state methods ── composed in via `playerStateMethods` mixin.
-	declare bufferState: () => BufferState;
-	declare networkState: () => NetworkState;
-	declare streamState: () => string;
-	declare visibilityState: () => VisibilityState;
-	declare qualityMode: {
-		(): QualityState;
-		(target: number | 'auto'): void;
-	};
-
-	declare audioTrackMode: {
-		(): AudioTrackState;
-		(idx: number): void;
-	};
-
-	// ── Platform + device capabilities ── composed in via `lifecycle` / `deviceMethods` mixins.
-	declare platform: () => IPlatform;
-	declare isTv: () => boolean;
-	declare isMobile: () => boolean;
-	declare isDesktop: () => boolean;
-	declare device: () => DeviceCapabilities;
-
-	// ── MediaCapabilities + ABR ── composed in via `abrMethods` mixin.
-	declare canPlay: (profile: { contentType: string; width?: number; height?: number; bitrate?: number; framerate?: number }) => Promise<CanPlayResult>;
-	declare bandwidth: () => number;
-	declare bandwidthEstimator: {
-		(): (() => number) | undefined;
-		(fn: () => number): void;
-	};
-
-	// ── Audio output device ── composed in via `audioOutputMethods` mixin.
-	declare audioOutputs: () => Promise<MediaDeviceInfo[]>;
-	declare selectAudioOutput: () => Promise<MediaDeviceInfo | null>;
-	declare audioOutput: {
-		(): Promise<string | null>;
-		(deviceId: string): Promise<void>;
-	};
-
-	// ── Tracks / chapters / quality ── composed in via `mediaTracksMethods` mixin.
-	// `subtitles` / `subtitle` / `subtitleStyle` are screen-domain concerns with
-	// no meaning on an audio backend — not part of the music player's contract.
-	declare audioTracks: () => AudioTrack[];
-	declare audioTrack: {
-		(): CurrentAudioTrackSelection | null;
-		(idx: number): Promise<void>;
-	};
-
-	declare qualityLevels: {
-		(): QualityLevel[];
-		(opts: { includeUnsupported: true }): QualityLevel[];
-	};
-
-	declare quality: {
-		(): CurrentQualitySelection | 'auto';
-		(idx: number | 'auto'): void;
-	};
-
-	declare chapters: () => Chapter[];
-	declare chapter: {
-		(): Chapter | null;
-		(idx: number): void;
-	};
-
-	declare seekToChapter: (idx: number, opts?: ActionOptions) => void;
-	declare nextChapter: (opts?: ActionOptions) => void;
-	declare previousChapter: (opts?: ActionOptions) => void;
-
-	// ── Cast / handoff ── composed in via `castMethods` mixin.
-	declare castState: () => CastState;
-	declare transferTo: (target: CastTarget) => Promise<void>;
-
-	// ── Auth runtime mutation ── composed in via `authMethods` mixin.
-	declare auth: {
-		(): Readonly<AuthConfig> | undefined;
-		(config: AuthConfig): void;
-		(partial: Partial<AuthConfig>): void;
-		(clear: null): void;
-	};
-
 	/** @internal */
 	declare _mediaAuthorization: (url: string) => string | undefined;
-
-	declare refreshAuth: () => Promise<void>;
-	declare resolveUrl: (url: string, category?: UrlCategory) => Promise<ResolvedUrl>;
-	declare urlResolver: {
-		(): IUrlResolver | undefined;
-		(resolver: IUrlResolver | undefined): void;
-	};
-
-	// ── Performance metrics / clock / accessibility ── composed in via `metricsMethods` mixin.
-	declare metrics: () => PlaybackMetrics;
-	declare recordMetric: (name: string, value: number) => void;
-	declare now: () => number;
-	declare announce: (text: string, level?: AriaLiveLevel) => void;
-
-	// ── Preload + transition strategies ── composed via `preloadStrategyMethods` mixin.
-	declare setPreloadStrategy: (strategy: IPreloadStrategy) => void;
-	declare setTransitionStrategy: (strategy: ITransitionStrategy) => void;
-	declare preloadStrategy: () => IPreloadStrategy;
-	declare transitionStrategy: () => ITransitionStrategy;
 }
 
 // Compose every shared player method onto the prototype. The kit's logic

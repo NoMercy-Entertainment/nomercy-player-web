@@ -209,7 +209,8 @@ export {
 	volumeMethods,
 } from './base-player';
 
-export type { PlayerCtorResolution } from './base-player';
+export { claimPlayerInstance } from './base-player';
+export type { PlayerCtorResolution, PlayerMountTarget } from './base-player';
 export { preloadStrategyMethods } from './base-player';
 
 // URL-param auth helper for non-HLS / native-HLS-fallback element.src paths
@@ -247,6 +248,7 @@ export {
 	formatSeconds,
 } from './core/format';
 // Plugin runtime
+export type { ComposedPlayerMethods } from './core/player-surface';
 export { Plugin, PluginThrow } from './core/plugin';
 export type {
 	BeforeDispatchResult,
