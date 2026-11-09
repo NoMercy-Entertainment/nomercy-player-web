@@ -10,11 +10,16 @@ import type {
 	ActionOptions,
 	LoadOptions,
 	PluginCtorWithId,
-	Translations,
 } from '@nomercy-entertainment/nomercy-player-core';
 import type { NMVideoPlayer } from '../index';
 import type { Stretching, VideoPlayerConfig, VideoPlaylistItem } from '../types';
-import { NotImplementedError, Plugin, SetupState } from '@nomercy-entertainment/nomercy-player-core';
+import {
+	installV1TranslationShims,
+	NotImplementedError,
+	Plugin,
+	SetupState,
+	v1DeprecationMessage,
+} from '@nomercy-entertainment/nomercy-player-core';
 import { PlayState, VolumeState } from '../types';
 
 interface V1SkipSegment {
@@ -37,21 +42,12 @@ interface V1LegacyTrack {
 	type?: string;
 }
 
-interface V1TranslationEntry {
-	key: string;
-	value: string;
-}
-
 interface ItemWithTracks {
 	tracks?: ReadonlyArray<V1LegacyTrack>;
 }
 
 function hasTracksField(value: unknown): value is ItemWithTracks {
 	return typeof value === 'object' && value !== null && 'tracks' in value;
-}
-
-function isTranslationEntryList(value: Translations | ReadonlyArray<V1TranslationEntry>): value is ReadonlyArray<V1TranslationEntry> {
-	return Array.isArray(value);
 }
 
 function snakeToCamel(value: string): string {
@@ -228,7 +224,7 @@ export class V1VideoCompatPlugin extends Plugin<NMVideoPlayer> {
 	static override readonly description: string = 'Attaches the legacy v1 method surface onto the v2 player. Every shim delegates to the current API and logs a deprecation warning.';
 
 	private _warn(method: string): void {
-		this.logger.warn(`@deprecated player.${method}() is a v1 compatibility shim — migrate to the v2 API before it is removed.`);
+		this.logger.warn(v1DeprecationMessage(method));
 	}
 
 	override use(): void {
@@ -673,41 +669,7 @@ export class V1VideoCompatPlugin extends Plugin<NMVideoPlayer> {
 	}
 
 	private _installTranslationShims(): void {
-		const player = this.player;
-		const warn = this._warn.bind(this);
-		const originalAddTranslations = player.addTranslations.bind(player);
-
-		player.localize = (key: string, vars?: Record<string, string>): string => {
-			warn('localize');
-			return player.t(key, vars);
-		};
-
-		player.addTranslation = (key: string, value: string): void => {
-			warn('addTranslation');
-			player.translation(player.language(), key, value);
-		};
-
-		function addTranslations(bundle: Translations): void;
-		function addTranslations(entries: ReadonlyArray<V1TranslationEntry>): void;
-		function addTranslations(bundleOrEntries: Translations | ReadonlyArray<V1TranslationEntry>): void {
-			warn('addTranslations');
-			if (isTranslationEntryList(bundleOrEntries)) {
-				const lang = player.language();
-				for (const entry of bundleOrEntries) {
-					player.translation(lang, entry.key, entry.value);
-				}
-				return;
-			}
-			originalAddTranslations(bundleOrEntries);
-		}
-		player.addTranslations = addTranslations;
-
-		player.setTitle = (title: string): void => {
-			warn('setTitle');
-			if (typeof document !== 'undefined') {
-				document.title = title;
-			}
-		};
+		installV1TranslationShims(this.player, this._warn.bind(this));
 	}
 
 	private _installLifecycleShims(): void {

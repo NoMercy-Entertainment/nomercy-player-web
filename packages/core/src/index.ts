@@ -263,6 +263,10 @@ export { buildResolvedUrl } from './core/resolved-url';
 export { interpolateTitleTokens } from './core/title-tokens';
 
 export type { TokenRegistry } from './core/title-tokens';
+// Shared pieces of the v1 compatibility plugins
+export { installV1TranslationShims, isV1TranslationEntryList, v1DeprecationMessage } from './core/v1-compat';
+
+export type { V1TranslationEntry, V1TranslationShimTarget } from './core/v1-compat';
 // Perceptual volume curve — maps linear 0..1 slider position to gain amplitude
 export { perceptualGain } from './core/volume-curve';
 
