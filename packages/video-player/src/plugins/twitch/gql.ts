@@ -9,21 +9,19 @@
 const GQL_URL = 'https://gql.twitch.tv/gql';
 const WEB_CLIENT_ID = 'kimne78kx3ncx6brgo4mv6wki5h1ko';
 
-/**
- * Sends one query to Twitch's web API. Uses plain `fetch` on purpose: `Plugin.fetch` adds
- * the player's bearer token to every request, and a media server's token must never reach Twitch.
- */
-export async function postGql<Data>(query: string, variables: object, clientId: string = WEB_CLIENT_ID, signal?: AbortSignal): Promise<Data | undefined> {
-  const response = await fetch(GQL_URL, {
+/** Sends a POST and decodes the JSON answer. The plugin supplies one that sends no player auth. */
+export type PostJson = <Body>(url: string, options: { method: 'POST'; headers: Record<string, string>; body: string }) => Promise<Body>;
+
+/** Sends one query to Twitch's web API through `post`. A media server's token must never reach Twitch. */
+export async function postGql<Data>(post: PostJson, query: string, variables: object, clientId: string = WEB_CLIENT_ID): Promise<Data | undefined> {
+  const { data } = await post<{ data?: Data }>(GQL_URL, {
     method: 'POST',
     headers: { 'Client-Id': clientId },
     body: JSON.stringify({
       query,
       variables,
     }),
-    signal,
   });
-  const { data }: { data?: Data } = await response.json();
 
   return data;
 }

@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- `./plugins/twitch`: the Twitch GQL calls go through `Plugin.fetch` with `auth: false`, so they use the configured transport and abort on dispose, and the player's token still never reaches Twitch.
+
+### Added
+
+- `VttSpriteThumbnailSource` takes optional `fetchers`, so a sprite server that needs auth can be reached with a token.
+
 ## [2.8.3] — 2026-11-09
 
 ### Fixed

@@ -12,6 +12,7 @@ import type {
   StreamFactoryOptions,
   StreamSourceState,
 } from '@nomercy-entertainment/nomercy-player-core';
+import type { PostJson } from './gql';
 import { postGql } from './gql';
 import { parseTwitchUrl } from './url';
 
@@ -54,8 +55,8 @@ function highestQuality(qualities: readonly ClipQuality[]): ClipQuality | undefi
 }
 
 /** Asks Twitch for a clip's highest-quality file. */
-export async function lookUpClip(slug: string, clientId?: string, signal?: AbortSignal): Promise<ResolvedClip | undefined> {
-  const clip = (await postGql<ClipData>(CLIP_QUERY, { slug }, clientId, signal))?.clip;
+export async function lookUpClip(post: PostJson, slug: string, clientId?: string): Promise<ResolvedClip | undefined> {
+  const clip = (await postGql<ClipData>(post, CLIP_QUERY, { slug }, clientId))?.clip;
   const file = highestQuality(clip?.videoQualities ?? []);
 
   if (!clip?.playbackAccessToken || !file)

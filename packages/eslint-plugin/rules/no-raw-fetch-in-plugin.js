@@ -17,10 +17,9 @@
  *
  * This is the auth-and-lifecycle half of the this.player boundary, the same
  * class as no-raw-player-bus and no-raw-timers-in-plugin. It fires only inside
- * a class that `extends Plugin`, so core internals are untouched. `this.fetch`
- * never matches (it is a member call, not the global). A genuinely-needed raw
- * fetch (a public URL that must NOT carry auth) takes an eslint-disable with a
- * one-line reason.
+ * a class that `extends Plugin` and in non-test files under `src/**\/plugins/`,
+ * so helper modules are covered and core internals are untouched. `this.fetch`
+ * never matches. A URL that must NOT carry auth uses `this.fetch(url, { auth: false })`.
  */
 
 import { inPluginSubclass } from './_in-plugin-subclass.js';

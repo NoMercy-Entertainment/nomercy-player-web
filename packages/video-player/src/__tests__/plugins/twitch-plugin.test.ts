@@ -36,7 +36,7 @@ class FakeBackend {
 
 /** The stub has no backend or preload surface, and these are what the plugin drives. */
 class BackendStubPlayer extends StubPlayer {
-  readonly options: { backendFactory?: (kind: string, config: object) => object } = {};
+  readonly options: { backendFactory?: (kind: string, config: object) => object; auth?: { bearerToken: string } } = {};
   active = new FakeBackend('html5');
   readonly strategy = { assetsToPreload: (item: FakeItem): string[] => [item.url ?? ''] };
 
@@ -246,6 +246,17 @@ describePlugin(TwitchPlugin, () => {
       player.off('item', listener);
 
       expect(announced).toEqual(['From Twitch']);
+    });
+
+    it('never sends the player bearer token to Twitch', async () => {
+      player.options.auth = { bearerToken: 'media-server-token' };
+
+      await titleAfterLoad('', 'https://www.twitch.tv/videos/123');
+
+      const [request] = vi.mocked(fetch).mock.calls[0] ?? [];
+
+      expect(request instanceof Request ? request.url : String(request)).toContain('gql.twitch.tv');
+      expect(request instanceof Request ? request.headers.get('Authorization') : 'no request').toBeNull();
     });
 
     it('keeps a title the consumer chose', async () => {

@@ -92,6 +92,15 @@ describe('VttSpriteThumbnailSource', () => {
     expect(src.lookup(10)).toBeNull();
   });
 
+  it('loads the VTT through the fetchers it was built with', async () => {
+    const fetchText = vi.fn(async () => '');
+    const src = new VttSpriteThumbnailSource({ fetchText });
+
+    await src.load({ id: '3', previewSpriteUrl: 'https://media.example/sprite.vtt' } as any);
+
+    expect(fetchText).toHaveBeenCalledWith('https://media.example/sprite.vtt');
+  });
+
   // Test 4
   it('lookup(time) returns null before any load() call', () => {
     const src = new VttSpriteThumbnailSource();

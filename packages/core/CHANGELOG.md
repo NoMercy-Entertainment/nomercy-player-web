@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `Plugin.fetch(url, { auth: false })` sends the request without the player's auth (no bearer token, headers, `transformUrl`, `signRequest` or 401 refresh). The configured transport, retry and dispose abort still apply. Use it for third-party hosts.
+
 ## [2.6.1] — 2026-11-09
 
 ### Fixed

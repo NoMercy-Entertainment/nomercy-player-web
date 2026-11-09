@@ -70,10 +70,9 @@ export interface SpriteFetchers {
   fetchImageUrl?: (url: string) => Promise<string | null>;
 }
 
-// Reachable in production via `VttSpriteThumbnailSource`, which calls
-// `loadSpriteSet` with no `fetchers` — that adapter has no plugin-scoped
-// authenticated fetch to inject, so this bare fallback stays.
+// Used when `VttSpriteThumbnailSource` is built without fetchers: it has no player, so no auth.
 async function defaultFetchText(url: string): Promise<string | null> {
+  // eslint-disable-next-line player/no-raw-fetch-in-plugin -- the adapter has no player to borrow auth from
   const response = await fetch(url);
 
   if (!response.ok)

@@ -6,6 +6,7 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
+import type { PostJson } from './gql';
 import { postGql } from './gql';
 
 const USHER_URL = 'https://usher.ttvnw.net';
@@ -20,8 +21,8 @@ interface StreamData {
 }
 
 /** Finds the HLS address of a live channel. A channel that is not streaming has none. */
-export async function lookUpLiveStream(channel: string, clientId?: string, signal?: AbortSignal): Promise<string | undefined> {
-  const data = await postGql<StreamData>(CHANNEL_TOKEN, { login: channel }, clientId, signal);
+export async function lookUpLiveStream(post: PostJson, channel: string, clientId?: string): Promise<string | undefined> {
+  const data = await postGql<StreamData>(post, CHANNEL_TOKEN, { login: channel }, clientId);
   const token = data?.streamPlaybackAccessToken;
 
   if (!data?.user?.stream || !token)

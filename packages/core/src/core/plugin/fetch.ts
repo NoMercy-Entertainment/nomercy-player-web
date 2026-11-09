@@ -26,6 +26,8 @@ interface FetchHttp {
   timeoutMs?: number;
   retry?: RetryConfig;
   scope?: 'plugin' | 'player' | 'silent';
+  /** `false` skips the player's auth (bearer, headers, transformUrl, signRequest, 401 refresh). */
+  auth?: false;
 }
 
 export type FetchOptions<T> =
@@ -60,15 +62,16 @@ interface PluginFetchHost {
 export function pluginFetch<T = string>(host: PluginFetchHost, url: string, options?: FetchOptions<T>): Promise<T> {
   const ctrl = host.lifecycle.abortable();
   const config = host.player.options ?? {};
-  const liveAuth = host.player._rawAuth?.();
-  const auth = liveAuth ?? config.auth;
+  const authless = options?.auth === false;
+  const liveAuth = authless ? undefined : host.player._rawAuth?.();
+  const auth = authless ? undefined : (liveAuth ?? config.auth);
   const scope = options?.scope ?? 'plugin';
   const fetchOpts: InternalFetchOptions<T> = {
     ...options,
     url,
     auth,
     fetch: config.fetch,
-    liveAuth: () => host.player._rawAuth?.() ?? config.auth,
+    liveAuth: authless ? undefined : () => host.player._rawAuth?.() ?? config.auth,
     signal: ctrl.signal,
     pluginId: host.id,
     scope,

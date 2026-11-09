@@ -9,6 +9,7 @@
 import type { QualityLevel, Translations } from '@nomercy-entertainment/nomercy-player-core';
 import type { NMVideoPlayer, VideoBackendKind, VideoPlaylistItem } from '@nomercy-entertainment/nomercy-video-player';
 import type { ChannelGone } from './TwitchEmbedBackend';
+import type { PostJson } from './gql';
 import type { TwitchSource } from './url';
 import { Plugin, translationsFromGlob } from '@nomercy-entertainment/nomercy-player-core';
 import { Html5VideoBackend } from '@nomercy-entertainment/nomercy-video-player';
@@ -50,6 +51,15 @@ export class TwitchPlugin extends Plugin<NMVideoPlayer, TwitchPluginOptions, Twi
   static override readonly version: string = '0.1.0';
   static override readonly description: string = 'Plays regular Twitch links: clips, VODs and live channels';
   static override readonly translations: Translations = translationsFromGlob('./i18n/*.ts');
+
+  /** Twitch is not the media server, so the player's bearer token must not go with these requests. */
+  private readonly postWithoutAuth: PostJson = <Body>(url: string, options: Parameters<PostJson>[1]): Promise<Body> =>
+    this.fetch<Body>(url, {
+      ...options,
+      responseType: 'json',
+      auth: false,
+      scope: 'silent',
+    });
 
   private muted = false;
   private sliderLevel: number | undefined;
@@ -158,7 +168,7 @@ export class TwitchPlugin extends Plugin<NMVideoPlayer, TwitchPluginOptions, Twi
   }
 
   private async findStream({ channel }: Extract<TwitchSource, { type: 'channel' }>): Promise<string> {
-    const stream = await lookUpLiveStream(channel, this.opts?.clientId, this.abortable().signal);
+    const stream = await lookUpLiveStream(this.postWithoutAuth, channel, this.opts?.clientId);
 
     if (!stream) {
       this.announceChannelGone({
@@ -244,7 +254,7 @@ export class TwitchPlugin extends Plugin<NMVideoPlayer, TwitchPluginOptions, Twi
   /** A link alone tells a viewer nothing, so the real name is looked up. Playback never waits on a failure. */
   private async fillTitle(item: VideoPlaylistItem, source: TwitchSource): Promise<void> {
     try {
-      item.title = await lookUpTitle(source, this.opts?.clientId, this.abortable().signal) ?? item.title;
+      item.title = await lookUpTitle(this.postWithoutAuth, source, this.opts?.clientId) ?? item.title;
 
       // eslint-disable-next-line player/no-raw-player-bus -- the UI drew this item before its title was known, and only `item` redraws it.
       this.player.emit('item', {
@@ -277,7 +287,7 @@ export class TwitchPlugin extends Plugin<NMVideoPlayer, TwitchPluginOptions, Twi
 
   /** Finds the clip's file and announces it. */
   private async resolveClipFile(slug: string): Promise<string> {
-    const clip = await lookUpClip(slug, this.opts?.clientId, this.abortable().signal);
+    const clip = await lookUpClip(this.postWithoutAuth, slug, this.opts?.clientId);
 
     if (!clip) {
       return this.throw({

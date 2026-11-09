@@ -729,6 +729,9 @@ export class Plugin<
    *  - On 401: `auth.refreshOnUnauthenticated()` runs once, then retry
    *  - On 403: propagates immediately, never refreshed, never retried
    *  - On 5xx / timeout / network: retry per RetryConfig
+   *
+   * Pass `{ auth: false }` for a third-party host: none of the auth steps run,
+   * but the transport, retry and dispose abort do.
    */
   protected fetch<T = string>(url: string, options?: FetchOptions<T>): Promise<T> {
     return pluginFetch<T>({

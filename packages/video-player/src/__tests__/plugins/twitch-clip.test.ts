@@ -6,7 +6,10 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
+import type { PostJson } from '../../plugins/twitch/gql';
 import { clipStreamFactory, lookUpClip } from '../../plugins/twitch/clip';
+
+const post: PostJson = async (url, options) => (await fetch(url, options)).json();
 
 const CLIP_LINK = 'https://clips.twitch.tv/SomeSlug';
 
@@ -37,7 +40,7 @@ describe('lookUpClip', () => {
   it('returns the tallest file, signed, with what Twitch says about it', async () => {
     answerWith(playableClip);
 
-    expect(await lookUpClip('SomeSlug')).toEqual({
+    expect(await lookUpClip(post, 'SomeSlug')).toEqual({
       url: 'https://cdn.example/1080.mp4?sig=sig1&token=%7B%22a%22%3A1%7D',
       title: 'A clip',
       duration: 25,
@@ -47,7 +50,7 @@ describe('lookUpClip', () => {
   it('sends the override client id and never an Authorization header', async () => {
     const fetchMock = answerWith(playableClip);
 
-    await lookUpClip('SomeSlug', 'override-id');
+    await lookUpClip(post, 'SomeSlug', 'override-id');
 
     const [, init] = fetchMock.mock.calls[0] ?? [];
 
@@ -61,7 +64,7 @@ describe('lookUpClip', () => {
   ])('finds nothing when %s', async (_reason, clip) => {
     answerWith(clip);
 
-    expect(await lookUpClip('SomeSlug')).toBeUndefined();
+    expect(await lookUpClip(post, 'SomeSlug')).toBeUndefined();
   });
 });
 

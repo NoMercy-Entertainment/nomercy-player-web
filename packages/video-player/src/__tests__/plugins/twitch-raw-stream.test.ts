@@ -9,7 +9,10 @@
 import type { IUrlResolver, UrlResolverContext } from '@nomercy-entertainment/nomercy-player-core';
 import { describePlugin, StubPlayer } from '@nomercy-entertainment/nomercy-player-core/testing';
 import { TwitchPlugin } from '../../plugins/twitch';
+import type { PostJson } from '../../plugins/twitch/gql';
 import { lookUpLiveStream, proxiedUrl } from '../../plugins/twitch/stream';
+
+const post: PostJson = async (url, options) => (await fetch(url, options)).json();
 
 const PROXY = 'http://127.0.0.1:5097';
 const CHANNEL_LINK = 'https://www.twitch.tv/some_channel';
@@ -32,7 +35,7 @@ describe('lookUpLiveStream', () => {
   it('builds the live address for a channel that is streaming', async () => {
     answerWith({ user: { stream: { id: '1' } }, streamPlaybackAccessToken: token });
 
-    const address = new URL(await lookUpLiveStream('some_channel') ?? '');
+    const address = new URL(await lookUpLiveStream(post, 'some_channel') ?? '');
 
     expect(address.origin + address.pathname).toBe('https://usher.ttvnw.net/api/channel/hls/some_channel.m3u8');
     expect(address.searchParams.get('sig')).toBe('sig1');
@@ -42,7 +45,7 @@ describe('lookUpLiveStream', () => {
   it('finds nothing for a channel that is offline', async () => {
     answerWith({ user: { stream: null }, streamPlaybackAccessToken: token });
 
-    expect(await lookUpLiveStream('some_channel')).toBeUndefined();
+    expect(await lookUpLiveStream(post, 'some_channel')).toBeUndefined();
   });
 });
 

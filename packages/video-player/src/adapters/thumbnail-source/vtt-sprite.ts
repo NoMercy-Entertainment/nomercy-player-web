@@ -8,7 +8,7 @@
 
 import type { BasePlaylistItem } from '@nomercy-entertainment/nomercy-player-core';
 
-import type { SpriteSet } from '../../plugins/desktop-ui/helpers/sprite';
+import type { SpriteFetchers, SpriteSet } from '../../plugins/desktop-ui/helpers/sprite';
 import type { IThumbnailSource, ThumbnailFrame } from './IThumbnailSource';
 
 import { loadSpriteSet, lookupCue } from '../../plugins/desktop-ui/helpers/sprite';
@@ -27,6 +27,12 @@ import { loadSpriteSet, lookupCue } from '../../plugins/desktop-ui/helpers/sprit
  */
 export class VttSpriteThumbnailSource implements IThumbnailSource {
   private _cache: SpriteSet | null = null;
+  private readonly _fetchers: SpriteFetchers | undefined;
+
+  /** Pass `fetchers` when the sprite server needs auth; without them the VTT is fetched with no token. */
+  constructor(fetchers?: SpriteFetchers) {
+    this._fetchers = fetchers;
+  }
 
   async load(item: BasePlaylistItem): Promise<boolean> {
     this._cache = null;
@@ -36,7 +42,7 @@ export class VttSpriteThumbnailSource implements IThumbnailSource {
     if (!spriteUrl)
       return false;
 
-    const spriteSet = await loadSpriteSet(spriteUrl);
+    const spriteSet = await loadSpriteSet(spriteUrl, this._fetchers);
 
     if (!spriteSet)
       return false;

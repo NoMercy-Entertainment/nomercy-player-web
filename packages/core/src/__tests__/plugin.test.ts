@@ -659,6 +659,55 @@ describe('Plugin base class', () => {
       expect(req.headers.get('Authorization')).toBe('Bearer tok');
     });
 
+    describe('auth: false', () => {
+      it('sends no Authorization, no signRequest, and skips the 401 refresh', async () => {
+        const signRequest = vi.fn();
+        const refresh = vi.fn();
+
+        (player as any).options = { auth: { bearerToken: 'tok', signRequest, refreshOnUnauthenticated: refresh } };
+        fetchSpy.mockImplementation(async () => new Response('no', { status: 401 }));
+
+        await expect(plugin.publicFetch('https://other.example/x', { auth: false })).rejects.toBeDefined();
+
+        const req = fetchSpy.mock.calls[0]![0] as Request;
+
+        expect(req.headers.get('Authorization')).toBeNull();
+        expect(signRequest).not.toHaveBeenCalled();
+        expect(refresh).not.toHaveBeenCalled();
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+      });
+
+      it('still uses the configured IFetch transport', async () => {
+        const transport = vi.fn(async () => new Response('{"ok":1}', { status: 200 }));
+
+        (player as any).options = { auth: { bearerToken: 'tok' }, fetch: transport };
+
+        const result = await plugin.publicFetch('https://other.example/x', { auth: false, responseType: 'json' });
+
+        expect(result).toEqual({ ok: 1 });
+        expect(transport).toHaveBeenCalledTimes(1);
+        expect(fetchSpy).not.toHaveBeenCalled();
+      });
+
+      it('aborts on plugin dispose', async () => {
+        let seen: AbortSignal | undefined;
+
+        (player as any).options = {
+          fetch: (_url: string, init?: RequestInit): Promise<Response> => {
+            seen = init?.signal ?? undefined;
+
+            return new Promise<Response>(() => {});
+          },
+        };
+
+        void plugin.publicFetch('https://other.example/x', { auth: false }).catch(() => {});
+        await new Promise<void>(resolve => setTimeout(resolve, 0));
+        lifecycle.dispose();
+
+        expect(seen?.aborted).toBe(true);
+      });
+    });
+
     it('reads the LIVE auth config via _rawAuth() — refreshes propagate', async () => {
       // setup-time options.auth says 'old', but _rawAuth() returns a refreshed
       // token. Plugin.fetch must use the refreshed one.

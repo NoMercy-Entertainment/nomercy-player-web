@@ -6,7 +6,10 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
+import type { PostJson } from '../../plugins/twitch/gql';
 import { lookUpTitle } from '../../plugins/twitch/metadata';
+
+const post: PostJson = async (url, options) => (await fetch(url, options)).json();
 
 function answerWith(data: object): ReturnType<typeof vi.fn> {
   const fetchMock = vi.fn(async () => new Response(JSON.stringify({ data })));
@@ -24,13 +27,13 @@ describe('lookUpTitle', () => {
   it('reads a clip title', async () => {
     answerWith({ clip: { title: 'A clip' } });
 
-    expect(await lookUpTitle({ type: 'clip', slug: 'Slug' })).toBe('A clip');
+    expect(await lookUpTitle(post, { type: 'clip', slug: 'Slug' })).toBe('A clip');
   });
 
   it('reads a VOD title without the v prefix in the query', async () => {
     const fetchMock = answerWith({ video: { title: 'A VOD' } });
 
-    expect(await lookUpTitle({
+    expect(await lookUpTitle(post, {
       type: 'video',
       video: 'v123',
       start: 0,
@@ -44,20 +47,20 @@ describe('lookUpTitle', () => {
   });
 
   it('reads the stream title of a channel', async () => {
-    answerWith({ user: { displayName: 'Stoney_Eagle', broadcastSettings: { title: 'Building a player' } } });
+    answerWith({ user: { displayName: 'Example_Channel', broadcastSettings: { title: 'Building a player' } } });
 
-    expect(await lookUpTitle({ type: 'channel', channel: 'stoney_eagle' })).toBe('Building a player');
+    expect(await lookUpTitle(post, { type: 'channel', channel: 'example_channel' })).toBe('Building a player');
   });
 
   it('falls back to the display name when a channel has no stream title', async () => {
-    answerWith({ user: { displayName: 'Stoney_Eagle', broadcastSettings: { title: '' } } });
+    answerWith({ user: { displayName: 'Example_Channel', broadcastSettings: { title: '' } } });
 
-    expect(await lookUpTitle({ type: 'channel', channel: 'stoney_eagle' })).toBe('Stoney_Eagle');
+    expect(await lookUpTitle(post, { type: 'channel', channel: 'example_channel' })).toBe('Example_Channel');
   });
 
   it('finds nothing for an unknown channel', async () => {
     answerWith({ user: null });
 
-    expect(await lookUpTitle({ type: 'channel', channel: 'nobody' })).toBeUndefined();
+    expect(await lookUpTitle(post, { type: 'channel', channel: 'nobody' })).toBeUndefined();
   });
 });
