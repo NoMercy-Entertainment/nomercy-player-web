@@ -64,6 +64,7 @@ import { AudioGraphPlugin } from '../../plugins/audio-graph';
 import { EqualizerPlugin } from '../../plugins/equalizer/index';
 import { MixerPlugin } from '../../plugins/mixer';
 import { SpectrumPlugin } from '../../plugins/spectrum';
+import { MockPlayerBase } from '../helpers/mock-player-base';
 
 // ── Web Audio stubs ───────────────────────────────────────────────────────────
 
@@ -153,17 +154,7 @@ class MockAudioContext {
 
 // ── MockPlayer ────────────────────────────────────────────────────────────────
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = document.createElement('div');
-
-	get id(): string {
-		return this.playerId;
-	}
-
-	declare options: object;
+class MockPlayer extends MockPlayerBase {
 	declare setup: (config: object) => this;
 	declare ready: () => Promise<void>;
 	declare dispose: () => void;
@@ -172,22 +163,6 @@ class MockPlayer extends EventEmitter<BaseEventMap> {
 	declare getPluginById: (id: string) => object | undefined;
 	declare removePlugin: (PluginClass: unknown) => void;
 	declare audioContext: () => AudioContext | undefined;
-
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this;
-		}
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _resetRegistry(): void {
-		_instances.clear();
-	}
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
