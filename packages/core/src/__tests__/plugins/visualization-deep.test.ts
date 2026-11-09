@@ -25,29 +25,19 @@
  */
 
 import type { VisualizationFrame } from '../../plugins/visualization';
-import type { BaseEventMap } from '../../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
 	playerCoreMethods,
-	resolvePlayerConstructor,
 } from '../../index';
 import { CanvasPlugin } from '../../plugins/canvas';
 import { SpectrumPlugin } from '../../plugins/spectrum';
 import { VisualizationPlugin, WaveformVisualization } from '../../plugins/visualization';
+import { MockPlayerBase } from '../helpers/mock-player-base';
 
 // ─── MockPlayer ───────────────────────────────────────────────────────────────
 
-const _instances = new Map<string, MockPlayer>();
-
-class MockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = {} as HTMLElement;
-
-	get id(): string { return this.playerId; }
-
+class MockPlayer extends MockPlayerBase {
 	declare options: (config?: unknown) => unknown;
 	declare setup: (config: unknown) => this;
 	declare ready: () => Promise<void>;
@@ -67,19 +57,6 @@ class MockPlayer extends EventEmitter<BaseEventMap> {
 	declare time: { (): number; (seconds: number, opts?: unknown): Promise<void> };
 	declare volume: { (): number; (level: number): void };
 	declare experimental: unknown;
-
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayer' });
-		const resolved = resolvePlayerConstructor(id, _instances, 'MockPlayer');
-		if (resolved.kind === 'existing')
-			return resolved.instance as unknown as this;
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
-
-	static _reset(): void { _instances.clear(); }
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
@@ -226,9 +203,9 @@ function invokeRenderTick(
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('VisualizationPlugin — deep behavioral coverage', () => {
-	beforeEach(() => MockPlayer._reset());
+	beforeEach(() => MockPlayer._resetRegistry());
 	afterEach(() => {
-		MockPlayer._reset();
+		MockPlayer._resetRegistry();
 		document.body.innerHTML = '';
 	});
 
