@@ -27,7 +27,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { ensureFfmpeg } from './ensure-ffmpeg.mjs';
+import { ensureFfmpeg } from '../../../scripts/ensure-ffmpeg.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const mediaDir = join(here, '..', 'e2e', 'media');
