@@ -119,7 +119,7 @@ jobs:
 
       - name: Install Playwright browsers
         if: steps.pkg.outputs.skip != 'true' && (steps.tag.outputs.short == 'video' || steps.tag.outputs.short == 'music')
-        run: yarn workspace ${{ steps.pkg.outputs.name }} exec playwright install --with-deps chromium
+        run: yarn playwright install --with-deps chromium
 
       - name: E2E tests
         if: steps.pkg.outputs.skip != 'true' && (steps.tag.outputs.short == 'video' || steps.tag.outputs.short == 'music')

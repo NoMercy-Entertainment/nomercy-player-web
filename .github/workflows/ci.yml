@@ -89,7 +89,7 @@ jobs:
 
       - name: Install Playwright browsers
         if: matrix.e2e
-        run: yarn workspace ${{ matrix.name }} exec playwright install --with-deps chromium
+        run: yarn playwright install --with-deps chromium
 
       - name: E2E tests
         if: matrix.e2e
