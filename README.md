@@ -52,6 +52,8 @@ To work on one package, use `yarn workspace <name> run <script>`, for example `y
 
 Unit tests of video and music read core from its source, so a change across packages is tested together without a build.
 
+The layout commit is listed in `.git-blame-ignore-revs`. Run `git config blame.ignoreRevsFile .git-blame-ignore-revs` once so `git blame` skips it. GitHub reads the file by itself.
+
 ## How a change reaches a release
 
 1. Make the change and run the commands above. [CONTRIBUTING.md](./CONTRIBUTING.md) has the commit and pull request rules.
