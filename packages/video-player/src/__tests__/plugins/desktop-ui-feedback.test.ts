@@ -33,13 +33,19 @@ import { desktopUiPlugin } from '../../plugins/desktop-ui';
 
 type ResizeCallback = (entries: Array<{ contentRect: { width: number } }>) => void;
 const MockResizeObserver = vi.fn(function (this: unknown, _cb: ResizeCallback) {
-	return { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() };
+  return {
+    observe: vi.fn(),
+    disconnect: vi.fn(),
+    unobserve: vi.fn(),
+  };
 });
 
 async function makePlayer(opts: Record<string, unknown> = {}): Promise<NMVideoPlayer> {
-	const player = new NMVideoPlayer('test').setup({});
-	await player.addPlugin(desktopUiPlugin, { inactivityMs: 4000, ...opts }).ready();
-	return player;
+  const player = new NMVideoPlayer('test').setup({});
+
+  await player.addPlugin(desktopUiPlugin, { inactivityMs: 4000, ...opts }).ready();
+
+  return player;
 }
 
 /**
@@ -50,450 +56,475 @@ async function makePlayer(opts: Record<string, unknown> = {}): Promise<NMVideoPl
  * plugin mounts and the initial feedback check runs.
  */
 async function makePlayerWithMedia(opts: Record<string, unknown> = {}): Promise<NMVideoPlayer> {
-	const player = new NMVideoPlayer('test').setup({ playlist: [{ id: 'big-buck-bunny' } as never] });
-	await player.addPlugin(desktopUiPlugin, { inactivityMs: 4000, ...opts }).ready();
-	return player;
+  const player = new NMVideoPlayer('test').setup({ playlist: [{ id: 'big-buck-bunny' } as never] });
+
+  await player.addPlugin(desktopUiPlugin, { inactivityMs: 4000, ...opts }).ready();
+
+  return player;
 }
 
 describe('DesktopUiPlugin — playback feedback', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	it('waiting event adds .buffering to container', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-		player.emit('waiting', {});
-		expect(container.classList.contains('buffering')).toBe(true);
-	});
+  it('waiting event adds .buffering to container', async () => {
+    const player = await makePlayer();
+    const container = player.container;
 
-	it('stalled event adds .buffering to container', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    player.emit('waiting', {});
+    expect(container.classList.contains('buffering')).toBe(true);
+  });
 
-		player.emit('stalled', {});
-		expect(container.classList.contains('buffering')).toBe(true);
-	});
+  it('stalled event adds .buffering to container', async () => {
+    const player = await makePlayer();
+    const container = player.container;
 
-	it('playing event removes .buffering from container', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    player.emit('stalled', {});
+    expect(container.classList.contains('buffering')).toBe(true);
+  });
 
-		player.emit('waiting', {});
-		expect(container.classList.contains('buffering')).toBe(true);
+  it('playing event removes .buffering from container', async () => {
+    const player = await makePlayer();
+    const container = player.container;
 
-		player.emit('playing', {});
-		expect(container.classList.contains('buffering')).toBe(false);
-	});
+    player.emit('waiting', {});
+    expect(container.classList.contains('buffering')).toBe(true);
 
-	it('time event clears the stall feedback this plugin owns', async () => {
-		// `.buffering` on the container is core's, and which events drop it is
-		// core's test to write — this suite runs against the installed core, so
-		// asserting a rule from an unreleased one only proves which checkout is
-		// on disk. What belongs here is the plugin's own overlay.
-		const player = await makePlayer();
-		const center = player.container.querySelector('.center')!;
+    player.emit('playing', {});
+    expect(container.classList.contains('buffering')).toBe(false);
+  });
 
-		player.emit('stalled', {});
-		expect(center.classList.contains('busy')).toBe(true);
+  it('time event clears the stall feedback this plugin owns', async () => {
+    // `.buffering` on the container is core's, and which events drop it is
+    // core's test to write — this suite runs against the installed core, so
+    // asserting a rule from an unreleased one only proves which checkout is
+    // on disk. What belongs here is the plugin's own overlay.
+    const player = await makePlayer();
+    const center = player.container.querySelector('.center')!;
 
-		player.emit('time', { time: 5 });
-		expect(center.classList.contains('busy')).toBe(false);
-	});
+    player.emit('stalled', {});
+    expect(center.classList.contains('busy')).toBe(true);
 
-	it('display-message event creates .player-message with .visible', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    player.emit('time', { time: 5 });
+    expect(center.classList.contains('busy')).toBe(false);
+  });
 
-		player.emit('display-message', { text: 'Test message' });
+  it('display-message event creates .player-message with .visible', async () => {
+    const player = await makePlayer();
+    const container = player.container;
 
-		const msgEl = container.querySelector('.player-message');
-		expect(msgEl).not.toBeNull();
-		expect(msgEl!.classList.contains('visible')).toBe(true);
-		expect(msgEl!.textContent).toBe('Test message');
-	});
+    player.emit('display-message', { text: 'Test message' });
 
-	it('remove-message event removes .visible from .player-message', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    const msgEl = container.querySelector('.player-message');
 
-		player.emit('display-message', { text: 'Hello' });
-		const msgEl = container.querySelector('.player-message')!;
-		expect(msgEl.classList.contains('visible')).toBe(true);
+    expect(msgEl).not.toBeNull();
+    expect(msgEl!.classList.contains('visible')).toBe(true);
+    expect(msgEl!.textContent).toBe('Test message');
+  });
 
-		player.emit('remove-message', {});
-		expect(msgEl.classList.contains('visible')).toBe(false);
-	});
+  it('remove-message event removes .visible from .player-message', async () => {
+    const player = await makePlayer();
+    const container = player.container;
 
-	it('play event adds .dismissed to centerWrap', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    player.emit('display-message', { text: 'Hello' });
+    const msgEl = container.querySelector('.player-message')!;
 
-		player.emit('play', {});
+    expect(msgEl.classList.contains('visible')).toBe(true);
 
-		const center = container.querySelector('.center');
-		expect(center?.classList.contains('dismissed')).toBe(true);
-	});
+    player.emit('remove-message', {});
+    expect(msgEl.classList.contains('visible')).toBe(false);
+  });
 
-	it('pause event while playing keeps activity alive (does not hide controls)', async () => {
-		vi.useFakeTimers();
-		const player = await makePlayer({ inactivityMs: 1000 });
+  it('play event adds .dismissed to centerWrap', async () => {
+    const player = await makePlayer();
+    const container = player.container;
 
-		// Drive to playing state
-		Object.assign(player, { playState: () => 'playing' });
+    player.emit('play', {});
 
-		const activityEvents: Array<{ active: boolean }> = [];
-		player.on('activity', (data: { active: boolean }) => {
-			activityEvents.push(data);
-		});
-		activityEvents.length = 0;
+    const center = container.querySelector('.center');
 
-		player.emit('pause', {});
+    expect(center?.classList.contains('dismissed')).toBe(true);
+  });
 
-		// Advance timer — controls must remain visible while paused
-		vi.advanceTimersByTime(2000);
+  it('pause event while playing keeps activity alive (does not hide controls)', async () => {
+    vi.useFakeTimers();
+    const player = await makePlayer({ inactivityMs: 1000 });
 
-		const hiddenEvent = activityEvents.find(ev => !ev.active);
-		expect(hiddenEvent).toBeUndefined();
+    // Drive to playing state
+    Object.assign(player, { playState: () => 'playing' });
 
-		vi.useRealTimers();
-	});
+    const activityEvents: Array<{ active: boolean }> = [];
 
-	it('volume event shows toast message with level', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    player.on('activity', (data: { active: boolean }) => {
+      activityEvents.push(data);
+    });
 
-		Object.assign(player, { volume: () => 75 });
-		player.emit('volume', { level: 75 });
+    activityEvents.length = 0;
 
-		const msgEl = container.querySelector('.player-message');
-		expect(msgEl).not.toBeNull();
-		expect(msgEl!.textContent).toMatch(/75/);
-	});
+    player.emit('pause', {});
 
-	it('canplay clears the loading message on a player that never started', async () => {
-		// Reported from the testbed: Big Buck Bunny paused on its poster with
-		// -9:56 already on the scrubber and readyState 4, still showing
-		// "Loading…". `playing` and `time` were the only clear signals, and a
-		// player that becomes ready without being started emits neither.
-		const player = await makePlayerWithMedia();
-		const container = player.container;
+    // Advance timer — controls must remain visible while paused
+    vi.advanceTimersByTime(2000);
 
-		const msgEl = container.querySelector('.player-message')!;
-		expect(msgEl.classList.contains('visible')).toBe(true);
+    const hiddenEvent = activityEvents.find((ev) => !ev.active);
 
-		player.emit('canplay', undefined as never);
+    expect(hiddenEvent).toBeUndefined();
 
-		expect(msgEl.classList.contains('visible')).toBe(false);
-	});
+    vi.useRealTimers();
+  });
 
-	it('canplay stops the spinner without waiting for playback to start', async () => {
-		const player = await makePlayerWithMedia();
-		const center = player.container.querySelector('.center')!;
+  it('volume event shows toast message with level', async () => {
+    const player = await makePlayer();
+    const container = player.container;
 
-		expect(center.classList.contains('busy')).toBe(true);
+    Object.assign(player, { volume: () => 75 });
+    player.emit('volume', { level: 75 });
 
-		player.emit('canplay', undefined as never);
+    const msgEl = container.querySelector('.player-message');
 
-		expect(center.classList.contains('busy')).toBe(false);
-	});
+    expect(msgEl).not.toBeNull();
+    expect(msgEl!.textContent).toMatch(/75/);
+  });
 
-	it('canplay leaves a consumer message alone', async () => {
-		// The spinner stops either way, but a message somebody else asked for
-		// outlives the load that happened to finish under it.
-		const player = await makePlayer();
-		const container = player.container;
+  it('canplay clears the loading message on a player that never started', async () => {
+    // Reported from the testbed: Big Buck Bunny paused on its poster with
+    // -9:56 already on the scrubber and readyState 4, still showing
+    // "Loading…". `playing` and `time` were the only clear signals, and a
+    // player that becomes ready without being started emits neither.
+    const player = await makePlayerWithMedia();
+    const container = player.container;
 
-		player.emit('display-message', { text: 'Saved to watchlist' });
-		player.emit('canplay', undefined as never);
+    const msgEl = container.querySelector('.player-message')!;
 
-		const msgEl = container.querySelector('.player-message')!;
-		expect(msgEl.classList.contains('visible')).toBe(true);
-		expect(msgEl.textContent).toBe('Saved to watchlist');
-	});
+    expect(msgEl.classList.contains('visible')).toBe(true);
 
-	it('a new item raises the spinner again and canplay lowers it', async () => {
-		const player = await makePlayer();
-		const center = player.container.querySelector('.center')!;
+    player.emit('canplay', undefined as never);
 
-		player.emit('canplay', undefined as never);
-		expect(center.classList.contains('busy')).toBe(false);
+    expect(msgEl.classList.contains('visible')).toBe(false);
+  });
 
-		player.emit('item', { item: { id: 'ep2' }, index: 1 } as never);
-		expect(center.classList.contains('busy')).toBe(true);
+  it('canplay stops the spinner without waiting for playback to start', async () => {
+    const player = await makePlayerWithMedia();
+    const center = player.container.querySelector('.center')!;
 
-		player.emit('canplay', undefined as never);
-		expect(center.classList.contains('busy')).toBe(false);
-	});
+    expect(center.classList.contains('busy')).toBe(true);
 
-	it('mute event shows toast message', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    player.emit('canplay', undefined as never);
 
-		Object.assign(player, { volumeState: () => 'muted' });
-		player.emit('mute', { muted: true });
+    expect(center.classList.contains('busy')).toBe(false);
+  });
 
-		const msgEl = container.querySelector('.player-message');
-		expect(msgEl).not.toBeNull();
-		expect(msgEl!.textContent?.length).toBeGreaterThan(0);
-	});
+  it('canplay leaves a consumer message alone', async () => {
+    // The spinner stops either way, but a message somebody else asked for
+    // outlives the load that happened to finish under it.
+    const player = await makePlayer();
+    const container = player.container;
+
+    player.emit('display-message', { text: 'Saved to watchlist' });
+    player.emit('canplay', undefined as never);
+
+    const msgEl = container.querySelector('.player-message')!;
+
+    expect(msgEl.classList.contains('visible')).toBe(true);
+    expect(msgEl.textContent).toBe('Saved to watchlist');
+  });
+
+  it('a new item raises the spinner again and canplay lowers it', async () => {
+    const player = await makePlayer();
+    const center = player.container.querySelector('.center')!;
+
+    player.emit('canplay', undefined as never);
+    expect(center.classList.contains('busy')).toBe(false);
+
+    player.emit('item', { item: { id: 'ep2' }, index: 1 } as never);
+    expect(center.classList.contains('busy')).toBe(true);
+
+    player.emit('canplay', undefined as never);
+    expect(center.classList.contains('busy')).toBe(false);
+  });
+
+  it('mute event shows toast message', async () => {
+    const player = await makePlayer();
+    const container = player.container;
+
+    Object.assign(player, { volumeState: () => 'muted' });
+    player.emit('mute', { muted: true });
+
+    const msgEl = container.querySelector('.player-message');
+
+    expect(msgEl).not.toBeNull();
+    expect(msgEl!.textContent?.length).toBeGreaterThan(0);
+  });
 });
 
 describe('DesktopUiPlugin — event-driven icon state', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	it('subtitle event with track index updates subtitles button aria label', async () => {
-		const player = await makePlayer({ buttons: { subtitles: true } });
-		const container = player.container;
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-		const subsBtn = container.querySelector<HTMLButtonElement>('[id="subtitles"]');
-		expect(subsBtn).not.toBeNull();
+  it('subtitle event with track index updates subtitles button aria label', async () => {
+    const player = await makePlayer({ buttons: { subtitles: true } });
+    const container = player.container;
 
-		player.emit('subtitle', { track: 0 });
+    const subsBtn = container.querySelector<HTMLButtonElement>('[id="subtitles"]');
 
-		// After track is set to 0 (active), the button should reflect the active state
-		// The aria-label is updated by applySubsIcon which sets either active or inactive state
-		expect(subsBtn).not.toBeNull();
-	});
+    expect(subsBtn).not.toBeNull();
 
-	it('subtitle event with null track resets to off', async () => {
-		const player = await makePlayer({ buttons: { subtitles: true } });
+    player.emit('subtitle', { track: 0 });
 
-		player.emit('subtitle', { track: 0 });
-		player.emit('subtitle', { track: null });
+    // After track is set to 0 (active), the button should reflect the active state
+    // The aria-label is updated by applySubsIcon which sets either active or inactive state
+    expect(subsBtn).not.toBeNull();
+  });
 
-		// No throw — behavior is the consequence test
-		expect(true).toBe(true);
-	});
+  it('subtitle event with null track resets to off', async () => {
+    const player = await makePlayer({ buttons: { subtitles: true } });
 
-	it('audioTrack event stores the track index', async () => {
-		const player = await makePlayer({ buttons: { audio: true } });
+    player.emit('subtitle', { track: 0 });
+    player.emit('subtitle', { track: null });
 
-		// Emitting audioTrack with id=1 must not throw
-		expect(() => {
-			player.emit('audioTrack', { id: 1 });
-		}).not.toThrow();
-	});
+    // No throw — behavior is the consequence test
+    expect(true).toBe(true);
+  });
 
-	it('quality:requested event with specific level stores user pick', async () => {
-		const player = await makePlayer({ buttons: { quality: true } });
+  it('audioTrack event stores the track index', async () => {
+    const player = await makePlayer({ buttons: { audio: true } });
 
-		expect(() => {
-			player.emit('quality:requested', { level: 2 });
-		}).not.toThrow();
-	});
+    // Emitting audioTrack with id=1 must not throw
+    expect(() => {
+      player.emit('audioTrack', { id: 1 });
+    }).not.toThrow();
+  });
 
-	it('quality:requested with auto resets user pick', async () => {
-		const player = await makePlayer({ buttons: { quality: true } });
+  it('quality:requested event with specific level stores user pick', async () => {
+    const player = await makePlayer({ buttons: { quality: true } });
 
-		player.emit('quality:requested', { level: 2 });
-		expect(() => {
-			player.emit('quality:requested', { level: 'auto' });
-		}).not.toThrow();
-	});
+    expect(() => {
+      player.emit('quality:requested', { level: 2 });
+    }).not.toThrow();
+  });
 
-	it('level-switched event updates playing quality label', async () => {
-		const player = await makePlayer({ buttons: { quality: true } });
+  it('quality:requested with auto resets user pick', async () => {
+    const player = await makePlayer({ buttons: { quality: true } });
 
-		expect(() => {
-			player.emit('level-switched', { level: 3 });
-		}).not.toThrow();
-	});
+    player.emit('quality:requested', { level: 2 });
 
-	it('theater event calls applyTheaterIcon without throwing', async () => {
-		const player = await makePlayer({ buttons: { theater: true } });
+    expect(() => {
+      player.emit('quality:requested', { level: 'auto' });
+    }).not.toThrow();
+  });
 
-		Object.assign(player, { theater: () => 'on' });
+  it('level-switched event updates playing quality label', async () => {
+    const player = await makePlayer({ buttons: { quality: true } });
 
-		expect(() => {
-			player.emit('theater', {});
-		}).not.toThrow();
-	});
+    expect(() => {
+      player.emit('level-switched', { level: 3 });
+    }).not.toThrow();
+  });
 
-	it('aspectRatio event calls applyAspectRatioIcon without throwing', async () => {
-		const player = await makePlayer({ buttons: { aspectRatio: true } });
+  it('theater event calls applyTheaterIcon without throwing', async () => {
+    const player = await makePlayer({ buttons: { theater: true } });
 
-		Object.assign(player, { aspectRatio: () => 'uniform' });
+    Object.assign(player, { theater: () => 'on' });
 
-		expect(() => {
-			player.emit('aspectRatio', {});
-		}).not.toThrow();
-	});
+    expect(() => {
+      player.emit('theater', {});
+    }).not.toThrow();
+  });
 
-	it('mediaReady refreshes chapters and syncs track indexes', async () => {
-		const player = await makePlayer();
+  it('aspectRatio event calls applyAspectRatioIcon without throwing', async () => {
+    const player = await makePlayer({ buttons: { aspectRatio: true } });
 
-		Object.assign(player, {
-			subtitles: () => [],
-			audioTracks: () => [],
-			qualityLevels: () => [],
-			chapters: () => [],
-			audioTrack: () => null,
-			subtitle: () => null,
-			quality: () => null,
-			playbackRates: () => [1],
-		});
+    Object.assign(player, { aspectRatio: () => 'uniform' });
 
-		expect(() => {
-			player.emit('mediaReady', {});
-		}).not.toThrow();
-	});
+    expect(() => {
+      player.emit('aspectRatio', {});
+    }).not.toThrow();
+  });
+
+  it('mediaReady refreshes chapters and syncs track indexes', async () => {
+    const player = await makePlayer();
+
+    Object.assign(player, {
+      subtitles: () => [],
+      audioTracks: () => [],
+      qualityLevels: () => [],
+      chapters: () => [],
+      audioTrack: () => null,
+      subtitle: () => null,
+      quality: () => null,
+      playbackRates: () => [1],
+    });
+
+    expect(() => {
+      player.emit('mediaReady', {});
+    }).not.toThrow();
+  });
 });
 
 describe('DesktopUiPlugin — applyStateVisibility (theater/pip/fullscreen)', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-		// Remove document property stubs if any were set.
-		try {
-			Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true });
-		}
-		catch {}
-		try {
-			Object.defineProperty(document, 'pictureInPictureElement', { value: null, configurable: true });
-		}
-		catch {}
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	async function makeTheaterPlayer(): Promise<NMVideoPlayer> {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { theater: true },
-		}).ready();
-		return player;
-	}
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
 
-	it('theaterBtn.hidden is false when fsActive=false and pipActive=false', async () => {
-		const player = await makeTheaterPlayer();
-		const container = player.container;
+    // Remove document property stubs if any were set.
+    try {
+      Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true });
+    } catch {}
 
-		Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true });
-		Object.defineProperty(document, 'pictureInPictureElement', { value: null, configurable: true });
-		player.emit('fullscreen' as never, {} as never);
+    try {
+      Object.defineProperty(document, 'pictureInPictureElement', { value: null, configurable: true });
+    } catch {}
+  });
 
-		const theaterBtn = container.querySelector<HTMLButtonElement>('[id="theater"]');
-		expect(theaterBtn).not.toBeNull();
-		expect(theaterBtn!.hidden).toBe(false);
-	});
+  async function makeTheaterPlayer(): Promise<NMVideoPlayer> {
+    const player = new NMVideoPlayer('test').setup({});
 
-	it('theaterBtn.hidden is true when fullscreen is active', async () => {
-		const player = await makeTheaterPlayer();
-		const container = player.container;
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { theater: true },
+    }).ready();
 
-		// Simulate fullscreen active
-		Object.defineProperty(document, 'fullscreenElement', { value: document.body, configurable: true });
-		Object.defineProperty(document, 'pictureInPictureElement', { value: null, configurable: true });
-		player.emit('fullscreen' as never, {} as never);
+    return player;
+  }
 
-		const theaterBtn = container.querySelector<HTMLButtonElement>('[id="theater"]');
-		expect(theaterBtn).not.toBeNull();
-		expect(theaterBtn!.hidden).toBe(true);
-	});
+  it('theaterBtn.hidden is false when fsActive=false and pipActive=false', async () => {
+    const player = await makeTheaterPlayer();
+    const container = player.container;
 
-	it('theaterBtn.hidden is true when pip is active', async () => {
-		const player = await makeTheaterPlayer();
-		const container = player.container;
+    Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true });
+    Object.defineProperty(document, 'pictureInPictureElement', { value: null, configurable: true });
+    player.emit('fullscreen' as never, {} as never);
 
-		Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true });
-		// Simulate PiP active
-		Object.defineProperty(document, 'pictureInPictureElement', { value: document.createElement('video'), configurable: true });
-		player.emit('pip' as never, {} as never);
+    const theaterBtn = container.querySelector<HTMLButtonElement>('[id="theater"]');
 
-		const theaterBtn = container.querySelector<HTMLButtonElement>('[id="theater"]');
-		expect(theaterBtn).not.toBeNull();
-		expect(theaterBtn!.hidden).toBe(true);
-	});
+    expect(theaterBtn).not.toBeNull();
+    expect(theaterBtn!.hidden).toBe(false);
+  });
 
-	it('theaterBtn.hidden returns false after both pip and fullscreen deactivate', async () => {
-		const player = await makeTheaterPlayer();
-		const container = player.container;
+  it('theaterBtn.hidden is true when fullscreen is active', async () => {
+    const player = await makeTheaterPlayer();
+    const container = player.container;
 
-		// First go pip-active
-		Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true });
-		Object.defineProperty(document, 'pictureInPictureElement', { value: document.createElement('video'), configurable: true });
-		player.emit('pip' as never, {} as never);
+    // Simulate fullscreen active
+    Object.defineProperty(document, 'fullscreenElement', { value: document.body, configurable: true });
+    Object.defineProperty(document, 'pictureInPictureElement', { value: null, configurable: true });
+    player.emit('fullscreen' as never, {} as never);
 
-		const theaterBtn = container.querySelector<HTMLButtonElement>('[id="theater"]');
-		expect(theaterBtn!.hidden).toBe(true);
+    const theaterBtn = container.querySelector<HTMLButtonElement>('[id="theater"]');
 
-		// Now deactivate pip
-		Object.defineProperty(document, 'pictureInPictureElement', { value: null, configurable: true });
-		player.emit('pip' as never, {} as never);
+    expect(theaterBtn).not.toBeNull();
+    expect(theaterBtn!.hidden).toBe(true);
+  });
 
-		expect(theaterBtn!.hidden).toBe(false);
-	});
+  it('theaterBtn.hidden is true when pip is active', async () => {
+    const player = await makeTheaterPlayer();
+    const container = player.container;
+
+    Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true });
+    // Simulate PiP active
+    Object.defineProperty(document, 'pictureInPictureElement', { value: document.createElement('video'), configurable: true });
+    player.emit('pip' as never, {} as never);
+
+    const theaterBtn = container.querySelector<HTMLButtonElement>('[id="theater"]');
+
+    expect(theaterBtn).not.toBeNull();
+    expect(theaterBtn!.hidden).toBe(true);
+  });
+
+  it('theaterBtn.hidden returns false after both pip and fullscreen deactivate', async () => {
+    const player = await makeTheaterPlayer();
+    const container = player.container;
+
+    // First go pip-active
+    Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true });
+    Object.defineProperty(document, 'pictureInPictureElement', { value: document.createElement('video'), configurable: true });
+    player.emit('pip' as never, {} as never);
+
+    const theaterBtn = container.querySelector<HTMLButtonElement>('[id="theater"]');
+
+    expect(theaterBtn!.hidden).toBe(true);
+
+    // Now deactivate pip
+    Object.defineProperty(document, 'pictureInPictureElement', { value: null, configurable: true });
+    player.emit('pip' as never, {} as never);
+
+    expect(theaterBtn!.hidden).toBe(false);
+  });
 });
 
 describe('DesktopUiPlugin — remaining-time toggle', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	it('clicking remaining-time element toggles between remaining and total display', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-		Object.assign(player, { time: () => 60, duration: () => 120 });
+  it('clicking remaining-time element toggles between remaining and total display', async () => {
+    const player = await makePlayer();
+    const container = player.container;
 
-		const remainingEl = container.querySelector<HTMLElement>('.remaining-time');
-		expect(remainingEl).not.toBeNull();
+    Object.assign(player, { time: () => 60, duration: () => 120 });
 
-		// Default is showRemaining=true → shows -1:00 (remaining)
-		player.emit('time', { time: 60 });
-		const textBefore = remainingEl!.textContent;
+    const remainingEl = container.querySelector<HTMLElement>('.remaining-time');
 
-		// Click to toggle to total duration display
-		remainingEl!.click();
-		player.emit('time', { time: 60 });
-		const textAfter = remainingEl!.textContent;
+    expect(remainingEl).not.toBeNull();
 
-		// The text content must change between the two modes
-		expect(textBefore).not.toBe(textAfter);
-	});
+    // Default is showRemaining=true → shows -1:00 (remaining)
+    player.emit('time', { time: 60 });
+    const textBefore = remainingEl!.textContent;
+
+    // Click to toggle to total duration display
+    remainingEl!.click();
+    player.emit('time', { time: 60 });
+    const textAfter = remainingEl!.textContent;
+
+    // The text content must change between the two modes
+    expect(textBefore).not.toBe(textAfter);
+  });
 });

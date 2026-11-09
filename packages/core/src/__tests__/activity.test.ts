@@ -16,220 +16,243 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => Promise<void>;
-	declare play: (opts?: any) => Promise<void>;
-	declare pause: (opts?: any) => Promise<void>;
-	declare bumpActivity: () => void;
-	declare activityTracking: (enabled?: boolean) => boolean;
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => Promise<void>;
+  declare play: (opts?: any) => Promise<void>;
+  declare pause: (opts?: any) => Promise<void>;
+  declare bumpActivity: () => void;
+  declare activityTracking: (enabled?: boolean) => boolean;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 function pointerMove(target: HTMLElement): void {
-	target.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
+  target.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
 }
 
 describe('activity — player-level tracker + inactivityMs + activityTracking()', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		vi.useRealTimers();
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    vi.useRealTimers();
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('setup() bumps once: activity {active:true} emitted and container gains .active', async () => {
-		const events: boolean[] = [];
-		const mockPlayer = makePlayer('act-initial');
-		mockPlayer.on('activity' as any, ({ active }: { active: boolean }) => events.push(active));
+  it('setup() bumps once: activity {active:true} emitted and container gains .active', async () => {
+    const events: boolean[] = [];
+    const mockPlayer = makePlayer('act-initial');
 
-		mockPlayer.setup({});
-		await mockPlayer.ready();
+    mockPlayer.on('activity' as any, ({ active }: { active: boolean }) =>
+      events.push(active));
 
-		expect(events).toEqual([true]);
-		expect(mockPlayer.container.classList.contains('active')).toBe(true);
-	});
+    mockPlayer.setup({});
+    await mockPlayer.ready();
 
-	it('while playing, the countdown expiry emits {active:false} and swaps .active for .inactive', async () => {
-		const mockPlayer = makePlayer('act-hide').setup({});
-		await mockPlayer.ready();
-		await mockPlayer.play();
+    expect(events).toEqual([true]);
+    expect(mockPlayer.container.classList.contains('active')).toBe(true);
+  });
 
-		vi.useFakeTimers();
-		mockPlayer.bumpActivity();
-		vi.advanceTimersByTime(4000);
+  it('while playing, the countdown expiry emits {active:false} and swaps .active for .inactive', async () => {
+    const mockPlayer = makePlayer('act-hide').setup({});
 
-		expect(mockPlayer.container.classList.contains('active')).toBe(false);
-		expect(mockPlayer.container.classList.contains('inactive')).toBe(true);
-	});
+    await mockPlayer.ready();
+    await mockPlayer.play();
 
-	it('while paused, the countdown expiry does NOT hide', async () => {
-		const mockPlayer = makePlayer('act-paused').setup({});
-		await mockPlayer.ready();
-		await mockPlayer.play();
-		await mockPlayer.pause();
+    vi.useFakeTimers();
+    mockPlayer.bumpActivity();
+    vi.advanceTimersByTime(4000);
 
-		vi.useFakeTimers();
-		mockPlayer.bumpActivity();
-		vi.advanceTimersByTime(60000);
+    expect(mockPlayer.container.classList.contains('active')).toBe(false);
+    expect(mockPlayer.container.classList.contains('inactive')).toBe(true);
+  });
 
-		expect(mockPlayer.container.classList.contains('active')).toBe(true);
-		expect(mockPlayer.container.classList.contains('inactive')).toBe(false);
-	});
+  it('while paused, the countdown expiry does NOT hide', async () => {
+    const mockPlayer = makePlayer('act-paused').setup({});
 
-	it('pointer input on the container wakes a hidden UI back to .active', async () => {
-		const mockPlayer = makePlayer('act-wake').setup({});
-		await mockPlayer.ready();
-		await mockPlayer.play();
+    await mockPlayer.ready();
+    await mockPlayer.play();
+    await mockPlayer.pause();
 
-		vi.useFakeTimers();
-		mockPlayer.bumpActivity();
-		vi.advanceTimersByTime(4000);
-		expect(mockPlayer.container.classList.contains('inactive')).toBe(true);
+    vi.useFakeTimers();
+    mockPlayer.bumpActivity();
+    vi.advanceTimersByTime(60000);
 
-		pointerMove(mockPlayer.container);
+    expect(mockPlayer.container.classList.contains('active')).toBe(true);
+    expect(mockPlayer.container.classList.contains('inactive')).toBe(false);
+  });
 
-		expect(mockPlayer.container.classList.contains('active')).toBe(true);
-		expect(mockPlayer.container.classList.contains('inactive')).toBe(false);
-	});
+  it('pointer input on the container wakes a hidden UI back to .active', async () => {
+    const mockPlayer = makePlayer('act-wake').setup({});
 
-	it('resuming playback re-arms the countdown (play event bumps)', async () => {
-		const mockPlayer = makePlayer('act-resume').setup({});
-		await mockPlayer.ready();
-		await mockPlayer.play();
-		await mockPlayer.pause();
+    await mockPlayer.ready();
+    await mockPlayer.play();
 
-		vi.useFakeTimers();
-		mockPlayer.bumpActivity();
-		vi.advanceTimersByTime(60000);
-		expect(mockPlayer.container.classList.contains('active')).toBe(true);
+    vi.useFakeTimers();
+    mockPlayer.bumpActivity();
+    vi.advanceTimersByTime(4000);
+    expect(mockPlayer.container.classList.contains('inactive')).toBe(true);
 
-		await mockPlayer.play();
-		vi.advanceTimersByTime(4000);
+    pointerMove(mockPlayer.container);
 
-		expect(mockPlayer.container.classList.contains('active')).toBe(false);
-		expect(mockPlayer.container.classList.contains('inactive')).toBe(true);
-	});
+    expect(mockPlayer.container.classList.contains('active')).toBe(true);
+    expect(mockPlayer.container.classList.contains('inactive')).toBe(false);
+  });
 
-	it('a custom inactivityMs drives the countdown', async () => {
-		const mockPlayer = makePlayer('act-custom').setup({ inactivityMs: 1000 });
-		await mockPlayer.ready();
-		await mockPlayer.play();
+  it('resuming playback re-arms the countdown (play event bumps)', async () => {
+    const mockPlayer = makePlayer('act-resume').setup({});
 
-		vi.useFakeTimers();
-		mockPlayer.bumpActivity();
-		vi.advanceTimersByTime(999);
-		expect(mockPlayer.container.classList.contains('active')).toBe(true);
+    await mockPlayer.ready();
+    await mockPlayer.play();
+    await mockPlayer.pause();
 
-		vi.advanceTimersByTime(1);
-		expect(mockPlayer.container.classList.contains('inactive')).toBe(true);
-	});
+    vi.useFakeTimers();
+    mockPlayer.bumpActivity();
+    vi.advanceTimersByTime(60000);
+    expect(mockPlayer.container.classList.contains('active')).toBe(true);
 
-	it('inactivityMs: 0 disables the tracker entirely', async () => {
-		const events: boolean[] = [];
-		const mockPlayer = makePlayer('act-disabled');
-		mockPlayer.on('activity' as any, ({ active }: { active: boolean }) => events.push(active));
+    await mockPlayer.play();
+    vi.advanceTimersByTime(4000);
 
-		mockPlayer.setup({ inactivityMs: 0 });
-		await mockPlayer.ready();
+    expect(mockPlayer.container.classList.contains('active')).toBe(false);
+    expect(mockPlayer.container.classList.contains('inactive')).toBe(true);
+  });
 
-		pointerMove(mockPlayer.container);
+  it('a custom inactivityMs drives the countdown', async () => {
+    const mockPlayer = makePlayer('act-custom').setup({ inactivityMs: 1000 });
 
-		expect(events).toEqual([]);
-		expect(mockPlayer.activityTracking()).toBe(false);
-		expect(mockPlayer.container.classList.contains('active')).toBe(false);
-	});
+    await mockPlayer.ready();
+    await mockPlayer.play();
 
-	it('activityTracking(false) clears the armed countdown and stands the listeners down', async () => {
-		const mockPlayer = makePlayer('act-takeover').setup({});
-		await mockPlayer.ready();
-		await mockPlayer.play();
+    vi.useFakeTimers();
+    mockPlayer.bumpActivity();
+    vi.advanceTimersByTime(999);
+    expect(mockPlayer.container.classList.contains('active')).toBe(true);
 
-		vi.useFakeTimers();
-		mockPlayer.bumpActivity();
-		mockPlayer.activityTracking(false);
-		vi.advanceTimersByTime(60000);
+    vi.advanceTimersByTime(1);
+    expect(mockPlayer.container.classList.contains('inactive')).toBe(true);
+  });
 
-		expect(mockPlayer.container.classList.contains('active')).toBe(true);
+  it('inactivityMs: 0 disables the tracker entirely', async () => {
+    const events: boolean[] = [];
+    const mockPlayer = makePlayer('act-disabled');
 
-		const events: boolean[] = [];
-		mockPlayer.on('activity' as any, ({ active }: { active: boolean }) => events.push(active));
-		pointerMove(mockPlayer.container);
+    mockPlayer.on('activity' as any, ({ active }: { active: boolean }) =>
+      events.push(active));
 
-		expect(events).toEqual([]);
-		expect(mockPlayer.activityTracking()).toBe(false);
-	});
+    mockPlayer.setup({ inactivityMs: 0 });
+    await mockPlayer.ready();
 
-	it('mouseleave hides immediately while playing, like the desktop UI', async () => {
-		const mockPlayer = makePlayer('act-leave').setup({});
-		await mockPlayer.ready();
-		await mockPlayer.play();
+    pointerMove(mockPlayer.container);
 
-		mockPlayer.bumpActivity();
-		expect(mockPlayer.container.classList.contains('active')).toBe(true);
+    expect(events).toEqual([]);
+    expect(mockPlayer.activityTracking()).toBe(false);
+    expect(mockPlayer.container.classList.contains('active')).toBe(false);
+  });
 
-		mockPlayer.container.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false }));
+  it('activityTracking(false) clears the armed countdown and stands the listeners down', async () => {
+    const mockPlayer = makePlayer('act-takeover').setup({});
 
-		expect(mockPlayer.container.classList.contains('active')).toBe(false);
-		expect(mockPlayer.container.classList.contains('inactive')).toBe(true);
-	});
+    await mockPlayer.ready();
+    await mockPlayer.play();
 
-	it('mouseleave while paused keeps the controls up', async () => {
-		const mockPlayer = makePlayer('act-leave-paused').setup({});
-		await mockPlayer.ready();
-		await mockPlayer.play();
-		await mockPlayer.pause();
+    vi.useFakeTimers();
+    mockPlayer.bumpActivity();
+    mockPlayer.activityTracking(false);
+    vi.advanceTimersByTime(60000);
 
-		mockPlayer.bumpActivity();
-		mockPlayer.container.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false }));
+    expect(mockPlayer.container.classList.contains('active')).toBe(true);
 
-		expect(mockPlayer.container.classList.contains('active')).toBe(true);
-	});
+    const events: boolean[] = [];
 
-	it('the desync guard force-re-emits {active:true} when a consumer stripped the class directly', async () => {
-		const mockPlayer = makePlayer('act-desync').setup({});
-		await mockPlayer.ready();
+    mockPlayer.on('activity' as any, ({ active }: { active: boolean }) =>
+      events.push(active));
 
-		mockPlayer.emit('activity' as any, { active: false });
-		expect(mockPlayer.container.classList.contains('active')).toBe(false);
+    pointerMove(mockPlayer.container);
 
-		mockPlayer.bumpActivity();
+    expect(events).toEqual([]);
+    expect(mockPlayer.activityTracking()).toBe(false);
+  });
 
-		expect(mockPlayer.container.classList.contains('active')).toBe(true);
-	});
+  it('mouseleave hides immediately while playing, like the desktop UI', async () => {
+    const mockPlayer = makePlayer('act-leave').setup({});
 
-	it('dispose() releases the listeners and any armed countdown', async () => {
-		const mockPlayer = makePlayer('act-dispose').setup({});
-		await mockPlayer.ready();
-		await mockPlayer.play();
+    await mockPlayer.ready();
+    await mockPlayer.play();
 
-		vi.useFakeTimers();
-		mockPlayer.bumpActivity();
-		const container = mockPlayer.container;
-		await mockPlayer.dispose();
+    mockPlayer.bumpActivity();
+    expect(mockPlayer.container.classList.contains('active')).toBe(true);
 
-		const events: boolean[] = [];
-		mockPlayer.on('activity' as any, ({ active }: { active: boolean }) => events.push(active));
-		pointerMove(container);
-		vi.advanceTimersByTime(60000);
+    mockPlayer.container.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false }));
 
-		expect(events).toEqual([]);
-	});
+    expect(mockPlayer.container.classList.contains('active')).toBe(false);
+    expect(mockPlayer.container.classList.contains('inactive')).toBe(true);
+  });
+
+  it('mouseleave while paused keeps the controls up', async () => {
+    const mockPlayer = makePlayer('act-leave-paused').setup({});
+
+    await mockPlayer.ready();
+    await mockPlayer.play();
+    await mockPlayer.pause();
+
+    mockPlayer.bumpActivity();
+    mockPlayer.container.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false }));
+
+    expect(mockPlayer.container.classList.contains('active')).toBe(true);
+  });
+
+  it('the desync guard force-re-emits {active:true} when a consumer stripped the class directly', async () => {
+    const mockPlayer = makePlayer('act-desync').setup({});
+
+    await mockPlayer.ready();
+
+    mockPlayer.emit('activity' as any, { active: false });
+    expect(mockPlayer.container.classList.contains('active')).toBe(false);
+
+    mockPlayer.bumpActivity();
+
+    expect(mockPlayer.container.classList.contains('active')).toBe(true);
+  });
+
+  it('dispose() releases the listeners and any armed countdown', async () => {
+    const mockPlayer = makePlayer('act-dispose').setup({});
+
+    await mockPlayer.ready();
+    await mockPlayer.play();
+
+    vi.useFakeTimers();
+    mockPlayer.bumpActivity();
+    const container = mockPlayer.container;
+
+    await mockPlayer.dispose();
+
+    const events: boolean[] = [];
+
+    mockPlayer.on('activity' as any, ({ active }: { active: boolean }) =>
+      events.push(active));
+
+    pointerMove(container);
+    vi.advanceTimersByTime(60000);
+
+    expect(events).toEqual([]);
+  });
 });

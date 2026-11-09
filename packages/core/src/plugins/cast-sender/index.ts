@@ -7,11 +7,11 @@
 // -----------------------------------------------------------------------------
 
 import type {
-	BaseEventMap,
-	BasePlaylistItem,
-	IPlayer,
-	Translations,
-	WithCurrentItem,
+  BaseEventMap,
+  BasePlaylistItem,
+  IPlayer,
+  Translations,
+  WithCurrentItem,
 } from '../../types';
 import { Plugin } from '../../core/plugin';
 import { BrowserPolicyError } from '../../errors';
@@ -49,36 +49,36 @@ import nlBundle from './i18n/nl';
 
 /** Options for {@link CastSenderPlugin}. */
 export interface CastSenderOptions {
-	/** Chromecast app id. */
-	chromecastAppId?: string;
-	/** Whether AirPlay is allowed (Safari only). */
-	enableAirPlay?: boolean;
-	/** Custom receiver namespace for messages. */
-	customReceiverNamespace?: string;
-	/**
-	 * Resume local playback after the receiver disconnects, restoring the
-	 * receiver's last `currentTime` and play/pause state. Default `true`.
-	 */
-	resumeLocalOnDisconnect?: boolean;
-	/**
-	 * Default content type when the playlist item doesn't carry `mime`.
-	 * Defaults to the value of `defaultContentType()` on the subclass.
-	 */
-	defaultContentType?: string;
-	/**
-	 * Treat the source as a live (unbounded) stream. Default `false` — VOD/buffered.
-	 */
-	live?: boolean;
+  /** Chromecast app id. */
+  chromecastAppId?: string;
+  /** Whether AirPlay is allowed (Safari only). */
+  enableAirPlay?: boolean;
+  /** Custom receiver namespace for messages. */
+  customReceiverNamespace?: string;
+  /**
+   * Resume local playback after the receiver disconnects, restoring the
+   * receiver's last `currentTime` and play/pause state. Default `true`.
+   */
+  resumeLocalOnDisconnect?: boolean;
+  /**
+   * Default content type when the playlist item doesn't carry `mime`.
+   * Defaults to the value of `defaultContentType()` on the subclass.
+   */
+  defaultContentType?: string;
+  /**
+   * Treat the source as a live (unbounded) stream. Default `false` — VOD/buffered.
+   */
+  live?: boolean;
 }
 
 /** Events emitted by {@link CastSenderPlugin}. */
 export interface CastSenderEvents {
-	'cast:connected': { deviceName: string };
-	'cast:disconnected': void;
-	'cast:error': { error: Error };
-	'cast:remote-state': { time: number; state: 'playing' | 'paused' | 'buffering' };
-	'cast:media-changed': { contentId: string };
-	'unsupported': { reason: string };
+  'cast:connected': { deviceName: string };
+  'cast:disconnected': void;
+  'cast:error': { error: Error };
+  'cast:remote-state': { time: number; state: 'playing' | 'paused' | 'buffering' };
+  'cast:media-changed': { contentId: string };
+  unsupported: { reason: string };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -91,52 +91,52 @@ export interface CastSenderEvents {
 type RemotePlayerEventHandler = (event: { value: unknown }) => void;
 
 interface RemotePlayerLike {
-	isConnected: boolean;
-	isPaused: boolean;
-	isMuted: boolean;
-	currentTime: number;
-	duration: number;
-	volumeLevel: number;
-	mediaInfo: { contentId?: string } | null;
+  isConnected: boolean;
+  isPaused: boolean;
+  isMuted: boolean;
+  currentTime: number;
+  duration: number;
+  volumeLevel: number;
+  mediaInfo: { contentId?: string } | null;
 }
 
 interface RemotePlayerControllerLike {
-	addEventListener: (event: string, handler: RemotePlayerEventHandler) => void;
-	removeEventListener: (event: string, handler: RemotePlayerEventHandler) => void;
-	playOrPause: () => void;
-	stop: () => void;
-	seek: () => void;
-	setVolumeLevel: () => void;
-	muteOrUnmute: () => void;
+  addEventListener: (event: string, handler: RemotePlayerEventHandler) => void;
+  removeEventListener: (event: string, handler: RemotePlayerEventHandler) => void;
+  playOrPause: () => void;
+  stop: () => void;
+  seek: () => void;
+  setVolumeLevel: () => void;
+  muteOrUnmute: () => void;
 }
 
 interface CastSessionLike {
-	loadMedia: (req: unknown) => Promise<unknown>;
-	getSessionId?: () => string;
-	getCastDevice?: () => { friendlyName?: string };
+  loadMedia: (req: unknown) => Promise<unknown>;
+  getSessionId?: () => string;
+  getCastDevice?: () => { friendlyName?: string };
 }
 
 interface CastContextLike {
-	requestSession: () => Promise<unknown>;
-	endCurrentSession?: (stopCasting?: boolean) => void;
-	getCurrentSession?: () => null | CastSessionLike;
+  requestSession: () => Promise<unknown>;
+  endCurrentSession?: (stopCasting?: boolean) => void;
+  getCurrentSession?: () => null | CastSessionLike;
 }
 
 interface CastFrameworkGlobal {
-	framework?: {
-		CastContext?: { getInstance: () => CastContextLike };
-		RemotePlayer?: new () => RemotePlayerLike;
-		RemotePlayerController?: new (player: RemotePlayerLike) => RemotePlayerControllerLike;
-		RemotePlayerEventType?: {
-			IS_CONNECTED_CHANGED: string;
-			IS_PAUSED_CHANGED: string;
-			CURRENT_TIME_CHANGED: string;
-			IS_MEDIA_LOADED_CHANGED: string;
-			MEDIA_INFO_CHANGED: string;
-			VOLUME_LEVEL_CHANGED: string;
-			IS_MUTED_CHANGED: string;
-		};
-	};
+  framework?: {
+    CastContext?: { getInstance: () => CastContextLike };
+    RemotePlayer?: new () => RemotePlayerLike;
+    RemotePlayerController?: new (player: RemotePlayerLike) => RemotePlayerControllerLike;
+    RemotePlayerEventType?: {
+      IS_CONNECTED_CHANGED: string;
+      IS_PAUSED_CHANGED: string;
+      CURRENT_TIME_CHANGED: string;
+      IS_MEDIA_LOADED_CHANGED: string;
+      MEDIA_INFO_CHANGED: string;
+      VOLUME_LEVEL_CHANGED: string;
+      IS_MUTED_CHANGED: string;
+    };
+  };
 }
 
 /**
@@ -146,27 +146,27 @@ interface CastFrameworkGlobal {
  */
 /** Mutable subset of the Cast SDK `MediaInfo` the sender populates. */
 export interface CastMediaInfo extends Record<string, unknown> {
-	metadata?: unknown;
-	streamType?: string;
+  metadata?: unknown;
+  streamType?: string;
 }
 
 /** Base Cast SDK `MediaMetadata` fields the sender writes; subclasses extend it. */
 export interface CastMediaMetadata extends Record<string, unknown> {
-	title?: string;
+  title?: string;
 }
 
 export interface ChromeCastMediaCtors {
-	MediaInfo: new (contentId: string, contentType: string) => CastMediaInfo;
-	LoadRequest: new (mediaInfo: unknown) => Record<string, unknown>;
-	GenericMediaMetadata: new () => CastMediaMetadata;
-	StreamType: { BUFFERED: string; LIVE: string };
-	[k: string]: unknown;
+  MediaInfo: new (contentId: string, contentType: string) => CastMediaInfo;
+  LoadRequest: new (mediaInfo: unknown) => Record<string, unknown>;
+  GenericMediaMetadata: new () => CastMediaMetadata;
+  StreamType: { BUFFERED: string; LIVE: string };
+  [k: string]: unknown;
 }
 
 interface ChromeCastGlobal {
-	cast?: {
-		media?: ChromeCastMediaCtors;
-	};
+  cast?: {
+    media?: ChromeCastMediaCtors;
+  };
 }
 
 /**
@@ -174,482 +174,558 @@ interface ChromeCastGlobal {
  * media-specific hooks; everything else is taken care of.
  */
 export class CastSenderPlugin<
-	TPlayer extends IPlayer<BaseEventMap> = IPlayer,
-	TItem extends BasePlaylistItem = BasePlaylistItem,
+  TPlayer extends IPlayer<BaseEventMap> = IPlayer,
+  TItem extends BasePlaylistItem = BasePlaylistItem,
 > extends Plugin<TPlayer, CastSenderOptions, CastSenderEvents> {
-	static override readonly id: string = 'cast-sender';
-	static override readonly version: string = '2.0.0';
-	static override readonly description: string = 'Chromecast sender — Web Sender SDK bridge';
-	static override readonly translations: Translations = {
-		en: enBundle,
-		nl: nlBundle,
-	};
+  static override readonly id: string = 'cast-sender';
+  static override readonly version: string = '2.0.0';
+  static override readonly description: string = 'Chromecast sender — Web Sender SDK bridge';
+  static override readonly translations: Translations = {
+    en: enBundle,
+    nl: nlBundle,
+  };
 
-	private connected: boolean = false;
-	private remotePlayer: RemotePlayerLike | null = null;
-	private remoteController: RemotePlayerControllerLike | null = null;
-	private listeners: Array<{ event: string; handler: RemotePlayerEventHandler }> = [];
-	/** Suppress player → cast forwarding while we're applying a cast → player update. */
-	private applyingFromRemote: boolean = false;
-	/** The resolved contentId the plugin itself last sent via `loadMedia()` — compared against MEDIA_INFO_CHANGED to tell a self-load echo from a genuine receiver-side switch. */
-	private lastSentContentId: string | null = null;
+  private connected: boolean = false;
+  private remotePlayer: RemotePlayerLike | null = null;
+  private remoteController: RemotePlayerControllerLike | null = null;
+  private listeners: Array<{ event: string; handler: RemotePlayerEventHandler }> = [];
+  /** Suppress player → cast forwarding while we're applying a cast → player update. */
+  private applyingFromRemote: boolean = false;
+  /** The resolved contentId the plugin itself last sent via `loadMedia()` — compared against MEDIA_INFO_CHANGED to tell a self-load echo from a genuine receiver-side switch. */
+  private lastSentContentId: string | null = null;
 
-	/**
-	 * Return the current playlist item from the player, or `undefined`.
-	 * Uses `WithCurrentItem<TItem>` to type the access narrowly; the cast is
-	 * `unknown` (not `any`) and breaks at compile time if the interface changes.
-	 */
-	private _readCurrentItem(): TItem | undefined {
-		const playerWithItem = this.player as unknown as WithCurrentItem<TItem>; // Generic mixin surface not visible on IPlayer — narrowed via local interface.
-		return playerWithItem.item();
-	}
+  /**
+   * Return the current playlist item from the player, or `undefined`.
+   * Uses `WithCurrentItem<TItem>` to type the access narrowly; the cast is
+   * `unknown` (not `any`) and breaks at compile time if the interface changes.
+   */
+  private _readCurrentItem(): TItem | undefined {
+    const playerWithItem = this.player as unknown as WithCurrentItem<TItem>; // Generic mixin surface not visible on IPlayer — narrowed via local interface.
 
-	/**
-	 * Called by the plugin system when the plugin is mounted to a player.
-	 * Subscribes to `item`, `play`, `pause`, `stop`, `seek`, `volume`, and
-	 * `mute` player events, forwarding each to the active Cast session via the
-	 * RemotePlayerController. Events tagged `{source: 'cast'}` are skipped to
-	 * prevent re-broadcast loops when the bridge mirrors receiver state back.
-	 */
-	override use(): void {
-		this.on('item', (_data) => {
-			if (!this.isConnected() || this.applyingFromRemote)
-				return;
-			void this.forwardCurrent();
-		});
-		this.on('play', (eventData) => {
-			const payload = eventData as Record<string, unknown> | undefined;
-			if (!this.isConnected() || this.applyingFromRemote || payload?.['source'] === 'cast')
-				return;
-			this.forwardPlayPause(true);
-		});
-		this.on('pause', (eventData) => {
-			const payload = eventData as Record<string, unknown> | undefined;
-			if (!this.isConnected() || this.applyingFromRemote || payload?.['source'] === 'cast')
-				return;
-			this.forwardPlayPause(false);
-		});
-		this.on('stop', (eventData) => {
-			const payload = eventData as Record<string, unknown> | undefined;
-			if (!this.isConnected() || this.applyingFromRemote || payload?.['source'] === 'cast')
-				return;
-			this.forwardStop();
-		});
-		this.on('seek', (eventData) => {
-			const payload = eventData as Record<string, unknown> | undefined;
-			if (!this.isConnected() || this.applyingFromRemote || payload?.['source'] === 'cast')
-				return;
-			this.forwardSeek(typeof payload?.['time'] === 'number' ? payload['time'] as number : 0);
-		});
-		this.on('volume', (eventData) => {
-			const payload = eventData as Record<string, unknown> | undefined;
-			if (!this.isConnected() || this.applyingFromRemote)
-				return;
-			this.forwardVolume(typeof payload?.['level'] === 'number' ? payload['level'] as number : 1);
-		});
-		this.on('mute', (eventData) => {
-			const payload = eventData as Record<string, unknown> | undefined;
-			if (!this.isConnected() || this.applyingFromRemote)
-				return;
-			this.forwardMute(!!payload?.['muted']);
-		});
-	}
+    return playerWithItem.item();
+  }
 
-	/**
-	 * Called by the plugin system when the player is disposed or the plugin is
-	 * removed. Tears down RemotePlayerController listeners and ends any active
-	 * Cast session. Safe to call multiple times.
-	 */
-	override dispose(): void {
-		this.detachRemoteListeners();
-		if (this.connected) {
-			try {
-				this.castContext()?.endCurrentSession?.(true);
-			}
-			catch { /* SDK absent or in a bad state — drop. */ }
-		}
-		this.connected = false;
-	}
+  /**
+   * Called by the plugin system when the plugin is mounted to a player.
+   * Subscribes to `item`, `play`, `pause`, `stop`, `seek`, `volume`, and
+   * `mute` player events, forwarding each to the active Cast session via the
+   * RemotePlayerController. Events tagged `{source: 'cast'}` are skipped to
+   * prevent re-broadcast loops when the bridge mirrors receiver state back.
+   */
+  override use(): void {
+    this.on('item', (_data) => {
+      if (!this.isConnected() || this.applyingFromRemote) return;
 
-	/** Returns `true` while a Cast session is established and `connect()` has not been followed by `disconnect()` or a remote disconnect. */
-	isConnected(): boolean {
-		return this.connected;
-	}
+      void this.forwardCurrent();
+    });
 
-	/**
-	 * Opens the Cast session picker and waits for the user to choose a device.
-	 * Once the session is established the bridge attaches RemotePlayerController
-	 * listeners and immediately forwards the current playlist item to the receiver.
-	 *
-	 * Emits `cast:connected` on success. Emits `cast:error` and re-throws on
-	 * failure. Emits `unsupported` and throws `BrowserPolicyError` if the Cast
-	 * SDK (`cast.framework`) is absent from the page — non-Chromium browsers
-	 * always land here.
-	 *
-	 * @throws {BrowserPolicyError} `core:policy/castUnavailable` — Cast SDK not loaded.
-	 */
-	async connect(): Promise<void> {
-		const ctx = this.castContext();
-		const id = (this.constructor as typeof CastSenderPlugin).id;
-		if (!ctx) {
-			this.emit('unsupported', { reason: 'cast-sdk-missing' });
-			throw new BrowserPolicyError({
-				code: 'core:policy/castUnavailable',
-				severity: 'error',
-				scope: {
-					kind: 'plugin',
-					id,
-				},
-				message: 'Cast SDK is not available — load cast.framework before calling connect().',
-			});
-		}
-		try {
-			await ctx.requestSession();
-			this.attachRemoteListeners();
-			this.connected = true;
-			const session = ctx.getCurrentSession?.();
-			const deviceName = session?.getCastDevice?.()?.friendlyName ?? 'Cast device';
-			this.emit('cast:connected', { deviceName });
-			// Forward whatever the local player has loaded right now.
-			void this.forwardCurrent(this.player.time());
-		}
-		catch (err) {
-			this.connected = false;
-			this.emit('cast:error', { error: err instanceof Error ? err : new Error(String(err)) });
-			throw err;
-		}
-	}
+    this.on('play', (eventData) => {
+      const payload = eventData as Record<string, unknown> | undefined;
 
-	/**
-	 * Ends the current Cast session and tears down the RemotePlayerController
-	 * listeners. Idempotent — safe to call when already disconnected. Emits
-	 * `cast:disconnected`. Emits `unsupported` if the SDK is absent.
-	 */
-	disconnect(): void {
-		const ctx = this.castContext();
-		if (!ctx) {
-			this.emit('unsupported', { reason: 'cast-sdk-missing' });
-			return;
-		}
-		this.detachRemoteListeners();
-		try {
-			ctx.endCurrentSession?.(true);
-		}
-		catch { /* SDK in a bad state — drop. */ }
-		this.connected = false;
-		this.emit('cast:disconnected', undefined as never);
-	}
+      if (!this.isConnected() || this.applyingFromRemote || payload?.['source'] === 'cast') return;
 
-	// ── Hooks for subclasses ───────────────────────────────────────────────
+      this.forwardPlayPause(true);
+    });
 
-	/**
-	 * Default content type when the playlist item lacks `mime` / `contentType`.
-	 * Override to specialize per media library (audio vs video).
-	 */
-	protected defaultContentType(): string {
-		return 'application/octet-stream';
-	}
+    this.on('pause', (eventData) => {
+      const payload = eventData as Record<string, unknown> | undefined;
 
-	/**
-	 * Build a `chrome.cast.media.*MediaMetadata` from the current playlist
-	 * item. Override to plug in `MusicTrackMediaMetadata`, `TvShowMediaMetadata`,
-	 * etc., and resolve URLs via `this.resolveUrl(url, 'poster' | 'sprite')`.
-	 *
-	 * Default returns a minimal `GenericMediaMetadata` with the title only.
-	 */
-	protected async buildMetadata(item: TItem, ctors: ChromeCastMediaCtors): Promise<unknown> {
-		const meta = new ctors.GenericMediaMetadata();
-		const titled = item as TItem & { title?: string; name?: string };
-		meta['title'] = titled.title ?? titled.name ?? '';
-		return meta;
-	}
+      if (!this.isConnected() || this.applyingFromRemote || payload?.['source'] === 'cast') return;
 
-	// ── Internals ──────────────────────────────────────────────────────────
+      this.forwardPlayPause(false);
+    });
 
-	/** Resolve the global cast.framework, or null if absent. */
-	private castFramework(): CastFrameworkGlobal['framework'] | null {
-		const emptyFallback: unknown = {};
-		const castGlobal = (typeof globalThis !== 'undefined' ? globalThis : emptyFallback) as { cast?: CastFrameworkGlobal };
-		return castGlobal.cast?.framework ?? null;
-	}
+    this.on('stop', (eventData) => {
+      const payload = eventData as Record<string, unknown> | undefined;
 
-	/** Resolve the global cast.framework.CastContext, or null if absent. */
-	protected castContext(): CastContextLike | null {
-		const fw = this.castFramework();
-		if (!fw?.CastContext)
-			return null;
-		try {
-			return fw.CastContext.getInstance();
-		}
-		catch { return null; }
-	}
+      if (!this.isConnected() || this.applyingFromRemote || payload?.['source'] === 'cast') return;
 
-	/** Resolve the chrome.cast.media constructors, or null if absent. */
-	protected chromeCastMedia(): ChromeCastMediaCtors | null {
-		const emptyFallback: unknown = {};
-		const chromeGlobal = (typeof globalThis !== 'undefined' ? globalThis : emptyFallback) as { chrome?: ChromeCastGlobal };
-		return chromeGlobal.chrome?.cast?.media ?? null;
-	}
+      this.forwardStop();
+    });
 
-	/** Wire up RemotePlayerController event subscriptions for cast → player mirroring. */
-	private attachRemoteListeners(): void {
-		this.detachRemoteListeners();
-		const fw = this.castFramework();
-		if (!fw?.RemotePlayer || !fw.RemotePlayerController || !fw.RemotePlayerEventType)
-			return;
-		try {
-			const remote = new fw.RemotePlayer();
-			const controller = new fw.RemotePlayerController(remote);
-			const ev = fw.RemotePlayerEventType;
-			this.remotePlayer = remote;
-			this.remoteController = controller;
+    this.on('seek', (eventData) => {
+      const payload = eventData as Record<string, unknown> | undefined;
 
-			const subscribe = (event: string, handler: RemotePlayerEventHandler): void => {
-				// eslint-disable-next-line player/no-raw-timers-in-plugin -- Cast SDK's RemotePlayerController is not an EventTarget, so this.listen() can't wrap it; cleanup is tracked manually via this.listeners.
-				controller.addEventListener(event, handler);
-				this.listeners.push({
-					event,
-					handler,
-				});
-			};
+      if (!this.isConnected() || this.applyingFromRemote || payload?.['source'] === 'cast') return;
 
-			subscribe(ev.IS_CONNECTED_CHANGED, () => {
-				if (!remote.isConnected) {
-					this.handleRemoteDisconnect();
-				}
-				else {
-					this.emitPlayer('castState', { state: 'connected' });
-				}
-			});
-			subscribe(ev.IS_PAUSED_CHANGED, () => {
-				const evtName = remote.isPaused ? 'pause' : 'play';
-				this.applyingFromRemote = true;
-				try {
-					this.emitPlayer(evtName, {
-						source: 'cast',
-						silent: true,
-					});
-				}
-				finally {
-					this.applyingFromRemote = false;
-				}
-				this.emit('cast:remote-state', {
-					time: remote.currentTime ?? 0,
-					state: remote.isPaused ? 'paused' : 'playing',
-				});
-			});
-			subscribe(ev.CURRENT_TIME_CHANGED, () => {
-				this.applyingFromRemote = true;
-				try {
-					this.emitPlayer('time', {
-						time: remote.currentTime ?? 0,
-						source: 'cast',
-					});
-				}
-				finally { this.applyingFromRemote = false; }
-			});
-			subscribe(ev.IS_MEDIA_LOADED_CHANGED, () => {
-				if (remote.mediaInfo)
-					this.emitPlayer('mediaReady', undefined);
-			});
-			subscribe(ev.MEDIA_INFO_CHANGED, () => {
-				const id = remote.mediaInfo?.contentId;
-				if (!id)
-					return;
-				if (id !== this.lastSentContentId) {
-					this.emit('cast:media-changed', { contentId: id });
-				}
-			});
-		}
-		catch (err) {
-			// SDK present but constructors failed — surface as cast:error.
-			this.emit('cast:error', { error: err instanceof Error ? err : new Error(String(err)) });
-		}
-	}
+      this.forwardSeek(typeof payload?.['time'] === 'number'
+        ? payload['time'] as number
+        : 0);
+    });
 
-	/** Unsubscribes every registered RemotePlayerController listener and clears the remote player references. */
-	private detachRemoteListeners(): void {
-		if (!this.remoteController) {
-			this.listeners = [];
-			this.remotePlayer = null;
-			return;
-		}
-		for (const { event, handler } of this.listeners) {
-			try {
-				this.remoteController.removeEventListener(event, handler);
-			}
-			catch { /* receiver gone — drop. */ }
-		}
-		this.listeners = [];
-		this.remoteController = null;
-		this.remotePlayer = null;
-	}
+    this.on('volume', (eventData) => {
+      const payload = eventData as Record<string, unknown> | undefined;
 
-	/**
-	 * Invoked by the IS_CONNECTED_CHANGED listener when `remote.isConnected`
-	 * becomes false. Captures the receiver's last position and pause state,
-	 * tears down the session, then optionally restores playback locally so the
-	 * user's media keeps going without manual intervention.
-	 * Controlled by `CastSenderOptions.resumeLocalOnDisconnect` (default `true`).
-	 */
-	private handleRemoteDisconnect(): void {
-		const remote = this.remotePlayer;
-		const wasPaused = remote?.isPaused ?? true;
-		const lastTime = remote?.currentTime ?? 0;
-		const opts: CastSenderOptions = this.opts ?? {};
-		const resume = opts.resumeLocalOnDisconnect !== false;
+      if (!this.isConnected() || this.applyingFromRemote) return;
 
-		this.detachRemoteListeners();
-		this.connected = false;
-		this.emitPlayer('castState', { state: 'disconnected' });
-		this.emit('cast:disconnected', undefined as never);
+      this.forwardVolume(typeof payload?.['level'] === 'number'
+        ? payload['level'] as number
+        : 1);
+    });
 
-		if (resume) {
-			try {
-				if (typeof this.player.time === 'function' && lastTime > 0) {
-					this.player.time(lastTime, { source: 'cast' });
-				}
-				if (wasPaused)
-					void this.player.pause?.({ source: 'cast' });
-				else void this.player.play?.({ source: 'cast' });
-			}
-			catch { /* local player not ready — drop. */ }
-		}
-	}
+    this.on('mute', (eventData) => {
+      const payload = eventData as Record<string, unknown> | undefined;
 
-	/**
-	 * Reads the current playlist item, resolves its URL through the player's
-	 * auth-aware URL resolver, constructs a `chrome.cast.media.MediaInfo`
-	 * (via `buildMetadata()`), and calls `session.loadMedia()`. Emits
-	 * `cast:error` on failure rather than throwing. No-ops if there is no
-	 * active session, no `chrome.cast.media` namespace, or no current item.
-	 */
-	private async forwardCurrent(startTime?: number): Promise<void> {
-		const ctx = this.castContext();
-		const session = ctx?.getCurrentSession?.();
-		const ctors = this.chromeCastMedia();
-		if (!session?.loadMedia || !ctors)
-			return;
-		const item = this._readCurrentItem();
-		if (!item)
-			return;
-		const opts: CastSenderOptions = this.opts ?? {};
-		const itemWithMedia = item as TItem & { url?: string; mime?: string; contentType?: string };
-		const rawUrl = itemWithMedia.url;
-		if (!rawUrl)
-			return;
-		const contentType = itemWithMedia.mime
-			?? itemWithMedia.contentType
-			?? opts.defaultContentType
-			?? this.defaultContentType();
-		try {
-			// Receiver fetches the URL itself — push auth via the player's
-			// URL resolver so query-string / signed-URL schemes reach the
-			// cast device.
-			const url = (await this.resolveUrl(rawUrl, 'cast')).href;
-			const mediaInfo = new ctors.MediaInfo(url, contentType);
-			const metadata = await this.buildMetadata(item, ctors);
-			mediaInfo.metadata = metadata;
-			mediaInfo.streamType = opts.live ? ctors.StreamType.LIVE : ctors.StreamType.BUFFERED;
-			const request = new ctors.LoadRequest(mediaInfo);
-			if (startTime)
-				request['currentTime'] = startTime;
-			this.lastSentContentId = url;
-			await session.loadMedia(request);
-		}
-		catch (err) {
-			this.emit('cast:error', { error: err instanceof Error ? err : new Error(String(err)) });
-		}
-	}
+      if (!this.isConnected() || this.applyingFromRemote) return;
 
-	/**
-	 * Calls `RemotePlayerController.playOrPause()` only when the receiver's
-	 * state differs from `wantPlaying` — avoids redundant toggles that can
-	 * confuse the Cast SDK state machine.
-	 *
-	 * Condition: `remote.isPaused === wantPlaying` means "receiver is paused
-	 * and we want to play, OR receiver is playing and we want to pause" — i.e.
-	 * the states differ and a toggle is needed.
-	 */
-	private forwardPlayPause(wantPlaying: boolean): void {
-		const remote = this.remotePlayer;
-		const ctrl = this.remoteController;
-		if (!remote || !ctrl)
-			return;
-		if (remote.isPaused === wantPlaying) {
-			try {
-				ctrl.playOrPause();
-			}
-			catch { /* receiver gone — drop. */ }
-		}
-	}
+      this.forwardMute(!!payload?.['muted']);
+    });
+  }
 
-	/** Stops the receiver. No-ops gracefully if the receiver is gone. */
-	private forwardStop(): void {
-		try {
-			this.remoteController?.stop();
-		}
-		catch { /* receiver gone — drop. */ }
-	}
+  /**
+   * Called by the plugin system when the player is disposed or the plugin is
+   * removed. Tears down RemotePlayerController listeners and ends any active
+   * Cast session. Safe to call multiple times.
+   */
+  override dispose(): void {
+    this.detachRemoteListeners();
 
-	/** Writes `time` (clamped to ≥ 0) into `remotePlayer.currentTime` then calls `seek()`. */
-	private forwardSeek(time: number): void {
-		const remote = this.remotePlayer;
-		const ctrl = this.remoteController;
-		if (!remote || !ctrl)
-			return;
-		try {
-			remote.currentTime = Math.max(0, time);
-			ctrl.seek();
-		}
-		catch { /* receiver gone — drop. */ }
-	}
+    if (this.connected) {
+      try {
+        this.castContext()?.endCurrentSession?.(true);
+      } catch { /* SDK absent or in a bad state — drop. */ }
+    }
 
-	/**
-	 * Forward the player's 0-100 volume level to the Cast SDK.
-	 * The SDK's `volumeLevel` field expects a 0-1 float, so we divide at the
-	 * boundary and clamp to keep the value in spec range.
-	 */
-	private forwardVolume(level: number): void {
-		const remote = this.remotePlayer;
-		const ctrl = this.remoteController;
-		if (!remote || !ctrl)
-			return;
+    this.connected = false;
+  }
 
-		try {
-			remote.volumeLevel = Math.max(0, Math.min(1, level / 100));
-			ctrl.setVolumeLevel();
-		}
-		catch { /* receiver gone — drop. */ }
-	}
+  /** Returns `true` while a Cast session is established and `connect()` has not been followed by `disconnect()` or a remote disconnect. */
+  isConnected(): boolean {
+    return this.connected;
+  }
 
-	/** Calls `RemotePlayerController.muteOrUnmute()` only when the receiver's mute state differs from `muted`. */
-	private forwardMute(muted: boolean): void {
-		const remote = this.remotePlayer;
-		const ctrl = this.remoteController;
-		if (!remote || !ctrl)
-			return;
-		if (remote.isMuted === muted)
-			return;
-		try {
-			remote.isMuted = muted;
-			ctrl.muteOrUnmute();
-		}
-		catch { /* receiver gone — drop. */ }
-	}
+  /**
+   * Opens the Cast session picker and waits for the user to choose a device.
+   * Once the session is established the bridge attaches RemotePlayerController
+   * listeners and immediately forwards the current playlist item to the receiver.
+   *
+   * Emits `cast:connected` on success. Emits `cast:error` and re-throws on
+   * failure. Emits `unsupported` and throws `BrowserPolicyError` if the Cast
+   * SDK (`cast.framework`) is absent from the page — non-Chromium browsers
+   * always land here.
+   *
+   * @throws {BrowserPolicyError} `core:policy/castUnavailable` — Cast SDK not loaded.
+   */
+  async connect(): Promise<void> {
+    const ctx = this.castContext();
+    const id = (this.constructor as typeof CastSenderPlugin).id;
 
-	/**
-	 * Emits an event directly on the player instance. Used by the cast → player
-	 * mirror path where the event name is not statically known at compile time.
-	 * Swallows errors so receiver-race teardown can't crash the plugin.
-	 */
-	private emitPlayer(event: string, payload: unknown): void {
-		try {
-			// eslint-disable-next-line player/no-raw-player-bus -- deliberate mirror of a dynamically-named PLAYER event from the cast receiver onto the player bus; not a plugin-scoped emit, so this.emit() (which namespaces under plugin:<id>:) is wrong here.
-			this.player.emit(event as keyof BaseEventMap, payload as BaseEventMap[keyof BaseEventMap]);
-		}
-		catch { /* player teardown raced — drop. */ }
-	}
+    if (!ctx) {
+      this.emit('unsupported', { reason: 'cast-sdk-missing' });
+      throw new BrowserPolicyError({
+        code: 'core:policy/castUnavailable',
+        severity: 'error',
+        scope: {
+          kind: 'plugin',
+          id,
+        },
+        message: 'Cast SDK is not available — load cast.framework before calling connect().',
+      });
+    }
+
+    try {
+      await ctx.requestSession();
+      this.attachRemoteListeners();
+      this.connected = true;
+      const session = ctx.getCurrentSession?.();
+      const deviceName = session?.getCastDevice?.()?.friendlyName ?? 'Cast device';
+
+      this.emit('cast:connected', { deviceName });
+      // Forward whatever the local player has loaded right now.
+      void this.forwardCurrent(this.player.time());
+    } catch (err) {
+      this.connected = false;
+
+      this.emit('cast:error', {
+        error: err instanceof Error
+          ? err
+          : new Error(String(err)),
+      });
+
+      throw err;
+    }
+  }
+
+  /**
+   * Ends the current Cast session and tears down the RemotePlayerController
+   * listeners. Idempotent — safe to call when already disconnected. Emits
+   * `cast:disconnected`. Emits `unsupported` if the SDK is absent.
+   */
+  disconnect(): void {
+    const ctx = this.castContext();
+
+    if (!ctx) {
+      this.emit('unsupported', { reason: 'cast-sdk-missing' });
+
+      return;
+    }
+
+    this.detachRemoteListeners();
+
+    try {
+      ctx.endCurrentSession?.(true);
+    } catch { /* SDK in a bad state — drop. */ }
+
+    this.connected = false;
+    this.emit('cast:disconnected', undefined as never);
+  }
+
+  // ── Hooks for subclasses ───────────────────────────────────────────────
+
+  /**
+   * Default content type when the playlist item lacks `mime` / `contentType`.
+   * Override to specialize per media library (audio vs video).
+   */
+  protected defaultContentType(): string {
+    return 'application/octet-stream';
+  }
+
+  /**
+   * Build a `chrome.cast.media.*MediaMetadata` from the current playlist
+   * item. Override to plug in `MusicTrackMediaMetadata`, `TvShowMediaMetadata`,
+   * etc., and resolve URLs via `this.resolveUrl(url, 'poster' | 'sprite')`.
+   *
+   * Default returns a minimal `GenericMediaMetadata` with the title only.
+   */
+  protected async buildMetadata(item: TItem, ctors: ChromeCastMediaCtors): Promise<unknown> {
+    const meta = new ctors.GenericMediaMetadata();
+    const titled = item as TItem & { title?: string; name?: string };
+
+    meta['title'] = titled.title ?? titled.name ?? '';
+
+    return meta;
+  }
+
+  // ── Internals ──────────────────────────────────────────────────────────
+
+  /** Resolve the global cast.framework, or null if absent. */
+  private castFramework(): CastFrameworkGlobal['framework'] | null {
+    const emptyFallback: unknown = {};
+    const castGlobal = (typeof globalThis !== 'undefined'
+      ? globalThis
+      : emptyFallback) as { cast?: CastFrameworkGlobal };
+
+    return castGlobal.cast?.framework ?? null;
+  }
+
+  /** Resolve the global cast.framework.CastContext, or null if absent. */
+  protected castContext(): CastContextLike | null {
+    const fw = this.castFramework();
+
+    if (!fw?.CastContext)
+      return null;
+
+    try {
+      return fw.CastContext.getInstance();
+    } catch { return null; }
+  }
+
+  /** Resolve the chrome.cast.media constructors, or null if absent. */
+  protected chromeCastMedia(): ChromeCastMediaCtors | null {
+    const emptyFallback: unknown = {};
+    const chromeGlobal = (typeof globalThis !== 'undefined'
+      ? globalThis
+      : emptyFallback) as { chrome?: ChromeCastGlobal };
+
+    return chromeGlobal.chrome?.cast?.media ?? null;
+  }
+
+  /** Wire up RemotePlayerController event subscriptions for cast → player mirroring. */
+  private attachRemoteListeners(): void {
+    this.detachRemoteListeners();
+    const fw = this.castFramework();
+
+    if (!fw?.RemotePlayer || !fw.RemotePlayerController || !fw.RemotePlayerEventType) return;
+
+    try {
+      const remote = new fw.RemotePlayer();
+      const controller = new fw.RemotePlayerController(remote);
+      const ev = fw.RemotePlayerEventType;
+
+      this.remotePlayer = remote;
+      this.remoteController = controller;
+
+      const subscribe = (event: string, handler: RemotePlayerEventHandler): void => {
+        // eslint-disable-next-line player/no-raw-timers-in-plugin -- Cast SDK's RemotePlayerController is not an EventTarget, so this.listen() can't wrap it; cleanup is tracked manually via this.listeners.
+        controller.addEventListener(event, handler);
+
+        this.listeners.push({
+          event,
+          handler,
+        });
+      };
+
+      subscribe(ev.IS_CONNECTED_CHANGED, () => {
+        if (!remote.isConnected) {
+          this.handleRemoteDisconnect();
+        } else {
+          this.emitPlayer('castState', { state: 'connected' });
+        }
+      });
+
+      subscribe(ev.IS_PAUSED_CHANGED, () => {
+        const evtName = remote.isPaused
+          ? 'pause'
+          : 'play';
+
+        this.applyingFromRemote = true;
+
+        try {
+          this.emitPlayer(evtName, {
+            source: 'cast',
+            silent: true,
+          });
+        } finally {
+          this.applyingFromRemote = false;
+        }
+
+        this.emit('cast:remote-state', {
+          time: remote.currentTime ?? 0,
+          state: remote.isPaused
+            ? 'paused'
+            : 'playing',
+        });
+      });
+
+      subscribe(ev.CURRENT_TIME_CHANGED, () => {
+        this.applyingFromRemote = true;
+
+        try {
+          this.emitPlayer('time', {
+            time: remote.currentTime ?? 0,
+            source: 'cast',
+          });
+        } finally { this.applyingFromRemote = false; }
+      });
+
+      subscribe(ev.IS_MEDIA_LOADED_CHANGED, () => {
+        if (remote.mediaInfo) {
+          this.emitPlayer('mediaReady', undefined);
+        }
+      });
+
+      subscribe(ev.MEDIA_INFO_CHANGED, () => {
+        const id = remote.mediaInfo?.contentId;
+
+        if (!id) return;
+
+        if (id !== this.lastSentContentId) {
+          this.emit('cast:media-changed', { contentId: id });
+        }
+      });
+    } catch (err) {
+      // SDK present but constructors failed — surface as cast:error.
+      this.emit('cast:error', {
+        error: err instanceof Error
+          ? err
+          : new Error(String(err)),
+      });
+    }
+  }
+
+  /** Unsubscribes every registered RemotePlayerController listener and clears the remote player references. */
+  private detachRemoteListeners(): void {
+    if (!this.remoteController) {
+      this.listeners = [];
+      this.remotePlayer = null;
+
+      return;
+    }
+
+    for (const { event, handler } of this.listeners) {
+      try {
+        this.remoteController.removeEventListener(event, handler);
+      } catch { /* receiver gone — drop. */ }
+    }
+
+    this.listeners = [];
+    this.remoteController = null;
+    this.remotePlayer = null;
+  }
+
+  /**
+   * Invoked by the IS_CONNECTED_CHANGED listener when `remote.isConnected`
+   * becomes false. Captures the receiver's last position and pause state,
+   * tears down the session, then optionally restores playback locally so the
+   * user's media keeps going without manual intervention.
+   * Controlled by `CastSenderOptions.resumeLocalOnDisconnect` (default `true`).
+   */
+  private handleRemoteDisconnect(): void {
+    const remote = this.remotePlayer;
+    const wasPaused = remote?.isPaused ?? true;
+    const lastTime = remote?.currentTime ?? 0;
+    const opts: CastSenderOptions = this.opts ?? {};
+    const resume = opts.resumeLocalOnDisconnect !== false;
+
+    this.detachRemoteListeners();
+    this.connected = false;
+    this.emitPlayer('castState', { state: 'disconnected' });
+    this.emit('cast:disconnected', undefined as never);
+
+    if (resume) {
+      try {
+        if (typeof this.player.time === 'function' && lastTime > 0) {
+          this.player.time(lastTime, { source: 'cast' });
+        }
+
+        if (wasPaused) {
+          void this.player.pause?.({ source: 'cast' });
+        } else {
+          void this.player.play?.({ source: 'cast' });
+        }
+      } catch { /* local player not ready — drop. */ }
+    }
+  }
+
+  /**
+   * Reads the current playlist item, resolves its URL through the player's
+   * auth-aware URL resolver, constructs a `chrome.cast.media.MediaInfo`
+   * (via `buildMetadata()`), and calls `session.loadMedia()`. Emits
+   * `cast:error` on failure rather than throwing. No-ops if there is no
+   * active session, no `chrome.cast.media` namespace, or no current item.
+   */
+  private async forwardCurrent(startTime?: number): Promise<void> {
+    const ctx = this.castContext();
+    const session = ctx?.getCurrentSession?.();
+    const ctors = this.chromeCastMedia();
+
+    if (!session?.loadMedia || !ctors) return;
+
+    const item = this._readCurrentItem();
+
+    if (!item) return;
+
+    const opts: CastSenderOptions = this.opts ?? {};
+    const itemWithMedia = item as TItem & {
+      url?: string;
+      mime?: string;
+      contentType?: string;
+    };
+    const rawUrl = itemWithMedia.url;
+
+    if (!rawUrl) return;
+
+    const contentType = itemWithMedia.mime ??
+      itemWithMedia.contentType ??
+      opts.defaultContentType ??
+      this.defaultContentType();
+
+    try {
+      // Receiver fetches the URL itself — push auth via the player's
+      // URL resolver so query-string / signed-URL schemes reach the
+      // cast device.
+      const url = (await this.resolveUrl(rawUrl, 'cast')).href;
+      const mediaInfo = new ctors.MediaInfo(url, contentType);
+      const metadata = await this.buildMetadata(item, ctors);
+
+      mediaInfo.metadata = metadata;
+
+      mediaInfo.streamType = opts.live
+        ? ctors.StreamType.LIVE
+        : ctors.StreamType.BUFFERED;
+
+      const request = new ctors.LoadRequest(mediaInfo);
+
+      if (startTime) {
+        request['currentTime'] = startTime;
+      }
+
+      this.lastSentContentId = url;
+      await session.loadMedia(request);
+    } catch (err) {
+      this.emit('cast:error', {
+        error: err instanceof Error
+          ? err
+          : new Error(String(err)),
+      });
+    }
+  }
+
+  /**
+   * Calls `RemotePlayerController.playOrPause()` only when the receiver's
+   * state differs from `wantPlaying` — avoids redundant toggles that can
+   * confuse the Cast SDK state machine.
+   *
+   * Condition: `remote.isPaused === wantPlaying` means "receiver is paused
+   * and we want to play, OR receiver is playing and we want to pause" — i.e.
+   * the states differ and a toggle is needed.
+   */
+  private forwardPlayPause(wantPlaying: boolean): void {
+    const remote = this.remotePlayer;
+    const ctrl = this.remoteController;
+
+    if (!remote || !ctrl) return;
+
+    if (remote.isPaused === wantPlaying) {
+      try {
+        ctrl.playOrPause();
+      } catch { /* receiver gone — drop. */ }
+    }
+  }
+
+  /** Stops the receiver. No-ops gracefully if the receiver is gone. */
+  private forwardStop(): void {
+    try {
+      this.remoteController?.stop();
+    } catch { /* receiver gone — drop. */ }
+  }
+
+  /** Writes `time` (clamped to ≥ 0) into `remotePlayer.currentTime` then calls `seek()`. */
+  private forwardSeek(time: number): void {
+    const remote = this.remotePlayer;
+    const ctrl = this.remoteController;
+
+    if (!remote || !ctrl) return;
+
+    try {
+      remote.currentTime = Math.max(0, time);
+      ctrl.seek();
+    } catch { /* receiver gone — drop. */ }
+  }
+
+  /**
+   * Forward the player's 0-100 volume level to the Cast SDK.
+   * The SDK's `volumeLevel` field expects a 0-1 float, so we divide at the
+   * boundary and clamp to keep the value in spec range.
+   */
+  private forwardVolume(level: number): void {
+    const remote = this.remotePlayer;
+    const ctrl = this.remoteController;
+
+    if (!remote || !ctrl) return;
+
+    try {
+      remote.volumeLevel = Math.max(0, Math.min(1, level / 100));
+      ctrl.setVolumeLevel();
+    } catch { /* receiver gone — drop. */ }
+  }
+
+  /** Calls `RemotePlayerController.muteOrUnmute()` only when the receiver's mute state differs from `muted`. */
+  private forwardMute(muted: boolean): void {
+    const remote = this.remotePlayer;
+    const ctrl = this.remoteController;
+
+    if (!remote || !ctrl) return;
+
+    if (remote.isMuted === muted) return;
+
+    try {
+      remote.isMuted = muted;
+      ctrl.muteOrUnmute();
+    } catch { /* receiver gone — drop. */ }
+  }
+
+  /**
+   * Emits an event directly on the player instance. Used by the cast → player
+   * mirror path where the event name is not statically known at compile time.
+   * Swallows errors so receiver-race teardown can't crash the plugin.
+   */
+  private emitPlayer(event: string, payload: unknown): void {
+    try {
+      // eslint-disable-next-line player/no-raw-player-bus -- deliberate mirror of a dynamically-named PLAYER event from the cast receiver onto the player bus; not a plugin-scoped emit, so this.emit() (which namespaces under plugin:<id>:) is wrong here.
+      this.player.emit(event as keyof BaseEventMap, payload as BaseEventMap[keyof BaseEventMap]);
+    } catch { /* player teardown raced — drop. */ }
+  }
 }
 
 /** Plugin alias for {@link CastSenderPlugin}. Pass to `addPlugin(castSenderPlugin)`. */

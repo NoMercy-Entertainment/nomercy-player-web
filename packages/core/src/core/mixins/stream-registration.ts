@@ -19,12 +19,12 @@ import { StreamRegistry } from '../../adapters/stream/registry';
  * writer; the `streamsReady` setup stage triggers the same lazy-init.
  */
 export interface StreamRegistrationState {
-	/**
-	 * Per-player stream factory registry. Lazy — first touch (either via the
-	 * `streamsReady` setup stage or via consumer `registerStream`) creates
-	 * the registry and seeds it with the kit defaults (`native`, `hls`).
-	 */
-	_streamRegistry: StreamRegistry | undefined;
+  /**
+   * Per-player stream factory registry. Lazy — first touch (either via the
+   * `streamsReady` setup stage or via consumer `registerStream`) creates
+   * the registry and seeds it with the kit defaults (`native`, `hls`).
+   */
+  _streamRegistry: StreamRegistry | undefined;
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -37,16 +37,17 @@ export interface StreamRegistrationState {
  * reaches the `streamsReady` stage — whichever comes first.
  */
 function _ensureStreamRegistry(self: Internals): StreamRegistry {
-	if (!self._streamRegistry) {
-		self._streamRegistry = new StreamRegistry();
-		// Seeded here rather than only at `streamsReady`, because resolution walks
-		// newest-first: a factory registered before setup would otherwise be
-		// pushed below the built-ins the moment setup seeded them, and lose to
-		// them for the URLs it was registered to claim.
-		self._streamRegistry.register(nativeFactory);
-		self._streamRegistry.register(hlsFactory);
-	}
-	return self._streamRegistry;
+  if (!self._streamRegistry) {
+    self._streamRegistry = new StreamRegistry();
+    // Seeded here rather than only at `streamsReady`, because resolution walks
+    // newest-first: a factory registered before setup would otherwise be
+    // pushed below the built-ins the moment setup seeded them, and lose to
+    // them for the URLs it was registered to claim.
+    self._streamRegistry.register(nativeFactory);
+    self._streamRegistry.register(hlsFactory);
+  }
+
+  return self._streamRegistry;
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -56,44 +57,46 @@ function _ensureStreamRegistry(self: Internals): StreamRegistry {
 // ──────────────────────────────────────────────────────────────────────────
 
 export const streamRegistrationMethods = {
-	/**
-	 * Register a custom stream factory. Factories are tried in reverse
-	 * registration order (most-recently-registered first), so a factory
-	 * registered without `prepend` takes priority over the built-in `hls` and
-	 * `native` factories. Pass `prepend: true` to push the factory to the back
-	 * of the queue instead. Re-registering a factory with the same `id` replaces
-	 * the existing entry. Returns the player for fluent chaining.
-	 */
-	registerStream(this: Internals, factory: IStreamFactory, prepend?: boolean): unknown {
-		_ensureStreamRegistry(this).register(factory, prepend);
-		return this;
-	},
-	/** Remove a registered factory by id. No-op when the id is not registered. Returns the player for fluent chaining. */
-	unregisterStream(this: Internals, id: string): unknown {
-		_ensureStreamRegistry(this).unregister(id);
-		return this;
-	},
-	/** Snapshot of registered factory ids in resolution order (highest-priority first). */
-	streams(this: Internals): ReadonlyArray<string> {
-		return _ensureStreamRegistry(this).list();
-	},
-	/**
-	 * Ask the registry whether a consumer registered a factory that claims this
-	 * URL, skipping the built-in `native` and `hls` entries and returning
-	 * `undefined` when none does.
-	 *
-	 * A backend calls this before its own HLS and progressive handling. Without
-	 * it the registry is seeded at setup and never asked, which makes
-	 * `registerStream` a call that records a factory nothing consults.
-	 */
-	resolveCustomStream(this: Internals, url: string, contentType?: string): IStreamSource | undefined {
-		return _ensureStreamRegistry(this).resolveCustom({
-			url,
-			contentType,
-		});
-	},
-	/** Look up a registered factory by id. Returns `undefined` when not found. */
-	getStreamFactory(this: Internals, id: string): IStreamFactory | undefined {
-		return _ensureStreamRegistry(this).findById(id);
-	},
+  /**
+   * Register a custom stream factory. Factories are tried in reverse
+   * registration order (most-recently-registered first), so a factory
+   * registered without `prepend` takes priority over the built-in `hls` and
+   * `native` factories. Pass `prepend: true` to push the factory to the back
+   * of the queue instead. Re-registering a factory with the same `id` replaces
+   * the existing entry. Returns the player for fluent chaining.
+   */
+  registerStream(this: Internals, factory: IStreamFactory, prepend?: boolean): unknown {
+    _ensureStreamRegistry(this).register(factory, prepend);
+
+    return this;
+  },
+  /** Remove a registered factory by id. No-op when the id is not registered. Returns the player for fluent chaining. */
+  unregisterStream(this: Internals, id: string): unknown {
+    _ensureStreamRegistry(this).unregister(id);
+
+    return this;
+  },
+  /** Snapshot of registered factory ids in resolution order (highest-priority first). */
+  streams(this: Internals): ReadonlyArray<string> {
+    return _ensureStreamRegistry(this).list();
+  },
+  /**
+   * Ask the registry whether a consumer registered a factory that claims this
+   * URL, skipping the built-in `native` and `hls` entries and returning
+   * `undefined` when none does.
+   *
+   * A backend calls this before its own HLS and progressive handling. Without
+   * it the registry is seeded at setup and never asked, which makes
+   * `registerStream` a call that records a factory nothing consults.
+   */
+  resolveCustomStream(this: Internals, url: string, contentType?: string): IStreamSource | undefined {
+    return _ensureStreamRegistry(this).resolveCustom({
+      url,
+      contentType,
+    });
+  },
+  /** Look up a registered factory by id. Returns `undefined` when not found. */
+  getStreamFactory(this: Internals, id: string): IStreamFactory | undefined {
+    return _ensureStreamRegistry(this).findById(id);
+  },
 } as const;

@@ -9,9 +9,9 @@
 import type { CastSenderTranslationKey } from './en';
 
 export default {
-	'plugin.cast-sender.casting.track': 'Հեռարձակվում է «{title}» {artist}-ի կողմից',
-	'plugin.cast-sender.casting.album': 'Հեռարձակվում է «{album}» ալբոմը',
-	'plugin.cast-sender.casting.queue': 'Հեռարձակվում է {count} երգ',
-	'plugin.cast-sender.action.cast-album': 'Հեռարձակել ալբոմը',
-	'plugin.cast-sender.action.cast-queue': 'Հեռարձակել հերթը',
+  'plugin.cast-sender.casting.track': 'Հեռարձակվում է «{title}» {artist}-ի կողմից',
+  'plugin.cast-sender.casting.album': 'Հեռարձակվում է «{album}» ալբոմը',
+  'plugin.cast-sender.casting.queue': 'Հեռարձակվում է {count} երգ',
+  'plugin.cast-sender.action.cast-album': 'Հեռարձակել ալբոմը',
+  'plugin.cast-sender.action.cast-queue': 'Հեռարձակել հերթը',
 } satisfies Record<CastSenderTranslationKey, string>;

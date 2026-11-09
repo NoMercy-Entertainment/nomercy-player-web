@@ -26,16 +26,16 @@
  * failure is real and the error surfaces.
  */
 export const SOURCE_OUTAGE_BACKOFF_MS: readonly number[] = [
-	1_000,
-	2_000,
-	4_000,
-	8_000,
-	15_000,
-	15_000,
-	15_000,
-	15_000,
-	15_000,
-	15_000,
+  1_000,
+  2_000,
+  4_000,
+  8_000,
+  15_000,
+  15_000,
+  15_000,
+  15_000,
+  15_000,
+  15_000,
 ];
 
 /**
@@ -48,7 +48,7 @@ export const HTTP_STATUS_RETRY_LIMIT = 5;
 
 /** Total wall-clock the ladder covers before a failure is treated as real. */
 export function sourceOutageBudgetMs(): number {
-	return SOURCE_OUTAGE_BACKOFF_MS.reduce((total, rung) => total + rung, 0);
+  return SOURCE_OUTAGE_BACKOFF_MS.reduce((total, rung) => total + rung, 0);
 }
 
 /**
@@ -62,10 +62,10 @@ export function sourceOutageBudgetMs(): number {
  * connection-failure-gated budget would cut short.
  */
 export function isOriginDownStatus(httpStatus: number): boolean {
-	return (httpStatus >= 520 && httpStatus <= 530)
-		|| httpStatus === 502
-		|| httpStatus === 503
-		|| httpStatus === 504;
+  return (httpStatus >= 520 && httpStatus <= 530) ||
+    httpStatus === 502 ||
+    httpStatus === 503 ||
+    httpStatus === 504;
 }
 
 /** No rung at all: the answer will not change by asking again. */
@@ -81,12 +81,12 @@ export const NO_RETRIES = 0;
  * 410 is the same answer said more firmly.
  */
 export function isMediaAbsentStatus(httpStatus: number): boolean {
-	return httpStatus === 404 || httpStatus === 410;
+  return httpStatus === 404 || httpStatus === 410;
 }
 
 /** True for a 5xx from a server that is up (500, 501, 505...), as opposed to an origin-down status. */
 export function isServerErrorStatus(httpStatus: number): boolean {
-	return httpStatus >= 500 && httpStatus <= 599 && !isOriginDownStatus(httpStatus);
+  return httpStatus >= 500 && httpStatus <= 599 && !isOriginDownStatus(httpStatus);
 }
 
 /**
@@ -105,21 +105,24 @@ export function isServerErrorStatus(httpStatus: number): boolean {
  *   from a video that is genuinely gone.
  */
 export function sourceOutageRetryLimit(
-	httpStatus: number,
-	sawConnectionFailure: boolean,
+  httpStatus: number,
+  sawConnectionFailure: boolean,
 ): number {
-	// A connection failure first means the host went away; the 404 that follows
-	// is a route table still warming up, not a missing file.
-	if (sawConnectionFailure)
-		return SOURCE_OUTAGE_BACKOFF_MS.length;
-	if (isOriginDownStatus(httpStatus))
-		return SOURCE_OUTAGE_BACKOFF_MS.length;
-	if (isMediaAbsentStatus(httpStatus) || isServerErrorStatus(httpStatus))
-		return NO_RETRIES;
-	if (httpStatus > 0)
-		return HTTP_STATUS_RETRY_LIMIT;
+  // A connection failure first means the host went away; the 404 that follows
+  // is a route table still warming up, not a missing file.
+  if (sawConnectionFailure)
+    return SOURCE_OUTAGE_BACKOFF_MS.length;
 
-	return SOURCE_OUTAGE_BACKOFF_MS.length;
+  if (isOriginDownStatus(httpStatus))
+    return SOURCE_OUTAGE_BACKOFF_MS.length;
+
+  if (isMediaAbsentStatus(httpStatus) || isServerErrorStatus(httpStatus))
+    return NO_RETRIES;
+
+  if (httpStatus > 0)
+    return HTTP_STATUS_RETRY_LIMIT;
+
+  return SOURCE_OUTAGE_BACKOFF_MS.length;
 }
 
 /**
@@ -138,13 +141,15 @@ export const UNAUTHENTICATED = 'core:auth/unauthenticated';
 
 /** The code for a failure no retry changes, else `undefined`. */
 export function definiteFailureCode(httpStatus: number, loading: boolean): string | undefined {
-	if (isMediaAbsentStatus(httpStatus))
-		return MEDIA_ABSENT;
-	if (isServerErrorStatus(httpStatus))
-		return SERVER_ERROR;
-	// A 401 counts only while loading: mid-playback the ladder picks up a refreshed token.
-	if (httpStatus === 401 && loading)
-		return UNAUTHENTICATED;
+  if (isMediaAbsentStatus(httpStatus))
+    return MEDIA_ABSENT;
 
-	return undefined;
+  if (isServerErrorStatus(httpStatus))
+    return SERVER_ERROR;
+
+  // A 401 counts only while loading: mid-playback the ladder picks up a refreshed token.
+  if (httpStatus === 401 && loading)
+    return UNAUTHENTICATED;
+
+  return undefined;
 }

@@ -26,241 +26,256 @@ const TWO_CUE_LRC = '[00:01.00]Hello\n[00:02.00]World\n';
 const PLAIN_TEXT_BODY = 'Just some liner notes.\nNo timestamps anywhere.\n';
 
 function track(id: string, extra?: Partial<MusicPlaylistItem>): MusicPlaylistItem {
-	return {
-		id,
-		name: `track ${id}`,
-		...extra,
-	};
+  return {
+    id,
+    name: `track ${id}`,
+    ...extra,
+  };
 }
 
 function tick(): Promise<void> {
-	return new Promise<void>(resolve => setTimeout(resolve, 0));
+  return new Promise<void>((resolve) => setTimeout(resolve, 0));
 }
 
 function requestUrl(input: RequestInfo | URL): string {
-	if (input instanceof Request)
-		return input.url;
-	return String(input);
+  if (input instanceof Request)
+    return input.url;
+
+  return String(input);
 }
 
 function lrcResponse(body: string): Response {
-	return new Response(body, {
-		status: 200,
-		headers: { 'Content-Type': 'text/plain' },
-	});
+  return new Response(body, {
+    status: 200,
+    headers: { 'Content-Type': 'text/plain' },
+  });
 }
 
 let idCounter = 0;
 
 async function makePlayerWithLyrics(opts?: Record<string, unknown>): Promise<{ player: NMMusicPlayer; plugin: LyricsPlugin }> {
-	idCounter += 1;
-	const id = `lyrics-residue-${idCounter}`;
-	const div = document.createElement('div');
-	div.id = id;
-	document.body.appendChild(div);
+  idCounter += 1;
+  const id = `lyrics-residue-${idCounter}`;
+  const div = document.createElement('div');
 
-	const player = new NMMusicPlayer(id).setup({});
-	player.addPlugin(lyricsPlugin, opts as any);
-	await player.ready();
+  div.id = id;
+  document.body.appendChild(div);
 
-	const plugin = player.getPlugin(LyricsPlugin);
-	if (!plugin)
-		throw new Error('LyricsPlugin not registered');
-	return {
-		player,
-		plugin,
-	};
+  const player = new NMMusicPlayer(id).setup({});
+
+  player.addPlugin(lyricsPlugin, opts as any);
+  await player.ready();
+
+  const plugin = player.getPlugin(LyricsPlugin);
+
+  if (!plugin)
+    throw new Error('LyricsPlugin not registered');
+
+  return {
+    player,
+    plugin,
+  };
 }
 
 describe('LyricsPlugin residue', () => {
-	beforeEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  beforeEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	afterEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.restoreAllMocks();
-	});
+  afterEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.restoreAllMocks();
+  });
 
-	// ── Auto-fetch via the real built-in LRC parser ───────────────────────────
+  // ── Auto-fetch via the real built-in LRC parser ───────────────────────────
 
-	describe('auto-fetch on item change', () => {
-		it('ignores lyrics fetched for a previous item after the next item loads', async () => {
-			let resolveFirst!: (response: Response) => void;
-			vi.spyOn(globalThis, 'fetch')
-				.mockImplementationOnce(() => new Promise<Response>((resolve) => { resolveFirst = resolve; }))
-				.mockResolvedValueOnce(lrcResponse('[00:01.00]Second track\n'));
-			const { player, plugin } = await makePlayerWithLyrics();
-			const loadedCounts: number[] = [];
-			player.on('plugin:lyrics:loaded' as any, (data: { count: number }) => { loadedCounts.push(data.count); });
-			player.queue([
-				track('a', { lyricsUrl: 'https://example.com/a.lrc' }),
-				track('b', { lyricsUrl: 'https://example.com/b.lrc' }),
-			]);
-			player.item('a');
-			player.item('b');
-			await tick();
-			resolveFirst(lrcResponse('[00:01.00]First track\n'));
-			await tick();
+  describe('auto-fetch on item change', () => {
+    it('ignores lyrics fetched for a previous item after the next item loads', async () => {
+      let resolveFirst!: (response: Response) => void;
 
-			expect(plugin.all().map(cue => cue.payload.text)).toEqual(['Second track']);
-			expect(loadedCounts).toEqual([1]);
-		});
+      vi.spyOn(globalThis, 'fetch')
+        .mockImplementationOnce(() => new Promise<Response>((resolve) => { resolveFirst = resolve; }))
+        .mockResolvedValueOnce(lrcResponse('[00:01.00]Second track\n'));
 
-		it('resolves item.lyricsUrl, fetches, and parses through the built-in LRC parser', async () => {
-			const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(lrcResponse(TWO_CUE_LRC));
-			const { player, plugin } = await makePlayerWithLyrics();
+      const { player, plugin } = await makePlayerWithLyrics();
+      const loadedCounts: number[] = [];
 
-			player.queue([track('a', { lyricsUrl: 'https://example.com/a.lrc' })]);
-			player.item('a');
-			await tick();
+      player.on('plugin:lyrics:loaded' as any, (data: { count: number }) => { loadedCounts.push(data.count); });
 
-			expect(fetchSpy).toHaveBeenCalledTimes(1);
-			expect(requestUrl(fetchSpy.mock.calls[0]![0])).toContain('https://example.com/a.lrc');
-			expect(plugin.all()).toHaveLength(2);
-			expect(plugin.all()[0]!.payload.text).toBe('Hello');
+      player.queue([
+        track('a', { lyricsUrl: 'https://example.com/a.lrc' }),
+        track('b', { lyricsUrl: 'https://example.com/b.lrc' }),
+      ]);
 
-			player.emit('time' as any, { time: 1.5 } as any);
-			expect(plugin.current()?.text).toBe('Hello');
-		});
+      player.item('a');
+      player.item('b');
+      await tick();
+      resolveFirst(lrcResponse('[00:01.00]First track\n'));
+      await tick();
 
-		it('prefers the getLyricsUrl resolver over item.lyricsUrl', async () => {
-			const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(lrcResponse(TWO_CUE_LRC));
-			const { player } = await makePlayerWithLyrics({
-				getLyricsUrl: (item: MusicPlaylistItem) => `https://resolver.example/${item.id}.lrc`,
-			});
+      expect(plugin.all().map((cue) => cue.payload.text)).toEqual(['Second track']);
+      expect(loadedCounts).toEqual([1]);
+    });
 
-			player.queue([track('a', { lyricsUrl: 'https://ignored.example/a.lrc' })]);
-			player.item('a');
-			await tick();
+    it('resolves item.lyricsUrl, fetches, and parses through the built-in LRC parser', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(lrcResponse(TWO_CUE_LRC));
+      const { player, plugin } = await makePlayerWithLyrics();
 
-			expect(requestUrl(fetchSpy.mock.calls[0]![0])).toContain('https://resolver.example/a.lrc');
-		});
+      player.queue([track('a', { lyricsUrl: 'https://example.com/a.lrc' })]);
+      player.item('a');
+      await tick();
 
-		it('autoFetch: false leaves item changes alone', async () => {
-			const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(lrcResponse(TWO_CUE_LRC));
-			const { player, plugin } = await makePlayerWithLyrics({ autoFetch: false });
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      expect(requestUrl(fetchSpy.mock.calls[0]![0])).toContain('https://example.com/a.lrc');
+      expect(plugin.all()).toHaveLength(2);
+      expect(plugin.all()[0]!.payload.text).toBe('Hello');
 
-			player.queue([track('a', { lyricsUrl: 'https://example.com/a.lrc' })]);
-			player.item('a');
-			await tick();
+      player.emit('time' as any, { time: 1.5 } as any);
+      expect(plugin.current()?.text).toBe('Hello');
+    });
 
-			expect(fetchSpy).not.toHaveBeenCalled();
-			expect(plugin.all()).toHaveLength(0);
-		});
+    it('prefers the getLyricsUrl resolver over item.lyricsUrl', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(lrcResponse(TWO_CUE_LRC));
+      const { player } = await makePlayerWithLyrics({
+        getLyricsUrl: (item: MusicPlaylistItem) => `https://resolver.example/${item.id}.lrc`,
+      });
 
-		it('autoFetch: false still clears a manually-fetched track\'s lyrics on the next item change', async () => {
-			const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(lrcResponse(TWO_CUE_LRC));
-			const { player, plugin } = await makePlayerWithLyrics({ autoFetch: false });
+      player.queue([track('a', { lyricsUrl: 'https://ignored.example/a.lrc' })]);
+      player.item('a');
+      await tick();
 
-			player.queue([track('a'), track('b')]);
-			player.item('a');
-			await tick();
+      expect(requestUrl(fetchSpy.mock.calls[0]![0])).toContain('https://resolver.example/a.lrc');
+    });
 
-			await plugin.fetchLyrics('https://example.com/manual-a.lrc');
-			expect(fetchSpy).toHaveBeenCalledTimes(1);
-			expect(plugin.all()).toHaveLength(2);
+    it('autoFetch: false leaves item changes alone', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(lrcResponse(TWO_CUE_LRC));
+      const { player, plugin } = await makePlayerWithLyrics({ autoFetch: false });
 
-			player.item('b');
-			await tick();
+      player.queue([track('a', { lyricsUrl: 'https://example.com/a.lrc' })]);
+      player.item('a');
+      await tick();
 
-			expect(plugin.all()).toHaveLength(0);
-			expect(plugin.current()).toBeUndefined();
-		});
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(plugin.all()).toHaveLength(0);
+    });
 
-		it('clears loaded lyrics when the next item has no lyricsUrl', async () => {
-			vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(lrcResponse(TWO_CUE_LRC));
-			const { player, plugin } = await makePlayerWithLyrics();
+    it('autoFetch: false still clears a manually-fetched track\'s lyrics on the next item change', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(lrcResponse(TWO_CUE_LRC));
+      const { player, plugin } = await makePlayerWithLyrics({ autoFetch: false });
 
-			player.queue([
-				track('a', { lyricsUrl: 'https://example.com/a.lrc' }),
-				track('b'),
-			]);
-			player.item('a');
-			await tick();
-			expect(plugin.all()).toHaveLength(2);
+      player.queue([track('a'), track('b')]);
+      player.item('a');
+      await tick();
 
-			player.item('b');
-			await tick();
+      await plugin.fetchLyrics('https://example.com/manual-a.lrc');
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      expect(plugin.all()).toHaveLength(2);
 
-			expect(plugin.all()).toHaveLength(0);
-			expect(plugin.current()).toBeUndefined();
-		});
+      player.item('b');
+      await tick();
 
-		it('clears state for an item payload that is not a music item', async () => {
-			vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(lrcResponse(TWO_CUE_LRC));
-			const { player, plugin } = await makePlayerWithLyrics();
+      expect(plugin.all()).toHaveLength(0);
+      expect(plugin.current()).toBeUndefined();
+    });
 
-			player.queue([track('a', { lyricsUrl: 'https://example.com/a.lrc' })]);
-			player.item('a');
-			await tick();
-			expect(plugin.all()).toHaveLength(2);
+    it('clears loaded lyrics when the next item has no lyricsUrl', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(lrcResponse(TWO_CUE_LRC));
+      const { player, plugin } = await makePlayerWithLyrics();
 
-			player.emit('item' as any, { item: { id: 'nameless' }, index: 0 } as any);
+      player.queue([
+        track('a', { lyricsUrl: 'https://example.com/a.lrc' }),
+        track('b'),
+      ]);
 
-			expect(plugin.all()).toHaveLength(0);
-		});
-	});
+      player.item('a');
+      await tick();
+      expect(plugin.all()).toHaveLength(2);
 
-	// ── Failure paths ─────────────────────────────────────────────────────────
+      player.item('b');
+      await tick();
 
-	describe('failure paths', () => {
-		it('fetch failure resolves undefined, emits a warning event, and never throws', async () => {
-			vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new TypeError('network down'));
-			const { player, plugin } = await makePlayerWithLyrics();
+      expect(plugin.all()).toHaveLength(0);
+      expect(plugin.current()).toBeUndefined();
+    });
 
-			const warnings: Array<{ error: { code: string } }> = [];
-			player.on('warning' as any, (data: { error: { code: string } }) => { warnings.push(data); });
+    it('clears state for an item payload that is not a music item', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(lrcResponse(TWO_CUE_LRC));
+      const { player, plugin } = await makePlayerWithLyrics();
 
-			await expect(plugin.fetchLyrics('https://example.com/broken.lrc')).resolves.toBeUndefined();
+      player.queue([track('a', { lyricsUrl: 'https://example.com/a.lrc' })]);
+      player.item('a');
+      await tick();
+      expect(plugin.all()).toHaveLength(2);
 
-			expect(warnings.some(entry => entry.error.code === 'plugin:lyrics/fetch-failed')).toBe(true);
-			expect(plugin.all()).toHaveLength(0);
-		});
+      player.emit('item' as any, { item: { id: 'nameless' }, index: 0 } as any);
 
-		it('an HTTP error status takes the same contained path', async () => {
-			vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response('gone', { status: 404 }));
-			const { player, plugin } = await makePlayerWithLyrics();
+      expect(plugin.all()).toHaveLength(0);
+    });
+  });
 
-			const warnings: Array<{ error: { code: string } }> = [];
-			player.on('warning' as any, (data: { error: { code: string } }) => { warnings.push(data); });
+  // ── Failure paths ─────────────────────────────────────────────────────────
 
-			await expect(plugin.fetchLyrics('https://example.com/missing.lrc')).resolves.toBeUndefined();
+  describe('failure paths', () => {
+    it('fetch failure resolves undefined, emits a warning event, and never throws', async () => {
+      vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new TypeError('network down'));
+      const { player, plugin } = await makePlayerWithLyrics();
 
-			expect(warnings.some(entry => entry.error.code === 'plugin:lyrics/fetch-failed')).toBe(true);
-		});
+      const warnings: Array<{ error: { code: string } }> = [];
 
-		it('a URL no registered parser accepts surfaces plugin:lyrics/no-parser', async () => {
-			const fetchSpy = vi.spyOn(globalThis, 'fetch');
-			const { player, plugin } = await makePlayerWithLyrics();
+      player.on('warning' as any, (data: { error: { code: string } }) => { warnings.push(data); });
 
-			const warnings: Array<{ error: { code: string } }> = [];
-			player.on('warning' as any, (data: { error: { code: string } }) => { warnings.push(data); });
+      await expect(plugin.fetchLyrics('https://example.com/broken.lrc')).resolves.toBeUndefined();
 
-			await expect(plugin.fetchLyrics('https://example.com/lyrics.xyz')).resolves.toBeUndefined();
+      expect(warnings.some((entry) => entry.error.code === 'plugin:lyrics/fetch-failed')).toBe(true);
+      expect(plugin.all()).toHaveLength(0);
+    });
 
-			expect(warnings.some(entry => entry.error.code === 'plugin:lyrics/no-parser')).toBe(true);
-			expect(fetchSpy).not.toHaveBeenCalled();
-		});
-	});
+    it('an HTTP error status takes the same contained path', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response('gone', { status: 404 }));
+      const { player, plugin } = await makePlayerWithLyrics();
 
-	// ── Plain text through the LRC parser ─────────────────────────────────────
+      const warnings: Array<{ error: { code: string } }> = [];
 
-	describe('plain text fallback', () => {
-		it('untimestamped plain text parses to an empty cue list instead of crashing', async () => {
-			vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(lrcResponse(PLAIN_TEXT_BODY));
-			const { player, plugin } = await makePlayerWithLyrics();
+      player.on('warning' as any, (data: { error: { code: string } }) => { warnings.push(data); });
 
-			const loadedCounts: number[] = [];
-			player.on('plugin:lyrics:loaded' as any, (data: { count: number }) => { loadedCounts.push(data.count); });
+      await expect(plugin.fetchLyrics('https://example.com/missing.lrc')).resolves.toBeUndefined();
 
-			const list = await plugin.fetchLyrics('https://example.com/notes.lrc');
+      expect(warnings.some((entry) => entry.error.code === 'plugin:lyrics/fetch-failed')).toBe(true);
+    });
 
-			expect(list).toBeDefined();
-			expect(list!.cues).toHaveLength(0);
-			expect(loadedCounts).toEqual([0]);
-			expect(plugin.current()).toBeUndefined();
-		});
-	});
+    it('a URL no registered parser accepts surfaces plugin:lyrics/no-parser', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch');
+      const { player, plugin } = await makePlayerWithLyrics();
+
+      const warnings: Array<{ error: { code: string } }> = [];
+
+      player.on('warning' as any, (data: { error: { code: string } }) => { warnings.push(data); });
+
+      await expect(plugin.fetchLyrics('https://example.com/lyrics.xyz')).resolves.toBeUndefined();
+
+      expect(warnings.some((entry) => entry.error.code === 'plugin:lyrics/no-parser')).toBe(true);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── Plain text through the LRC parser ─────────────────────────────────────
+
+  describe('plain text fallback', () => {
+    it('untimestamped plain text parses to an empty cue list instead of crashing', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(lrcResponse(PLAIN_TEXT_BODY));
+      const { player, plugin } = await makePlayerWithLyrics();
+
+      const loadedCounts: number[] = [];
+
+      player.on('plugin:lyrics:loaded' as any, (data: { count: number }) => { loadedCounts.push(data.count); });
+
+      const list = await plugin.fetchLyrics('https://example.com/notes.lrc');
+
+      expect(list).toBeDefined();
+      expect(list!.cues).toHaveLength(0);
+      expect(loadedCounts).toEqual([0]);
+      expect(plugin.current()).toBeUndefined();
+    });
+  });
 });

@@ -11,9 +11,9 @@
  * debug overlays / save+restore tooling.
  */
 export interface PluginState<O = unknown> {
-	id: string;
-	version: string;
-	enabled: boolean;
-	opts: Readonly<O>;
-	runtime: Record<string, unknown>;
+  id: string;
+  version: string;
+  enabled: boolean;
+  opts: Readonly<O>;
+  runtime: Record<string, unknown>;
 }

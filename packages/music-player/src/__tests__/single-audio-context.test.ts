@@ -31,127 +31,140 @@ import { NMMusicPlayer } from '../index';
 // ── AudioContext stub ──────────────────────────────────────────────────────────
 
 class MockGainNode {
-	gain = { value: 1, setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn() };
-	connect = vi.fn();
-	disconnect = vi.fn();
+  gain = {
+    value: 1,
+    setTargetAtTime: vi.fn(),
+    cancelScheduledValues: vi.fn(),
+    setValueAtTime: vi.fn(),
+    linearRampToValueAtTime: vi.fn(),
+  };
+
+  connect = vi.fn();
+  disconnect = vi.fn();
 }
 
 class MockAnalyserNode {
-	fftSize = 2048;
-	smoothingTimeConstant = 0;
-	connect = vi.fn();
-	disconnect = vi.fn();
+  fftSize = 2048;
+  smoothingTimeConstant = 0;
+  connect = vi.fn();
+  disconnect = vi.fn();
 }
 
 class MockAudioContext {
-	static instances: MockAudioContext[] = [];
+  static instances: MockAudioContext[] = [];
 
-	state: AudioContextState = 'running';
-	currentTime = 0;
-	destination = { connect: vi.fn() } as unknown as AudioDestinationNode;
-	sampleRate = 44100;
+  state: AudioContextState = 'running';
+  currentTime = 0;
+  destination = { connect: vi.fn() } as unknown as AudioDestinationNode;
+  sampleRate = 44100;
 
-	createGain = vi.fn((): MockGainNode => new MockGainNode());
-	createAnalyser = vi.fn((): MockAnalyserNode => new MockAnalyserNode());
-	createMediaElementSource = vi.fn((): MockSourceNode => new MockSourceNode());
-	resume = vi.fn((): Promise<void> => Promise.resolve());
+  createGain = vi.fn((): MockGainNode => new MockGainNode());
+  createAnalyser = vi.fn((): MockAnalyserNode => new MockAnalyserNode());
+  createMediaElementSource = vi.fn((): MockSourceNode => new MockSourceNode());
+  resume = vi.fn((): Promise<void> => Promise.resolve());
 
-	constructor() {
-		MockAudioContext.instances.push(this);
-	}
+  constructor() {
+    MockAudioContext.instances.push(this);
+  }
 }
 
 function installAudioContext(): void {
-	MockAudioContext.instances = [];
-	(globalThis as unknown as { AudioContext: typeof MockAudioContext }).AudioContext = MockAudioContext;
+  MockAudioContext.instances = [];
+  (globalThis as unknown as { AudioContext: typeof MockAudioContext }).AudioContext = MockAudioContext;
 }
 
 function removeAudioContext(): void {
-	delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
-	MockAudioContext.instances = [];
+  delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
+  MockAudioContext.instances = [];
 }
 
 function makePlayer(): NMMusicPlayer {
-	const div = document.createElement('div');
-	div.id = `p-${Math.random().toString(36).slice(2)}`;
-	document.body.appendChild(div);
-	const player = new NMMusicPlayer(div.id);
-	player.setup({ backend: 'webaudio' });
-	return player;
+  const div = document.createElement('div');
+
+  div.id = `p-${Math.random().toString(36).slice(2)}`;
+  document.body.appendChild(div);
+  const player = new NMMusicPlayer(div.id);
+
+  player.setup({ backend: 'webaudio' });
+
+  return player;
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 describe('single AudioContext invariant (Bug 1 regression)', () => {
-	beforeEach(() => {
-		installAudioContext();
-		(NMMusicPlayer as unknown as { _resetRegistry(): void })._resetRegistry();
-	});
+  beforeEach(() => {
+    installAudioContext();
+    (NMMusicPlayer as unknown as { _resetRegistry(): void })._resetRegistry();
+  });
 
-	afterEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry(): void })._resetRegistry();
-		removeAudioContext();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry(): void })._resetRegistry();
+    removeAudioContext();
+    document.body.innerHTML = '';
+  });
 
-	it('player.audioContext() returns the backend context immediately after backend creation', () => {
-		const player = makePlayer();
+  it('player.audioContext() returns the backend context immediately after backend creation', () => {
+    const player = makePlayer();
 
-		// Force backend creation (lazy getter).
-		const backend = player.backend() as WebAudioBackend;
+    // Force backend creation (lazy getter).
+    const backend = player.backend() as WebAudioBackend;
 
-		expect(typeof backend.audioContext).toBe('function');
-		const backendCtx = backend.audioContext();
-		const playerCtx = player.audioContext();
+    expect(typeof backend.audioContext).toBe('function');
+    const backendCtx = backend.audioContext();
+    const playerCtx = player.audioContext();
 
-		expect(playerCtx).toBeDefined();
-		expect(playerCtx).toBe(backendCtx);
-	});
+    expect(playerCtx).toBeDefined();
+    expect(playerCtx).toBe(backendCtx);
+  });
 
-	it('exactly one AudioContext is created across backend + AudioGraphPlugin', async () => {
-		const player = makePlayer();
+  it('exactly one AudioContext is created across backend + AudioGraphPlugin', async () => {
+    const player = makePlayer();
 
-		// Force backend creation.
-		player.backend();
+    // Force backend creation.
+    player.backend();
 
-		// Add AudioGraphPlugin — it must reuse the existing context.
-		player.addPlugin(AudioGraphPlugin);
-		await player.ready();
+    // Add AudioGraphPlugin — it must reuse the existing context.
+    player.addPlugin(AudioGraphPlugin);
+    await player.ready();
 
-		// Only one AudioContext instance should exist — the backend's.
-		expect(MockAudioContext.instances).toHaveLength(1);
-	});
+    // Only one AudioContext instance should exist — the backend's.
+    expect(MockAudioContext.instances).toHaveLength(1);
+  });
 
-	it('AudioGraphPlugin.context() is the same object as player.audioContext()', async () => {
-		const player = makePlayer();
-		player.backend();
-		player.addPlugin(AudioGraphPlugin);
-		await player.ready();
+  it('AudioGraphPlugin.context() is the same object as player.audioContext()', async () => {
+    const player = makePlayer();
 
-		const pluginInstance = player.getPlugin(AudioGraphPlugin)!;
-		expect(pluginInstance).toBeDefined();
+    player.backend();
+    player.addPlugin(AudioGraphPlugin);
+    await player.ready();
 
-		const pluginCtx = pluginInstance.context();
-		const playerCtx = player.audioContext();
+    const pluginInstance = player.getPlugin(AudioGraphPlugin)!;
 
-		expect(pluginCtx).toBe(playerCtx);
-	});
+    expect(pluginInstance).toBeDefined();
 
-	it('backend source node and plugin chain live in the same AudioContext', async () => {
-		const player = makePlayer();
-		const backend = player.backend() as WebAudioBackend;
-		player.addPlugin(AudioGraphPlugin);
-		await player.ready();
+    const pluginCtx = pluginInstance.context();
+    const playerCtx = player.audioContext();
 
-		const backendCtx = backend.audioContext();
-		const pluginInstance = player.getPlugin(AudioGraphPlugin)!;
-		const pluginCtx = pluginInstance.context();
+    expect(pluginCtx).toBe(playerCtx);
+  });
 
-		// Both contexts must be the same object — cross-context connect is
-		// structurally impossible when this holds.
-		expect(backendCtx).toBe(pluginCtx);
+  it('backend source node and plugin chain live in the same AudioContext', async () => {
+    const player = makePlayer();
+    const backend = player.backend() as WebAudioBackend;
 
-		// The source node returned by the backend was created in backendCtx.
-		expect(backendCtx.createMediaElementSource).toHaveBeenCalled();
-	});
+    player.addPlugin(AudioGraphPlugin);
+    await player.ready();
+
+    const backendCtx = backend.audioContext();
+    const pluginInstance = player.getPlugin(AudioGraphPlugin)!;
+    const pluginCtx = pluginInstance.context();
+
+    // Both contexts must be the same object — cross-context connect is
+    // structurally impossible when this holds.
+    expect(backendCtx).toBe(pluginCtx);
+
+    // The source node returned by the backend was created in backendCtx.
+    expect(backendCtx.createMediaElementSource).toHaveBeenCalled();
+  });
 });

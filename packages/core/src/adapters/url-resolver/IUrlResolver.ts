@@ -27,14 +27,14 @@ import type { AuthConfig } from '../../types/config';
  * unknown categories as a passthrough.
  */
 export const URL_CATEGORY = {
-	MEDIA: 'media',
-	SUBTITLE: 'subtitle',
-	FONT: 'font',
-	POSTER: 'poster',
-	SPRITE: 'sprite',
-	LYRICS: 'lyrics',
-	CAST: 'cast',
-	LICENSE: 'license',
+  MEDIA: 'media',
+  SUBTITLE: 'subtitle',
+  FONT: 'font',
+  POSTER: 'poster',
+  SPRITE: 'sprite',
+  LYRICS: 'lyrics',
+  CAST: 'cast',
+  LICENSE: 'license',
 } as const;
 
 export type UrlCategory = typeof URL_CATEGORY[keyof typeof URL_CATEGORY] | (string & {});
@@ -56,17 +56,17 @@ export type UrlCategory = typeof URL_CATEGORY[keyof typeof URL_CATEGORY] | (stri
  *  - `toString()` — returns `href`, so template strings work transparently.
  */
 export interface ResolvedUrl {
-	readonly raw: string;
-	readonly href: string;
-	readonly scheme: string;
-	readonly origin: string;
-	readonly pathname: string;
-	readonly ext: string;
-	readonly search: string;
-	readonly searchParams: URLSearchParams;
-	readonly hash: string;
-	readonly relative: boolean;
-	toString(): string;
+  readonly raw: string;
+  readonly href: string;
+  readonly scheme: string;
+  readonly origin: string;
+  readonly pathname: string;
+  readonly ext: string;
+  readonly search: string;
+  readonly searchParams: URLSearchParams;
+  readonly hash: string;
+  readonly relative: boolean;
+  toString(): string;
 }
 
 /**
@@ -77,11 +77,11 @@ export interface ResolvedUrl {
  * for some categories and delegate the rest.
  */
 export interface UrlResolverContext {
-	readonly auth: AuthConfig | undefined;
-	readonly baseUrl: string | undefined;
-	readonly category: UrlCategory;
-	/** Built-in resolver (auth.transformUrl + buildResolvedUrl). */
-	readonly defaultResolve: (url: string) => Promise<ResolvedUrl>;
+  readonly auth: AuthConfig | undefined;
+  readonly baseUrl: string | undefined;
+  readonly category: UrlCategory;
+  /** Built-in resolver (auth.transformUrl + buildResolvedUrl). */
+  readonly defaultResolve: (url: string) => Promise<ResolvedUrl>;
 }
 
 /**
@@ -99,5 +99,5 @@ export interface UrlResolverContext {
  * comments on the call signature.
  */
 export interface IUrlResolver {
-	(url: string, ctx: UrlResolverContext): Promise<ResolvedUrl> | ResolvedUrl;
+  (url: string, ctx: UrlResolverContext): Promise<ResolvedUrl> | ResolvedUrl;
 }

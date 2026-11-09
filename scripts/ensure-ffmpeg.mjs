@@ -23,10 +23,10 @@
  */
 import { spawnSync } from 'node:child_process';
 import {
-	createWriteStream,
-	existsSync,
-	mkdirSync,
-	rmSync,
+  createWriteStream,
+  existsSync,
+  mkdirSync,
+  rmSync,
 } from 'node:fs';
 import { chmod } from 'node:fs/promises';
 import { arch, platform } from 'node:os';
@@ -44,119 +44,140 @@ const cacheDir = join(here, '..', '.cache', 'ffmpeg', FFMPEG_VERSION);
 
 /** Maps the current OS+arch to the release artifact slug the fork publishes. */
 function resolvePlatformSlug() {
-	const os = platform();
-	const cpu = arch();
-	if (os === 'win32' && cpu === 'x64') {
-		return {
-			slug: 'windows-x86_64',
-			ext: 'zip',
-			exe: 'ffmpeg.exe',
-		};
-	}
-	if (os === 'linux' && cpu === 'x64') {
-		return {
-			slug: 'linux-x86_64',
-			ext: 'tar.gz',
-			exe: 'ffmpeg',
-		};
-	}
-	if (os === 'linux' && cpu === 'arm64') {
-		return {
-			slug: 'linux-aarch64',
-			ext: 'tar.gz',
-			exe: 'ffmpeg',
-		};
-	}
-	if (os === 'darwin' && cpu === 'arm64') {
-		return {
-			slug: 'darwin-arm64',
-			ext: 'tar.gz',
-			exe: 'ffmpeg',
-		};
-	}
-	if (os === 'darwin' && cpu === 'x64') {
-		return {
-			slug: 'darwin-x86_64',
-			ext: 'tar.gz',
-			exe: 'ffmpeg',
-		};
-	}
-	throw new Error(`No NoMercy ffmpeg artifact for ${os}/${cpu}. Set NOMERCY_FFMPEG to a binary path.`);
+  const os = platform();
+  const cpu = arch();
+
+  if (os === 'win32' && cpu === 'x64') {
+    return {
+      slug: 'windows-x86_64',
+      ext: 'zip',
+      exe: 'ffmpeg.exe',
+    };
+  }
+
+  if (os === 'linux' && cpu === 'x64') {
+    return {
+      slug: 'linux-x86_64',
+      ext: 'tar.gz',
+      exe: 'ffmpeg',
+    };
+  }
+
+  if (os === 'linux' && cpu === 'arm64') {
+    return {
+      slug: 'linux-aarch64',
+      ext: 'tar.gz',
+      exe: 'ffmpeg',
+    };
+  }
+
+  if (os === 'darwin' && cpu === 'arm64') {
+    return {
+      slug: 'darwin-arm64',
+      ext: 'tar.gz',
+      exe: 'ffmpeg',
+    };
+  }
+
+  if (os === 'darwin' && cpu === 'x64') {
+    return {
+      slug: 'darwin-x86_64',
+      ext: 'tar.gz',
+      exe: 'ffmpeg',
+    };
+  }
+
+  throw new Error(`No NoMercy ffmpeg artifact for ${os}/${cpu}. Set NOMERCY_FFMPEG to a binary path.`);
 }
 
 /** Confirms a path is an ffmpeg that actually runs. */
 function isRunnable(binaryPath) {
-	if (!existsSync(binaryPath))
-		return false;
-	const probe = spawnSync(binaryPath, ['-version'], { encoding: 'utf8' });
-	return probe.status === 0 && /ffmpeg version/i.test(probe.stdout ?? '');
+  if (!existsSync(binaryPath))
+    return false;
+
+  const probe = spawnSync(binaryPath, ['-version'], { encoding: 'utf8' });
+
+  return probe.status === 0 && /ffmpeg version/i.test(probe.stdout ?? '');
 }
 
 async function downloadArtifact(slug, ext, archivePath) {
-	const assetName = `ffmpeg-${FFMPEG_FFVERSION}-${slug}-${FFMPEG_VERSION}.${ext}`;
-	const url = `https://github.com/${REPO}/releases/download/${FFMPEG_VERSION}/${assetName}`;
-	const response = await fetch(url);
-	if (!response.ok)
-		throw new Error(`Download failed (${response.status}) for ${url}`);
-	await pipeline(response.body, createWriteStream(archivePath));
+  const assetName = `ffmpeg-${FFMPEG_FFVERSION}-${slug}-${FFMPEG_VERSION}.${ext}`;
+  const url = `https://github.com/${REPO}/releases/download/${FFMPEG_VERSION}/${assetName}`;
+  const response = await fetch(url);
+
+  if (!response.ok)
+    throw new Error(`Download failed (${response.status}) for ${url}`);
+
+  await pipeline(response.body, createWriteStream(archivePath));
 }
 
 function extractArchive(archivePath, ext) {
-	if (ext === 'zip') {
-		// PowerShell Expand-Archive is present on every supported Windows runner.
-		const result = spawnSync(
-			'powershell',
-			['-NoProfile', '-Command', `Expand-Archive -Path '${archivePath}' -DestinationPath '${cacheDir}' -Force`],
-			{ encoding: 'utf8' },
-		);
-		if (result.status !== 0)
-			throw new Error(`Expand-Archive failed: ${result.stderr}`);
-		return;
-	}
-	const result = spawnSync('tar', ['-xzf', archivePath, '-C', cacheDir], { encoding: 'utf8' });
-	if (result.status !== 0)
-		throw new Error(`tar extraction failed: ${result.stderr}`);
+  if (ext === 'zip') {
+    // PowerShell Expand-Archive is present on every supported Windows runner.
+    const result = spawnSync(
+      'powershell',
+      ['-NoProfile', '-Command', `Expand-Archive -Path '${archivePath}' -DestinationPath '${cacheDir}' -Force`],
+      { encoding: 'utf8' },
+    );
+
+    if (result.status !== 0)
+      throw new Error(`Expand-Archive failed: ${result.stderr}`);
+
+    return;
+  }
+
+  const result = spawnSync('tar', ['-xzf', archivePath, '-C', cacheDir], { encoding: 'utf8' });
+
+  if (result.status !== 0)
+    throw new Error(`tar extraction failed: ${result.stderr}`);
 }
 
 /** Runs ffmpeg with the given arguments in `cwd` and throws with its stderr on failure. */
 export function runFfmpeg(ffmpeg, args, cwd) {
-	const result = spawnSync(ffmpeg, ['-y', '-loglevel', 'error', ...args], {
-		encoding: 'utf8',
-		cwd,
-	});
-	if (result.status !== 0)
-		throw new Error(`ffmpeg failed: ${args.join(' ')}\n${result.stderr}`);
+  const result = spawnSync(ffmpeg, ['-y', '-loglevel', 'error', ...args], {
+    encoding: 'utf8',
+    cwd,
+  });
+
+  if (result.status !== 0)
+    throw new Error(`ffmpeg failed: ${args.join(' ')}\n${result.stderr}`);
 }
 
 /** Returns an absolute path to a runnable NoMercy ffmpeg, downloading it on first use. */
 export async function ensureFfmpeg() {
-	const fromEnv = process.env.NOMERCY_FFMPEG;
-	if (fromEnv && isRunnable(fromEnv))
-		return fromEnv;
+  const fromEnv = process.env.NOMERCY_FFMPEG;
 
-	const { slug, ext, exe } = resolvePlatformSlug();
-	const binaryPath = join(cacheDir, exe);
-	if (isRunnable(binaryPath))
-		return binaryPath;
+  if (fromEnv && isRunnable(fromEnv))
+    return fromEnv;
 
-	mkdirSync(cacheDir, { recursive: true });
-	const archivePath = join(cacheDir, `ffmpeg.${ext}`);
-	await downloadArtifact(slug, ext, archivePath);
-	extractArchive(archivePath, ext);
-	rmSync(archivePath, { force: true });
-	if (exe !== 'ffmpeg.exe')
-		await chmod(binaryPath, 0o755);
+  const { slug, ext, exe } = resolvePlatformSlug();
+  const binaryPath = join(cacheDir, exe);
 
-	if (!isRunnable(binaryPath))
-		throw new Error(`Extracted ffmpeg at ${binaryPath} is not runnable.`);
-	return binaryPath;
+  if (isRunnable(binaryPath))
+    return binaryPath;
+
+  mkdirSync(cacheDir, { recursive: true });
+  const archivePath = join(cacheDir, `ffmpeg.${ext}`);
+
+  await downloadArtifact(slug, ext, archivePath);
+  extractArchive(archivePath, ext);
+  rmSync(archivePath, { force: true });
+
+  if (exe !== 'ffmpeg.exe') {
+    await chmod(binaryPath, 0o755);
+  }
+
+  if (!isRunnable(binaryPath))
+    throw new Error(`Extracted ffmpeg at ${binaryPath} is not runnable.`);
+
+  return binaryPath;
 }
 
 if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('ensure-ffmpeg.mjs')) {
-	ensureFfmpeg()
-		.then(path => console.log(path))
-		.catch((error) => {
-			console.error(error.message);
-			process.exit(1);
-		});
+  ensureFfmpeg()
+    .then((path) => console.log(path))
+    .catch((error) => {
+      console.error(error.message);
+      process.exit(1);
+    });
 }

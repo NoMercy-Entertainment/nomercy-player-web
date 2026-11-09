@@ -31,415 +31,458 @@ import { Plugin } from '../core/plugin';
 import { describePlugin } from '../testing';
 
 interface ProbeOptions {
-	tone?: string;
-	level?: number;
-	nested?: Record<string, number>;
+  tone?: string;
+  level?: number;
+  nested?: Record<string, number>;
 }
 
 class ApiProbePlugin extends Plugin<StubPlayer, ProbeOptions> {
-	static override readonly id: string = 'api-probe';
-	static override readonly version: string = '3.1.4';
-	static override readonly description: string = 'Probes the Plugin base public API';
+  static override readonly id: string = 'api-probe';
+  static override readonly version: string = '3.1.4';
+  static override readonly description: string = 'Probes the Plugin base public API';
 
-	publicAppendStyles(href: string, styleId: string): void {
-		this.appendStyles(href, styleId);
-	}
+  publicAppendStyles(href: string, styleId: string): void {
+    this.appendStyles(href, styleId);
+  }
 
-	publicCreateElement<K extends keyof HTMLElementTagNameMap>(type: K, id: string, unique?: boolean) {
-		return this.createElement(type, id, unique);
-	}
+  publicCreateElement<K extends keyof HTMLElementTagNameMap>(type: K, id: string, unique?: boolean) {
+    return this.createElement(type, id, unique);
+  }
 
-	publicCreateButton(id: string, label: string, onClick: (event: Event) => void): HTMLButtonElement {
-		return this.createButton(id, label, onClick);
-	}
+  publicCreateButton(id: string, label: string, onClick: (event: Event) => void): HTMLButtonElement {
+    return this.createButton(id, label, onClick);
+  }
 
-	publicCreateSVG(id: string, viewBox: string): SVGSVGElement {
-		return this.createSVG(id, viewBox);
-	}
+  publicCreateSVG(id: string, viewBox: string): SVGSVGElement {
+    return this.createSVG(id, viewBox);
+  }
 
-	publicAddClasses<T extends Element>(el: T, names: string[]) {
-		return this.addClasses(el, names);
-	}
+  publicAddClasses<T extends Element>(el: T, names: string[]) {
+    return this.addClasses(el, names);
+  }
 
-	publicRemoveClasses<T extends Element>(el: T, names: string[]): T {
-		return this.removeClasses(el, names);
-	}
+  publicRemoveClasses<T extends Element>(el: T, names: string[]): T {
+    return this.removeClasses(el, names);
+  }
 }
 
 describePlugin(ApiProbePlugin, (ctx) => {
-	describe('enable() / disable() — plugin-scoped channels', () => {
-		it('disable() emits plugin:api-probe:disabled with id and reason', () => {
-			const received: Array<{ id: string; reason?: string }> = [];
-			const handler = (data: { id: string; reason?: string }): void => {
-				received.push(data);
-			};
-			ctx.player.on('plugin:api-probe:disabled', handler);
+  describe('enable() / disable() — plugin-scoped channels', () => {
+    it('disable() emits plugin:api-probe:disabled with id and reason', () => {
+      const received: Array<{ id: string; reason?: string }> = [];
 
-			ctx.plugin.disable('maintenance');
+      const handler = (data: { id: string; reason?: string }): void => {
+        received.push(data);
+      };
 
-			ctx.player.off('plugin:api-probe:disabled', handler);
-			expect(received).toEqual([
-				{
-					id: 'api-probe',
-					reason: 'maintenance',
-				},
-			]);
-		});
+      ctx.player.on('plugin:api-probe:disabled', handler);
 
-		it('enable() emits plugin:api-probe:enabled with the plugin id', () => {
-			const received: Array<{ id: string }> = [];
-			const handler = (data: { id: string }): void => {
-				received.push(data);
-			};
-			ctx.plugin.disable();
-			ctx.player.on('plugin:api-probe:enabled', handler);
+      ctx.plugin.disable('maintenance');
 
-			ctx.plugin.enable();
+      ctx.player.off('plugin:api-probe:disabled', handler);
 
-			ctx.player.off('plugin:api-probe:enabled', handler);
-			expect(received).toEqual([{ id: 'api-probe' }]);
-		});
+      expect(received).toEqual([
+        {
+          id: 'api-probe',
+          reason: 'maintenance',
+        },
+      ]);
+    });
 
-		it('enable() emits the generic and the plugin-scoped channel together', () => {
-			const channels: string[] = [];
-			const genericHandler = (): void => {
-				channels.push('plugin:enabled');
-			};
-			const scopedHandler = (): void => {
-				channels.push('plugin:api-probe:enabled');
-			};
-			ctx.plugin.disable();
-			ctx.player.on('plugin:enabled', genericHandler);
-			ctx.player.on('plugin:api-probe:enabled', scopedHandler);
+    it('enable() emits plugin:api-probe:enabled with the plugin id', () => {
+      const received: Array<{ id: string }> = [];
 
-			ctx.plugin.enable();
+      const handler = (data: { id: string }): void => {
+        received.push(data);
+      };
 
-			ctx.player.off('plugin:enabled', genericHandler);
-			ctx.player.off('plugin:api-probe:enabled', scopedHandler);
-			expect(channels).toEqual([
-				'plugin:enabled',
-				'plugin:api-probe:enabled',
-			]);
-		});
+      ctx.plugin.disable();
+      ctx.player.on('plugin:api-probe:enabled', handler);
 
-		it('enable() while already enabled emits nothing on the plugin-scoped channel', () => {
-			const received: unknown[] = [];
-			const handler = (data: unknown): void => {
-				received.push(data);
-			};
-			ctx.player.on('plugin:api-probe:enabled', handler);
+      ctx.plugin.enable();
 
-			ctx.plugin.enable();
+      ctx.player.off('plugin:api-probe:enabled', handler);
+      expect(received).toEqual([{ id: 'api-probe' }]);
+    });
 
-			ctx.player.off('plugin:api-probe:enabled', handler);
-			expect(received).toEqual([]);
-		});
+    it('enable() emits the generic and the plugin-scoped channel together', () => {
+      const channels: string[] = [];
 
-		it('disable() while already disabled emits nothing on the plugin-scoped channel', () => {
-			ctx.plugin.disable();
-			const received: unknown[] = [];
-			const handler = (data: unknown): void => {
-				received.push(data);
-			};
-			ctx.player.on('plugin:api-probe:disabled', handler);
+      const genericHandler = (): void => {
+        channels.push('plugin:enabled');
+      };
 
-			ctx.plugin.disable();
+      const scopedHandler = (): void => {
+        channels.push('plugin:api-probe:enabled');
+      };
 
-			ctx.player.off('plugin:api-probe:disabled', handler);
-			expect(received).toEqual([]);
-		});
-	});
+      ctx.plugin.disable();
+      ctx.player.on('plugin:enabled', genericHandler);
+      ctx.player.on('plugin:api-probe:enabled', scopedHandler);
 
-	describe('state() snapshot', () => {
-		it('returns the exact snapshot shape', () => {
-			expect(ctx.plugin.state()).toEqual({
-				id: 'api-probe',
-				version: '3.1.4',
-				enabled: true,
-				opts: {
-					tone: 'warm',
-					level: 3,
-				},
-				runtime: {},
-			});
-		});
+      ctx.plugin.enable();
 
-		it('tracks the enabled flag through a disable/enable cycle', () => {
-			ctx.plugin.disable();
-			expect(ctx.plugin.state().enabled).toBe(false);
-			ctx.plugin.enable();
-			expect(ctx.plugin.state().enabled).toBe(true);
-		});
-	});
+      ctx.player.off('plugin:enabled', genericHandler);
+      ctx.player.off('plugin:api-probe:enabled', scopedHandler);
 
-	describe('export()', () => {
-		it('returns a detached deep clone — mutating it does not touch live opts', () => {
-			const exported = ctx.plugin.export();
-			expect(exported).toEqual({
-				tone: 'warm',
-				level: 3,
-			});
-			expect(exported).not.toBe(ctx.plugin.opts);
+      expect(channels).toEqual([
+        'plugin:enabled',
+        'plugin:api-probe:enabled',
+      ]);
+    });
 
-			exported.tone = 'mutated';
-			expect(ctx.plugin.options().tone).toBe('warm');
-		});
-	});
+    it('enable() while already enabled emits nothing on the plugin-scoped channel', () => {
+      const received: unknown[] = [];
 
-	describe('static derive()', () => {
-		it('keeps the same static id when newId is omitted', () => {
-			const Derived = ApiProbePlugin.derive({ level: 9 });
-			expect((Derived as unknown as { id: string }).id).toBe('api-probe');
-		});
+      const handler = (data: unknown): void => {
+        received.push(data);
+      };
 
-		it('derived instances remain instanceof the source class', () => {
-			const Derived = ApiProbePlugin.derive({ level: 9 });
-			const instance = new Derived();
-			expect(instance).toBeInstanceOf(ApiProbePlugin);
-			expect(instance).toBeInstanceOf(Plugin);
-		});
+      ctx.player.on('plugin:api-probe:enabled', handler);
 
-		it('pre-baked opts flow through when no consumer opts are supplied', () => {
-			const Derived = ApiProbePlugin.derive({
-				level: 9,
-				tone: 'baked',
-			});
-			const instance = new Derived();
-			const lifecycle = new LifecycleRegistry();
-			instance.initialize(ctx.player, undefined as unknown as ProbeOptions, lifecycle);
+      ctx.plugin.enable();
 
-			expect(instance.opts).toEqual({
-				level: 9,
-				tone: 'baked',
-			});
-			lifecycle.dispose();
-		});
+      ctx.player.off('plugin:api-probe:enabled', handler);
+      expect(received).toEqual([]);
+    });
 
-		it('consumer opts win over baked defaults on a shallow merge', () => {
-			const Derived = ApiProbePlugin.derive({
-				level: 9,
-				tone: 'baked',
-				nested: { alpha: 1 },
-			});
-			const instance = new Derived();
-			const lifecycle = new LifecycleRegistry();
-			instance.initialize(ctx.player, {
-				tone: 'consumer',
-				nested: { beta: 2 },
-			}, lifecycle);
+    it('disable() while already disabled emits nothing on the plugin-scoped channel', () => {
+      ctx.plugin.disable();
+      const received: unknown[] = [];
 
-			expect(instance.opts).toEqual({
-				level: 9,
-				tone: 'consumer',
-				nested: { beta: 2 },
-			});
-			lifecycle.dispose();
-		});
+      const handler = (data: unknown): void => {
+        received.push(data);
+      };
 
-		it('derive(opts, newId) renames the derived class and leaves the source untouched', () => {
-			const Renamed = ApiProbePlugin.derive({ level: 1 }, 'api-probe-renamed');
-			expect((Renamed as unknown as { id: string }).id).toBe('api-probe-renamed');
-			expect(ApiProbePlugin.id).toBe('api-probe');
-		});
-	});
+      ctx.player.on('plugin:api-probe:disabled', handler);
 
-	describe('clone()', () => {
-		it('bakes the current exported state into the derived class', () => {
-			ctx.plugin.options({
-				tone: 'live-tuned',
-				level: 8,
-			});
-			const Clone = ctx.plugin.clone();
-			const instance = new (Clone as unknown as new () => ApiProbePlugin)();
-			const lifecycle = new LifecycleRegistry();
-			instance.initialize(ctx.player, undefined as unknown as ProbeOptions, lifecycle);
+      ctx.plugin.disable();
 
-			expect(instance.opts).toEqual({
-				tone: 'live-tuned',
-				level: 8,
-			});
-			lifecycle.dispose();
-		});
+      ctx.player.off('plugin:api-probe:disabled', handler);
+      expect(received).toEqual([]);
+    });
+  });
 
-		it('keeps the source static id on the cloned class', () => {
-			const Clone = ctx.plugin.clone();
-			expect((Clone as unknown as { id: string }).id).toBe('api-probe');
-		});
+  describe('state() snapshot', () => {
+    it('returns the exact snapshot shape', () => {
+      expect(ctx.plugin.state()).toEqual({
+        id: 'api-probe',
+        version: '3.1.4',
+        enabled: true,
+        opts: {
+          tone: 'warm',
+          level: 3,
+        },
+        runtime: {},
+      });
+    });
 
-		it('flows through export() — a subclass export() override enriches the clone', () => {
-			class SnapshottingPlugin extends Plugin<StubPlayer, ProbeOptions> {
-				static override readonly id: string = 'snapshotting';
-				static override readonly description: string = 'export() override probe';
+    it('tracks the enabled flag through a disable/enable cycle', () => {
+      ctx.plugin.disable();
+      expect(ctx.plugin.state().enabled).toBe(false);
+      ctx.plugin.enable();
+      expect(ctx.plugin.state().enabled).toBe(true);
+    });
+  });
 
-				override export(): ProbeOptions {
-					return {
-						...(this.opts ?? {}),
-						tone: 'from-export',
-					};
-				}
-			}
+  describe('export()', () => {
+    it('returns a detached deep clone — mutating it does not touch live opts', () => {
+      const exported = ctx.plugin.export();
 
-			const source = new SnapshottingPlugin();
-			const sourceLifecycle = new LifecycleRegistry();
-			source.initialize(ctx.player, { level: 5 }, sourceLifecycle);
+      expect(exported).toEqual({
+        tone: 'warm',
+        level: 3,
+      });
 
-			const Clone = source.clone();
-			const cloned = new (Clone as unknown as new () => SnapshottingPlugin)();
-			const cloneLifecycle = new LifecycleRegistry();
-			cloned.initialize(ctx.player, undefined as unknown as ProbeOptions, cloneLifecycle);
+      expect(exported).not.toBe(ctx.plugin.opts);
 
-			expect(cloned.opts).toEqual({
-				level: 5,
-				tone: 'from-export',
-			});
-			sourceLifecycle.dispose();
-			cloneLifecycle.dispose();
-		});
-	});
+      exported.tone = 'mutated';
+      expect(ctx.plugin.options().tone).toBe('warm');
+    });
+  });
 
-	describe('static priority', () => {
-		it('defaults to 0 on the base class and on subclasses that do not override', () => {
-			expect(Plugin.priority).toBe(0);
-			expect(ApiProbePlugin.priority).toBe(0);
-		});
+  describe('static derive()', () => {
+    it('keeps the same static id when newId is omitted', () => {
+      const Derived = ApiProbePlugin.derive({ level: 9 });
 
-		it('subclass override is visible on the class', () => {
-			class PrioritizedPlugin extends Plugin<StubPlayer, ProbeOptions> {
-				static override readonly id: string = 'prioritized';
-				static override readonly priority: number = 25;
-			}
-			expect(PrioritizedPlugin.priority).toBe(25);
-		});
+      expect((Derived as unknown as { id: string }).id).toBe('api-probe');
+    });
 
-		it('derive() keeps the source priority', () => {
-			class PrioritizedPlugin extends Plugin<StubPlayer, ProbeOptions> {
-				static override readonly id: string = 'prioritized-derive';
-				static override readonly priority: number = 42;
-			}
-			const Derived = PrioritizedPlugin.derive({ level: 1 });
-			expect((Derived as unknown as { priority: number }).priority).toBe(42);
-		});
-	});
+    it('derived instances remain instanceof the source class', () => {
+      const Derived = ApiProbePlugin.derive({ level: 9 });
+      const instance = new Derived();
 
-	describe('static moduleUrl + appendStyles()', () => {
-		interface HappyDomSettings {
-			disableCSSFileLoading?: boolean;
-			handleDisabledFileLoadingAsSuccess?: boolean;
-		}
+      expect(instance).toBeInstanceOf(ApiProbePlugin);
+      expect(instance).toBeInstanceOf(Plugin);
+    });
 
-		interface HappyDomWindow {
-			happyDOM?: { settings?: HappyDomSettings };
-		}
+    it('pre-baked opts flow through when no consumer opts are supplied', () => {
+      const Derived = ApiProbePlugin.derive({
+        level: 9,
+        tone: 'baked',
+      });
+      const instance = new Derived();
+      const lifecycle = new LifecycleRegistry();
 
-		let previousSettings: HappyDomSettings | undefined;
+      instance.initialize(ctx.player, undefined as unknown as ProbeOptions, lifecycle);
 
-		beforeEach(() => {
-			// appendStyles inserts a <link rel="stylesheet">; stop happy-dom from
-			// actually fetching the URL — these tests assert href resolution only.
-			const settings = (window as unknown as HappyDomWindow).happyDOM?.settings;
-			if (settings) {
-				previousSettings = {
-					disableCSSFileLoading: settings.disableCSSFileLoading,
-					handleDisabledFileLoadingAsSuccess: settings.handleDisabledFileLoadingAsSuccess,
-				};
-				settings.disableCSSFileLoading = true;
-				settings.handleDisabledFileLoadingAsSuccess = true;
-			}
-		});
+      expect(instance.opts).toEqual({
+        level: 9,
+        tone: 'baked',
+      });
 
-		afterEach(() => {
-			const settings = (window as unknown as HappyDomWindow).happyDOM?.settings;
-			if (settings && previousSettings) {
-				settings.disableCSSFileLoading = previousSettings.disableCSSFileLoading;
-				settings.handleDisabledFileLoadingAsSuccess = previousSettings.handleDisabledFileLoadingAsSuccess;
-			}
-		});
+      lifecycle.dispose();
+    });
 
-		it('moduleUrl is undefined by default', () => {
-			expect(Plugin.moduleUrl).toBeUndefined();
-			expect(ApiProbePlugin.moduleUrl).toBeUndefined();
-		});
+    it('consumer opts win over baked defaults on a shallow merge', () => {
+      const Derived = ApiProbePlugin.derive({
+        level: 9,
+        tone: 'baked',
+        nested: { alpha: 1 },
+      });
+      const instance = new Derived();
+      const lifecycle = new LifecycleRegistry();
 
-		it('appendStyles resolves a relative href against document.baseURI when moduleUrl is unset', () => {
-			const styleId = 'api-probe-fallback-styles';
-			ctx.plugin.publicAppendStyles('./probe-fallback.css', styleId);
+      instance.initialize(ctx.player, {
+        tone: 'consumer',
+        nested: { beta: 2 },
+      }, lifecycle);
 
-			const link = document.getElementById(styleId) as HTMLLinkElement | null;
-			expect(link?.tagName).toBe('LINK');
-			expect(link?.rel).toBe('stylesheet');
-			expect(link?.href).toBe(new URL('./probe-fallback.css', document.baseURI).href);
-			link?.remove();
-		});
+      expect(instance.opts).toEqual({
+        level: 9,
+        tone: 'consumer',
+        nested: { beta: 2 },
+      });
 
-		it('appendStyles resolves a relative href against the static moduleUrl when set', () => {
-			class StyledPlugin extends ApiProbePlugin {
-				static override readonly id: string = 'styled-probe';
-				static override readonly moduleUrl: string = 'https://cdn.example.com/plugins/styled/plugin.js';
-			}
-			const styleId = 'styled-probe-styles';
-			const styled = new StyledPlugin();
-			styled.publicAppendStyles('./theme.css', styleId);
+      lifecycle.dispose();
+    });
 
-			const link = document.getElementById(styleId) as HTMLLinkElement | null;
-			expect(link?.href).toBe('https://cdn.example.com/plugins/styled/theme.css');
-			link?.remove();
-		});
+    it('derive(opts, newId) renames the derived class and leaves the source untouched', () => {
+      const Renamed = ApiProbePlugin.derive({ level: 1 }, 'api-probe-renamed');
 
-		it('appendStyles dedupes by style id — the second call is a no-op', () => {
-			const styleId = 'api-probe-dedupe-styles';
-			ctx.plugin.publicAppendStyles('./first.css', styleId);
-			ctx.plugin.publicAppendStyles('./second.css', styleId);
+      expect((Renamed as unknown as { id: string }).id).toBe('api-probe-renamed');
+      expect(ApiProbePlugin.id).toBe('api-probe');
+    });
+  });
 
-			const links = document.querySelectorAll(`#${styleId}`);
-			expect(links).toHaveLength(1);
-			expect((links[0] as HTMLLinkElement).href).toBe(new URL('./first.css', document.baseURI).href);
-			links[0]?.remove();
-		});
-	});
+  describe('clone()', () => {
+    it('bakes the current exported state into the derived class', () => {
+      ctx.plugin.options({
+        tone: 'live-tuned',
+        level: 8,
+      });
 
-	describe('DOM construction helpers — createElement/createButton/createSVG/addClasses/removeClasses', () => {
-		it('createElement("div", "x") creates a <div> and appendTo(parent) attaches it as a child', () => {
-			const parent = document.createElement('div');
-			document.body.appendChild(parent);
+      const Clone = ctx.plugin.clone();
+      const instance = new (Clone as unknown as new () => ApiProbePlugin)();
+      const lifecycle = new LifecycleRegistry();
 
-			const builder = ctx.plugin.publicCreateElement('div', 'x');
-			builder.appendTo(parent);
-			const element = builder.get();
+      instance.initialize(ctx.player, undefined as unknown as ProbeOptions, lifecycle);
 
-			expect(element.tagName.toLowerCase()).toBe('div');
-			expect(element.id).toBe('x');
-			expect(parent.contains(element)).toBe(true);
-			parent.remove();
-		});
+      expect(instance.opts).toEqual({
+        tone: 'live-tuned',
+        level: 8,
+      });
 
-		it('createButton() returns an accessible <button>', () => {
-			const btn = ctx.plugin.publicCreateButton('probe-btn', 'Play', () => {});
-			expect(btn).toBeInstanceOf(HTMLButtonElement);
-			expect(btn.type).toBe('button');
-			expect(btn.getAttribute('aria-label')).toBe('Play');
-		});
+      lifecycle.dispose();
+    });
 
-		it('createSVG() returns an <svg> in the SVG namespace', () => {
-			const svg = ctx.plugin.publicCreateSVG('probe-svg', '0 0 24 24');
-			expect(svg).toBeInstanceOf(SVGSVGElement);
-			expect(svg.getAttribute('viewBox')).toBe('0 0 24 24');
-		});
+    it('keeps the source static id on the cloned class', () => {
+      const Clone = ctx.plugin.clone();
 
-		it('addClasses(el, ["a","b"]) adds both; removeClasses(el, ["a"]) removes only "a", "b" stays', () => {
-			const el = document.createElement('span');
+      expect((Clone as unknown as { id: string }).id).toBe('api-probe');
+    });
 
-			ctx.plugin.publicAddClasses(el, ['a', 'b']);
-			expect(el.classList.contains('a')).toBe(true);
-			expect(el.classList.contains('b')).toBe(true);
+    it('flows through export() — a subclass export() override enriches the clone', () => {
+      class SnapshottingPlugin extends Plugin<StubPlayer, ProbeOptions> {
+        static override readonly id: string = 'snapshotting';
+        static override readonly description: string = 'export() override probe';
 
-			ctx.plugin.publicRemoveClasses(el, ['a']);
-			expect(el.classList.contains('a')).toBe(false);
-			expect(el.classList.contains('b')).toBe(true);
-		});
-	});
+        override export(): ProbeOptions {
+          return {
+            ...(this.opts ?? {}),
+            tone: 'from-export',
+          };
+        }
+      }
+
+      const source = new SnapshottingPlugin();
+      const sourceLifecycle = new LifecycleRegistry();
+
+      source.initialize(ctx.player, { level: 5 }, sourceLifecycle);
+
+      const Clone = source.clone();
+      const cloned = new (Clone as unknown as new () => SnapshottingPlugin)();
+      const cloneLifecycle = new LifecycleRegistry();
+
+      cloned.initialize(ctx.player, undefined as unknown as ProbeOptions, cloneLifecycle);
+
+      expect(cloned.opts).toEqual({
+        level: 5,
+        tone: 'from-export',
+      });
+
+      sourceLifecycle.dispose();
+      cloneLifecycle.dispose();
+    });
+  });
+
+  describe('static priority', () => {
+    it('defaults to 0 on the base class and on subclasses that do not override', () => {
+      expect(Plugin.priority).toBe(0);
+      expect(ApiProbePlugin.priority).toBe(0);
+    });
+
+    it('subclass override is visible on the class', () => {
+      class PrioritizedPlugin extends Plugin<StubPlayer, ProbeOptions> {
+        static override readonly id: string = 'prioritized';
+        static override readonly priority: number = 25;
+      }
+      expect(PrioritizedPlugin.priority).toBe(25);
+    });
+
+    it('derive() keeps the source priority', () => {
+      class PrioritizedPlugin extends Plugin<StubPlayer, ProbeOptions> {
+        static override readonly id: string = 'prioritized-derive';
+        static override readonly priority: number = 42;
+      }
+      const Derived = PrioritizedPlugin.derive({ level: 1 });
+
+      expect((Derived as unknown as { priority: number }).priority).toBe(42);
+    });
+  });
+
+  describe('static moduleUrl + appendStyles()', () => {
+    interface HappyDomSettings {
+      disableCSSFileLoading?: boolean;
+      handleDisabledFileLoadingAsSuccess?: boolean;
+    }
+
+    interface HappyDomWindow {
+      happyDOM?: { settings?: HappyDomSettings };
+    }
+
+    let previousSettings: HappyDomSettings | undefined;
+
+    beforeEach(() => {
+      // appendStyles inserts a <link rel="stylesheet">; stop happy-dom from
+      // actually fetching the URL — these tests assert href resolution only.
+      const settings = (window as unknown as HappyDomWindow).happyDOM?.settings;
+
+      if (settings) {
+        previousSettings = {
+          disableCSSFileLoading: settings.disableCSSFileLoading,
+          handleDisabledFileLoadingAsSuccess: settings.handleDisabledFileLoadingAsSuccess,
+        };
+
+        settings.disableCSSFileLoading = true;
+        settings.handleDisabledFileLoadingAsSuccess = true;
+      }
+    });
+
+    afterEach(() => {
+      const settings = (window as unknown as HappyDomWindow).happyDOM?.settings;
+
+      if (settings && previousSettings) {
+        settings.disableCSSFileLoading = previousSettings.disableCSSFileLoading;
+        settings.handleDisabledFileLoadingAsSuccess = previousSettings.handleDisabledFileLoadingAsSuccess;
+      }
+    });
+
+    it('moduleUrl is undefined by default', () => {
+      expect(Plugin.moduleUrl).toBeUndefined();
+      expect(ApiProbePlugin.moduleUrl).toBeUndefined();
+    });
+
+    it('appendStyles resolves a relative href against document.baseURI when moduleUrl is unset', () => {
+      const styleId = 'api-probe-fallback-styles';
+
+      ctx.plugin.publicAppendStyles('./probe-fallback.css', styleId);
+
+      const link = document.getElementById(styleId) as HTMLLinkElement | null;
+
+      expect(link?.tagName).toBe('LINK');
+      expect(link?.rel).toBe('stylesheet');
+      expect(link?.href).toBe(new URL('./probe-fallback.css', document.baseURI).href);
+      link?.remove();
+    });
+
+    it('appendStyles resolves a relative href against the static moduleUrl when set', () => {
+      class StyledPlugin extends ApiProbePlugin {
+        static override readonly id: string = 'styled-probe';
+        static override readonly moduleUrl: string = 'https://cdn.example.com/plugins/styled/plugin.js';
+      }
+      const styleId = 'styled-probe-styles';
+      const styled = new StyledPlugin();
+
+      styled.publicAppendStyles('./theme.css', styleId);
+
+      const link = document.getElementById(styleId) as HTMLLinkElement | null;
+
+      expect(link?.href).toBe('https://cdn.example.com/plugins/styled/theme.css');
+      link?.remove();
+    });
+
+    it('appendStyles dedupes by style id — the second call is a no-op', () => {
+      const styleId = 'api-probe-dedupe-styles';
+
+      ctx.plugin.publicAppendStyles('./first.css', styleId);
+      ctx.plugin.publicAppendStyles('./second.css', styleId);
+
+      const links = document.querySelectorAll(`#${styleId}`);
+
+      expect(links).toHaveLength(1);
+      expect((links[0] as HTMLLinkElement).href).toBe(new URL('./first.css', document.baseURI).href);
+      links[0]?.remove();
+    });
+  });
+
+  describe('DOM construction helpers — createElement/createButton/createSVG/addClasses/removeClasses', () => {
+    it('createElement("div", "x") creates a <div> and appendTo(parent) attaches it as a child', () => {
+      const parent = document.createElement('div');
+
+      document.body.appendChild(parent);
+
+      const builder = ctx.plugin.publicCreateElement('div', 'x');
+
+      builder.appendTo(parent);
+      const element = builder.get();
+
+      expect(element.tagName.toLowerCase()).toBe('div');
+      expect(element.id).toBe('x');
+      expect(parent.contains(element)).toBe(true);
+      parent.remove();
+    });
+
+    it('createButton() returns an accessible <button>', () => {
+      const btn = ctx.plugin.publicCreateButton('probe-btn', 'Play', () => {});
+
+      expect(btn).toBeInstanceOf(HTMLButtonElement);
+      expect(btn.type).toBe('button');
+      expect(btn.getAttribute('aria-label')).toBe('Play');
+    });
+
+    it('createSVG() returns an <svg> in the SVG namespace', () => {
+      const svg = ctx.plugin.publicCreateSVG('probe-svg', '0 0 24 24');
+
+      expect(svg).toBeInstanceOf(SVGSVGElement);
+      expect(svg.getAttribute('viewBox')).toBe('0 0 24 24');
+    });
+
+    it('addClasses(el, ["a","b"]) adds both; removeClasses(el, ["a"]) removes only "a", "b" stays', () => {
+      const el = document.createElement('span');
+
+      ctx.plugin.publicAddClasses(el, ['a', 'b']);
+      expect(el.classList.contains('a')).toBe(true);
+      expect(el.classList.contains('b')).toBe(true);
+
+      ctx.plugin.publicRemoveClasses(el, ['a']);
+      expect(el.classList.contains('a')).toBe(false);
+      expect(el.classList.contains('b')).toBe(true);
+    });
+  });
 }, {
-	opts: {
-		tone: 'warm',
-		level: 3,
-	},
+  opts: {
+    tone: 'warm',
+    level: 3,
+  },
 });

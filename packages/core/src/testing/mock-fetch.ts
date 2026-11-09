@@ -24,30 +24,30 @@ import type { FetchOptions } from '../core/plugin';
  * ```
  */
 export interface MockFetchCall {
-	url: string;
-	options: FetchOptions<unknown> | undefined;
+  url: string;
+  options: FetchOptions<unknown> | undefined;
 }
 
 export interface MockFetchResponse {
-	body: unknown;
+  body: unknown;
 }
 
 export interface MockFetch {
-	/** Drop-in replacement for `Plugin.fetch`. Assign to `plugin['fetch']`. */
-	fetch: <T = string>(url: string, options?: FetchOptions<T>) => Promise<T>;
+  /** Drop-in replacement for `Plugin.fetch`. Assign to `plugin['fetch']`. */
+  fetch: <T = string>(url: string, options?: FetchOptions<T>) => Promise<T>;
 
-	/** All calls made so far, in order. */
-	calls: MockFetchCall[];
+  /** All calls made so far, in order. */
+  calls: MockFetchCall[];
 
-	/**
-	 * Queue a response body for the next fetch call. Each queued value is
-	 * consumed once in FIFO order. If no responses remain, the mock resolves
-	 * with `undefined` cast to `T`.
-	 */
-	respondWith(body: unknown): void;
+  /**
+   * Queue a response body for the next fetch call. Each queued value is
+   * consumed once in FIFO order. If no responses remain, the mock resolves
+   * with `undefined` cast to `T`.
+   */
+  respondWith(body: unknown): void;
 
-	/** Clear call history and queued responses. */
-	reset(): void;
+  /** Clear call history and queued responses. */
+  reset(): void;
 }
 
 /**
@@ -69,27 +69,31 @@ export interface MockFetch {
  * ```
  */
 export function mockFetch(): MockFetch {
-	const calls: MockFetchCall[] = [];
-	const queue: unknown[] = [];
+  const calls: MockFetchCall[] = [];
+  const queue: unknown[] = [];
 
-	const fetch = <T = string>(url: string, options?: FetchOptions<T>): Promise<T> => {
-		calls.push({
-			url,
-			options: options as FetchOptions<unknown> | undefined,
-		});
-		const response = queue.length > 0 ? queue.shift() : undefined;
-		return Promise.resolve(response as T);
-	};
+  const fetch = <T = string>(url: string, options?: FetchOptions<T>): Promise<T> => {
+    calls.push({
+      url,
+      options: options as FetchOptions<unknown> | undefined,
+    });
 
-	return {
-		fetch,
-		calls,
-		respondWith(body: unknown): void {
-			queue.push(body);
-		},
-		reset(): void {
-			calls.length = 0;
-			queue.length = 0;
-		},
-	};
+    const response = queue.length > 0
+      ? queue.shift()
+      : undefined;
+
+    return Promise.resolve(response as T);
+  };
+
+  return {
+    fetch,
+    calls,
+    respondWith(body: unknown): void {
+      queue.push(body);
+    },
+    reset(): void {
+      calls.length = 0;
+      queue.length = 0;
+    },
+  };
 }

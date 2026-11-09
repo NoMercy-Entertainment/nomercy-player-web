@@ -14,11 +14,12 @@ import type { IIdGenerator } from './IIdGenerator';
  * absent (some old workers, non-secure contexts).
  */
 export const defaultIdGenerator: IIdGenerator = {
-	next(): string {
-		if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-			return crypto.randomUUID();
-		}
-		return `${Date.now().toString(36)}-${Math.random().toString(36)
-			.slice(2)}`;
-	},
+  next(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+
+    return `${Date.now().toString(36)}-${Math.random().toString(36)
+      .slice(2)}`;
+  },
 };

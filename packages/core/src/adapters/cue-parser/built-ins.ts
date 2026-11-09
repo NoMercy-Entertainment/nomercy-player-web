@@ -33,50 +33,55 @@ const SPRITE_VTT_HINT_RE = /sprite\.vtt(?:\?|$)|sprites?\.vtt(?:\?|$)/i;
 
 /** Built-in parser for `.lrc` files and `application/x-lrc` content-type. */
 export const lrcParser: ICueParser<LrcPayload> = {
-	id: 'lrc',
-	canParse(url: string, contentType?: string): boolean {
-		if (LRC_EXT_RE.test(url))
-			return true;
-		if (contentType && LRC_MIME_RE.test(contentType))
-			return true;
-		return false;
-	},
-	parse(raw: string) {
-		return parseLrc(raw);
-	},
+  id: 'lrc',
+  canParse(url: string, contentType?: string): boolean {
+    if (LRC_EXT_RE.test(url))
+      return true;
+
+    if (contentType && LRC_MIME_RE.test(contentType))
+      return true;
+
+    return false;
+  },
+  parse(raw: string) {
+    return parseLrc(raw);
+  },
 };
 
 /** Built-in parser for WebVTT subtitle files. Does not match sprite-VTT URLs. */
 export const vttSubtitleParser: ICueParser<VTTSubtitlePayload> = {
-	id: 'vtt',
-	canParse(url: string, contentType?: string): boolean {
-		// Sprite VTT outranks plain VTT only when the URL hints at sprites; this
-		// parser handles plain subtitle VTT.
-		if (SPRITE_VTT_HINT_RE.test(url))
-			return false;
-		if (VTT_EXT_RE.test(url))
-			return true;
-		if (contentType && VTT_MIME_RE.test(contentType))
-			return true;
-		return false;
-	},
-	parse(raw: string) {
-		return parseVttSubtitles(raw);
-	},
+  id: 'vtt',
+  canParse(url: string, contentType?: string): boolean {
+    // Sprite VTT outranks plain VTT only when the URL hints at sprites; this
+    // parser handles plain subtitle VTT.
+    if (SPRITE_VTT_HINT_RE.test(url))
+      return false;
+
+    if (VTT_EXT_RE.test(url))
+      return true;
+
+    if (contentType && VTT_MIME_RE.test(contentType))
+      return true;
+
+    return false;
+  },
+  parse(raw: string) {
+    return parseVttSubtitles(raw);
+  },
 };
 
 /** Built-in parser for sprite WebVTT files (`*.sprite.vtt` / `*.sprites.vtt`). */
 export const spriteVttParser: ICueParser<VTTSpritePayload> = {
-	id: 'sprite-vtt',
-	canParse(url: string): boolean {
-		// Activates only when the URL strongly hints at sprite content
-		// (`*.sprite.vtt` / `*.sprites.vtt`). Pure `.vtt` falls through to
-		// `vttSubtitleParser`.
-		return SPRITE_VTT_HINT_RE.test(url);
-	},
-	parse(raw: string, opts?: { baseUrl?: string }) {
-		return parseVttSprite(raw, opts?.baseUrl);
-	},
+  id: 'sprite-vtt',
+  canParse(url: string): boolean {
+    // Activates only when the URL strongly hints at sprite content
+    // (`*.sprite.vtt` / `*.sprites.vtt`). Pure `.vtt` falls through to
+    // `vttSubtitleParser`.
+    return SPRITE_VTT_HINT_RE.test(url);
+  },
+  parse(raw: string, opts?: { baseUrl?: string }) {
+    return parseVttSprite(raw, opts?.baseUrl);
+  },
 };
 
 /**
@@ -86,7 +91,7 @@ export const spriteVttParser: ICueParser<VTTSpritePayload> = {
  * remove one entirely.
  */
 export const builtInCueParsers: ReadonlyArray<ICueParser> = [
-	lrcParser,
-	vttSubtitleParser,
-	spriteVttParser,
+  lrcParser,
+  vttSubtitleParser,
+  spriteVttParser,
 ];

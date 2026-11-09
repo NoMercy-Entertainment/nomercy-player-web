@@ -16,11 +16,11 @@ import { KIT_VERSION } from '../core/kit-version';
 // plugins. Phase 0 single-sourced it from package.json. This test fails if it
 // ever drifts back out of sync.
 describe('KIT_VERSION stays in sync with package.json', () => {
-	it('equals the package version exactly', () => {
-		expect(KIT_VERSION).toBe(pkg.version);
-	});
+  it('equals the package version exactly', () => {
+    expect(KIT_VERSION).toBe(pkg.version);
+  });
 
-	it('is not the stale beta value that B4 fixed', () => {
-		expect(KIT_VERSION).not.toBe('2.0.0-beta.1');
-	});
+  it('is not the stale beta value that B4 fixed', () => {
+    expect(KIT_VERSION).not.toBe('2.0.0-beta.1');
+  });
 });

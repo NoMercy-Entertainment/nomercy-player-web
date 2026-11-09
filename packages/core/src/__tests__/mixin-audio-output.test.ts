@@ -27,187 +27,216 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	BrowserPolicyError,
-	composeMixins,
-	playerCoreMethods,
+  BrowserPolicyError,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare audioOutputs: () => Promise<MediaDeviceInfo[]>;
-	declare selectAudioOutput: () => Promise<MediaDeviceInfo | null>;
-	declare audioOutput: {
-		(): Promise<string | null>;
-		(deviceId: string): Promise<void>;
-	};
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare audioOutputs: () => Promise<MediaDeviceInfo[]>;
+  declare selectAudioOutput: () => Promise<MediaDeviceInfo | null>;
+  declare audioOutput: {
+    (): Promise<string | null>;
+    (deviceId: string): Promise<void>;
+  };
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 const originalMediaDevices = Object.getOwnPropertyDescriptor(navigator, 'mediaDevices');
 
 function restoreMediaDevices(): void {
-	if (originalMediaDevices) {
-		Object.defineProperty(navigator, 'mediaDevices', originalMediaDevices);
-	}
-	else {
-		try { delete (navigator as unknown as Record<string, unknown>)['mediaDevices']; }
-		catch { /* read-only in some envs */ }
-	}
+  if (originalMediaDevices) {
+    Object.defineProperty(navigator, 'mediaDevices', originalMediaDevices);
+  } else {
+    try { delete (navigator as unknown as Record<string, unknown>)['mediaDevices']; } catch { /* read-only in some envs */ }
+  }
 }
 
 function mockMediaDevices(overrides: Partial<MediaDevices & { selectAudioOutput?: () => Promise<MediaDeviceInfo> }>): void {
-	Object.defineProperty(navigator, 'mediaDevices', {
-		configurable: true,
-		get: () => overrides,
-	});
+  Object.defineProperty(navigator, 'mediaDevices', {
+    configurable: true,
+    get: () => overrides,
+  });
 }
 
 describe('audioOutputMethods', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-		restoreMediaDevices();
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+    restoreMediaDevices();
+  });
 
-	describe('audioOutputs()', () => {
-		it('returns [] when navigator.mediaDevices is undefined', async () => {
-			Object.defineProperty(navigator, 'mediaDevices', { configurable: true, get: () => undefined });
-			const mockPlayer = makePlayer('ao-1');
-			await expect(mockPlayer.audioOutputs()).resolves.toEqual([]);
-		});
+  describe('audioOutputs()', () => {
+    it('returns [] when navigator.mediaDevices is undefined', async () => {
+      Object.defineProperty(navigator, 'mediaDevices', { configurable: true, get: () => undefined });
+      const mockPlayer = makePlayer('ao-1');
 
-		it('returns [] when enumerateDevices is undefined', async () => {
-			mockMediaDevices({} as any);
-			const mockPlayer = makePlayer('ao-2');
-			await expect(mockPlayer.audioOutputs()).resolves.toEqual([]);
-		});
+      await expect(mockPlayer.audioOutputs()).resolves.toEqual([]);
+    });
 
-		it('filters to audiooutput devices only', async () => {
-			const devices: Partial<MediaDeviceInfo>[] = [
-				{ kind: 'audioinput', deviceId: 'mic-1' },
-				{ kind: 'audiooutput', deviceId: 'spk-1' },
-				{ kind: 'videoinput', deviceId: 'cam-1' },
-				{ kind: 'audiooutput', deviceId: 'spk-2' },
-			];
-			mockMediaDevices({
-				enumerateDevices: async () => devices as MediaDeviceInfo[],
-			} as any);
-			const mockPlayer = makePlayer('ao-3');
-			const result = await mockPlayer.audioOutputs();
-			expect(result).toHaveLength(2);
-			expect(result.map(mediaDeviceInfo => mediaDeviceInfo.deviceId)).toEqual(['spk-1', 'spk-2']);
-		});
-	});
+    it('returns [] when enumerateDevices is undefined', async () => {
+      mockMediaDevices({} as any);
+      const mockPlayer = makePlayer('ao-2');
 
-	describe('selectAudioOutput()', () => {
-		it('throws BrowserPolicyError when selectAudioOutput is not in mediaDevices', async () => {
-			mockMediaDevices({} as any);
-			const mockPlayer = makePlayer('ao-4');
-			await expect(mockPlayer.selectAudioOutput()).rejects.toBeInstanceOf(BrowserPolicyError);
-		});
+      await expect(mockPlayer.audioOutputs()).resolves.toEqual([]);
+    });
 
-		it('throws BrowserPolicyError when navigator.mediaDevices is undefined', async () => {
-			Object.defineProperty(navigator, 'mediaDevices', { configurable: true, get: () => undefined });
-			const mockPlayer = makePlayer('ao-5');
-			await expect(mockPlayer.selectAudioOutput()).rejects.toBeInstanceOf(BrowserPolicyError);
-		});
+    it('filters to audiooutput devices only', async () => {
+      const devices: Partial<MediaDeviceInfo>[] = [
+        { kind: 'audioinput', deviceId: 'mic-1' },
+        { kind: 'audiooutput', deviceId: 'spk-1' },
+        { kind: 'videoinput', deviceId: 'cam-1' },
+        { kind: 'audiooutput', deviceId: 'spk-2' },
+      ];
 
-		it('returns null when user aborts (AbortError)', async () => {
-			const abort = Object.assign(new Error('abort'), { name: 'AbortError' });
-			mockMediaDevices({
-				selectAudioOutput: async () => { throw abort; },
-			} as any);
-			const mockPlayer = makePlayer('ao-6');
-			await expect(mockPlayer.selectAudioOutput()).resolves.toBeNull();
-		});
+      mockMediaDevices({
+        enumerateDevices: async () => devices as MediaDeviceInfo[],
+      } as any);
 
-		it('returns null when user denies (NotAllowedError)', async () => {
-			const denied = Object.assign(new Error('denied'), { name: 'NotAllowedError' });
-			mockMediaDevices({
-				selectAudioOutput: async () => { throw denied; },
-			} as any);
-			const mockPlayer = makePlayer('ao-7');
-			await expect(mockPlayer.selectAudioOutput()).resolves.toBeNull();
-		});
+      const mockPlayer = makePlayer('ao-3');
+      const result = await mockPlayer.audioOutputs();
 
-		it('re-throws non-abort/non-allowed errors', async () => {
-			const unexpected = Object.assign(new Error('unexpected'), { name: 'UnknownError' });
-			mockMediaDevices({
-				selectAudioOutput: async () => { throw unexpected; },
-			} as any);
-			const mockPlayer = makePlayer('ao-8');
-			await expect(mockPlayer.selectAudioOutput()).rejects.toThrow('unexpected');
-		});
+      expect(result).toHaveLength(2);
+      expect(result.map((mediaDeviceInfo) => mediaDeviceInfo.deviceId)).toEqual(['spk-1', 'spk-2']);
+    });
+  });
 
-		it('returns the selected device on success', async () => {
-			const device: Partial<MediaDeviceInfo> = { deviceId: 'spk-3', kind: 'audiooutput', label: 'Headphones' };
-			mockMediaDevices({
-				selectAudioOutput: async () => device as MediaDeviceInfo,
-			} as any);
-			const mockPlayer = makePlayer('ao-9');
-			await expect(mockPlayer.selectAudioOutput()).resolves.toBe(device);
-		});
-	});
+  describe('selectAudioOutput()', () => {
+    it('throws BrowserPolicyError when selectAudioOutput is not in mediaDevices', async () => {
+      mockMediaDevices({} as any);
+      const mockPlayer = makePlayer('ao-4');
 
-	describe('audioOutput() getter / setter', () => {
-		it('getter returns null by default', async () => {
-			const mockPlayer = makePlayer('ao-10');
-			await expect(mockPlayer.audioOutput()).resolves.toBeNull();
-		});
+      await expect(mockPlayer.selectAudioOutput()).rejects.toBeInstanceOf(BrowserPolicyError);
+    });
 
-		it('setter throws BrowserPolicyError when no backend / no setSinkId', async () => {
-			const mockPlayer = makePlayer('ao-11');
-			await expect(mockPlayer.audioOutput('device-1')).rejects.toBeInstanceOf(BrowserPolicyError);
-		});
+    it('throws BrowserPolicyError when navigator.mediaDevices is undefined', async () => {
+      Object.defineProperty(navigator, 'mediaDevices', { configurable: true, get: () => undefined });
+      const mockPlayer = makePlayer('ao-5');
 
-		it('setter calls setSinkId and stores device id when backend has setSinkId', async () => {
-			const mockPlayer = makePlayer('ao-12');
-			const setSinkId = vi.fn().mockResolvedValue(undefined);
-			const mockElement = { setSinkId };
-			(mockPlayer as any)._peekBackendTyped = () => ({ mediaElement: () => mockElement });
-			await mockPlayer.audioOutput('device-x');
-			expect(setSinkId).toHaveBeenCalledWith('device-x');
-			await expect(mockPlayer.audioOutput()).resolves.toBe('device-x');
-		});
+      await expect(mockPlayer.selectAudioOutput()).rejects.toBeInstanceOf(BrowserPolicyError);
+    });
 
-		it('getter reflects the live element sinkId after a media-element swap, not the stale cached id', async () => {
-			const mockPlayer = makePlayer('ao-13');
-			const oldElement = { setSinkId: vi.fn().mockResolvedValue(undefined), sinkId: 'old-device' };
-			(mockPlayer as any)._peekBackendTyped = () => ({ mediaElement: () => oldElement });
-			await mockPlayer.audioOutput('old-device');
-			await expect(mockPlayer.audioOutput()).resolves.toBe('old-device');
+    it('returns null when user aborts (AbortError)', async () => {
+      const abort = Object.assign(new Error('abort'), { name: 'AbortError' });
 
-			const newElement = { setSinkId: vi.fn().mockResolvedValue(undefined), sinkId: 'new-device' };
-			(mockPlayer as any)._peekBackendTyped = () => ({ mediaElement: () => newElement });
+      mockMediaDevices({
+        selectAudioOutput: async () => { throw abort; },
+      } as any);
 
-			await expect(mockPlayer.audioOutput()).resolves.toBe('new-device');
-		});
+      const mockPlayer = makePlayer('ao-6');
 
-		it('setter normalizes "" (system default) to null on read-back, per spec', async () => {
-			const mockPlayer = makePlayer('ao-14');
-			const setSinkId = vi.fn().mockResolvedValue(undefined);
-			const mockElement = { setSinkId, sinkId: '' };
-			(mockPlayer as any)._peekBackendTyped = () => ({ mediaElement: () => mockElement });
+      await expect(mockPlayer.selectAudioOutput()).resolves.toBeNull();
+    });
 
-			await mockPlayer.audioOutput('');
+    it('returns null when user denies (NotAllowedError)', async () => {
+      const denied = Object.assign(new Error('denied'), { name: 'NotAllowedError' });
 
-			expect(setSinkId).toHaveBeenCalledWith('');
-			await expect(mockPlayer.audioOutput()).resolves.toBeNull();
-		});
-	});
+      mockMediaDevices({
+        selectAudioOutput: async () => { throw denied; },
+      } as any);
+
+      const mockPlayer = makePlayer('ao-7');
+
+      await expect(mockPlayer.selectAudioOutput()).resolves.toBeNull();
+    });
+
+    it('re-throws non-abort/non-allowed errors', async () => {
+      const unexpected = Object.assign(new Error('unexpected'), { name: 'UnknownError' });
+
+      mockMediaDevices({
+        selectAudioOutput: async () => { throw unexpected; },
+      } as any);
+
+      const mockPlayer = makePlayer('ao-8');
+
+      await expect(mockPlayer.selectAudioOutput()).rejects.toThrow('unexpected');
+    });
+
+    it('returns the selected device on success', async () => {
+      const device: Partial<MediaDeviceInfo> = {
+        deviceId: 'spk-3',
+        kind: 'audiooutput',
+        label: 'Headphones',
+      };
+
+      mockMediaDevices({
+        selectAudioOutput: async () => device as MediaDeviceInfo,
+      } as any);
+
+      const mockPlayer = makePlayer('ao-9');
+
+      await expect(mockPlayer.selectAudioOutput()).resolves.toBe(device);
+    });
+  });
+
+  describe('audioOutput() getter / setter', () => {
+    it('getter returns null by default', async () => {
+      const mockPlayer = makePlayer('ao-10');
+
+      await expect(mockPlayer.audioOutput()).resolves.toBeNull();
+    });
+
+    it('setter throws BrowserPolicyError when no backend / no setSinkId', async () => {
+      const mockPlayer = makePlayer('ao-11');
+
+      await expect(mockPlayer.audioOutput('device-1')).rejects.toBeInstanceOf(BrowserPolicyError);
+    });
+
+    it('setter calls setSinkId and stores device id when backend has setSinkId', async () => {
+      const mockPlayer = makePlayer('ao-12');
+      const setSinkId = vi.fn().mockResolvedValue(undefined);
+      const mockElement = { setSinkId };
+
+      (mockPlayer as any)._peekBackendTyped = () => ({ mediaElement: () => mockElement });
+      await mockPlayer.audioOutput('device-x');
+      expect(setSinkId).toHaveBeenCalledWith('device-x');
+      await expect(mockPlayer.audioOutput()).resolves.toBe('device-x');
+    });
+
+    it('getter reflects the live element sinkId after a media-element swap, not the stale cached id', async () => {
+      const mockPlayer = makePlayer('ao-13');
+      const oldElement = { setSinkId: vi.fn().mockResolvedValue(undefined), sinkId: 'old-device' };
+
+      (mockPlayer as any)._peekBackendTyped = () => ({ mediaElement: () => oldElement });
+      await mockPlayer.audioOutput('old-device');
+      await expect(mockPlayer.audioOutput()).resolves.toBe('old-device');
+
+      const newElement = { setSinkId: vi.fn().mockResolvedValue(undefined), sinkId: 'new-device' };
+
+      (mockPlayer as any)._peekBackendTyped = () => ({ mediaElement: () => newElement });
+
+      await expect(mockPlayer.audioOutput()).resolves.toBe('new-device');
+    });
+
+    it('setter normalizes "" (system default) to null on read-back, per spec', async () => {
+      const mockPlayer = makePlayer('ao-14');
+      const setSinkId = vi.fn().mockResolvedValue(undefined);
+      const mockElement = { setSinkId, sinkId: '' };
+
+      (mockPlayer as any)._peekBackendTyped = () => ({ mediaElement: () => mockElement });
+
+      await mockPlayer.audioOutput('');
+
+      expect(setSinkId).toHaveBeenCalledWith('');
+      await expect(mockPlayer.audioOutput()).resolves.toBeNull();
+    });
+  });
 });

@@ -28,323 +28,530 @@ import { mediaTracksMethods, normalizeLanguage } from '../core/mixins/media-trac
 
 /** Minimal "Internals" shape that `subtitles()` actually reads. */
 function makeInternals(opts: {
-	backendTracks?: SubtitleTrack[];
-	sidecarTracks?: Array<{
-		kind?: string;
-		file?: string;
-		language?: string;
-		label?: string;
-	}>;
-	typedSubtitles?: Array<Partial<SubtitleTrack>>;
+  backendTracks?: SubtitleTrack[];
+  sidecarTracks?: Array<{
+    kind?: string;
+    file?: string;
+    language?: string;
+    label?: string;
+  }>;
+  typedSubtitles?: Array<Partial<SubtitleTrack>>;
 }): ThisParameterType<typeof mediaTracksMethods.subtitles> {
-	return {
-		_peekBackendTyped<S extends object>(): S | undefined {
-			if (!opts.backendTracks)
-				return undefined;
-			return {
-				subtitleTracks: (): SubtitleTrack[] => opts.backendTracks!,
-			} as unknown as S;
-		},
-		item(): {
-			tracks?: Array<{ kind?: string; file?: string; language?: string; label?: string }>;
-			subtitles?: Array<Partial<SubtitleTrack>>;
-		} | undefined {
-			if (!opts.sidecarTracks && !opts.typedSubtitles)
-				return undefined;
-			return {
-				tracks: opts.sidecarTracks,
-				subtitles: opts.typedSubtitles,
-			};
-		},
-	} as unknown as ThisParameterType<typeof mediaTracksMethods.subtitles>;
+  return {
+    _peekBackendTyped<S extends object>(): S | undefined {
+      if (!opts.backendTracks)
+        return undefined;
+
+      return {
+        subtitleTracks: (): SubtitleTrack[] => opts.backendTracks!,
+      } as unknown as S;
+    },
+    item(): {
+      tracks?: Array<{
+        kind?: string;
+        file?: string;
+        language?: string;
+        label?: string;
+      }>;
+      subtitles?: Array<Partial<SubtitleTrack>>;
+    } | undefined {
+      if (!opts.sidecarTracks && !opts.typedSubtitles)
+        return undefined;
+
+      return {
+        tracks: opts.sidecarTracks,
+        subtitles: opts.typedSubtitles,
+      };
+    },
+  } as unknown as ThisParameterType<typeof mediaTracksMethods.subtitles>;
 }
 
 function callSubtitles(opts: {
-	backendTracks?: SubtitleTrack[];
-	sidecarTracks?: Array<{
-		kind?: string;
-		file?: string;
-		language?: string;
-		label?: string;
-	}>;
-	typedSubtitles?: Array<Partial<SubtitleTrack>>;
+  backendTracks?: SubtitleTrack[];
+  sidecarTracks?: Array<{
+    kind?: string;
+    file?: string;
+    language?: string;
+    label?: string;
+  }>;
+  typedSubtitles?: Array<Partial<SubtitleTrack>>;
 }): ReadonlyArray<SubtitleTrack> {
-	return mediaTracksMethods.subtitles.call(makeInternals(opts));
+  return mediaTracksMethods.subtitles.call(makeInternals(opts));
 }
 
 // ── normalizeLanguage ──────────────────────────────────────────────────────
 
 describe('normalizeLanguage()', () => {
-	it('passes ISO 639-1 codes through unchanged', () => {
-		expect(normalizeLanguage('de')).toBe('de');
-		expect(normalizeLanguage('en')).toBe('en');
-		expect(normalizeLanguage('fr')).toBe('fr');
-		expect(normalizeLanguage('nl')).toBe('nl');
-	});
+  it('passes ISO 639-1 codes through unchanged', () => {
+    expect(normalizeLanguage('de')).toBe('de');
+    expect(normalizeLanguage('en')).toBe('en');
+    expect(normalizeLanguage('fr')).toBe('fr');
+    expect(normalizeLanguage('nl')).toBe('nl');
+  });
 
-	it('maps ISO 639-2/B codes to ISO 639-1', () => {
-		expect(normalizeLanguage('ger')).toBe('de');
-		expect(normalizeLanguage('eng')).toBe('en');
-		expect(normalizeLanguage('fre')).toBe('fr');
-		expect(normalizeLanguage('dut')).toBe('nl');
-	});
+  it('maps ISO 639-2/B codes to ISO 639-1', () => {
+    expect(normalizeLanguage('ger')).toBe('de');
+    expect(normalizeLanguage('eng')).toBe('en');
+    expect(normalizeLanguage('fre')).toBe('fr');
+    expect(normalizeLanguage('dut')).toBe('nl');
+  });
 
-	it('maps ISO 639-2/T codes to ISO 639-1', () => {
-		expect(normalizeLanguage('deu')).toBe('de');
-		expect(normalizeLanguage('fra')).toBe('fr');
-		expect(normalizeLanguage('nld')).toBe('nl');
-	});
+  it('maps ISO 639-2/T codes to ISO 639-1', () => {
+    expect(normalizeLanguage('deu')).toBe('de');
+    expect(normalizeLanguage('fra')).toBe('fr');
+    expect(normalizeLanguage('nld')).toBe('nl');
+  });
 
-	it('strips BCP-47 region subtag before normalising', () => {
-		expect(normalizeLanguage('de-AT')).toBe('de');
-		expect(normalizeLanguage('ger-DE')).toBe('de');
-		expect(normalizeLanguage('en-US')).toBe('en');
-	});
+  it('strips BCP-47 region subtag before normalising', () => {
+    expect(normalizeLanguage('de-AT')).toBe('de');
+    expect(normalizeLanguage('ger-DE')).toBe('de');
+    expect(normalizeLanguage('en-US')).toBe('en');
+  });
 
-	it('passes through unknown codes unchanged', () => {
-		expect(normalizeLanguage('xyz')).toBe('xyz');
-	});
+  it('passes through unknown codes unchanged', () => {
+    expect(normalizeLanguage('xyz')).toBe('xyz');
+  });
 
-	it('returns undefined for undefined input', () => {
-		expect(normalizeLanguage(undefined)).toBeUndefined();
-	});
+  it('returns undefined for undefined input', () => {
+    expect(normalizeLanguage(undefined)).toBeUndefined();
+  });
 
-	it('returns empty string for empty string input', () => {
-		expect(normalizeLanguage('')).toBe('');
-	});
+  it('returns empty string for empty string input', () => {
+    expect(normalizeLanguage('')).toBe('');
+  });
 });
 
 // ── subtitles() dedup ──────────────────────────────────────────────────────
 
 describe('subtitles() dedup', () => {
-	it('returns sidecar tracks when no backend tracks exist', () => {
-		const result = callSubtitles({
-			sidecarTracks: [
-				{ kind: 'subtitles', file: '/eng.vtt', language: 'eng', label: 'English' },
-				{ kind: 'subtitles', file: '/ger.vtt', language: 'ger', label: 'German' },
-			],
-		});
+  it('returns sidecar tracks when no backend tracks exist', () => {
+    const result = callSubtitles({
+      sidecarTracks: [
+        {
+          kind: 'subtitles',
+          file: '/eng.vtt',
+          language: 'eng',
+          label: 'English',
+        },
+        {
+          kind: 'subtitles',
+          file: '/ger.vtt',
+          language: 'ger',
+          label: 'German',
+        },
+      ],
+    });
 
-		expect(result).toHaveLength(2);
-		expect(result[0]!.label).toBe('English');
-		expect(result[1]!.label).toBe('German');
-	});
+    expect(result).toHaveLength(2);
+    expect(result[0]!.label).toBe('English');
+    expect(result[1]!.label).toBe('German');
+  });
 
-	it('removes backend track when sidecar covers the same language (same code form)', () => {
-		const result = callSubtitles({
-			backendTracks: [
-				{ id: 'b0', language: 'ger', kind: 'subtitles', label: 'German (HLS)', url: '' },
-			],
-			sidecarTracks: [
-				{ kind: 'subtitles', file: '/ger.vtt', language: 'ger', label: 'German (sidecar)' },
-			],
-		});
+  it('removes backend track when sidecar covers the same language (same code form)', () => {
+    const result = callSubtitles({
+      backendTracks: [
+        {
+          id: 'b0',
+          language: 'ger',
+          kind: 'subtitles',
+          label: 'German (HLS)',
+          url: '',
+        },
+      ],
+      sidecarTracks: [
+        {
+          kind: 'subtitles',
+          file: '/ger.vtt',
+          language: 'ger',
+          label: 'German (sidecar)',
+        },
+      ],
+    });
 
-		expect(result).toHaveLength(1);
-		expect(result[0]!.label).toBe('German (sidecar)');
-	});
+    expect(result).toHaveLength(1);
+    expect(result[0]!.label).toBe('German (sidecar)');
+  });
 
-	it('removes backend track when sidecar uses ISO 639-2/B and backend uses ISO 639-1 — ger vs de', () => {
-		const result = callSubtitles({
-			backendTracks: [
-				{ id: 'b0', language: 'de', kind: 'subtitles', label: 'German (HLS/de)', url: '' },
-			],
-			sidecarTracks: [
-				{ kind: 'subtitles', file: '/ger.vtt', language: 'ger', label: 'German (Full)' },
-			],
-		});
+  it('removes backend track when sidecar uses ISO 639-2/B and backend uses ISO 639-1 — ger vs de', () => {
+    const result = callSubtitles({
+      backendTracks: [
+        {
+          id: 'b0',
+          language: 'de',
+          kind: 'subtitles',
+          label: 'German (HLS/de)',
+          url: '',
+        },
+      ],
+      sidecarTracks: [
+        {
+          kind: 'subtitles',
+          file: '/ger.vtt',
+          language: 'ger',
+          label: 'German (Full)',
+        },
+      ],
+    });
 
-		expect(result).toHaveLength(1);
-		expect(result[0]!.label).toBe('German (Full)');
-	});
+    expect(result).toHaveLength(1);
+    expect(result[0]!.label).toBe('German (Full)');
+  });
 
-	it('removes backend track when sidecar uses ISO 639-2/B and backend uses ISO 639-2/T — ger vs deu', () => {
-		const result = callSubtitles({
-			backendTracks: [
-				{ id: 'b0', language: 'deu', kind: 'subtitles', label: 'German (HLS/deu)', url: '' },
-			],
-			sidecarTracks: [
-				{ kind: 'subtitles', file: '/ger.vtt', language: 'ger', label: 'German (Full)' },
-			],
-		});
+  it('removes backend track when sidecar uses ISO 639-2/B and backend uses ISO 639-2/T — ger vs deu', () => {
+    const result = callSubtitles({
+      backendTracks: [
+        {
+          id: 'b0',
+          language: 'deu',
+          kind: 'subtitles',
+          label: 'German (HLS/deu)',
+          url: '',
+        },
+      ],
+      sidecarTracks: [
+        {
+          kind: 'subtitles',
+          file: '/ger.vtt',
+          language: 'ger',
+          label: 'German (Full)',
+        },
+      ],
+    });
 
-		expect(result).toHaveLength(1);
-		expect(result[0]!.label).toBe('German (Full)');
-	});
+    expect(result).toHaveLength(1);
+    expect(result[0]!.label).toBe('German (Full)');
+  });
 
-	it('keeps both tracks when they are different languages', () => {
-		const result = callSubtitles({
-			backendTracks: [
-				{ id: 'b0', language: 'en', kind: 'subtitles', label: 'English (HLS)', url: '' },
-			],
-			sidecarTracks: [
-				{ kind: 'subtitles', file: '/ger.vtt', language: 'ger', label: 'German (Full)' },
-			],
-		});
+  it('keeps both tracks when they are different languages', () => {
+    const result = callSubtitles({
+      backendTracks: [
+        {
+          id: 'b0',
+          language: 'en',
+          kind: 'subtitles',
+          label: 'English (HLS)',
+          url: '',
+        },
+      ],
+      sidecarTracks: [
+        {
+          kind: 'subtitles',
+          file: '/ger.vtt',
+          language: 'ger',
+          label: 'German (Full)',
+        },
+      ],
+    });
 
-		expect(result).toHaveLength(2);
-	});
+    expect(result).toHaveLength(2);
+  });
 
-	it('deduplicates within sidecar list — first occurrence wins', () => {
-		const result = callSubtitles({
-			sidecarTracks: [
-				{ kind: 'subtitles', file: '/ger.vtt', language: 'ger', label: 'German (Full)' },
-				{ kind: 'subtitles', file: '/eng.vtt', language: 'eng', label: 'English (Full)' },
-				{ kind: 'subtitles', file: '/ger.vtt', language: 'ger', label: 'German (Full)' },
-			],
-		});
+  it('deduplicates within sidecar list — first occurrence wins', () => {
+    const result = callSubtitles({
+      sidecarTracks: [
+        {
+          kind: 'subtitles',
+          file: '/ger.vtt',
+          language: 'ger',
+          label: 'German (Full)',
+        },
+        {
+          kind: 'subtitles',
+          file: '/eng.vtt',
+          language: 'eng',
+          label: 'English (Full)',
+        },
+        {
+          kind: 'subtitles',
+          file: '/ger.vtt',
+          language: 'ger',
+          label: 'German (Full)',
+        },
+      ],
+    });
 
-		expect(result).toHaveLength(2);
-		expect(result.map(subtitleTrack => subtitleTrack.label)).toEqual(['German (Full)', 'English (Full)']);
-	});
+    expect(result).toHaveLength(2);
+    expect(result.map((subtitleTrack) => subtitleTrack.label)).toEqual(['German (Full)', 'English (Full)']);
+  });
 
-	it('regression: sidecar ger + manifest de → one German entry, sidecar wins', () => {
-		const result = callSubtitles({
-			backendTracks: [
-				{ id: 'b0', language: 'de', kind: 'subtitles', label: 'German (manifest)', url: '' },
-				{ id: 'b1', language: 'en', kind: 'subtitles', label: 'English (manifest)', url: '' },
-			],
-			sidecarTracks: [
-				{ kind: 'subtitles', file: '/eng.vtt', language: 'eng', label: 'English (Full)' },
-				{ kind: 'subtitles', file: '/ger.vtt', language: 'ger', label: 'German (Full)' },
-			],
-		});
+  it('regression: sidecar ger + manifest de → one German entry, sidecar wins', () => {
+    const result = callSubtitles({
+      backendTracks: [
+        {
+          id: 'b0',
+          language: 'de',
+          kind: 'subtitles',
+          label: 'German (manifest)',
+          url: '',
+        },
+        {
+          id: 'b1',
+          language: 'en',
+          kind: 'subtitles',
+          label: 'English (manifest)',
+          url: '',
+        },
+      ],
+      sidecarTracks: [
+        {
+          kind: 'subtitles',
+          file: '/eng.vtt',
+          language: 'eng',
+          label: 'English (Full)',
+        },
+        {
+          kind: 'subtitles',
+          file: '/ger.vtt',
+          language: 'ger',
+          label: 'German (Full)',
+        },
+      ],
+    });
 
-		expect(result).toHaveLength(2);
+    expect(result).toHaveLength(2);
 
-		const labels = result.map(subtitleTrack => subtitleTrack.label);
-		expect(labels).toContain('English (Full)');
-		expect(labels).toContain('German (Full)');
-		expect(labels).not.toContain('German (manifest)');
-		expect(labels).not.toContain('English (manifest)');
-	});
+    const labels = result.map((subtitleTrack) => subtitleTrack.label);
 
-	it('regression: same-language variants with distinct files both survive — eng full + eng sign', () => {
-		const result = callSubtitles({
-			sidecarTracks: [
-				{ kind: 'subtitles', file: '/eng.full.ass', language: 'eng', label: 'full' },
-				{ kind: 'subtitles', file: '/eng.sign.ass', language: 'eng', label: 'sign' },
-			],
-		});
+    expect(labels).toContain('English (Full)');
+    expect(labels).toContain('German (Full)');
+    expect(labels).not.toContain('German (manifest)');
+    expect(labels).not.toContain('English (manifest)');
+  });
 
-		expect(result).toHaveLength(2);
-		expect(result.map(subtitleTrack => subtitleTrack.label)).toEqual(['full', 'sign']);
-	});
+  it('regression: same-language variants with distinct files both survive — eng full + eng sign', () => {
+    const result = callSubtitles({
+      sidecarTracks: [
+        {
+          kind: 'subtitles',
+          file: '/eng.full.ass',
+          language: 'eng',
+          label: 'full',
+        },
+        {
+          kind: 'subtitles',
+          file: '/eng.sign.ass',
+          language: 'eng',
+          label: 'sign',
+        },
+      ],
+    });
 
-	it('variant sidecars still displace the backend track for that language', () => {
-		const result = callSubtitles({
-			backendTracks: [
-				{ id: 'b0', language: 'en', kind: 'subtitles', label: 'English (manifest)', url: '' },
-			],
-			sidecarTracks: [
-				{ kind: 'subtitles', file: '/eng.full.ass', language: 'eng', label: 'full' },
-				{ kind: 'subtitles', file: '/eng.sign.ass', language: 'eng', label: 'sign' },
-			],
-		});
+    expect(result).toHaveLength(2);
+    expect(result.map((subtitleTrack) => subtitleTrack.label)).toEqual(['full', 'sign']);
+  });
 
-		expect(result.map(subtitleTrack => subtitleTrack.label)).toEqual(['full', 'sign']);
-	});
+  it('variant sidecars still displace the backend track for that language', () => {
+    const result = callSubtitles({
+      backendTracks: [
+        {
+          id: 'b0',
+          language: 'en',
+          kind: 'subtitles',
+          label: 'English (manifest)',
+          url: '',
+        },
+      ],
+      sidecarTracks: [
+        {
+          kind: 'subtitles',
+          file: '/eng.full.ass',
+          language: 'eng',
+          label: 'full',
+        },
+        {
+          kind: 'subtitles',
+          file: '/eng.sign.ass',
+          language: 'eng',
+          label: 'sign',
+        },
+      ],
+    });
 
-	it('drops sidecar tracks with no file URL', () => {
-		const result = callSubtitles({
-			sidecarTracks: [
-				{ kind: 'subtitles', file: '/ger.vtt', language: 'ger', label: 'German (Full)' },
-				{ kind: 'subtitles', language: 'eng', label: 'English (no file)' },
-			],
-		});
+    expect(result.map((subtitleTrack) => subtitleTrack.label)).toEqual(['full', 'sign']);
+  });
 
-		expect(result).toHaveLength(1);
-		expect(result[0]!.label).toBe('German (Full)');
-	});
+  it('drops sidecar tracks with no file URL', () => {
+    const result = callSubtitles({
+      sidecarTracks: [
+        {
+          kind: 'subtitles',
+          file: '/ger.vtt',
+          language: 'ger',
+          label: 'German (Full)',
+        },
+        {
+          kind: 'subtitles',
+          language: 'eng',
+          label: 'English (no file)',
+        },
+      ],
+    });
 
-	it('returns backend tracks when no sidecar item is active', () => {
-		const result = callSubtitles({
-			backendTracks: [
-				{ id: 'b0', language: 'en', kind: 'subtitles', label: 'English (HLS)', url: '' },
-			],
-		});
+    expect(result).toHaveLength(1);
+    expect(result[0]!.label).toBe('German (Full)');
+  });
 
-		expect(result).toHaveLength(1);
-		expect(result[0]!.label).toBe('English (HLS)');
-	});
+  it('returns backend tracks when no sidecar item is active', () => {
+    const result = callSubtitles({
+      backendTracks: [
+        {
+          id: 'b0',
+          language: 'en',
+          kind: 'subtitles',
+          label: 'English (HLS)',
+          url: '',
+        },
+      ],
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.label).toBe('English (HLS)');
+  });
 });
 
 // ── typed `subtitles` field on the item ────────────────────────────────────
 
 describe('subtitles() — typed item.subtitles field', () => {
-	it('lists tracks declared via the typed field with no wire tracks array present', () => {
-		const result = callSubtitles({
-			typedSubtitles: [
-				{ id: 'eng', label: 'English', language: 'eng', kind: 'subtitles', url: '/eng.vtt' },
-				{ id: 'dut', label: 'Dutch', language: 'dut', kind: 'subtitles', url: '/dut.vtt' },
-			],
-		});
+  it('lists tracks declared via the typed field with no wire tracks array present', () => {
+    const result = callSubtitles({
+      typedSubtitles: [
+        {
+          id: 'eng',
+          label: 'English',
+          language: 'eng',
+          kind: 'subtitles',
+          url: '/eng.vtt',
+        },
+        {
+          id: 'dut',
+          label: 'Dutch',
+          language: 'dut',
+          kind: 'subtitles',
+          url: '/dut.vtt',
+        },
+      ],
+    });
 
-		expect(result.map(subtitleTrack => subtitleTrack.label)).toEqual(['English', 'Dutch']);
-	});
+    expect(result.map((subtitleTrack) => subtitleTrack.label)).toEqual(['English', 'Dutch']);
+  });
 
-	it('typed-field tracks precede wire-format tracks and dedupe by URL across both', () => {
-		const result = callSubtitles({
-			typedSubtitles: [
-				{ id: 'eng', label: 'English (typed)', language: 'eng', kind: 'subtitles', url: '/eng.vtt' },
-			],
-			sidecarTracks: [
-				{ kind: 'subtitles', file: '/eng.vtt', language: 'eng', label: 'English (wire dupe)' },
-				{ kind: 'subtitles', file: '/ger.vtt', language: 'ger', label: 'German (wire)' },
-			],
-		});
+  it('typed-field tracks precede wire-format tracks and dedupe by URL across both', () => {
+    const result = callSubtitles({
+      typedSubtitles: [
+        {
+          id: 'eng',
+          label: 'English (typed)',
+          language: 'eng',
+          kind: 'subtitles',
+          url: '/eng.vtt',
+        },
+      ],
+      sidecarTracks: [
+        {
+          kind: 'subtitles',
+          file: '/eng.vtt',
+          language: 'eng',
+          label: 'English (wire dupe)',
+        },
+        {
+          kind: 'subtitles',
+          file: '/ger.vtt',
+          language: 'ger',
+          label: 'German (wire)',
+        },
+      ],
+    });
 
-		expect(result.map(subtitleTrack => subtitleTrack.label)).toEqual(['English (typed)', 'German (wire)']);
-	});
+    expect(result.map((subtitleTrack) => subtitleTrack.label)).toEqual(['English (typed)', 'German (wire)']);
+  });
 
-	it('drops typed entries without a url and displaces same-language backend tracks', () => {
-		const result = callSubtitles({
-			backendTracks: [
-				{ id: 'b0', language: 'en', kind: 'subtitles', label: 'English (manifest)', url: '' },
-			],
-			typedSubtitles: [
-				{ id: 'eng', label: 'English (typed)', language: 'eng', kind: 'subtitles', url: '/eng.vtt' },
-				{ id: 'bad', label: 'No URL', language: 'fre', kind: 'subtitles' },
-			],
-		});
+  it('drops typed entries without a url and displaces same-language backend tracks', () => {
+    const result = callSubtitles({
+      backendTracks: [
+        {
+          id: 'b0',
+          language: 'en',
+          kind: 'subtitles',
+          label: 'English (manifest)',
+          url: '',
+        },
+      ],
+      typedSubtitles: [
+        {
+          id: 'eng',
+          label: 'English (typed)',
+          language: 'eng',
+          kind: 'subtitles',
+          url: '/eng.vtt',
+        },
+        {
+          id: 'bad',
+          label: 'No URL',
+          language: 'fre',
+          kind: 'subtitles',
+        },
+      ],
+    });
 
-		expect(result.map(subtitleTrack => subtitleTrack.label)).toEqual(['English (typed)']);
-	});
+    expect(result.map((subtitleTrack) => subtitleTrack.label)).toEqual(['English (typed)']);
+  });
 });
 
 // ── chapters() reads the typed field without a tracks gate ──────────────────
 
 describe('chapters() — typed item.chapters field', () => {
-	function callChapters(item: unknown): ReturnType<typeof mediaTracksMethods.chapters> {
-		const internals = { item: () => item } as unknown as ThisParameterType<typeof mediaTracksMethods.chapters>;
-		return mediaTracksMethods.chapters.call(internals);
-	}
+  function callChapters(item: unknown): ReturnType<typeof mediaTracksMethods.chapters> {
+    const internals = { item: () => item } as unknown as ThisParameterType<typeof mediaTracksMethods.chapters>;
 
-	it('returns chapters declared on an item that has NO wire tracks array', () => {
-		const chapters = [
-			{ index: 0, start: 0, end: 107, title: 'Opening' },
-			{ index: 1, start: 107, end: 207, title: 'A Dangerous Quest' },
-		];
-		expect(callChapters({ chapters })).toEqual(chapters);
-	});
+    return mediaTracksMethods.chapters.call(internals);
+  }
 
-	it('returns an empty list when the item has no chapters', () => {
-		expect(callChapters({})).toEqual([]);
-		expect(callChapters(undefined)).toEqual([]);
-	});
+  it('returns chapters declared on an item that has NO wire tracks array', () => {
+    const chapters = [
+      {
+        index: 0,
+        start: 0,
+        end: 107,
+        title: 'Opening',
+      },
+      {
+        index: 1,
+        start: 107,
+        end: 207,
+        title: 'A Dangerous Quest',
+      },
+    ];
+
+    expect(callChapters({ chapters })).toEqual(chapters);
+  });
+
+  it('returns an empty list when the item has no chapters', () => {
+    expect(callChapters({})).toEqual([]);
+    expect(callChapters(undefined)).toEqual([]);
+  });
 });
 
 describe('subtitles() — language-less stream tracks', () => {
-	const sidecar = [{ kind: 'subtitles', file: '/a.ass', language: 'eng', label: 'Full' }];
-	const stream = (language?: string): SubtitleTrack => ({ id: 's', language, label: 'Track 1', url: '' });
+  const sidecar = [{
+    kind: 'subtitles',
+    file: '/a.ass',
+    language: 'eng',
+    label: 'Full',
+  }];
+  const stream = (language?: string): SubtitleTrack => ({
+    id: 's',
+    language,
+    label: 'Track 1',
+    url: '',
+  });
 
-	it('drops a stream track with no language when a sidecar exists', () => {
-		expect(callSubtitles({ backendTracks: [stream(undefined)], sidecarTracks: sidecar }).map(track => track.label)).toEqual(['Full']);
-		expect(callSubtitles({ backendTracks: [stream('')], sidecarTracks: sidecar }).map(track => track.label)).toEqual(['Full']);
-		expect(callSubtitles({ backendTracks: [stream('und')], sidecarTracks: sidecar }).map(track => track.label)).toEqual(['Full']);
-	});
+  it('drops a stream track with no language when a sidecar exists', () => {
+    expect(callSubtitles({ backendTracks: [stream(undefined)], sidecarTracks: sidecar }).map((track) => track.label)).toEqual(['Full']);
+    expect(callSubtitles({ backendTracks: [stream('')], sidecarTracks: sidecar }).map((track) => track.label)).toEqual(['Full']);
+    expect(callSubtitles({ backendTracks: [stream('und')], sidecarTracks: sidecar }).map((track) => track.label)).toEqual(['Full']);
+  });
 
-	it('keeps a language-less stream track when there are no sidecars', () => {
-		expect(callSubtitles({ backendTracks: [stream(undefined)] }).map(track => track.label)).toEqual(['Track 1']);
-	});
+  it('keeps a language-less stream track when there are no sidecars', () => {
+    expect(callSubtitles({ backendTracks: [stream(undefined)] }).map((track) => track.label)).toEqual(['Track 1']);
+  });
 });

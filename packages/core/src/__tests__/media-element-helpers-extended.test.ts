@@ -28,498 +28,542 @@ import type { BackendState } from '../adapters/media-element/backend-state';
 import { describe, expect, it, vi } from 'vitest';
 import { BACKEND_STATE } from '../adapters/media-element/backend-state';
 import {
-	attachDomBridgesTo,
-	attachHlsOrFallback,
-	captureStreamFromElement,
-	createAuthorizationXhrSetup,
-	createSecondaryAudioElement,
-	destroyHlsInstance,
-	getMediaKeysFromElement,
-	getSinkIdFromElement,
-	primeSecondaryElement,
-	resetMediaElement,
-	resolveOrCreateMediaElement,
-	setMediaKeysOnElement,
-	setSinkIdOnElement,
-	waitForMediaElementMetadata,
+  attachDomBridgesTo,
+  attachHlsOrFallback,
+  captureStreamFromElement,
+  createAuthorizationXhrSetup,
+  createSecondaryAudioElement,
+  destroyHlsInstance,
+  getMediaKeysFromElement,
+  getSinkIdFromElement,
+  primeSecondaryElement,
+  resetMediaElement,
+  resolveOrCreateMediaElement,
+  setMediaKeysOnElement,
+  setSinkIdOnElement,
+  waitForMediaElementMetadata,
 } from '../adapters/media-element/helpers';
 import { BrowserPolicyError } from '../errors';
 
 describe('attachHlsOrFallback — fallback without auth token', () => {
-	it('sets el.src to the bare url when no auth param is supplied', () => {
-		class UnsupportedHls {
-			static isSupported(): boolean {
-				return false;
-			}
-		}
-		const el = document.createElement('audio');
-		el.load = vi.fn();
+  it('sets el.src to the bare url when no auth param is supplied', () => {
+    class UnsupportedHls {
+      static isSupported(): boolean {
+        return false;
+      }
+    }
+    const el = document.createElement('audio');
 
-		const handle = attachHlsOrFallback(UnsupportedHls, el, 'https://x/live.m3u8', undefined, {});
+    el.load = vi.fn();
 
-		expect(handle).toBeUndefined();
-		expect(el.src).toBe('https://x/live.m3u8');
-	});
+    const handle = attachHlsOrFallback(UnsupportedHls, el, 'https://x/live.m3u8', undefined, {});
+
+    expect(handle).toBeUndefined();
+    expect(el.src).toBe('https://x/live.m3u8');
+  });
 });
 
 describe('destroyHlsInstance — repeat-call safety', () => {
-	it('can be called twice on the same handle without throwing', () => {
-		const handle = {
-			detachMedia: vi.fn(),
-			destroy: vi.fn(),
-			stopLoad: vi.fn(),
-			startLoad: vi.fn(),
-		};
+  it('can be called twice on the same handle without throwing', () => {
+    const handle = {
+      detachMedia: vi.fn(),
+      destroy: vi.fn(),
+      stopLoad: vi.fn(),
+      startLoad: vi.fn(),
+    };
 
-		destroyHlsInstance(handle);
-		expect(() => destroyHlsInstance(handle)).not.toThrow();
-		expect(handle.destroy).toHaveBeenCalledTimes(2);
-	});
+    destroyHlsInstance(handle);
+    expect(() => destroyHlsInstance(handle)).not.toThrow();
+    expect(handle.destroy).toHaveBeenCalledTimes(2);
+  });
 
-	it('works on a handle without detachMedia', () => {
-		const handle = {
-			destroy: vi.fn(),
-			stopLoad: vi.fn(),
-			startLoad: vi.fn(),
-		};
+  it('works on a handle without detachMedia', () => {
+    const handle = {
+      destroy: vi.fn(),
+      stopLoad: vi.fn(),
+      startLoad: vi.fn(),
+    };
 
-		expect(() => destroyHlsInstance(handle)).not.toThrow();
-		expect(handle.destroy).toHaveBeenCalledTimes(1);
-	});
+    expect(() => destroyHlsInstance(handle)).not.toThrow();
+    expect(handle.destroy).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('createAuthorizationXhrSetup()', () => {
-	const OURS = 'https://media.example.com';
-	// What a consumer's hook looks like: it knows its own server, and nothing
-	// else gets the token.
-	const provider = (url: string): string | undefined =>
-		url.startsWith(`${OURS}/`) ? 'Bearer tok-1' : undefined;
+  const OURS = 'https://media.example.com';
+  // What a consumer's hook looks like: it knows its own server, and nothing
+  // else gets the token.
+  const provider = (url: string): string | undefined =>
+    url.startsWith(`${OURS}/`)
+      ? 'Bearer tok-1'
+      : undefined;
 
-	it('stamps the Authorization header for a request the consumer claims', () => {
-		const setup = createAuthorizationXhrSetup(provider);
-		const xhr = { setRequestHeader: vi.fn() } as unknown as XMLHttpRequest;
+  it('stamps the Authorization header for a request the consumer claims', () => {
+    const setup = createAuthorizationXhrSetup(provider);
+    const xhr = { setRequestHeader: vi.fn() } as unknown as XMLHttpRequest;
 
-		setup(xhr, `${OURS}/segment-1.ts`);
+    setup(xhr, `${OURS}/segment-1.ts`);
 
-		expect(xhr.setRequestHeader).toHaveBeenCalledTimes(1);
-		expect(xhr.setRequestHeader).toHaveBeenCalledWith('Authorization', 'Bearer tok-1');
-	});
+    expect(xhr.setRequestHeader).toHaveBeenCalledTimes(1);
+    expect(xhr.setRequestHeader).toHaveBeenCalledWith('Authorization', 'Bearer tok-1');
+  });
 
-	/**
-	 * hls.js hands the request url to this callback and it was thrown away: the
-	 * header was resolved once for the source, then stamped on every request the
-	 * loader made after it. A manifest names where its segments live, and nothing
-	 * says that is where the manifest lives.
-	 */
-	it('asks again for a segment hosted somewhere else', () => {
-		const setup = createAuthorizationXhrSetup(provider);
-		const xhr = { setRequestHeader: vi.fn() } as unknown as XMLHttpRequest;
+  /**
+   * hls.js hands the request url to this callback and it was thrown away: the
+   * header was resolved once for the source, then stamped on every request the
+   * loader made after it. A manifest names where its segments live, and nothing
+   * says that is where the manifest lives.
+   */
+  it('asks again for a segment hosted somewhere else', () => {
+    const setup = createAuthorizationXhrSetup(provider);
+    const xhr = { setRequestHeader: vi.fn() } as unknown as XMLHttpRequest;
 
-		setup(xhr, 'https://cdn.stranger.test/segment-1.ts');
+    setup(xhr, 'https://cdn.stranger.test/segment-1.ts');
 
-		expect(xhr.setRequestHeader).not.toHaveBeenCalled();
-	});
+    expect(xhr.setRequestHeader).not.toHaveBeenCalled();
+  });
 
-	it('passes the url through unchanged so the consumer decides on the real target', () => {
-		const seen: string[] = [];
-		const setup = createAuthorizationXhrSetup((url) => {
-			seen.push(url);
-			return undefined;
-		});
+  it('passes the url through unchanged so the consumer decides on the real target', () => {
+    const seen: string[] = [];
+    const setup = createAuthorizationXhrSetup((url) => {
+      seen.push(url);
 
-		setup({ setRequestHeader: vi.fn() } as unknown as XMLHttpRequest, `${OURS}/a.ts`);
-		setup({ setRequestHeader: vi.fn() } as unknown as XMLHttpRequest, 'https://other.test/b.ts');
+      return undefined;
+    });
 
-		expect(seen).toEqual([`${OURS}/a.ts`, 'https://other.test/b.ts']);
-	});
+    setup({ setRequestHeader: vi.fn() } as unknown as XMLHttpRequest, `${OURS}/a.ts`);
+    setup({ setRequestHeader: vi.fn() } as unknown as XMLHttpRequest, 'https://other.test/b.ts');
 
-	it('does not touch the request when no provider is wired', () => {
-		const setup = createAuthorizationXhrSetup(undefined);
-		const xhr = { setRequestHeader: vi.fn() } as unknown as XMLHttpRequest;
+    expect(seen).toEqual([`${OURS}/a.ts`, 'https://other.test/b.ts']);
+  });
 
-		setup(xhr, `${OURS}/segment-1.ts`);
+  it('does not touch the request when no provider is wired', () => {
+    const setup = createAuthorizationXhrSetup(undefined);
+    const xhr = { setRequestHeader: vi.fn() } as unknown as XMLHttpRequest;
 
-		expect(xhr.setRequestHeader).not.toHaveBeenCalled();
-	});
+    setup(xhr, `${OURS}/segment-1.ts`);
 
-	it('does not stamp when the provider answers with nothing', () => {
-		const setup = createAuthorizationXhrSetup(() => undefined);
-		const xhr = { setRequestHeader: vi.fn() } as unknown as XMLHttpRequest;
+    expect(xhr.setRequestHeader).not.toHaveBeenCalled();
+  });
 
-		setup(xhr, `${OURS}/segment-1.ts`);
+  it('does not stamp when the provider answers with nothing', () => {
+    const setup = createAuthorizationXhrSetup(() => undefined);
+    const xhr = { setRequestHeader: vi.fn() } as unknown as XMLHttpRequest;
 
-		expect(xhr.setRequestHeader).not.toHaveBeenCalled();
-	});
+    setup(xhr, `${OURS}/segment-1.ts`);
+
+    expect(xhr.setRequestHeader).not.toHaveBeenCalled();
+  });
 });
 
 describe('attachDomBridgesTo()', () => {
-	function wire(): {
-		el: HTMLMediaElement;
-		emitted: Array<{ event: string; data: unknown }>;
-		states: BackendState[];
-		state: () => BackendState;
-	} {
-		const el = document.createElement('audio');
-		const emitted: Array<{ event: string; data: unknown }> = [];
-		const states: BackendState[] = [];
-		let currentState: BackendState = BACKEND_STATE.IDLE;
+  function wire(): {
+    el: HTMLMediaElement;
+    emitted: Array<{ event: string; data: unknown }>;
+    states: BackendState[];
+    state: () => BackendState;
+  } {
+    const el = document.createElement('audio');
+    const emitted: Array<{ event: string; data: unknown }> = [];
+    const states: BackendState[] = [];
+    let currentState: BackendState = BACKEND_STATE.IDLE;
 
-		attachDomBridgesTo(
-			el,
-			(event, data) => emitted.push({
-				event,
-				data,
-			}),
-			(state) => {
-				currentState = state;
-				states.push(state);
-			},
-			() => currentState,
-		);
+    attachDomBridgesTo(
+      el,
+      (event, data) => emitted.push({
+        event,
+        data,
+      }),
+      (state) => {
+        currentState = state;
+        states.push(state);
+      },
+      () => currentState,
+    );
 
-		return {
-			el,
-			emitted,
-			states,
-			state: () => currentState,
-		};
-	}
+    return {
+      el,
+      emitted,
+      states,
+      state: () => currentState,
+    };
+  }
 
-	it('returns one tracked handler per registration (13 emits + 6 state handlers)', () => {
-		const el = document.createElement('audio');
-		const handlers = attachDomBridgesTo(el, () => {}, () => {}, () => BACKEND_STATE.IDLE);
-		expect(handlers).toHaveLength(19);
-		for (const entry of handlers) {
-			expect(typeof entry.event).toBe('string');
-			expect(typeof entry.handler).toBe('function');
-		}
-	});
+  it('returns one tracked handler per registration (13 emits + 6 state handlers)', () => {
+    const el = document.createElement('audio');
+    const handlers = attachDomBridgesTo(el, () => {}, () => {}, () => BACKEND_STATE.IDLE);
 
-	it('forwards each standard DOM event with its Event object as data', () => {
-		const { el, emitted } = wire();
-		const domEvents = [
-			'loadstart',
-			'loadedmetadata',
-			'canplay',
-			'play',
-			'playing',
-			'pause',
-			'ended',
-			'timeupdate',
-			'waiting',
-			'stalled',
-			'ratechange',
-			'encrypted',
-			'error',
-		];
+    expect(handlers).toHaveLength(19);
 
-		for (const name of domEvents) {
-			el.dispatchEvent(new Event(name));
-		}
+    for (const entry of handlers) {
+      expect(typeof entry.event).toBe('string');
+      expect(typeof entry.handler).toBe('function');
+    }
+  });
 
-		expect(emitted.map(entry => entry.event)).toEqual(domEvents);
-		for (const entry of emitted) {
-			expect(entry.data).toBeInstanceOf(Event);
-		}
-	});
+  it('forwards each standard DOM event with its Event object as data', () => {
+    const { el, emitted } = wire();
+    const domEvents = [
+      'loadstart',
+      'loadedmetadata',
+      'canplay',
+      'play',
+      'playing',
+      'pause',
+      'ended',
+      'timeupdate',
+      'waiting',
+      'stalled',
+      'ratechange',
+      'encrypted',
+      'error',
+    ];
 
-	it('drives the loading → ready → playing → paused state sequence', () => {
-		const { el, states } = wire();
+    for (const name of domEvents) {
+      el.dispatchEvent(new Event(name));
+    }
 
-		el.dispatchEvent(new Event('loadstart'));
-		el.dispatchEvent(new Event('loadedmetadata'));
-		el.dispatchEvent(new Event('play'));
-		el.dispatchEvent(new Event('pause'));
+    expect(emitted.map((entry) => entry.event)).toEqual(domEvents);
 
-		expect(states).toEqual([
-			BACKEND_STATE.LOADING,
-			BACKEND_STATE.READY,
-			BACKEND_STATE.PLAYING,
-			BACKEND_STATE.PAUSED,
-		]);
-	});
+    for (const entry of emitted) {
+      expect(entry.data).toBeInstanceOf(Event);
+    }
+  });
 
-	it('the pause guard leaves idle and error states untouched', () => {
-		const idleWire = wire();
-		idleWire.el.dispatchEvent(new Event('pause'));
-		expect(idleWire.states).toEqual([]);
+  it('drives the loading → ready → playing → paused state sequence', () => {
+    const { el, states } = wire();
 
-		const errorWire = wire();
-		errorWire.el.dispatchEvent(new Event('error'));
-		errorWire.el.dispatchEvent(new Event('pause'));
-		expect(errorWire.state()).toBe(BACKEND_STATE.ERROR);
-	});
+    el.dispatchEvent(new Event('loadstart'));
+    el.dispatchEvent(new Event('loadedmetadata'));
+    el.dispatchEvent(new Event('play'));
+    el.dispatchEvent(new Event('pause'));
 
-	it('maps ended to paused', () => {
-		const { el, state } = wire();
-		el.dispatchEvent(new Event('play'));
-		el.dispatchEvent(new Event('ended'));
-		expect(state()).toBe(BACKEND_STATE.PAUSED);
-	});
+    expect(states).toEqual([
+      BACKEND_STATE.LOADING,
+      BACKEND_STATE.READY,
+      BACKEND_STATE.PLAYING,
+      BACKEND_STATE.PAUSED,
+    ]);
+  });
+
+  it('the pause guard leaves idle and error states untouched', () => {
+    const idleWire = wire();
+
+    idleWire.el.dispatchEvent(new Event('pause'));
+    expect(idleWire.states).toEqual([]);
+
+    const errorWire = wire();
+
+    errorWire.el.dispatchEvent(new Event('error'));
+    errorWire.el.dispatchEvent(new Event('pause'));
+    expect(errorWire.state()).toBe(BACKEND_STATE.ERROR);
+  });
+
+  it('maps ended to paused', () => {
+    const { el, state } = wire();
+
+    el.dispatchEvent(new Event('play'));
+    el.dispatchEvent(new Event('ended'));
+    expect(state()).toBe(BACKEND_STATE.PAUSED);
+  });
 });
 
 describe('resetMediaElement()', () => {
-	it('pauses, removes the src attribute, and reloads the pipeline', () => {
-		const el = document.createElement('audio');
-		el.setAttribute('src', 'https://x/track.mp3');
-		const pauseSpy = vi.spyOn(el, 'pause');
-		const loadSpy = vi.spyOn(el, 'load');
+  it('pauses, removes the src attribute, and reloads the pipeline', () => {
+    const el = document.createElement('audio');
 
-		resetMediaElement(el);
+    el.setAttribute('src', 'https://x/track.mp3');
+    const pauseSpy = vi.spyOn(el, 'pause');
+    const loadSpy = vi.spyOn(el, 'load');
 
-		expect(pauseSpy).toHaveBeenCalledTimes(1);
-		expect(el.hasAttribute('src')).toBe(false);
-		expect(loadSpy).toHaveBeenCalledTimes(1);
-	});
+    resetMediaElement(el);
 
-	it('continues past a throwing pause()', () => {
-		const el = document.createElement('audio');
-		el.setAttribute('src', 'https://x/track.mp3');
-		el.pause = (): void => {
-			throw new Error('pause boom');
-		};
-		const loadSpy = vi.spyOn(el, 'load');
+    expect(pauseSpy).toHaveBeenCalledTimes(1);
+    expect(el.hasAttribute('src')).toBe(false);
+    expect(loadSpy).toHaveBeenCalledTimes(1);
+  });
 
-		expect(() => resetMediaElement(el)).not.toThrow();
-		expect(el.hasAttribute('src')).toBe(false);
-		expect(loadSpy).toHaveBeenCalledTimes(1);
-	});
+  it('continues past a throwing pause()', () => {
+    const el = document.createElement('audio');
 
-	it('swallows a throwing load()', () => {
-		const el = document.createElement('audio');
-		el.load = (): void => {
-			throw new Error('load boom');
-		};
+    el.setAttribute('src', 'https://x/track.mp3');
 
-		expect(() => resetMediaElement(el)).not.toThrow();
-	});
+    el.pause = (): void => {
+      throw new Error('pause boom');
+    };
+
+    const loadSpy = vi.spyOn(el, 'load');
+
+    expect(() => resetMediaElement(el)).not.toThrow();
+    expect(el.hasAttribute('src')).toBe(false);
+    expect(loadSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('swallows a throwing load()', () => {
+    const el = document.createElement('audio');
+
+    el.load = (): void => {
+      throw new Error('load boom');
+    };
+
+    expect(() => resetMediaElement(el)).not.toThrow();
+  });
 });
 
 describe('resolveOrCreateMediaElement()', () => {
-	it('prefers a pre-existing element from opts and never claims ownership', () => {
-		const container = document.createElement('div');
-		const provided = document.createElement('audio');
+  it('prefers a pre-existing element from opts and never claims ownership', () => {
+    const container = document.createElement('div');
+    const provided = document.createElement('audio');
 
-		const result = resolveOrCreateMediaElement(container, 'audio', { element: provided });
+    const result = resolveOrCreateMediaElement(container, 'audio', { element: provided });
 
-		expect(result.element).toBe(provided);
-		expect(result.ownsElement).toBe(false);
-		expect(container.contains(provided)).toBe(false);
-	});
+    expect(result.element).toBe(provided);
+    expect(result.ownsElement).toBe(false);
+    expect(container.contains(provided)).toBe(false);
+  });
 
-	it('adopts an existing child of the container without ownership', () => {
-		const container = document.createElement('div');
-		const existing = document.createElement('video');
-		container.appendChild(existing);
+  it('adopts an existing child of the container without ownership', () => {
+    const container = document.createElement('div');
+    const existing = document.createElement('video');
 
-		const result = resolveOrCreateMediaElement<HTMLVideoElement>(container, 'video');
+    container.appendChild(existing);
 
-		expect(result.element).toBe(existing);
-		expect(result.ownsElement).toBe(false);
-	});
+    const result = resolveOrCreateMediaElement<HTMLVideoElement>(container, 'video');
 
-	it('creates and appends a new element when the container has none, claiming ownership', () => {
-		const container = document.createElement('div');
+    expect(result.element).toBe(existing);
+    expect(result.ownsElement).toBe(false);
+  });
 
-		const result = resolveOrCreateMediaElement<HTMLAudioElement>(container, 'audio');
+  it('creates and appends a new element when the container has none, claiming ownership', () => {
+    const container = document.createElement('div');
 
-		expect(result.element.tagName).toBe('AUDIO');
-		expect(result.ownsElement).toBe(true);
-		expect(container.contains(result.element)).toBe(true);
-	});
+    const result = resolveOrCreateMediaElement<HTMLAudioElement>(container, 'audio');
 
-	it('creates a detached element when no container is given', () => {
-		const result = resolveOrCreateMediaElement<HTMLVideoElement>(undefined, 'video');
+    expect(result.element.tagName).toBe('AUDIO');
+    expect(result.ownsElement).toBe(true);
+    expect(container.contains(result.element)).toBe(true);
+  });
 
-		expect(result.element.tagName).toBe('VIDEO');
-		expect(result.ownsElement).toBe(true);
-		expect(result.element.parentElement).toBeNull();
-	});
+  it('creates a detached element when no container is given', () => {
+    const result = resolveOrCreateMediaElement<HTMLVideoElement>(undefined, 'video');
+
+    expect(result.element.tagName).toBe('VIDEO');
+    expect(result.ownsElement).toBe(true);
+    expect(result.element.parentElement).toBeNull();
+  });
 });
 
 describe('createSecondaryAudioElement()', () => {
-	it('creates a hidden auto-preload audio element appended to the container', () => {
-		const container = document.createElement('div');
+  it('creates a hidden auto-preload audio element appended to the container', () => {
+    const container = document.createElement('div');
 
-		const el = createSecondaryAudioElement(container, null);
+    const el = createSecondaryAudioElement(container, null);
 
-		expect(el.tagName).toBe('AUDIO');
-		expect(el.preload).toBe('auto');
-		expect(el.style.display).toBe('none');
-		expect(container.contains(el)).toBe(true);
-	});
+    expect(el.tagName).toBe('AUDIO');
+    expect(el.preload).toBe('auto');
+    expect(el.style.display).toBe('none');
+    expect(container.contains(el)).toBe(true);
+  });
 
-	it('propagates crossOrigin anonymous from the primary element', () => {
-		const el = createSecondaryAudioElement(undefined, 'anonymous');
-		expect(el.crossOrigin).toBe('anonymous');
-	});
+  it('propagates crossOrigin anonymous from the primary element', () => {
+    const el = createSecondaryAudioElement(undefined, 'anonymous');
 
-	it('leaves crossOrigin unset when the primary has none', () => {
-		const el = createSecondaryAudioElement(undefined, null);
-		expect(el.crossOrigin).toBeNull();
-	});
+    expect(el.crossOrigin).toBe('anonymous');
+  });
 
-	it('stays detached when no container is given', () => {
-		const el = createSecondaryAudioElement(undefined, null);
-		expect(el.parentElement).toBeNull();
-	});
+  it('leaves crossOrigin unset when the primary has none', () => {
+    const el = createSecondaryAudioElement(undefined, null);
+
+    expect(el.crossOrigin).toBeNull();
+  });
+
+  it('stays detached when no container is given', () => {
+    const el = createSecondaryAudioElement(undefined, null);
+
+    expect(el.parentElement).toBeNull();
+  });
 });
 
 describe('primeSecondaryElement()', () => {
-	function readyElement(readyState: number): HTMLAudioElement {
-		const el = document.createElement('audio');
-		Object.defineProperty(el, 'readyState', {
-			configurable: true,
-			get: () => readyState,
-		});
-		return el;
-	}
+  function readyElement(readyState: number): HTMLAudioElement {
+    const el = document.createElement('audio');
 
-	it('resolves immediately when the element is already ready to play', async () => {
-		const el = readyElement(3);
-		await expect(primeSecondaryElement(el)).resolves.toBeUndefined();
-	});
+    Object.defineProperty(el, 'readyState', {
+      configurable: true,
+      get: () => readyState,
+    });
 
-	it('waits for canplay when the element is not ready yet', async () => {
-		const el = document.createElement('audio');
-		let settled = false;
-		const pending = primeSecondaryElement(el).then(() => {
-			settled = true;
-		});
+    return el;
+  }
 
-		await Promise.resolve();
-		expect(settled).toBe(false);
+  it('resolves immediately when the element is already ready to play', async () => {
+    const el = readyElement(3);
 
-		el.dispatchEvent(new Event('canplay'));
-		await pending;
-		expect(settled).toBe(true);
-	});
+    await expect(primeSecondaryElement(el)).resolves.toBeUndefined();
+  });
 
-	it('seeks to seekMs (milliseconds → seconds) after readiness', async () => {
-		const el = readyElement(4);
-		await primeSecondaryElement(el, 4500);
-		expect(el.currentTime).toBe(4.5);
-	});
+  it('waits for canplay when the element is not ready yet', async () => {
+    const el = document.createElement('audio');
+    let settled = false;
+    const pending = primeSecondaryElement(el).then(() => {
+      settled = true;
+    });
 
-	it('does not seek for a zero or missing seekMs', async () => {
-		const withZero = readyElement(4);
-		await primeSecondaryElement(withZero, 0);
-		expect(withZero.currentTime).toBe(0);
+    await Promise.resolve();
+    expect(settled).toBe(false);
 
-		const withoutSeek = readyElement(4);
-		await primeSecondaryElement(withoutSeek);
-		expect(withoutSeek.currentTime).toBe(0);
-	});
+    el.dispatchEvent(new Event('canplay'));
+    await pending;
+    expect(settled).toBe(true);
+  });
+
+  it('seeks to seekMs (milliseconds → seconds) after readiness', async () => {
+    const el = readyElement(4);
+
+    await primeSecondaryElement(el, 4500);
+    expect(el.currentTime).toBe(4.5);
+  });
+
+  it('does not seek for a zero or missing seekMs', async () => {
+    const withZero = readyElement(4);
+
+    await primeSecondaryElement(withZero, 0);
+    expect(withZero.currentTime).toBe(0);
+
+    const withoutSeek = readyElement(4);
+
+    await primeSecondaryElement(withoutSeek);
+    expect(withoutSeek.currentTime).toBe(0);
+  });
 });
 
 describe('waitForMediaElementMetadata()', () => {
-	it('resolves immediately when metadata is already available', async () => {
-		const el = document.createElement('audio');
-		Object.defineProperty(el, 'readyState', {
-			configurable: true,
-			get: () => 1,
-		});
-		await expect(waitForMediaElementMetadata(el)).resolves.toBeUndefined();
-	});
+  it('resolves immediately when metadata is already available', async () => {
+    const el = document.createElement('audio');
 
-	it('resolves when loadedmetadata fires', async () => {
-		const el = document.createElement('audio');
-		const pending = waitForMediaElementMetadata(el);
-		el.dispatchEvent(new Event('loadedmetadata'));
-		await expect(pending).resolves.toBeUndefined();
-	});
+    Object.defineProperty(el, 'readyState', {
+      configurable: true,
+      get: () => 1,
+    });
 
-	it('rejects with a fallback Error when the element errors without an error object', async () => {
-		const el = document.createElement('audio');
-		const pending = waitForMediaElementMetadata(el);
-		el.dispatchEvent(new Event('error'));
-		await expect(pending).rejects.toThrow('media element error');
-	});
+    await expect(waitForMediaElementMetadata(el)).resolves.toBeUndefined();
+  });
 
-	it('rejects with el.error when the element carries one', async () => {
-		const el = document.createElement('audio');
-		const mediaError = {
-			code: 4,
-			message: 'MEDIA_ELEMENT_ERROR',
-		};
-		Object.defineProperty(el, 'error', {
-			configurable: true,
-			get: () => mediaError,
-		});
-		const pending = waitForMediaElementMetadata(el);
-		el.dispatchEvent(new Event('error'));
-		await expect(pending).rejects.toBe(mediaError);
-	});
+  it('resolves when loadedmetadata fires', async () => {
+    const el = document.createElement('audio');
+    const pending = waitForMediaElementMetadata(el);
+
+    el.dispatchEvent(new Event('loadedmetadata'));
+    await expect(pending).resolves.toBeUndefined();
+  });
+
+  it('rejects with a fallback Error when the element errors without an error object', async () => {
+    const el = document.createElement('audio');
+    const pending = waitForMediaElementMetadata(el);
+
+    el.dispatchEvent(new Event('error'));
+    await expect(pending).rejects.toThrow('media element error');
+  });
+
+  it('rejects with el.error when the element carries one', async () => {
+    const el = document.createElement('audio');
+    const mediaError = {
+      code: 4,
+      message: 'MEDIA_ELEMENT_ERROR',
+    };
+
+    Object.defineProperty(el, 'error', {
+      configurable: true,
+      get: () => mediaError,
+    });
+
+    const pending = waitForMediaElementMetadata(el);
+
+    el.dispatchEvent(new Event('error'));
+    await expect(pending).rejects.toBe(mediaError);
+  });
 });
 
 describe('capability helpers — guarded forms', () => {
-	it('captureStreamFromElement returns the element stream when supported', () => {
-		const el = document.createElement('video');
-		const stream = captureStreamFromElement(el, 'video');
-		expect(stream).toBeInstanceOf(MediaStream);
-	});
+  it('captureStreamFromElement returns the element stream when supported', () => {
+    const el = document.createElement('video');
+    const stream = captureStreamFromElement(el, 'video');
 
-	it('captureStreamFromElement throws BrowserPolicyError scoped to the backend when unsupported', () => {
-		const el = document.createElement('video');
-		(el as HTMLMediaElement & { captureStream?: unknown }).captureStream = undefined;
+    expect(stream).toBeInstanceOf(MediaStream);
+  });
 
-		let caught: unknown;
-		try {
-			captureStreamFromElement(el, 'webaudio');
-		}
-		catch (err) {
-			caught = err;
-		}
-		expect(caught).toBeInstanceOf(BrowserPolicyError);
-		expect((caught as BrowserPolicyError).code).toBe('core:policy/captureStreamUnsupported');
-		expect((caught as BrowserPolicyError).scope).toEqual({
-			kind: 'backend',
-			id: 'webaudio',
-		});
-	});
+  it('captureStreamFromElement throws BrowserPolicyError scoped to the backend when unsupported', () => {
+    const el = document.createElement('video');
 
-	it('setSinkIdOnElement + getSinkIdFromElement round-trip', async () => {
-		const el = document.createElement('audio');
-		expect(getSinkIdFromElement(el)).toBe('');
-		await setSinkIdOnElement(el, 'output-7', 'audio-element');
-		expect(getSinkIdFromElement(el)).toBe('output-7');
-	});
+    (el as HTMLMediaElement & { captureStream?: unknown }).captureStream = undefined;
 
-	it('setSinkIdOnElement rejects with BrowserPolicyError when the API is absent', async () => {
-		const el = document.createElement('audio');
-		(el as unknown as { setSinkId?: unknown }).setSinkId = undefined;
-		await expect(setSinkIdOnElement(el, 'output-7', 'audio-element')).rejects.toMatchObject({
-			code: 'core:policy/setSinkIdUnsupported',
-			scope: {
-				kind: 'backend',
-				id: 'audio-element',
-			},
-		});
-	});
+    let caught: unknown;
 
-	it('getSinkIdFromElement falls back to the empty string when sinkId is missing entirely', () => {
-		const bare = {} as HTMLMediaElement;
-		expect(getSinkIdFromElement(bare)).toBe('');
-	});
+    try {
+      captureStreamFromElement(el, 'webaudio');
+    } catch (err) {
+      caught = err;
+    }
 
-	it('getMediaKeysFromElement normalises null to undefined and returns set keys', async () => {
-		const el = document.createElement('video');
-		expect(getMediaKeysFromElement(el)).toBeUndefined();
+    expect(caught).toBeInstanceOf(BrowserPolicyError);
+    expect((caught as BrowserPolicyError).code).toBe('core:policy/captureStreamUnsupported');
 
-		const keys = { fake: 'keys' } as unknown as MediaKeys;
-		await setMediaKeysOnElement(el, keys, 'video');
-		expect(getMediaKeysFromElement(el)).toBe(keys);
-	});
+    expect((caught as BrowserPolicyError).scope).toEqual({
+      kind: 'backend',
+      id: 'webaudio',
+    });
+  });
 
-	it('setMediaKeysOnElement rejects with BrowserPolicyError when EME is absent', async () => {
-		const el = document.createElement('video');
-		(el as unknown as { setMediaKeys?: unknown }).setMediaKeys = undefined;
-		await expect(setMediaKeysOnElement(el, {} as unknown as MediaKeys, 'video')).rejects.toMatchObject({
-			code: 'core:policy/emeUnsupported',
-			scope: {
-				kind: 'backend',
-				id: 'video',
-			},
-		});
-	});
+  it('setSinkIdOnElement + getSinkIdFromElement round-trip', async () => {
+    const el = document.createElement('audio');
+
+    expect(getSinkIdFromElement(el)).toBe('');
+    await setSinkIdOnElement(el, 'output-7', 'audio-element');
+    expect(getSinkIdFromElement(el)).toBe('output-7');
+  });
+
+  it('setSinkIdOnElement rejects with BrowserPolicyError when the API is absent', async () => {
+    const el = document.createElement('audio');
+
+    (el as unknown as { setSinkId?: unknown }).setSinkId = undefined;
+
+    await expect(setSinkIdOnElement(el, 'output-7', 'audio-element')).rejects.toMatchObject({
+      code: 'core:policy/setSinkIdUnsupported',
+      scope: {
+        kind: 'backend',
+        id: 'audio-element',
+      },
+    });
+  });
+
+  it('getSinkIdFromElement falls back to the empty string when sinkId is missing entirely', () => {
+    const bare = {} as HTMLMediaElement;
+
+    expect(getSinkIdFromElement(bare)).toBe('');
+  });
+
+  it('getMediaKeysFromElement normalises null to undefined and returns set keys', async () => {
+    const el = document.createElement('video');
+
+    expect(getMediaKeysFromElement(el)).toBeUndefined();
+
+    const keys = { fake: 'keys' } as unknown as MediaKeys;
+
+    await setMediaKeysOnElement(el, keys, 'video');
+    expect(getMediaKeysFromElement(el)).toBe(keys);
+  });
+
+  it('setMediaKeysOnElement rejects with BrowserPolicyError when EME is absent', async () => {
+    const el = document.createElement('video');
+
+    (el as unknown as { setMediaKeys?: unknown }).setMediaKeys = undefined;
+
+    await expect(setMediaKeysOnElement(el, {} as unknown as MediaKeys, 'video')).rejects.toMatchObject({
+      code: 'core:policy/emeUnsupported',
+      scope: {
+        kind: 'backend',
+        id: 'video',
+      },
+    });
+  });
 });

@@ -9,9 +9,9 @@
 import type { CastSenderTranslationKey } from './en';
 
 export default {
-	'plugin.cast-sender.casting.track': '{artist} sanatçısından "{title}" yayınlanıyor',
-	'plugin.cast-sender.casting.album': '"{album}" albümü yayınlanıyor',
-	'plugin.cast-sender.casting.queue': '{count} parça yayınlanıyor',
-	'plugin.cast-sender.action.cast-album': 'Albümü yayınla',
-	'plugin.cast-sender.action.cast-queue': 'Sırayı yayınla',
+  'plugin.cast-sender.casting.track': '{artist} sanatçısından "{title}" yayınlanıyor',
+  'plugin.cast-sender.casting.album': '"{album}" albümü yayınlanıyor',
+  'plugin.cast-sender.casting.queue': '{count} parça yayınlanıyor',
+  'plugin.cast-sender.action.cast-album': 'Albümü yayınla',
+  'plugin.cast-sender.action.cast-queue': 'Sırayı yayınla',
 } satisfies Record<CastSenderTranslationKey, string>;

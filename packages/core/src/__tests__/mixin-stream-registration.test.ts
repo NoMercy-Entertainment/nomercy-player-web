@@ -23,124 +23,140 @@
 import type { IStreamFactory, IStreamSource } from '../adapters/stream/IStreamSource';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 function makeFactory(id: string): IStreamFactory {
-	return {
-		id,
-		canPlay: () => true,
-		create: () => ({ kind: 'native' as const } as IStreamSource),
-	};
+  return {
+    id,
+    canPlay: () => true,
+    create: () => ({ kind: 'native' as const } as IStreamSource),
+  };
 }
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare registerStream: (factory: IStreamFactory, prepend?: boolean) => this;
-	declare unregisterStream: (id: string) => this;
-	declare streams: () => ReadonlyArray<string>;
-	declare getStreamFactory: (id: string) => IStreamFactory | undefined;
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare registerStream: (factory: IStreamFactory, prepend?: boolean) => this;
+  declare unregisterStream: (id: string) => this;
+  declare streams: () => ReadonlyArray<string>;
+  declare getStreamFactory: (id: string) => IStreamFactory | undefined;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 describe('streamRegistrationMethods', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	describe('registerStream()', () => {
-		it('returns the player for fluent chaining', () => {
-			const mockPlayer = makePlayer('sr-1');
-			const result = mockPlayer.registerStream(makeFactory('custom'));
-			expect(result).toBe(mockPlayer);
-		});
+  describe('registerStream()', () => {
+    it('returns the player for fluent chaining', () => {
+      const mockPlayer = makePlayer('sr-1');
+      const result = mockPlayer.registerStream(makeFactory('custom'));
 
-		it('registered factory appears in streams()', () => {
-			const mockPlayer = makePlayer('sr-2');
-			mockPlayer.registerStream(makeFactory('custom-hls'));
-			expect(mockPlayer.streams()).toContain('custom-hls');
-		});
+      expect(result).toBe(mockPlayer);
+    });
 
-		it('re-registering same id replaces the factory', () => {
-			const mockPlayer = makePlayer('sr-3');
-			const factoryA = makeFactory('same-id');
-			const factoryB = makeFactory('same-id');
-			mockPlayer.registerStream(factoryA);
-			mockPlayer.registerStream(factoryB);
-			const list = mockPlayer.streams();
-			const count = list.filter(id => id === 'same-id').length;
-			expect(count).toBe(1);
-			expect(mockPlayer.getStreamFactory('same-id')).toBe(factoryB);
-		});
+    it('registered factory appears in streams()', () => {
+      const mockPlayer = makePlayer('sr-2');
 
-		it('prepend=true places factory at low-priority end', () => {
-			const mockPlayer = makePlayer('sr-4');
-			mockPlayer.registerStream(makeFactory('first'));
-			mockPlayer.registerStream(makeFactory('prepended'), true);
-			const list = mockPlayer.streams();
-			expect(list.indexOf('first')).toBeLessThan(list.indexOf('prepended'));
-		});
-	});
+      mockPlayer.registerStream(makeFactory('custom-hls'));
+      expect(mockPlayer.streams()).toContain('custom-hls');
+    });
 
-	describe('unregisterStream()', () => {
-		it('removes the factory and returns this for chaining', () => {
-			const mockPlayer = makePlayer('sr-5');
-			mockPlayer.registerStream(makeFactory('to-remove'));
-			const result = mockPlayer.unregisterStream('to-remove');
-			expect(result).toBe(mockPlayer);
-			expect(mockPlayer.streams()).not.toContain('to-remove');
-		});
+    it('re-registering same id replaces the factory', () => {
+      const mockPlayer = makePlayer('sr-3');
+      const factoryA = makeFactory('same-id');
+      const factoryB = makeFactory('same-id');
 
-		it('is a no-op when id is not registered', () => {
-			const mockPlayer = makePlayer('sr-6');
-			expect(() => mockPlayer.unregisterStream('nonexistent')).not.toThrow();
-		});
-	});
+      mockPlayer.registerStream(factoryA);
+      mockPlayer.registerStream(factoryB);
+      const list = mockPlayer.streams();
+      const count = list.filter((id) => id === 'same-id').length;
 
-	describe('streams()', () => {
-		it('returns empty array on a fresh player (lazy registry not yet seeded)', () => {
-			const mockPlayer = makePlayer('sr-7');
-			const list = mockPlayer.streams();
-			expect(Array.isArray(list)).toBe(true);
-		});
+      expect(count).toBe(1);
+      expect(mockPlayer.getStreamFactory('same-id')).toBe(factoryB);
+    });
 
-		it('lists ids in resolution order (last registered first)', () => {
-			const mockPlayer = makePlayer('sr-8');
-			mockPlayer.registerStream(makeFactory('a'));
-			mockPlayer.registerStream(makeFactory('b'));
-			const list = mockPlayer.streams();
-			expect(list.indexOf('b')).toBeLessThan(list.indexOf('a'));
-		});
-	});
+    it('prepend=true places factory at low-priority end', () => {
+      const mockPlayer = makePlayer('sr-4');
 
-	describe('getStreamFactory()', () => {
-		it('returns the factory by id', () => {
-			const mockPlayer = makePlayer('sr-9');
-			const factory = makeFactory('my-factory');
-			mockPlayer.registerStream(factory);
-			expect(mockPlayer.getStreamFactory('my-factory')).toBe(factory);
-		});
+      mockPlayer.registerStream(makeFactory('first'));
+      mockPlayer.registerStream(makeFactory('prepended'), true);
+      const list = mockPlayer.streams();
 
-		it('returns undefined when id is not registered', () => {
-			const mockPlayer = makePlayer('sr-10');
-			expect(mockPlayer.getStreamFactory('unknown')).toBeUndefined();
-		});
-	});
+      expect(list.indexOf('first')).toBeLessThan(list.indexOf('prepended'));
+    });
+  });
+
+  describe('unregisterStream()', () => {
+    it('removes the factory and returns this for chaining', () => {
+      const mockPlayer = makePlayer('sr-5');
+
+      mockPlayer.registerStream(makeFactory('to-remove'));
+      const result = mockPlayer.unregisterStream('to-remove');
+
+      expect(result).toBe(mockPlayer);
+      expect(mockPlayer.streams()).not.toContain('to-remove');
+    });
+
+    it('is a no-op when id is not registered', () => {
+      const mockPlayer = makePlayer('sr-6');
+
+      expect(() => mockPlayer.unregisterStream('nonexistent')).not.toThrow();
+    });
+  });
+
+  describe('streams()', () => {
+    it('returns empty array on a fresh player (lazy registry not yet seeded)', () => {
+      const mockPlayer = makePlayer('sr-7');
+      const list = mockPlayer.streams();
+
+      expect(Array.isArray(list)).toBe(true);
+    });
+
+    it('lists ids in resolution order (last registered first)', () => {
+      const mockPlayer = makePlayer('sr-8');
+
+      mockPlayer.registerStream(makeFactory('a'));
+      mockPlayer.registerStream(makeFactory('b'));
+      const list = mockPlayer.streams();
+
+      expect(list.indexOf('b')).toBeLessThan(list.indexOf('a'));
+    });
+  });
+
+  describe('getStreamFactory()', () => {
+    it('returns the factory by id', () => {
+      const mockPlayer = makePlayer('sr-9');
+      const factory = makeFactory('my-factory');
+
+      mockPlayer.registerStream(factory);
+      expect(mockPlayer.getStreamFactory('my-factory')).toBe(factory);
+    });
+
+    it('returns undefined when id is not registered', () => {
+      const mockPlayer = makePlayer('sr-10');
+
+      expect(mockPlayer.getStreamFactory('unknown')).toBeUndefined();
+    });
+  });
 });

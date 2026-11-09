@@ -27,25 +27,26 @@ import { SpectrumPlugin } from '../../plugins/spectrum';
 
 /** Minimal AnalyserNode stub with mutable fftSize + smoothingTimeConstant. */
 function makeAnalyserStub(initialFftSize: number = 2048): AnalyserNode {
-	let fftSize = initialFftSize;
-	let smoothingTimeConstant = 0.8;
-	return {
-		get fftSize() { return fftSize; },
-		set fftSize(val: number) { fftSize = val; },
-		get frequencyBinCount() { return fftSize / 2; },
-		get smoothingTimeConstant() { return smoothingTimeConstant; },
-		set smoothingTimeConstant(val: number) { smoothingTimeConstant = val; },
-		getByteFrequencyData: (buf: Uint8Array) => { buf.fill(0); },
-		getByteTimeDomainData: (buf: Uint8Array) => { buf.fill(128); },
-		getFloatFrequencyData: (buf: Float32Array) => { buf.fill(-100); },
-		getFloatTimeDomainData: (buf: Float32Array) => { buf.fill(0); },
-		connect: () => {},
-	} as unknown as AnalyserNode;
+  let fftSize = initialFftSize;
+  let smoothingTimeConstant = 0.8;
+
+  return {
+    get fftSize() { return fftSize; },
+    set fftSize(val: number) { fftSize = val; },
+    get frequencyBinCount() { return fftSize / 2; },
+    get smoothingTimeConstant() { return smoothingTimeConstant; },
+    set smoothingTimeConstant(val: number) { smoothingTimeConstant = val; },
+    getByteFrequencyData: (buf: Uint8Array) => { buf.fill(0); },
+    getByteTimeDomainData: (buf: Uint8Array) => { buf.fill(128); },
+    getFloatFrequencyData: (buf: Float32Array) => { buf.fill(-100); },
+    getFloatTimeDomainData: (buf: Float32Array) => { buf.fill(0); },
+    connect: () => {},
+  } as unknown as AnalyserNode;
 }
 
 /** Minimal EventEmitter player stub — just enough for Plugin.on() + Plugin.emit() to route events. */
 function makePlayerStub(): EventEmitter<BaseEventMap> {
-	return new EventEmitter<BaseEventMap>();
+  return new EventEmitter<BaseEventMap>();
 }
 
 /**
@@ -56,99 +57,104 @@ function makePlayerStub(): EventEmitter<BaseEventMap> {
  * registers. The frame() hook is a no-op here; only the event wiring matters.
  */
 function wirePlugin(
-	plugin: SpectrumPlugin,
-	player: EventEmitter<BaseEventMap>,
-	analyser: AnalyserNode,
-	opts: { fftSize?: number; smoothingTimeConstant?: number } = {},
+  plugin: SpectrumPlugin,
+  player: EventEmitter<BaseEventMap>,
+  analyser: AnalyserNode,
+  opts: { fftSize?: number; smoothingTimeConstant?: number } = {},
 ): void {
-	const lifecycle = new LifecycleRegistry();
+  const lifecycle = new LifecycleRegistry();
 
-	// Plant the minimal internals the base Plugin class expects before use().
-	(plugin as unknown as { player: typeof player }).player = player;
-	(plugin as unknown as { lifecycle: LifecycleRegistry }).lifecycle = lifecycle;
-	(plugin as unknown as { opts: typeof opts }).opts = opts;
+  // Plant the minimal internals the base Plugin class expects before use().
+  (plugin as unknown as { player: typeof player }).player = player;
+  (plugin as unknown as { lifecycle: LifecycleRegistry }).lifecycle = lifecycle;
+  (plugin as unknown as { opts: typeof opts }).opts = opts;
 
-	// Stub the AudioGraphPlugin dependency lookup so use() doesn't throw.
-	(player as unknown as { getPlugin: (ctor: unknown) => unknown }).getPlugin = () => ({
-		analyserSource: () => analyser,
-		context: () => ({ sampleRate: 44100 } as unknown as AudioContext),
-	});
+  // Stub the AudioGraphPlugin dependency lookup so use() doesn't throw.
+  (player as unknown as { getPlugin: (ctor: unknown) => unknown }).getPlugin = () => ({
+    analyserSource: () => analyser,
+    context: () => ({ sampleRate: 44100 } as unknown as AudioContext),
+  });
 
-	// Stub frame() so the RAF tick never fires (no real rAF in happy-dom).
-	(plugin as unknown as { frame: (fn: unknown) => void }).frame = () => {};
+  // Stub frame() so the RAF tick never fires (no real rAF in happy-dom).
+  (plugin as unknown as { frame: (fn: unknown) => void }).frame = () => {};
 
-	plugin.use();
+  plugin.use();
 }
 
 describe('SpectrumPlugin — live opts re-apply via opts:changed', () => {
-	let player: EventEmitter<BaseEventMap>;
+  let player: EventEmitter<BaseEventMap>;
 
-	beforeEach(() => {
-		player = makePlayerStub();
-	});
+  beforeEach(() => {
+    player = makePlayerStub();
+  });
 
-	afterEach(() => {
-		// nothing to clean up — no DOM or real timers used
-	});
+  afterEach(() => {
+    // nothing to clean up — no DOM or real timers used
+  });
 
-	it('options({ fftSize }) re-applies to the live AnalyserNode immediately', () => {
-		const analyser = makeAnalyserStub(2048);
-		const plugin = new SpectrumPlugin();
-		wirePlugin(plugin, player, analyser, { fftSize: 2048, smoothingTimeConstant: 0.8 });
+  it('options({ fftSize }) re-applies to the live AnalyserNode immediately', () => {
+    const analyser = makeAnalyserStub(2048);
+    const plugin = new SpectrumPlugin();
 
-		expect(analyser.fftSize).toBe(2048);
+    wirePlugin(plugin, player, analyser, { fftSize: 2048, smoothingTimeConstant: 0.8 });
 
-		plugin.options({ fftSize: 4096 });
+    expect(analyser.fftSize).toBe(2048);
 
-		// The opts:changed listener wired in use() must forward to fftSize().
-		expect(analyser.fftSize).toBe(4096);
-	});
+    plugin.options({ fftSize: 4096 });
 
-	it('options({ smoothingTimeConstant }) re-applies to the live AnalyserNode immediately', () => {
-		const analyser = makeAnalyserStub(2048);
-		const plugin = new SpectrumPlugin();
-		wirePlugin(plugin, player, analyser, { fftSize: 2048, smoothingTimeConstant: 0.8 });
+    // The opts:changed listener wired in use() must forward to fftSize().
+    expect(analyser.fftSize).toBe(4096);
+  });
 
-		expect(analyser.smoothingTimeConstant).toBeCloseTo(0.8);
+  it('options({ smoothingTimeConstant }) re-applies to the live AnalyserNode immediately', () => {
+    const analyser = makeAnalyserStub(2048);
+    const plugin = new SpectrumPlugin();
 
-		plugin.options({ smoothingTimeConstant: 0.2 });
+    wirePlugin(plugin, player, analyser, { fftSize: 2048, smoothingTimeConstant: 0.8 });
 
-		expect(analyser.smoothingTimeConstant).toBeCloseTo(0.2);
-	});
+    expect(analyser.smoothingTimeConstant).toBeCloseTo(0.8);
 
-	it('fftSize() getter returns the live AnalyserNode value', () => {
-		const analyser = makeAnalyserStub(1024);
-		const plugin = new SpectrumPlugin();
-		wirePlugin(plugin, player, analyser, { fftSize: 1024 });
+    plugin.options({ smoothingTimeConstant: 0.2 });
 
-		expect(plugin.fftSize()).toBe(1024);
+    expect(analyser.smoothingTimeConstant).toBeCloseTo(0.2);
+  });
 
-		plugin.fftSize(2048);
-		expect(analyser.fftSize).toBe(2048);
-		expect(plugin.fftSize()).toBe(2048);
-	});
+  it('fftSize() getter returns the live AnalyserNode value', () => {
+    const analyser = makeAnalyserStub(1024);
+    const plugin = new SpectrumPlugin();
 
-	it('smoothingTimeConstant() getter + setter round-trips correctly', () => {
-		const analyser = makeAnalyserStub(2048);
-		const plugin = new SpectrumPlugin();
-		wirePlugin(plugin, player, analyser, { fftSize: 2048, smoothingTimeConstant: 0.5 });
+    wirePlugin(plugin, player, analyser, { fftSize: 1024 });
 
-		expect(plugin.smoothingTimeConstant()).toBeCloseTo(0.5);
+    expect(plugin.fftSize()).toBe(1024);
 
-		plugin.smoothingTimeConstant(0.9);
-		expect(analyser.smoothingTimeConstant).toBeCloseTo(0.9);
-		expect(plugin.smoothingTimeConstant()).toBeCloseTo(0.9);
-	});
+    plugin.fftSize(2048);
+    expect(analyser.fftSize).toBe(2048);
+    expect(plugin.fftSize()).toBe(2048);
+  });
 
-	it('partial options() update does not clobber unchanged settings', () => {
-		const analyser = makeAnalyserStub(2048);
-		const plugin = new SpectrumPlugin();
-		wirePlugin(plugin, player, analyser, { fftSize: 2048, smoothingTimeConstant: 0.8 });
+  it('smoothingTimeConstant() getter + setter round-trips correctly', () => {
+    const analyser = makeAnalyserStub(2048);
+    const plugin = new SpectrumPlugin();
 
-		// Update only smoothing — fftSize must stay at 2048.
-		plugin.options({ smoothingTimeConstant: 0.3 });
+    wirePlugin(plugin, player, analyser, { fftSize: 2048, smoothingTimeConstant: 0.5 });
 
-		expect(analyser.fftSize).toBe(2048);
-		expect(analyser.smoothingTimeConstant).toBeCloseTo(0.3);
-	});
+    expect(plugin.smoothingTimeConstant()).toBeCloseTo(0.5);
+
+    plugin.smoothingTimeConstant(0.9);
+    expect(analyser.smoothingTimeConstant).toBeCloseTo(0.9);
+    expect(plugin.smoothingTimeConstant()).toBeCloseTo(0.9);
+  });
+
+  it('partial options() update does not clobber unchanged settings', () => {
+    const analyser = makeAnalyserStub(2048);
+    const plugin = new SpectrumPlugin();
+
+    wirePlugin(plugin, player, analyser, { fftSize: 2048, smoothingTimeConstant: 0.8 });
+
+    // Update only smoothing — fftSize must stay at 2048.
+    plugin.options({ smoothingTimeConstant: 0.3 });
+
+    expect(analyser.fftSize).toBe(2048);
+    expect(analyser.smoothingTimeConstant).toBeCloseTo(0.3);
+  });
 });

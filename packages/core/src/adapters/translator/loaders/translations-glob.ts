@@ -25,9 +25,9 @@ export const LAZY_TRANSLATIONS_MARKER = Symbol.for('nomercy.translations.lazy');
  * Each module either default-exports the bundle (preferred) OR exports it
  * as a named export — both shapes are accepted.
  */
-export type GlobModule
-	= | { default?: Record<string, string> }
-		| Record<string, unknown>;
+export type GlobModule =
+  | { default?: Record<string, string> } |
+  Record<string, unknown>;
 
 export type GlobLazyLoader = () => Promise<GlobModule>;
 
@@ -77,45 +77,51 @@ export type LazyTranslationLoader = (lang: string) => Promise<Record<string, str
  */
 export function translationsFromGlob(input: string): Translations;
 export function translationsFromGlob(modules: Record<string, GlobModule | GlobLazyLoader>): Translations;
+
 export function translationsFromGlob(
-	input: string | Record<string, GlobModule | GlobLazyLoader>,
+  input: string | Record<string, GlobModule | GlobLazyLoader>,
 ): Translations {
-	if (typeof input === 'string') {
-		throw new StateError({
-			code: 'core:state/vite-plugin-not-configured',
-			severity: 'fatal',
-			scope: { kind: 'core' },
-			message: `translationsFromGlob('${input}') was called with a literal string at runtime. This call should have been rewritten to a static lazy import map at build time.`,
-			suggestion: 'If you are building from source: add nomercyTranslationsPlugin() to your vite.config / vitest.config. If you are consuming a published dist: the package dist should already contain the rewritten form — check that the package was built with its post-build resolver (scripts/resolve-translation-globs.mjs).',
-			context: { pattern: input },
-		});
-	}
+  if (typeof input === 'string') {
+    throw new StateError({
+      code: 'core:state/vite-plugin-not-configured',
+      severity: 'fatal',
+      scope: { kind: 'core' },
+      message: `translationsFromGlob('${input}') was called with a literal string at runtime. This call should have been rewritten to a static lazy import map at build time.`,
+      suggestion: 'If you are building from source: add nomercyTranslationsPlugin() to your vite.config / vitest.config. If you are consuming a published dist: the package dist should already contain the rewritten form — check that the package was built with its post-build resolver (scripts/resolve-translation-globs.mjs).',
+      context: { pattern: input },
+    });
+  }
 
-	const entries = Object.entries(input);
-	const isLazy = entries.some(([, mod]) => typeof mod === 'function');
+  const entries = Object.entries(input);
+  const isLazy = entries.some(([, mod]) => typeof mod === 'function');
 
-	if (isLazy) {
-		return buildLazy(entries as Array<[string, GlobLazyLoader | GlobModule]>);
-	}
-	return buildEager(entries as Array<[string, GlobModule]>);
+  if (isLazy) {
+    return buildLazy(entries as Array<[string, GlobLazyLoader | GlobModule]>);
+  }
+
+  return buildEager(entries as Array<[string, GlobModule]>);
 }
 
 /** Eager path — every module is already imported; extract and merge bundles directly. */
 function buildEager(entries: Array<[string, GlobModule]>): Translations {
-	const out: Translations = {};
-	for (const [path, mod] of entries) {
-		const tag = pathToTag(path);
-		if (!tag)
-			continue;
-		const bundle = extractBundle(mod, tag);
-		if (!bundle)
-			continue;
-		out[tag] = {
-			...(out[tag] ?? {}),
-			...bundle,
-		};
-	}
-	return out;
+  const out: Translations = {};
+
+  for (const [path, mod] of entries) {
+    const tag = pathToTag(path);
+
+    if (!tag) continue;
+
+    const bundle = extractBundle(mod, tag);
+
+    if (!bundle) continue;
+
+    out[tag] = {
+      ...(out[tag] ?? {}),
+      ...bundle,
+    };
+  }
+
+  return out;
 }
 
 /**
@@ -125,59 +131,73 @@ function buildEager(entries: Array<[string, GlobModule]>): Translations {
  * rather than pulling every language into memory up front.
  */
 function buildLazy(entries: Array<[string, GlobLazyLoader | GlobModule]>): Translations {
-	// Map tag → loader so lookup is O(1) at runtime.
-	const tagToLoader = new Map<string, GlobLazyLoader>();
-	for (const [path, mod] of entries) {
-		const tag = pathToTag(path);
-		if (!tag)
-			continue;
-		// Eager entries in a mixed map are wrapped so the lazy loader can
-		// await them uniformly — avoids a branch at lookup time.
-		if (typeof mod === 'function')
-			tagToLoader.set(tag, mod as GlobLazyLoader);
-		else tagToLoader.set(tag, () => Promise.resolve(mod as GlobModule));
-	}
+  // Map tag → loader so lookup is O(1) at runtime.
+  const tagToLoader = new Map<string, GlobLazyLoader>();
 
-	const loader: LazyTranslationLoader = async (lang: string) => {
-		const fn = tagToLoader.get(lang);
-		if (!fn)
-			return undefined;
-		try {
-			const mod = await fn();
-			return extractBundle(mod, lang) ?? undefined;
-		}
-		catch {
-			return undefined;
-		}
-	};
+  for (const [path, mod] of entries) {
+    const tag = pathToTag(path);
 
-	const out: Translations = {};
-	Object.defineProperty(out, LAZY_TRANSLATIONS_MARKER, {
-		value: loader,
-		enumerable: false,
-		configurable: false,
-		writable: false,
-	});
-	// Also expose the list of available tags so consumers / debug tooling
-	// can know what's shippable without invoking every loader.
-	Object.defineProperty(out, '__nomercyAvailableTags', {
-		value: Array.from(tagToLoader.keys()),
-		enumerable: false,
-		configurable: false,
-		writable: false,
-	});
-	return out;
+    if (!tag) continue;
+
+    // Eager entries in a mixed map are wrapped so the lazy loader can
+    // await them uniformly — avoids a branch at lookup time.
+    if (typeof mod === 'function') {
+      tagToLoader.set(tag, mod as GlobLazyLoader);
+    } else {
+      tagToLoader.set(tag, () =>
+        Promise.resolve(mod as GlobModule));
+    }
+  }
+
+  const loader: LazyTranslationLoader = async (lang: string) => {
+    const fn = tagToLoader.get(lang);
+
+    if (!fn)
+      return undefined;
+
+    try {
+      const mod = await fn();
+
+      return extractBundle(mod, lang) ?? undefined;
+    } catch {
+      return undefined;
+    }
+  };
+
+  const out: Translations = {};
+
+  Object.defineProperty(out, LAZY_TRANSLATIONS_MARKER, {
+    value: loader,
+    enumerable: false,
+    configurable: false,
+    writable: false,
+  });
+
+  // Also expose the list of available tags so consumers / debug tooling
+  // can know what's shippable without invoking every loader.
+  Object.defineProperty(out, '__nomercyAvailableTags', {
+    value: Array.from(tagToLoader.keys()),
+    enumerable: false,
+    configurable: false,
+    writable: false,
+  });
+
+  return out;
 }
 
 /** `./i18n/pt-BR.ts` → `pt-BR`. `i18n/index.ts` → null (skipped). */
 function pathToTag(path: string): string | null {
-	const match = path.match(/([^/\\]+)\.[a-z0-9]+$/iu);
-	if (!match)
-		return null;
-	const tag = match[1]!;
-	if (tag === 'index')
-		return null;
-	return tag;
+  const match = path.match(/([^/\\]+)\.[a-z0-9]+$/iu);
+
+  if (!match)
+    return null;
+
+  const tag = match[1]!;
+
+  if (tag === 'index')
+    return null;
+
+  return tag;
 }
 
 /**
@@ -187,19 +207,24 @@ function pathToTag(path: string): string | null {
  * the table.
  */
 function extractBundle(mod: GlobModule, tag: string): Record<string, string> | null {
-	if (!mod || typeof mod !== 'object')
-		return null;
-	const candidate = (mod as { default?: unknown }).default
-		?? (mod as Record<string, unknown>)[tag];
-	if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate))
-		return null;
+  if (!mod || typeof mod !== 'object')
+    return null;
 
-	const bundle: Record<string, string> = {};
-	for (const [key, value] of Object.entries(candidate as Record<string, unknown>)) {
-		if (typeof value === 'string')
-			bundle[key] = value;
-	}
-	return bundle;
+  const candidate = (mod as { default?: unknown }).default ??
+    (mod as Record<string, unknown>)[tag];
+
+  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate))
+    return null;
+
+  const bundle: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(candidate as Record<string, unknown>)) {
+    if (typeof value === 'string') {
+      bundle[key] = value;
+    }
+  }
+
+  return bundle;
 }
 
 /**
@@ -208,7 +233,10 @@ function extractBundle(mod: GlobModule, tag: string): Record<string, string> | n
  * authors don't call this.
  */
 export function getLazyTranslationLoader(translations: Translations): LazyTranslationLoader | null {
-	// Symbol-keyed marker is not in the Translations public type — accessed via opaque cast.
-	const markerValue = (translations as unknown as { [k: symbol]: unknown })[LAZY_TRANSLATIONS_MARKER];
-	return typeof markerValue === 'function' ? (markerValue as LazyTranslationLoader) : null;
+  // Symbol-keyed marker is not in the Translations public type — accessed via opaque cast.
+  const markerValue = (translations as unknown as { [k: symbol]: unknown })[LAZY_TRANSLATIONS_MARKER];
+
+  return typeof markerValue === 'function'
+    ? (markerValue as LazyTranslationLoader)
+    : null;
 }

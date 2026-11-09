@@ -7,12 +7,12 @@
 // -----------------------------------------------------------------------------
 
 export const LOG_LEVEL = {
-	SILENT: 'silent',
-	ERROR: 'error',
-	WARN: 'warn',
-	INFO: 'info',
-	DEBUG: 'debug',
-	TRACE: 'trace',
+  SILENT: 'silent',
+  ERROR: 'error',
+  WARN: 'warn',
+  INFO: 'info',
+  DEBUG: 'debug',
+  TRACE: 'trace',
 } as const;
 
 /**
@@ -27,12 +27,12 @@ export type LogLevel = typeof LOG_LEVEL[keyof typeof LOG_LEVEL];
  * special-cased as -1 so it ranks below all other levels.
  */
 export const LEVEL_RANK: Record<LogLevel, number> = {
-	[LOG_LEVEL.SILENT]: -1,
-	[LOG_LEVEL.ERROR]: 0,
-	[LOG_LEVEL.WARN]: 1,
-	[LOG_LEVEL.INFO]: 2,
-	[LOG_LEVEL.DEBUG]: 3,
-	[LOG_LEVEL.TRACE]: 4,
+  [LOG_LEVEL.SILENT]: -1,
+  [LOG_LEVEL.ERROR]: 0,
+  [LOG_LEVEL.WARN]: 1,
+  [LOG_LEVEL.INFO]: 2,
+  [LOG_LEVEL.DEBUG]: 3,
+  [LOG_LEVEL.TRACE]: 4,
 };
 
 /**
@@ -43,9 +43,9 @@ export const LEVEL_RANK: Record<LogLevel, number> = {
 export type LogSink = (level: LogLevel, prefix: string, args: unknown[]) => void;
 
 export interface LoggerOptions {
-	/** Verbosity threshold. Default `'info'`. */
-	level?: LogLevel;
-	prefix?: string;
+  /** Verbosity threshold. Default `'info'`. */
+  level?: LogLevel;
+  prefix?: string;
 }
 
 /**
@@ -60,38 +60,38 @@ export interface LoggerOptions {
  * scoping works on the underlying engine.
  */
 export interface ILogger {
-	/** Emit a trace-level message (most verbose). */
-	trace(...args: unknown[]): void;
-	/** Emit a debug-level message. */
-	debug(...args: unknown[]): void;
-	/** Emit an info-level message. */
-	info(...args: unknown[]): void;
-	/** Emit a warning. */
-	warn(...args: unknown[]): void;
-	/** Emit an error. */
-	error(...args: unknown[]): void;
+  /** Emit a trace-level message (most verbose). */
+  trace(...args: unknown[]): void;
+  /** Emit a debug-level message. */
+  debug(...args: unknown[]): void;
+  /** Emit an info-level message. */
+  info(...args: unknown[]): void;
+  /** Emit a warning. */
+  warn(...args: unknown[]): void;
+  /** Emit an error. */
+  error(...args: unknown[]): void;
 
-	/**
-	 * Read or write the verbosity threshold.
-	 *
-	 * `level()` — returns the active `LogLevel`.
-	 * `level(value)` — switches the threshold at runtime.
-	 */
-	level(): LogLevel;
-	level(value: LogLevel): void;
+  /**
+   * Read or write the verbosity threshold.
+   *
+   * `level()` — returns the active `LogLevel`.
+   * `level(value)` — switches the threshold at runtime.
+   */
+  level(): LogLevel;
+  level(value: LogLevel): void;
 
-	/**
-	 * Pipe future log lines to an additional sink. Multiple sinks compose in
-	 * registration order. Returns an unsubscribe function.
-	 *
-	 * Adapters wrapping engines without a multi-sink concept may keep only one
-	 * active sink and no-op additional registrations — document the behaviour.
-	 */
-	addSink(fn: LogSink): () => void;
+  /**
+   * Pipe future log lines to an additional sink. Multiple sinks compose in
+   * registration order. Returns an unsubscribe function.
+   *
+   * Adapters wrapping engines without a multi-sink concept may keep only one
+   * active sink and no-op additional registrations — document the behaviour.
+   */
+  addSink(fn: LogSink): () => void;
 
-	/**
-	 * Derive a scoped sub-logger that prepends an additional prefix segment.
-	 * Used by the kit to scope plugin loggers to `[nmplayer][<plugin-id>]`.
-	 */
-	child(suffix: string): ILogger;
+  /**
+   * Derive a scoped sub-logger that prepends an additional prefix segment.
+   * Used by the kit to scope plugin loggers to `[nmplayer][<plugin-id>]`.
+   */
+  child(suffix: string): ILogger;
 }

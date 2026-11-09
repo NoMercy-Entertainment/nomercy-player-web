@@ -37,12 +37,12 @@ import type { BaseEventMap, IPlayer } from '../types';
 // ─── Concrete payload type used by a hypothetical plugin ─────────────────────
 
 interface EqChangePayload {
-	bands: Array<{ frequency: number; gain: number }>;
-	selectedPreset: string | undefined;
+  bands: Array<{ frequency: number; gain: number }>;
+  selectedPreset: string | undefined;
 }
 
 interface PanChangedPayload {
-	pan: number;
+  pan: number;
 }
 
 // ─── Proof 1: typed overload gives concrete payload ──────────────────────────
@@ -50,10 +50,10 @@ interface PanChangedPayload {
 declare const typedPlayer: IPlayer<BaseEventMap>;
 
 typedPlayer.on('play', (data) => {
-	// `data` must be `ActionOptions`, not `unknown` or `any`.
-	// Accessing a non-existent property must be a type error.
-	// @ts-expect-error — 'ABSENT' does not exist on ActionOptions
-	void data.ABSENT;
+  // `data` must be `ActionOptions`, not `unknown` or `any`.
+  // Accessing a non-existent property must be a type error.
+  // @ts-expect-error — 'ABSENT' does not exist on ActionOptions
+  void data.ABSENT;
 });
 
 // The payload type extracted from the map is concrete.
@@ -68,21 +68,21 @@ const _playProof: PlayPayload = _badPlay;
 // these lines produce TS2769. With `AnyHandler = (data: any) => void` they compile.
 
 typedPlayer.on('plugin:equalizer:change', (data: EqChangePayload) => {
-	void data.bands;
-	void data.selectedPreset;
+  void data.bands;
+  void data.selectedPreset;
 });
 
 typedPlayer.on('plugin:mixer:pan:changed', (data: PanChangedPayload) => {
-	void data.pan;
+  void data.pan;
 });
 
 // once() and off() must also accept typed callbacks via the string fallback.
 typedPlayer.once('plugin:some-plugin:ready', (data: { version: string }) => {
-	void data.version;
+  void data.version;
 });
 
 typedPlayer.off('plugin:some-plugin:ready', (data: { version: string }) => {
-	void data.version;
+  void data.version;
 });
 
 // ─── Proof 3: EventEmitter.on() has the same guarantees ──────────────────────
@@ -90,22 +90,23 @@ typedPlayer.off('plugin:some-plugin:ready', (data: { version: string }) => {
 declare const emitter: EventEmitter<BaseEventMap>;
 
 emitter.on('plugin:foo:bar', (data: EqChangePayload) => {
-	void data.bands;
+  void data.bands;
 });
 
 // ─── Proof 4: 'all' firehose receives (event: string, data: unknown) ─────────
 
 typedPlayer.on('all', (event, data) => {
-	// `event` is string, `data` is unknown — consumers must narrow before use.
-	const _ev: string = event;
-	void _ev;
-	void data;
+  // `event` is string, `data` is unknown — consumers must narrow before use.
+  const _ev: string = event;
 
-	// Prove `data` is `unknown` (not `any`): narrowing required before member access.
-	if (typeof data === 'object' && data !== null) {
-		// This is fine — `data` narrowed to `object`.
-		void Object.keys(data);
-	}
+  void _ev;
+  void data;
+
+  // Prove `data` is `unknown` (not `any`): narrowing required before member access.
+  if (typeof data === 'object' && data !== null) {
+    // This is fine — `data` narrowed to `object`.
+    void Object.keys(data);
+  }
 });
 
 // ─── Silence unused-variable noise ───────────────────────────────────────────

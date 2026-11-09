@@ -31,287 +31,320 @@ import { buildTitleBar, updateTitleBar } from '../../plugins/desktop-ui/helpers/
 
 type ResizeCallback = (entries: Array<{ contentRect: { width: number } }>) => void;
 const MockResizeObserver = vi.fn(function (this: unknown, _cb: ResizeCallback) {
-	return { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() };
+  return {
+    observe: vi.fn(),
+    disconnect: vi.fn(),
+    unobserve: vi.fn(),
+  };
 });
 
 describe('buildTitleBar — back / close button events', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	it('backBtn click emits "back" event on the player', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-		const backEvents: unknown[] = [];
-		(player as unknown as { on: (event: string, fn: (payload: unknown) => void) => void })
-			.on('back', payload => backEvents.push(payload));
+  it('backBtn click emits "back" event on the player', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const parent = document.createElement('div');
-		const refs = buildTitleBar(player as never, parent);
+    await player.ready();
 
-		refs.backBtn.hidden = false;
-		refs.backBtn.click();
+    const backEvents: unknown[] = [];
 
-		expect(backEvents.length).toBe(1);
-	});
+    (player as unknown as { on: (event: string, fn: (payload: unknown) => void) => void })
+      .on('back', (payload) =>
+        backEvents.push(payload));
 
-	it('closeBtn click emits "close" event on the player', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+    const parent = document.createElement('div');
+    const refs = buildTitleBar(player as never, parent);
 
-		const closeEvents: unknown[] = [];
-		(player as unknown as { on: (event: string, fn: (payload: unknown) => void) => void })
-			.on('close', payload => closeEvents.push(payload));
+    refs.backBtn.hidden = false;
+    refs.backBtn.click();
 
-		const parent = document.createElement('div');
-		const refs = buildTitleBar(player as never, parent);
+    expect(backEvents.length).toBe(1);
+  });
 
-		refs.closeBtn.hidden = false;
-		refs.closeBtn.click();
+  it('closeBtn click emits "close" event on the player', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		expect(closeEvents.length).toBe(1);
-	});
+    await player.ready();
+
+    const closeEvents: unknown[] = [];
+
+    (player as unknown as { on: (event: string, fn: (payload: unknown) => void) => void })
+      .on('close', (payload) =>
+        closeEvents.push(payload));
+
+    const parent = document.createElement('div');
+    const refs = buildTitleBar(player as never, parent);
+
+    refs.closeBtn.hidden = false;
+    refs.closeBtn.click();
+
+    expect(closeEvents.length).toBe(1);
+  });
 });
 
 describe('buildTitleBar — cast button (owner ruling 2026-07-14)', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	it('is hidden when buttons.cast is unset', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-		const parent = document.createElement('div');
-		const refs = buildTitleBar(player as never, parent, {});
+  it('is hidden when buttons.cast is unset', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		expect(refs.castBtn.hidden).toBe(true);
-	});
+    await player.ready();
 
-	it('is hidden when buttons.cast is explicitly false', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+    const parent = document.createElement('div');
+    const refs = buildTitleBar(player as never, parent, {});
 
-		const parent = document.createElement('div');
-		const refs = buildTitleBar(player as never, parent, { buttons: { cast: false } });
+    expect(refs.castBtn.hidden).toBe(true);
+  });
 
-		expect(refs.castBtn.hidden).toBe(true);
-	});
+  it('is hidden when buttons.cast is explicitly false', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-	it('is visible when buttons.cast is true', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+    await player.ready();
 
-		const parent = document.createElement('div');
-		const refs = buildTitleBar(player as never, parent, { buttons: { cast: true } });
+    const parent = document.createElement('div');
+    const refs = buildTitleBar(player as never, parent, { buttons: { cast: false } });
 
-		expect(refs.castBtn.hidden).toBe(false);
-	});
+    expect(refs.castBtn.hidden).toBe(true);
+  });
 
-	it('click emits "cast" on the player — never touches CastSenderPlugin/loadMedia', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+  it('is visible when buttons.cast is true', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const castEvents: unknown[] = [];
-		(player as unknown as { on: (event: string, fn: (payload: unknown) => void) => void })
-			.on('cast', payload => castEvents.push(payload));
+    await player.ready();
 
-		const parent = document.createElement('div');
-		const refs = buildTitleBar(player as never, parent, { buttons: { cast: true } });
+    const parent = document.createElement('div');
+    const refs = buildTitleBar(player as never, parent, { buttons: { cast: true } });
 
-		refs.castBtn.click();
+    expect(refs.castBtn.hidden).toBe(false);
+  });
 
-		expect(castEvents.length).toBe(1);
-	});
+  it('click emits "cast" on the player — never touches CastSenderPlugin/loadMedia', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-	it('has aria-haspopup="dialog" and a translated aria-label/title', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+    await player.ready();
 
-		const parent = document.createElement('div');
-		const refs = buildTitleBar(player as never, parent, { buttons: { cast: true } });
+    const castEvents: unknown[] = [];
 
-		expect(refs.castBtn.getAttribute('aria-haspopup')).toBe('dialog');
-		expect(refs.castBtn.getAttribute('aria-label')).toBe(player.t('plugin.desktop-ui.button.cast'));
-		expect(refs.castBtn.title).toBe(player.t('plugin.desktop-ui.button.cast'));
-	});
+    (player as unknown as { on: (event: string, fn: (payload: unknown) => void) => void })
+      .on('cast', (payload) =>
+        castEvents.push(payload));
 
-	it('visibility is opt-in only — presence of a "cast" listener does not show it', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+    const parent = document.createElement('div');
+    const refs = buildTitleBar(player as never, parent, { buttons: { cast: true } });
 
-		(player as unknown as { on: (event: string, fn: (payload: unknown) => void) => void })
-			.on('cast', () => {});
+    refs.castBtn.click();
 
-		const parent = document.createElement('div');
-		const refs = buildTitleBar(player as never, parent, {});
+    expect(castEvents.length).toBe(1);
+  });
 
-		expect(refs.castBtn.hidden).toBe(true);
-	});
+  it('has aria-haspopup="dialog" and a translated aria-label/title', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.ready();
+
+    const parent = document.createElement('div');
+    const refs = buildTitleBar(player as never, parent, { buttons: { cast: true } });
+
+    expect(refs.castBtn.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(refs.castBtn.getAttribute('aria-label')).toBe(player.t('plugin.desktop-ui.button.cast'));
+    expect(refs.castBtn.title).toBe(player.t('plugin.desktop-ui.button.cast'));
+  });
+
+  it('visibility is opt-in only — presence of a "cast" listener does not show it', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.ready();
+
+    (player as unknown as { on: (event: string, fn: (payload: unknown) => void) => void })
+      .on('cast', () => {});
+
+    const parent = document.createElement('div');
+    const refs = buildTitleBar(player as never, parent, {});
+
+    expect(refs.castBtn.hidden).toBe(true);
+  });
 });
 
 describe('updateTitleBar — title / secondary-line branches', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	async function makeRefsWithPlayer(): Promise<{ player: NMVideoPlayer; refs: ReturnType<typeof buildTitleBar> }> {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
-		const parent = document.createElement('div');
-		const refs = buildTitleBar(player as never, parent);
-		return { player, refs };
-	}
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-	it('movie item: shows title as primary, empty secondary (hidden)', async () => {
-		const { player, refs } = await makeRefsWithPlayer();
-		updateTitleBar(player as never, refs, { id: 1, title: 'Dune' } as never);
+  async function makeRefsWithPlayer(): Promise<{ player: NMVideoPlayer; refs: ReturnType<typeof buildTitleBar> }> {
+    const player = new NMVideoPlayer('test').setup({});
 
-		expect(refs.titleText.textContent).toBe('Dune');
-		expect(refs.showInfoText.textContent).toBe('');
-		expect(refs.showInfoText.hidden).toBe(true);
-	});
+    await player.ready();
+    const parent = document.createElement('div');
+    const refs = buildTitleBar(player as never, parent);
 
-	it('null item: titleText becomes empty string', async () => {
-		const { player, refs } = await makeRefsWithPlayer();
-		updateTitleBar(player as never, refs, null);
+    return { player, refs };
+  }
 
-		expect(refs.titleText.textContent).toBe('');
-	});
+  it('movie item: shows title as primary, empty secondary (hidden)', async () => {
+    const { player, refs } = await makeRefsWithPlayer();
 
-	it('undefined item: titleText becomes empty string', async () => {
-		const { player, refs } = await makeRefsWithPlayer();
-		updateTitleBar(player as never, refs, undefined);
+    updateTitleBar(player as never, refs, { id: 1, title: 'Dune' } as never);
 
-		expect(refs.titleText.textContent).toBe('');
-	});
+    expect(refs.titleText.textContent).toBe('Dune');
+    expect(refs.showInfoText.textContent).toBe('');
+    expect(refs.showInfoText.hidden).toBe(true);
+  });
 
-	it('series S1E3 with ep title: primary=show, secondary=S1E3 • EpTitle', async () => {
-		const { player, refs } = await makeRefsWithPlayer();
-		updateTitleBar(player as never, refs, {
-			id: 2,
-			title: 'The Breaking Point',
-			show: 'Breaking Bad',
-			season: 1,
-			episode: 3,
-		} as never);
+  it('null item: titleText becomes empty string', async () => {
+    const { player, refs } = await makeRefsWithPlayer();
 
-		expect(refs.titleText.textContent).toBe('Breaking Bad');
-		expect(refs.showInfoText.textContent).toBe('S1E3 • The Breaking Point');
-		expect(refs.showInfoText.hidden).toBe(false);
-	});
+    updateTitleBar(player as never, refs, null);
 
-	it('series S2E1 without distinct ep title: primary=show, secondary=S2E1', async () => {
-		const { player, refs } = await makeRefsWithPlayer();
-		// title === show → no bullet point
-		updateTitleBar(player as never, refs, {
-			id: 3,
-			title: 'Breaking Bad',
-			show: 'Breaking Bad',
-			season: 2,
-			episode: 1,
-		} as never);
+    expect(refs.titleText.textContent).toBe('');
+  });
 
-		expect(refs.titleText.textContent).toBe('Breaking Bad');
-		expect(refs.showInfoText.textContent).toBe('S2E1');
-	});
+  it('undefined item: titleText becomes empty string', async () => {
+    const { player, refs } = await makeRefsWithPlayer();
 
-	it('specials (season=0): secondary starts with Extras E{n}', async () => {
-		const { player, refs } = await makeRefsWithPlayer();
-		updateTitleBar(player as never, refs, {
-			id: 4,
-			title: 'Behind the Scenes',
-			show: 'Breaking Bad',
-			season: 0,
-			episode: 2,
-		} as never);
+    updateTitleBar(player as never, refs, undefined);
 
-		expect(refs.titleText.textContent).toBe('Breaking Bad');
-		expect(refs.showInfoText.textContent).toMatch(/^Extras E2/);
-	});
+    expect(refs.titleText.textContent).toBe('');
+  });
 
-	it('specials (season=0) without ep title: secondary=Extras E{n} only', async () => {
-		const { player, refs } = await makeRefsWithPlayer();
-		updateTitleBar(player as never, refs, {
-			id: 5,
-			title: 'Breaking Bad',
-			show: 'Breaking Bad',
-			season: 0,
-			episode: 1,
-		} as never);
+  it('series S1E3 with ep title: primary=show, secondary=S1E3 • EpTitle', async () => {
+    const { player, refs } = await makeRefsWithPlayer();
 
-		expect(refs.showInfoText.textContent).toBe('Extras E1');
-	});
+    updateTitleBar(player as never, refs, {
+      id: 2,
+      title: 'The Breaking Point',
+      show: 'Breaking Bad',
+      season: 1,
+      episode: 3,
+    } as never);
 
-	it('series with no season but has episode: secondary uses localized episode prefix', async () => {
-		const { player, refs } = await makeRefsWithPlayer();
-		updateTitleBar(player as never, refs, {
-			id: 6,
-			title: 'Chapter One',
-			show: 'My Show',
-			episode: 7,
-		} as never);
+    expect(refs.titleText.textContent).toBe('Breaking Bad');
+    expect(refs.showInfoText.textContent).toBe('S1E3 • The Breaking Point');
+    expect(refs.showInfoText.hidden).toBe(false);
+  });
 
-		expect(refs.titleText.textContent).toBe('My Show');
-		expect(refs.showInfoText.textContent).toMatch(/E7/);
-	});
+  it('series S2E1 without distinct ep title: primary=show, secondary=S2E1', async () => {
+    const { player, refs } = await makeRefsWithPlayer();
 
-	it('series with no season, no distinct ep title: secondary=localized-episode-prefix{n} only', async () => {
-		const { player, refs } = await makeRefsWithPlayer();
-		updateTitleBar(player as never, refs, {
-			id: 7,
-			title: 'My Show',
-			show: 'My Show',
-			episode: 4,
-		} as never);
+    // title === show → no bullet point
+    updateTitleBar(player as never, refs, {
+      id: 3,
+      title: 'Breaking Bad',
+      show: 'Breaking Bad',
+      season: 2,
+      episode: 1,
+    } as never);
 
-		expect(refs.showInfoText.textContent).toBe('E4');
-	});
+    expect(refs.titleText.textContent).toBe('Breaking Bad');
+    expect(refs.showInfoText.textContent).toBe('S2E1');
+  });
 
-	it('show present but no episode: secondary is empty', async () => {
-		const { player, refs } = await makeRefsWithPlayer();
-		updateTitleBar(player as never, refs, {
-			id: 8,
-			title: 'Feature',
-			show: 'My Show',
-		} as never);
+  it('specials (season=0): secondary starts with Extras E{n}', async () => {
+    const { player, refs } = await makeRefsWithPlayer();
 
-		expect(refs.titleText.textContent).toBe('My Show');
-		expect(refs.showInfoText.textContent).toBe('');
-		expect(refs.showInfoText.hidden).toBe(true);
-	});
+    updateTitleBar(player as never, refs, {
+      id: 4,
+      title: 'Behind the Scenes',
+      show: 'Breaking Bad',
+      season: 0,
+      episode: 2,
+    } as never);
+
+    expect(refs.titleText.textContent).toBe('Breaking Bad');
+    expect(refs.showInfoText.textContent).toMatch(/^Extras E2/);
+  });
+
+  it('specials (season=0) without ep title: secondary=Extras E{n} only', async () => {
+    const { player, refs } = await makeRefsWithPlayer();
+
+    updateTitleBar(player as never, refs, {
+      id: 5,
+      title: 'Breaking Bad',
+      show: 'Breaking Bad',
+      season: 0,
+      episode: 1,
+    } as never);
+
+    expect(refs.showInfoText.textContent).toBe('Extras E1');
+  });
+
+  it('series with no season but has episode: secondary uses localized episode prefix', async () => {
+    const { player, refs } = await makeRefsWithPlayer();
+
+    updateTitleBar(player as never, refs, {
+      id: 6,
+      title: 'Chapter One',
+      show: 'My Show',
+      episode: 7,
+    } as never);
+
+    expect(refs.titleText.textContent).toBe('My Show');
+    expect(refs.showInfoText.textContent).toMatch(/E7/);
+  });
+
+  it('series with no season, no distinct ep title: secondary=localized-episode-prefix{n} only', async () => {
+    const { player, refs } = await makeRefsWithPlayer();
+
+    updateTitleBar(player as never, refs, {
+      id: 7,
+      title: 'My Show',
+      show: 'My Show',
+      episode: 4,
+    } as never);
+
+    expect(refs.showInfoText.textContent).toBe('E4');
+  });
+
+  it('show present but no episode: secondary is empty', async () => {
+    const { player, refs } = await makeRefsWithPlayer();
+
+    updateTitleBar(player as never, refs, {
+      id: 8,
+      title: 'Feature',
+      show: 'My Show',
+    } as never);
+
+    expect(refs.titleText.textContent).toBe('My Show');
+    expect(refs.showInfoText.textContent).toBe('');
+    expect(refs.showInfoText.hidden).toBe(true);
+  });
 });

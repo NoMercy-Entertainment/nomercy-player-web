@@ -25,14 +25,14 @@ import { inPluginSubclass } from './_in-plugin-subclass.js';
 // Raw JS error constructors. A plugin should never hand-build one of these to
 // throw; the kit's PlayerError hierarchy (via this.throw) is the surface.
 const RAW_ERROR_CTORS = new Set([
-	'Error',
-	'TypeError',
-	'RangeError',
-	'SyntaxError',
-	'ReferenceError',
-	'EvalError',
-	'URIError',
-	'AggregateError',
+  'Error',
+  'TypeError',
+  'RangeError',
+  'SyntaxError',
+  'ReferenceError',
+  'EvalError',
+  'URIError',
+  'AggregateError',
 ]);
 
 // `new window.Error(...)` reaches the same global constructor as `new Error(...)`.
@@ -46,52 +46,52 @@ const GLOBAL_RECEIVERS = new Set(['window', 'globalThis', 'self']);
  * @returns {string | null} The banned constructor name, or null when the callee is allowed.
  */
 function rawErrorCtorName(callee) {
-	if (callee.type === 'Identifier' && RAW_ERROR_CTORS.has(callee.name))
-		return callee.name;
-	if (
-		callee.type === 'MemberExpression'
-		&& !callee.computed
-		&& callee.object.type === 'Identifier'
-		&& GLOBAL_RECEIVERS.has(callee.object.name)
-		&& callee.property.type === 'Identifier'
-		&& RAW_ERROR_CTORS.has(callee.property.name)
-	) {
-		return callee.property.name;
-	}
-	return null;
+  if (callee.type === 'Identifier' && RAW_ERROR_CTORS.has(callee.name))
+    return callee.name;
+  if (
+    callee.type === 'MemberExpression'
+    && !callee.computed
+    && callee.object.type === 'Identifier'
+    && GLOBAL_RECEIVERS.has(callee.object.name)
+    && callee.property.type === 'Identifier'
+    && RAW_ERROR_CTORS.has(callee.property.name)
+  ) {
+    return callee.property.name;
+  }
+  return null;
 }
 
 /** @type {import('eslint').Rule.RuleModule} */
 export default {
-	meta: {
-		type: 'problem',
-		docs: {
-			description: 'Ban throw new Error(...) inside a plugin — use this.throw({...}) (abort) or this.report({...}) (warning).',
-		},
-		schema: [],
-		messages: {
-			rawThrow: 'throw new {{ctor}}(...) inside a plugin skips the structured error surface — use this.throw({...}) or this.report({...}).',
-		},
-	},
+  meta: {
+    type: 'problem',
+    docs: {
+      description: 'Ban throw new Error(...) inside a plugin — use this.throw({...}) (abort) or this.report({...}) (warning).',
+    },
+    schema: [],
+    messages: {
+      rawThrow: 'throw new {{ctor}}(...) inside a plugin skips the structured error surface — use this.throw({...}) or this.report({...}).',
+    },
+  },
 
-	create(context) {
-		return {
-			ThrowStatement(node) {
-				const argument = node.argument;
-				if (!argument || argument.type !== 'NewExpression')
-					return;
-				const ctor = rawErrorCtorName(argument.callee);
-				if (!ctor)
-					return;
-				if (!inPluginSubclass(node))
-					return;
+  create(context) {
+    return {
+      ThrowStatement(node) {
+        const argument = node.argument;
+        if (!argument || argument.type !== 'NewExpression')
+          return;
+        const ctor = rawErrorCtorName(argument.callee);
+        if (!ctor)
+          return;
+        if (!inPluginSubclass(node))
+          return;
 
-				context.report({
-					node,
-					messageId: 'rawThrow',
-					data: { ctor },
-				});
-			},
-		};
-	},
+        context.report({
+          node,
+          messageId: 'rawThrow',
+          data: { ctor },
+        });
+      },
+    };
+  },
 };

@@ -11,119 +11,126 @@ import { expect, test } from '@playwright/test';
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 async function mountBasicPlayer(page: import('@playwright/test').Page): Promise<void> {
-	await page.goto('/e2e/fixture-audio.html');
-	await page.waitForFunction(
-		() => (window as any).__playerReady !== undefined,
-		{ timeout: 15_000 },
-	);
-	const ready = await page.evaluate(() => (window as any).__playerReady);
-	const err = await page.evaluate(() => (window as any).__playerError);
-	if (!ready) {
-		throw new Error(`Player failed to mount: ${err}`);
-	}
+  await page.goto('/e2e/fixture-audio.html');
+
+  await page.waitForFunction(
+    () => (window as any).__playerReady !== undefined,
+    { timeout: 15_000 },
+  );
+
+  const ready = await page.evaluate(() => (window as any).__playerReady);
+  const err = await page.evaluate(() => (window as any).__playerError);
+
+  if (!ready) {
+    throw new Error(`Player failed to mount: ${err}`);
+  }
 }
 
 // ── tests ─────────────────────────────────────────────────────────────────────
 
 test.describe('audio-playback (AudioElementBackend)', () => {
-	test.beforeEach(async ({ page }) => {
-		await mountBasicPlayer(page);
-	});
+  test.beforeEach(async ({ page }) => {
+    await mountBasicPlayer(page);
+  });
 
-	test('loadedmetadata fires and duration > 0 for trackA.mp3', async ({ page }) => {
-		// Load track and wait for the duration event — proves real decode happened.
-		const duration = await page.evaluate(async () => {
-			const player = (window as any).playerBasic;
+  test('loadedmetadata fires and duration > 0 for trackA.mp3', async ({ page }) => {
+    // Load track and wait for the duration event — proves real decode happened.
+    const duration = await page.evaluate(async () => {
+      const player = (window as any).playerBasic;
 
-			return new Promise<number>((resolve, reject) => {
-				const timeout = setTimeout(() => reject(new Error('duration event timeout')), 10_000);
+      return new Promise<number>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('duration event timeout')), 10_000);
 
-				player.on('duration', (data: { duration: number }) => {
-					clearTimeout(timeout);
-					resolve(data.duration);
-				});
+        player.on('duration', (data: { duration: number }) => {
+          clearTimeout(timeout);
+          resolve(data.duration);
+        });
 
-				player.queue([{
-					id: '1',
-					url: '/e2e/media/trackA.mp3',
-					title: 'Track A',
-				}]);
-				player.item('1');
-				player.backend().load('/e2e/media/trackA.mp3');
-			});
-		});
+        player.queue([{
+          id: '1',
+          url: '/e2e/media/trackA.mp3',
+          title: 'Track A',
+        }]);
 
-		expect(duration).toBeGreaterThan(0);
-	});
+        player.item('1');
+        player.backend().load('/e2e/media/trackA.mp3');
+      });
+    });
 
-	test('currentTime advances at wall-clock rate after play()', async ({ page }) => {
-		// Autoplay policy: browsers require a user gesture. Playwright's evaluate
-		// runs in a trusted context so element.play() is permitted.
-		const advanced = await page.evaluate(async () => {
-			const player = (window as any).playerBasic;
-			const backend = player.backend();
+    expect(duration).toBeGreaterThan(0);
+  });
 
-			// Load and wait for canplay before calling play().
-			await new Promise<void>((resolve, reject) => {
-				const timeout = setTimeout(() => reject(new Error('canplay timeout')), 10_000);
-				backend.on('canplay', () => { clearTimeout(timeout); resolve(); });
-				backend.load('/e2e/media/trackA.mp3');
-			});
+  test('currentTime advances at wall-clock rate after play()', async ({ page }) => {
+    // Autoplay policy: browsers require a user gesture. Playwright's evaluate
+    // runs in a trusted context so element.play() is permitted.
+    const advanced = await page.evaluate(async () => {
+      const player = (window as any).playerBasic;
+      const backend = player.backend();
 
-			await backend.play();
+      // Load and wait for canplay before calling play().
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('canplay timeout')), 10_000);
 
-			const t0 = backend.currentTime();
-			await new Promise<void>(r => setTimeout(r, 600));
-			const t1 = backend.currentTime();
+        backend.on('canplay', () => { clearTimeout(timeout); resolve(); });
+        backend.load('/e2e/media/trackA.mp3');
+      });
 
-			return t1 - t0;
-		});
+      await backend.play();
 
-		// 600 ms of wall-clock time at normal playback rate — allow wide tolerance
-		// for browser scheduling jitter.
-		expect(advanced).toBeGreaterThan(0.2);
-		expect(advanced).toBeLessThan(1.5);
-	});
+      const t0 = backend.currentTime();
 
-	test('ended event fires when short.mp3 plays to completion', async ({ page }) => {
-		// short.mp3 is 1 s — wait up to 8 s for ended.
-		const didEnd = await page.evaluate(async () => {
-			const player = (window as any).playerBasic;
-			const backend = player.backend();
+      await new Promise<void>((r) => setTimeout(r, 600));
+      const t1 = backend.currentTime();
 
-			return new Promise<boolean>((resolve, reject) => {
-				const timeout = setTimeout(() => reject(new Error('ended timeout')), 8_000);
+      return t1 - t0;
+    });
 
-				backend.on('ended', () => {
-					clearTimeout(timeout);
-					resolve(true);
-				});
+    // 600 ms of wall-clock time at normal playback rate — allow wide tolerance
+    // for browser scheduling jitter.
+    expect(advanced).toBeGreaterThan(0.2);
+    expect(advanced).toBeLessThan(1.5);
+  });
 
-				backend.on('canplay', () => {
-					backend.play().catch(() => {});
-				});
+  test('ended event fires when short.mp3 plays to completion', async ({ page }) => {
+    // short.mp3 is 1 s — wait up to 8 s for ended.
+    const didEnd = await page.evaluate(async () => {
+      const player = (window as any).playerBasic;
+      const backend = player.backend();
 
-				backend.load('/e2e/media/short.mp3');
-			});
-		});
+      return new Promise<boolean>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('ended timeout')), 8_000);
 
-		expect(didEnd).toBe(true);
-	});
+        backend.on('ended', () => {
+          clearTimeout(timeout);
+          resolve(true);
+        });
 
-	test('duration() returns finite positive number after metadata loads', async ({ page }) => {
-		const duration = await page.evaluate(async () => {
-			const backend = (window as any).playerBasic.backend();
+        backend.on('canplay', () => {
+          backend.play().catch(() => {});
+        });
 
-			await new Promise<void>((resolve, reject) => {
-				const timeout = setTimeout(() => reject(new Error('loadedmetadata timeout')), 10_000);
-				backend.on('loadedmetadata', () => { clearTimeout(timeout); resolve(); });
-				backend.load('/e2e/media/trackA.mp3');
-			});
+        backend.load('/e2e/media/short.mp3');
+      });
+    });
 
-			return backend.duration();
-		});
+    expect(didEnd).toBe(true);
+  });
 
-		expect(Number.isFinite(duration)).toBe(true);
-		expect(duration).toBeGreaterThan(0);
-	});
+  test('duration() returns finite positive number after metadata loads', async ({ page }) => {
+    const duration = await page.evaluate(async () => {
+      const backend = (window as any).playerBasic.backend();
+
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('loadedmetadata timeout')), 10_000);
+
+        backend.on('loadedmetadata', () => { clearTimeout(timeout); resolve(); });
+        backend.load('/e2e/media/trackA.mp3');
+      });
+
+      return backend.duration();
+    });
+
+    expect(Number.isFinite(duration)).toBe(true);
+    expect(duration).toBeGreaterThan(0);
+  });
 });

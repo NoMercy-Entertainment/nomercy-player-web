@@ -21,57 +21,57 @@ const TODO_MARKER = /\b(?:TODO|FIXME)\b/i;
 
 /** @type {import('eslint').Rule.RuleModule} */
 export default {
-	meta: {
-		type: 'suggestion',
-		docs: {
-			description: 'Ban bug-history comments, spec citations (§), and naked TODO/FIXME markers.',
-		},
-		schema: [
-			{
-				type: 'object',
-				properties: {
-					issueRefPattern: { type: 'string' },
-				},
-				additionalProperties: false,
-			},
-		],
-		messages: {
-			bugHistory: 'Bug-number history in a comment — that belongs in the commit message, not the code.',
-			specCitation: 'Spec citation (\'§\') in a comment — link the spec from docs; don\'t cite section markers in code.',
-			nakedTodo: 'TODO/FIXME without an issue reference — file an issue and reference it, or remove the note.',
-		},
-	},
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description: 'Ban bug-history comments, spec citations (§), and naked TODO/FIXME markers.',
+    },
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          issueRefPattern: { type: 'string' },
+        },
+        additionalProperties: false,
+      },
+    ],
+    messages: {
+      bugHistory: 'Bug-number history in a comment — that belongs in the commit message, not the code.',
+      specCitation: 'Spec citation (\'§\') in a comment — link the spec from docs; don\'t cite section markers in code.',
+      nakedTodo: 'TODO/FIXME without an issue reference — file an issue and reference it, or remove the note.',
+    },
+  },
 
-	create(context) {
-		const issueRef = new RegExp(context.options[0]?.issueRefPattern ?? DEFAULT_ISSUE_REF);
-		const sourceCode = context.sourceCode ?? context.getSourceCode();
+  create(context) {
+    const issueRef = new RegExp(context.options[0]?.issueRefPattern ?? DEFAULT_ISSUE_REF);
+    const sourceCode = context.sourceCode ?? context.getSourceCode();
 
-		return {
-			Program() {
-				for (const comment of sourceCode.getAllComments()) {
-					const value = comment.value;
-					if (BUG_HISTORY.test(value)) {
-						context.report({
-							loc: comment.loc,
-							messageId: 'bugHistory',
-						});
-						continue;
-					}
-					if (SPEC_CITATION.test(value)) {
-						context.report({
-							loc: comment.loc,
-							messageId: 'specCitation',
-						});
-						continue;
-					}
-					if (TODO_MARKER.test(value) && !issueRef.test(value)) {
-						context.report({
-							loc: comment.loc,
-							messageId: 'nakedTodo',
-						});
-					}
-				}
-			},
-		};
-	},
+    return {
+      Program() {
+        for (const comment of sourceCode.getAllComments()) {
+          const value = comment.value;
+          if (BUG_HISTORY.test(value)) {
+            context.report({
+              loc: comment.loc,
+              messageId: 'bugHistory',
+            });
+            continue;
+          }
+          if (SPEC_CITATION.test(value)) {
+            context.report({
+              loc: comment.loc,
+              messageId: 'specCitation',
+            });
+            continue;
+          }
+          if (TODO_MARKER.test(value) && !issueRef.test(value)) {
+            context.report({
+              loc: comment.loc,
+              messageId: 'nakedTodo',
+            });
+          }
+        }
+      },
+    };
+  },
 };

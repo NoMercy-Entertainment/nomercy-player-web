@@ -17,18 +17,19 @@ import { NMMusicPlayer, nmplayer } from '../../index';
  * (events, phase, baseUrl, audioContext, experimental, i18n, cue parsers).
  */
 beforeEach(() => {
-	(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	const div = document.createElement('div');
-	div.id = 'contract-music';
-	document.body.appendChild(div);
+  (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  const div = document.createElement('div');
+
+  div.id = 'contract-music';
+  document.body.appendChild(div);
 });
 
 afterEach(() => {
-	document.body.innerHTML = '';
-	(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  document.body.innerHTML = '';
+  (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
 });
 
 runIPlayerContract({
-	create: () => nmplayer('contract-music').setup({}),
-	label: 'NMMusicPlayer',
+  create: () => nmplayer('contract-music').setup({}),
+  label: 'NMMusicPlayer',
 });

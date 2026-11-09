@@ -7,10 +7,10 @@
 // -----------------------------------------------------------------------------
 
 import type {
-	BasePlaylistItem,
-	Cue,
-	CueList,
-	ICueParser,
+  BasePlaylistItem,
+  Cue,
+  CueList,
+  ICueParser,
 } from '@nomercy-entertainment/nomercy-player-core';
 
 import type { NMMusicPlayer } from '../../index';
@@ -19,24 +19,24 @@ import { CueTracker, Plugin } from '@nomercy-entertainment/nomercy-player-core';
 
 /** Events emitted by {@link LyricsPlugin}. */
 export interface LyricsEvents {
-	/** Fired once the cue list is fetched, parsed, and the tracker is attached. */
-	loaded: { count: number };
-	line: { text: string; [key: string]: unknown };
-	lineEnter: { text: string; [key: string]: unknown };
-	lineExit: { text: string; [key: string]: unknown };
+  /** Fired once the cue list is fetched, parsed, and the tracker is attached. */
+  loaded: { count: number };
+  line: { text: string; [key: string]: unknown };
+  lineEnter: { text: string; [key: string]: unknown };
+  lineExit: { text: string; [key: string]: unknown };
 }
 
 /** Options for {@link LyricsPlugin}. */
 export interface LyricsOptions {
-	/** Resolve an item to a lyrics URL. Defaults to `item.lyricsUrl`. */
-	getLyricsUrl?: (item: MusicPlaylistItem) => string | undefined;
-	/** Auto-fetch on `current` event. Default `true`. */
-	autoFetch?: boolean;
+  /** Resolve an item to a lyrics URL. Defaults to `item.lyricsUrl`. */
+  getLyricsUrl?: (item: MusicPlaylistItem) => string | undefined;
+  /** Auto-fetch on `current` event. Default `true`. */
+  autoFetch?: boolean;
 }
 
 interface LyricPayload {
-	text: string;
-	[key: string]: unknown;
+  text: string;
+  [key: string]: unknown;
 }
 
 /**
@@ -51,142 +51,160 @@ interface LyricPayload {
  *  - `plugin:lyrics:lineExit`    — emitted when a line goes inactive
  */
 export class LyricsPlugin<T extends MusicPlaylistItem = MusicPlaylistItem> extends Plugin<NMMusicPlayer<T>, LyricsOptions, LyricsEvents> {
-	static override readonly id: string = 'lyrics';
-	static override readonly version: string = '2.0.0';
-	static override readonly description: string = 'Synced lyrics via cue parser registry + CueTracker';
+  static override readonly id: string = 'lyrics';
+  static override readonly version: string = '2.0.0';
+  static override readonly description: string = 'Synced lyrics via cue parser registry + CueTracker';
 
-	private tracker?: CueTracker<LyricPayload>;
-	private cueList?: CueList<LyricPayload>;
-	private activeCue?: Cue<LyricPayload>;
-	private requestVersion = 0;
+  private tracker?: CueTracker<LyricPayload>;
+  private cueList?: CueList<LyricPayload>;
+  private activeCue?: Cue<LyricPayload>;
+  private requestVersion = 0;
 
-	/** Attaches the `item` listener to auto-fetch lyrics when a new track loads. */
-	override use(): void {
-		this.on('item', (payload) => {
-			this.clear();
+  /** Attaches the `item` listener to auto-fetch lyrics when a new track loads. */
+  override use(): void {
+    this.on('item', (payload) => {
+      this.clear();
 
-			if (this.opts?.autoFetch === false)
-				return;
+      if (this.opts?.autoFetch === false) return;
 
-			const item = payload?.item;
-			if (!item || !this.isMusicItem(item))
-				return;
+      const item = payload?.item;
 
-			const url = this.resolveLyricsUrl(item);
-			if (!url)
-				return;
+      if (!item || !this.isMusicItem(item)) return;
 
-			void this.fetchAndAttach(url);
-		});
-	}
+      const url = this.resolveLyricsUrl(item);
 
-	/** Disposes the active cue tracker and clears all lyric state. */
-	override dispose(): void {
-		this.clear();
-	}
+      if (!url) return;
 
-	/** Currently-active line cue payload, or `undefined` between lines. */
-	current(): LyricPayload | undefined {
-		return this.activeCue?.payload;
-	}
+      void this.fetchAndAttach(url);
+    });
+  }
 
-	/** All cues for the current track (empty list if none loaded). */
-	all(): ReadonlyArray<Cue<LyricPayload>> {
-		return this.cueList?.cues ?? [];
-	}
+  /** Disposes the active cue tracker and clears all lyric state. */
+  override dispose(): void {
+    this.clear();
+  }
 
-	/** Tear down the active cue tracker without disposing the plugin. */
-	clear(): void {
-		this.requestVersion++;
-		if (this.tracker) {
-			this.tracker.dispose();
-			this.tracker = undefined;
-		}
-		this.cueList = undefined;
-		this.activeCue = undefined;
-	}
+  /** Currently-active line cue payload, or `undefined` between lines. */
+  current(): LyricPayload | undefined {
+    return this.activeCue?.payload;
+  }
 
-	/**
-	 * Explicit fetcher — takes precedence over `current`-event auto-fetch.
-	 * Resolves once the cue tracker is attached. Returns the parsed cue list
-	 * (or `undefined` if fetch/parse failed and was reported via `report`).
-	 */
-	async fetchLyrics(url: string): Promise<CueList<LyricPayload> | undefined> {
-		return this.fetchAndAttach(url);
-	}
+  /** All cues for the current track (empty list if none loaded). */
+  all(): ReadonlyArray<Cue<LyricPayload>> {
+    return this.cueList?.cues ?? [];
+  }
 
-	/**
-	 * Type predicate: narrows a TS generic intersection to `T` by checking
-	 * that the required `name` field (from `MusicPlaylistItem`) is present.
-	 * Needed because `Plugin.on('item', ...)` infers the payload item as a
-	 * distributive intersection when `T` is a free generic parameter.
-	 */
-	private isMusicItem(item: BasePlaylistItem): item is T {
-		return 'name' in item;
-	}
+  /** Tear down the active cue tracker without disposing the plugin. */
+  clear(): void {
+    this.requestVersion++;
 
-	private resolveLyricsUrl(item: T): string | undefined {
-		const resolver = this.opts?.getLyricsUrl;
-		if (typeof resolver === 'function')
-			return resolver(item);
-		return item.lyricsUrl;
-	}
+    if (this.tracker) {
+      this.tracker.dispose();
+      this.tracker = undefined;
+    }
 
-	private async fetchAndAttach(url: string): Promise<CueList<LyricPayload> | undefined> {
-		const requestVersion = ++this.requestVersion;
-		const parser = this.resolveParser(url);
-		if (!parser) {
-			this.report({
-				code: 'plugin:lyrics/no-parser',
-				message: `No cue parser registered for ${url}`,
-				context: { url },
-			});
-			return undefined;
-		}
-		let raw: string;
-		try {
-			raw = await this.fetch(url);
-		}
-		catch (err) {
-			if (requestVersion !== this.requestVersion)
-				return undefined;
-			this.report({
-				code: 'plugin:lyrics/fetch-failed',
-				message: `Failed to fetch lyrics from ${url}`,
-				cause: err,
-				context: { url },
-			});
-			return undefined;
-		}
-		if (requestVersion !== this.requestVersion)
-			return undefined;
-		const list = parser.parse(raw) as CueList<LyricPayload>;
-		this.attach(list);
-		return list;
-	}
+    this.cueList = undefined;
+    this.activeCue = undefined;
+  }
 
-	private resolveParser(url: string): ICueParser | undefined {
-		return this.player.resolveCueParser(url);
-	}
+  /**
+   * Explicit fetcher — takes precedence over `current`-event auto-fetch.
+   * Resolves once the cue tracker is attached. Returns the parsed cue list
+   * (or `undefined` if fetch/parse failed and was reported via `report`).
+   */
+  async fetchLyrics(url: string): Promise<CueList<LyricPayload> | undefined> {
+    return this.fetchAndAttach(url);
+  }
 
-	private attach(list: CueList<LyricPayload>): void {
-		this.clear();
-		this.cueList = list;
-		const tracker = new CueTracker<LyricPayload>(list);
-		this.tracker = tracker;
-		tracker.on('enter', (cue) => {
-			this.activeCue = cue;
-			this.emit('line', cue.payload);
-			this.emit('lineEnter', cue.payload);
-		});
-		tracker.on('exit', (cue) => {
-			if (this.activeCue === cue)
-				this.activeCue = undefined;
-			this.emit('lineExit', cue.payload);
-		});
-		tracker.attach(this.player);
-		this.emit('loaded', { count: list.cues.length });
-	}
+  /**
+   * Type predicate: narrows a TS generic intersection to `T` by checking
+   * that the required `name` field (from `MusicPlaylistItem`) is present.
+   * Needed because `Plugin.on('item', ...)` infers the payload item as a
+   * distributive intersection when `T` is a free generic parameter.
+   */
+  private isMusicItem(item: BasePlaylistItem): item is T {
+    return 'name' in item;
+  }
+
+  private resolveLyricsUrl(item: T): string | undefined {
+    const resolver = this.opts?.getLyricsUrl;
+
+    if (typeof resolver === 'function')
+      return resolver(item);
+
+    return item.lyricsUrl;
+  }
+
+  private async fetchAndAttach(url: string): Promise<CueList<LyricPayload> | undefined> {
+    const requestVersion = ++this.requestVersion;
+    const parser = this.resolveParser(url);
+
+    if (!parser) {
+      this.report({
+        code: 'plugin:lyrics/no-parser',
+        message: `No cue parser registered for ${url}`,
+        context: { url },
+      });
+
+      return undefined;
+    }
+
+    let raw: string;
+
+    try {
+      raw = await this.fetch(url);
+    } catch (err) {
+      if (requestVersion !== this.requestVersion)
+        return undefined;
+
+      this.report({
+        code: 'plugin:lyrics/fetch-failed',
+        message: `Failed to fetch lyrics from ${url}`,
+        cause: err,
+        context: { url },
+      });
+
+      return undefined;
+    }
+
+    if (requestVersion !== this.requestVersion)
+      return undefined;
+
+    const list = parser.parse(raw) as CueList<LyricPayload>;
+
+    this.attach(list);
+
+    return list;
+  }
+
+  private resolveParser(url: string): ICueParser | undefined {
+    return this.player.resolveCueParser(url);
+  }
+
+  private attach(list: CueList<LyricPayload>): void {
+    this.clear();
+    this.cueList = list;
+    const tracker = new CueTracker<LyricPayload>(list);
+
+    this.tracker = tracker;
+
+    tracker.on('enter', (cue) => {
+      this.activeCue = cue;
+      this.emit('line', cue.payload);
+      this.emit('lineEnter', cue.payload);
+    });
+
+    tracker.on('exit', (cue) => {
+      if (this.activeCue === cue) {
+        this.activeCue = undefined;
+      }
+
+      this.emit('lineExit', cue.payload);
+    });
+
+    tracker.attach(this.player);
+    this.emit('loaded', { count: list.cues.length });
+  }
 }
 
 /** Plugin alias for {@link LyricsPlugin}. Pass to `addPlugin(lyricsPlugin)`. */

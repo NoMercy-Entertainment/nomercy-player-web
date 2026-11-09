@@ -14,10 +14,10 @@ import type { ICueParser } from './ICueParser';
  * URL pattern.
  */
 export interface ICueParserRegistry {
-	register(parser: ICueParser, prepend?: boolean): void;
-	unregister(id: string): void;
-	resolve(url: string, contentType?: string): ICueParser | undefined;
-	findById(id: string): ICueParser | undefined;
-	list(): string[];
-	dispose(): void;
+  register(parser: ICueParser, prepend?: boolean): void;
+  unregister(id: string): void;
+  resolve(url: string, contentType?: string): ICueParser | undefined;
+  findById(id: string): ICueParser | undefined;
+  list(): string[];
+  dispose(): void;
 }

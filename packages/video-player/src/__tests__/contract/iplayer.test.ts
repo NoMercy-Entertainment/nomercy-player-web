@@ -15,18 +15,19 @@ import { nmplayer, NMVideoPlayer } from '../../index';
  * Same suite `StubPlayer` and `NMMusicPlayer` run against themselves.
  */
 beforeEach(() => {
-	(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	const div = document.createElement('div');
-	div.id = 'contract-video';
-	document.body.appendChild(div);
+  (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  const div = document.createElement('div');
+
+  div.id = 'contract-video';
+  document.body.appendChild(div);
 });
 
 afterEach(() => {
-	document.body.innerHTML = '';
-	(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  document.body.innerHTML = '';
+  (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
 });
 
 runIPlayerContract({
-	create: () => nmplayer('contract-video').setup({}),
-	label: 'NMVideoPlayer',
+  create: () => nmplayer('contract-video').setup({}),
+  label: 'NMVideoPlayer',
 });

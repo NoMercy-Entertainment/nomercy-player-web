@@ -7,11 +7,12 @@
 // -----------------------------------------------------------------------------
 
 export {
-	autoAdvancePlugin,
-	AutoAdvancePlugin,
-	LinearPlaylistGenerator,
-	SmartShuffleGenerator,
+  autoAdvancePlugin,
+  AutoAdvancePlugin,
+  LinearPlaylistGenerator,
+  SmartShuffleGenerator,
 } from './auto-advance';
+
 export type { AutoAdvanceOptions, IPlaylistGenerator } from './auto-advance';
 
 export { castSenderPlugin, CastSenderPlugin } from './cast-sender';
@@ -25,59 +26,62 @@ export type { LyricsEvents, LyricsOptions } from './lyrics';
 export { mediaSessionPlugin, MediaSessionPlugin } from './media-session';
 
 export { NoopScrobbler, scrobblePlugin, ScrobblePlugin } from './scrobble';
+
 export type {
-	IScrobbler,
-	ScrobbleContext,
-	ScrobbleEvents,
-	ScrobbleOptions,
+  IScrobbler,
+  ScrobbleContext,
+  ScrobbleEvents,
+  ScrobbleOptions,
 } from './scrobble';
 
 // Audio-graph plugins re-exported from core for ergonomic imports.
 // Layered composition: addPlugin(audioGraphPlugin) → addPlugin(equalizerPlugin / mixerPlugin / spectrumPlugin / canvasPlugin / visualizers).
 // All opt-in — none allocate AudioContext / canvas / RAF unless registered.
 export {
-	audioGraphPlugin,
-	AudioGraphPlugin,
-	canvasPlugin,
-	CanvasPlugin,
-	equalizerPlugin,
-	EqualizerPlugin,
-	FrameDataTexture,
-	GpuSurface,
-	mixerPlugin,
-	MixerPlugin,
-	spectrumPlugin,
-	SpectrumPlugin,
-	VisualizationPlugin,
-	volumeMemoryPlugin,
-	VolumeMemoryPlugin,
+  audioGraphPlugin,
+  AudioGraphPlugin,
+  canvasPlugin,
+  CanvasPlugin,
+  equalizerPlugin,
+  EqualizerPlugin,
+  FrameDataTexture,
+  GpuSurface,
+  mixerPlugin,
+  MixerPlugin,
+  spectrumPlugin,
+  SpectrumPlugin,
+  VisualizationPlugin,
+  volumeMemoryPlugin,
+  VolumeMemoryPlugin,
 } from '@nomercy-entertainment/nomercy-player-core';
+
 export type {
-	AudioGraphEvents,
-	AudioGraphOptions,
-	CanvasEvents,
-	CanvasOptions,
-	CanvasRenderFn,
-	EqBand,
-	EqPreset,
-	EqualizerEvents,
-	EqualizerOptions,
-	GpuSurfaceOptions,
-	MixerEvents,
-	MixerOptions,
-	SpectrumOptions,
-	VisualizationFrame,
-	VisualizationOptions,
-	VolumeMemoryOptions,
+  AudioGraphEvents,
+  AudioGraphOptions,
+  CanvasEvents,
+  CanvasOptions,
+  CanvasRenderFn,
+  EqBand,
+  EqPreset,
+  EqualizerEvents,
+  EqualizerOptions,
+  GpuSurfaceOptions,
+  MixerEvents,
+  MixerOptions,
+  SpectrumOptions,
+  VisualizationFrame,
+  VisualizationOptions,
+  VolumeMemoryOptions,
 } from '@nomercy-entertainment/nomercy-player-core';
 
 export { embedPlugin, EmbedPlugin } from '@nomercy-entertainment/nomercy-player-core/plugins/embed';
+
 export type {
-	EmbedCommand,
-	EmbedEventMessage,
-	EmbedForwardedEvent,
-	EmbedOptions,
-	EmbedSerializedError,
+  EmbedCommand,
+  EmbedEventMessage,
+  EmbedForwardedEvent,
+  EmbedOptions,
+  EmbedSerializedError,
 } from '@nomercy-entertainment/nomercy-player-core/plugins/embed';
 
 export type { KeyBindings, KeyHandlerOptions } from '@nomercy-entertainment/nomercy-player-core/plugins/key-handler';

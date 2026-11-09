@@ -21,8 +21,8 @@ import type { IPreloadStrategy, ITransitionStrategy } from '../adapters/preload/
 import type { BasePlaylistItem, PluginCtorWithId } from '../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 import { makeFakeLogger } from './helpers/fake-logger';
 import { makeFakePlatform } from './helpers/fake-platform';
@@ -36,96 +36,96 @@ import { MockPlayerBase } from './helpers/mock-player-base';
 // ── MockPlayer (same minimal shape used in base-player.test.ts) ───────────────
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare phase: () => string;
-	declare dispatching: () => ReadonlyArray<string>;
-	declare setupState: () => any;
-	declare baseUrl: { (): string | undefined; (url: string): void };
-	declare audioContext: () => AudioContext | undefined;
-	declare experimental: any;
-	declare t: {
-		(key: string, vars?: Record<string, string>): string;
-		(PluginClass: PluginCtorWithId, key: string, vars?: Record<string, string>): string;
-	};
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare phase: () => string;
+  declare dispatching: () => ReadonlyArray<string>;
+  declare setupState: () => any;
+  declare baseUrl: { (): string | undefined; (url: string): void };
+  declare audioContext: () => AudioContext | undefined;
+  declare experimental: any;
+  declare t: {
+    (key: string, vars?: Record<string, string>): string;
+    (PluginClass: PluginCtorWithId, key: string, vars?: Record<string, string>): string;
+  };
 
-	declare language: { (): string; (lang: string): Promise<void> };
-	declare addTranslations: (bundle: any) => void;
-	declare translation: { (lang: string, key: string): string | undefined; (lang: string, key: string, value: string): void };
-	declare removeTranslations: (prefix: string, lang?: string) => void;
-	declare registerCueParser: (parser: any, prepend?: boolean) => void;
-	declare unregisterCueParser: (id: string) => void;
-	declare resolveUrl: (url: string, category?: string) => Promise<any>;
-	declare urlResolver: { (): any; (fn: any): void };
-	declare play: (opts?: any) => Promise<void>;
-	declare pause: (opts?: any) => Promise<void>;
-	declare stop: (opts?: any) => Promise<void>;
-	declare togglePlayback: (opts?: any) => Promise<void>;
-	declare next: (opts?: any) => Promise<void>;
-	declare previous: (opts?: any) => Promise<void>;
-	declare rewind: (seconds?: number, opts?: any) => Promise<void>;
-	declare forward: (seconds?: number, opts?: any) => Promise<void>;
-	declare restart: (opts?: any) => Promise<void>;
-	declare time: { (): number; (seconds: number, opts?: any): Promise<void> };
-	declare duration: () => number;
-	declare buffered: () => number;
-	declare bufferedRanges: () => TimeRanges;
-	declare seekable: () => TimeRanges;
-	declare timeData: () => any;
-	declare seekByPercentage: (pct: number, opts?: any) => void;
-	declare playbackRate: { (): number; (rate: number): void };
-	declare playbackRates: () => number[];
-	declare volume: { (): number; (level: number): void };
-	declare mute: () => void;
-	declare unmute: () => void;
-	declare toggleMute: () => void;
-	declare volumeUp: (step?: number) => void;
-	declare volumeDown: (step?: number) => void;
-	declare playState: () => string;
-	declare volumeState: () => string;
-	declare repeatState: { (): string; (state: any): void };
-	declare shuffleState: { (): string; (state: any): void };
-	declare queue: { (): ReadonlyArray<any>; (items: any[], opts?: any): void };
-	declare queueAppend: (item: any, opts?: any) => void;
-	declare queuePrepend: (item: any, opts?: any) => void;
-	declare queueInsert: (item: any, index: number, opts?: any) => void;
-	declare queueRemove: (id: any, opts?: any) => void;
-	declare queueRemoveAt: (index: number, opts?: any) => void;
-	declare queueMove: (from: number, to: number, opts?: any) => void;
-	declare queueClear: (opts?: any) => void;
-	declare queueShuffle: (opts?: any) => void;
-	declare queueSort: (compare: any, opts?: any) => void;
-	declare peekNext: () => any;
-	declare peekPrevious: () => any;
-	declare queueLength: () => number;
-	declare queueIndexOf: (id: any) => number;
-	declare item: { (): any; (target: any, opts?: any): void };
-	declare index: () => number;
-	declare backlog: { (): ReadonlyArray<any>; (items: any[]): void };
-	declare backlogAppend: (item: any) => void;
-	declare backlogRemove: (id: any) => void;
-	declare backlogClear: () => void;
-	declare addPlugin: (PluginClass: any, opts?: any) => this;
-	declare getPlugin: (PluginClass: any) => any;
-	declare getPluginById: (id: string) => any;
-	declare removePlugin: (PluginClass: any) => void;
-	declare removePluginById: (id: string) => void;
-	declare plugins: () => ReadonlyArray<any>;
-	declare enabledPlugins: () => ReadonlyArray<any>;
-	declare setPreloadStrategy: (strategy: IPreloadStrategy) => void;
-	declare setTransitionStrategy: (strategy: ITransitionStrategy) => void;
-	declare preloadStrategy: () => IPreloadStrategy;
-	declare transitionStrategy: () => ITransitionStrategy;
-	declare platform: () => any;
-	declare auth: any;
-	declare hasAuth: () => boolean;
-	declare refreshAuth: () => Promise<void>;
-	declare baseImageUrl: { (): string | undefined; (url: string): void };
-	declare cueParsers: () => any[];
-	declare load: (url: string, opts?: any) => Promise<void>;
-	declare pushDispatch: (name: string) => void;
-	declare popDispatch: () => string | undefined;
+  declare language: { (): string; (lang: string): Promise<void> };
+  declare addTranslations: (bundle: any) => void;
+  declare translation: { (lang: string, key: string): string | undefined; (lang: string, key: string, value: string): void };
+  declare removeTranslations: (prefix: string, lang?: string) => void;
+  declare registerCueParser: (parser: any, prepend?: boolean) => void;
+  declare unregisterCueParser: (id: string) => void;
+  declare resolveUrl: (url: string, category?: string) => Promise<any>;
+  declare urlResolver: { (): any; (fn: any): void };
+  declare play: (opts?: any) => Promise<void>;
+  declare pause: (opts?: any) => Promise<void>;
+  declare stop: (opts?: any) => Promise<void>;
+  declare togglePlayback: (opts?: any) => Promise<void>;
+  declare next: (opts?: any) => Promise<void>;
+  declare previous: (opts?: any) => Promise<void>;
+  declare rewind: (seconds?: number, opts?: any) => Promise<void>;
+  declare forward: (seconds?: number, opts?: any) => Promise<void>;
+  declare restart: (opts?: any) => Promise<void>;
+  declare time: { (): number; (seconds: number, opts?: any): Promise<void> };
+  declare duration: () => number;
+  declare buffered: () => number;
+  declare bufferedRanges: () => TimeRanges;
+  declare seekable: () => TimeRanges;
+  declare timeData: () => any;
+  declare seekByPercentage: (pct: number, opts?: any) => void;
+  declare playbackRate: { (): number; (rate: number): void };
+  declare playbackRates: () => number[];
+  declare volume: { (): number; (level: number): void };
+  declare mute: () => void;
+  declare unmute: () => void;
+  declare toggleMute: () => void;
+  declare volumeUp: (step?: number) => void;
+  declare volumeDown: (step?: number) => void;
+  declare playState: () => string;
+  declare volumeState: () => string;
+  declare repeatState: { (): string; (state: any): void };
+  declare shuffleState: { (): string; (state: any): void };
+  declare queue: { (): ReadonlyArray<any>; (items: any[], opts?: any): void };
+  declare queueAppend: (item: any, opts?: any) => void;
+  declare queuePrepend: (item: any, opts?: any) => void;
+  declare queueInsert: (item: any, index: number, opts?: any) => void;
+  declare queueRemove: (id: any, opts?: any) => void;
+  declare queueRemoveAt: (index: number, opts?: any) => void;
+  declare queueMove: (from: number, to: number, opts?: any) => void;
+  declare queueClear: (opts?: any) => void;
+  declare queueShuffle: (opts?: any) => void;
+  declare queueSort: (compare: any, opts?: any) => void;
+  declare peekNext: () => any;
+  declare peekPrevious: () => any;
+  declare queueLength: () => number;
+  declare queueIndexOf: (id: any) => number;
+  declare item: { (): any; (target: any, opts?: any): void };
+  declare index: () => number;
+  declare backlog: { (): ReadonlyArray<any>; (items: any[]): void };
+  declare backlogAppend: (item: any) => void;
+  declare backlogRemove: (id: any) => void;
+  declare backlogClear: () => void;
+  declare addPlugin: (PluginClass: any, opts?: any) => this;
+  declare getPlugin: (PluginClass: any) => any;
+  declare getPluginById: (id: string) => any;
+  declare removePlugin: (PluginClass: any) => void;
+  declare removePluginById: (id: string) => void;
+  declare plugins: () => ReadonlyArray<any>;
+  declare enabledPlugins: () => ReadonlyArray<any>;
+  declare setPreloadStrategy: (strategy: IPreloadStrategy) => void;
+  declare setTransitionStrategy: (strategy: ITransitionStrategy) => void;
+  declare preloadStrategy: () => IPreloadStrategy;
+  declare transitionStrategy: () => ITransitionStrategy;
+  declare platform: () => any;
+  declare auth: any;
+  declare hasAuth: () => boolean;
+  declare refreshAuth: () => Promise<void>;
+  declare baseImageUrl: { (): string | undefined; (url: string): void };
+  declare cueParsers: () => any[];
+  declare load: (url: string, opts?: any) => Promise<void>;
+  declare pushDispatch: (name: string) => void;
+  declare popDispatch: () => string | undefined;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
@@ -135,127 +135,136 @@ composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 let divCounter = 0;
 
 function makeDiv(id: string): HTMLDivElement {
-	const div = document.createElement('div');
-	div.id = id;
-	document.body.appendChild(div);
-	return div;
+  const div = document.createElement('div');
+
+  div.id = id;
+  document.body.appendChild(div);
+
+  return div;
 }
 
 function makeItem(id: string): BasePlaylistItem {
-	return { id };
+  return { id };
 }
 
 function buildPlayer(config: Record<string, unknown> = {}): MockPlayer {
-	const divId = `di-test-${++divCounter}`;
-	makeDiv(divId);
-	return new MockPlayer(divId).setup(config);
+  const divId = `di-test-${++divCounter}`;
+
+  makeDiv(divId);
+
+  return new MockPlayer(divId).setup(config);
 }
 
 // ── Suite ─────────────────────────────────────────────────────────────────────
 
 describe('adapter-injection', () => {
-	beforeEach(() => { MockPlayer._resetRegistry(); });
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-		divCounter = 0;
-	});
+  beforeEach(() => { MockPlayer._resetRegistry(); });
 
-	it('logger injection — setup routes log calls through the injected logger', async () => {
-		const fakeLogger = makeFakeLogger();
-		const player = buildPlayer({ logger: fakeLogger, logLevel: 'debug' });
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+    divCounter = 0;
+  });
 
-		await player.ready();
+  it('logger injection — setup routes log calls through the injected logger', async () => {
+    const fakeLogger = makeFakeLogger();
+    const player = buildPlayer({ logger: fakeLogger, logLevel: 'debug' });
 
-		expect(fakeLogger.calls.length).toBeGreaterThan(0);
-	});
+    await player.ready();
 
-	it('platform injection — visibility.subscribe called on the injected platform when pauseWhenHidden is true', async () => {
-		const fakePlatform = makeFakePlatform();
-		const player = buildPlayer({ platform: fakePlatform, pauseWhenHidden: true });
+    expect(fakeLogger.calls.length).toBeGreaterThan(0);
+  });
 
-		await player.ready();
+  it('platform injection — visibility.subscribe called on the injected platform when pauseWhenHidden is true', async () => {
+    const fakePlatform = makeFakePlatform();
+    const player = buildPlayer({ platform: fakePlatform, pauseWhenHidden: true });
 
-		expect(fakePlatform.visibilitySubscribeCalls).toBe(1);
-	});
+    await player.ready();
 
-	it('translator injection — t() routes through the injected translator', async () => {
-		const fakeTranslator = makeFakeTranslator();
-		const player = buildPlayer({ translator: fakeTranslator });
+    expect(fakePlatform.visibilitySubscribeCalls).toBe(1);
+  });
 
-		await player.ready();
+  it('translator injection — t() routes through the injected translator', async () => {
+    const fakeTranslator = makeFakeTranslator();
+    const player = buildPlayer({ translator: fakeTranslator });
 
-		const result = player.t('hello');
+    await player.ready();
 
-		expect(result).toBe('FAKE:hello');
-		expect(fakeTranslator.translateCalls).toContain('hello');
-	});
+    const result = player.t('hello');
 
-	it('urlResolver injection — resolveUrl() calls the injected resolver', async () => {
-		const fakeResolver = makeFakeUrlResolver();
-		const player = buildPlayer({ urlResolver: fakeResolver });
+    expect(result).toBe('FAKE:hello');
+    expect(fakeTranslator.translateCalls).toContain('hello');
+  });
 
-		await player.ready();
+  it('urlResolver injection — resolveUrl() calls the injected resolver', async () => {
+    const fakeResolver = makeFakeUrlResolver();
+    const player = buildPlayer({ urlResolver: fakeResolver });
 
-		const resolved = await player.resolveUrl('/asset.mp4', 'media');
+    await player.ready();
 
-		expect(resolved.href).toBe('RESOLVED');
-		expect(fakeResolver.resolveCalls).toContain('/asset.mp4');
-	});
+    const resolved = await player.resolveUrl('/asset.mp4', 'media');
 
-	it('shuffleStrategy injection — queueShuffle() calls the injected strategy', async () => {
-		const fakeStrategy = makeFakeShuffleStrategy();
-		const player = buildPlayer({ shuffleStrategy: fakeStrategy });
+    expect(resolved.href).toBe('RESOLVED');
+    expect(fakeResolver.resolveCalls).toContain('/asset.mp4');
+  });
 
-		await player.ready();
+  it('shuffleStrategy injection — queueShuffle() calls the injected strategy', async () => {
+    const fakeStrategy = makeFakeShuffleStrategy();
+    const player = buildPlayer({ shuffleStrategy: fakeStrategy });
 
-		const itemA = makeItem('a');
-		const itemB = makeItem('b');
-		const itemC = makeItem('c');
-		player.queue([itemA, itemB, itemC]);
+    await player.ready();
 
-		player.queueShuffle();
+    const itemA = makeItem('a');
+    const itemB = makeItem('b');
+    const itemC = makeItem('c');
 
-		expect(fakeStrategy.shuffleCalled).toBe(true);
+    player.queue([itemA, itemB, itemC]);
 
-		const ids = (player.queue() as ReadonlyArray<BasePlaylistItem>).map(i => i.id);
-		expect(ids).toEqual(['c', 'b', 'a']);
-	});
+    player.queueShuffle();
 
-	it('preloadStrategy injection — injected shouldPreload is called on a time tick', async () => {
-		const fakeStrategy = makeFakePreloadStrategy();
-		const player = buildPlayer({ preloadStrategy: fakeStrategy });
+    expect(fakeStrategy.shuffleCalled).toBe(true);
 
-		await player.ready();
+    const ids = (player.queue() as ReadonlyArray<BasePlaylistItem>).map((i) => i.id);
 
-		player.queue([makeItem('current'), makeItem('next')]);
-		player.item('current');
+    expect(ids).toEqual(['c', 'b', 'a']);
+  });
 
-		const internals = player as any;
-		internals._internalDuration = 60;
+  it('preloadStrategy injection — injected shouldPreload is called on a time tick', async () => {
+    const fakeStrategy = makeFakePreloadStrategy();
+    const player = buildPlayer({ preloadStrategy: fakeStrategy });
 
-		player.emit('time', { time: 55 });
+    await player.ready();
 
-		expect(fakeStrategy.shouldPreloadCalls).toBeGreaterThanOrEqual(1);
-	});
+    player.queue([makeItem('current'), makeItem('next')]);
+    player.item('current');
 
-	it('transitionStrategy injection — injected shouldTransition is called on a time tick', async () => {
-		const fakeStrategy = makeFakeTransitionStrategy();
-		const player = buildPlayer({
-			transitionStrategy: fakeStrategy,
-			crossfadeEnabled: true,
-		});
+    const internals = player as any;
 
-		await player.ready();
+    internals._internalDuration = 60;
 
-		player.queue([makeItem('current'), makeItem('next')]);
-		player.item('current');
+    player.emit('time', { time: 55 });
 
-		const internals = player as any;
-		internals._internalDuration = 60;
+    expect(fakeStrategy.shouldPreloadCalls).toBeGreaterThanOrEqual(1);
+  });
 
-		player.emit('time', { time: 55 });
+  it('transitionStrategy injection — injected shouldTransition is called on a time tick', async () => {
+    const fakeStrategy = makeFakeTransitionStrategy();
+    const player = buildPlayer({
+      transitionStrategy: fakeStrategy,
+      crossfadeEnabled: true,
+    });
 
-		expect(fakeStrategy.shouldTransitionCalls).toBeGreaterThanOrEqual(1);
-	});
+    await player.ready();
+
+    player.queue([makeItem('current'), makeItem('next')]);
+    player.item('current');
+
+    const internals = player as any;
+
+    internals._internalDuration = 60;
+
+    player.emit('time', { time: 55 });
+
+    expect(fakeStrategy.shouldTransitionCalls).toBeGreaterThanOrEqual(1);
+  });
 });

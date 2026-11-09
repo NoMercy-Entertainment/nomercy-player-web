@@ -22,299 +22,336 @@ import { NMMusicPlayer } from '../index';
 // ── Mock backend ──────────────────────────────────────────────────────────────
 
 function makeMockBackend(overrides: Partial<IAudioBackend> = {}): IAudioBackend {
-	return {
-		kind: 'audio-element',
-		load: vi.fn(() => Promise.resolve()),
-		unload: vi.fn(),
-		dispose: vi.fn(),
-		play: vi.fn(() => Promise.resolve()),
-		pause: vi.fn(),
-		stop: vi.fn(),
-		currentTime: vi.fn(() => 0) as any,
-		duration: vi.fn(() => 0),
-		buffered: vi.fn(() => 0),
-		bufferedRanges: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
-		seekable: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
-		playbackRate: vi.fn(() => 1) as any,
-		volume: vi.fn(() => 0.8) as any,
-		mute: vi.fn(),
-		unmute: vi.fn(),
-		state: vi.fn(() => 'idle' as const),
-		outputNode: vi.fn(() => ({} as AudioNode)),
-		analyserSource: vi.fn(() => ({} as AudioNode)),
-		mediaElement: vi.fn(() => document.createElement('audio')),
-		captureStream: vi.fn(() => ({} as MediaStream)),
-		setSinkId: vi.fn(() => Promise.resolve()),
-		getSinkId: vi.fn(() => ''),
-		mediaKeys: vi.fn(() => undefined),
-		setMediaKeys: vi.fn(() => Promise.resolve()),
-		outputProtectionState: vi.fn(() => 'unsupported' as const),
-		pauseLoader: vi.fn(),
-		resumeLoader: vi.fn(),
-		loaderState: vi.fn(() => 'running' as const),
-		on: vi.fn(),
-		off: vi.fn(),
-		supportsCrossfade: vi.fn(() => true),
-		loadSecondary: vi.fn(() => Promise.resolve()),
-		disposeSecondary: vi.fn(),
-		primeSecondary: vi.fn(() => Promise.resolve()),
-		crossfade: vi.fn(() => Promise.resolve()),
-		secondaryGain: vi.fn(() => 0) as any,
-		...overrides,
-	};
+  return {
+    kind: 'audio-element',
+    load: vi.fn(() => Promise.resolve()),
+    unload: vi.fn(),
+    dispose: vi.fn(),
+    play: vi.fn(() => Promise.resolve()),
+    pause: vi.fn(),
+    stop: vi.fn(),
+    currentTime: vi.fn(() => 0) as any,
+    duration: vi.fn(() => 0),
+    buffered: vi.fn(() => 0),
+    bufferedRanges: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
+    seekable: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
+    playbackRate: vi.fn(() => 1) as any,
+    volume: vi.fn(() => 0.8) as any,
+    mute: vi.fn(),
+    unmute: vi.fn(),
+    state: vi.fn(() => 'idle' as const),
+    outputNode: vi.fn(() => ({} as AudioNode)),
+    analyserSource: vi.fn(() => ({} as AudioNode)),
+    mediaElement: vi.fn(() => document.createElement('audio')),
+    captureStream: vi.fn(() => ({} as MediaStream)),
+    setSinkId: vi.fn(() => Promise.resolve()),
+    getSinkId: vi.fn(() => ''),
+    mediaKeys: vi.fn(() => undefined),
+    setMediaKeys: vi.fn(() => Promise.resolve()),
+    outputProtectionState: vi.fn(() => 'unsupported' as const),
+    pauseLoader: vi.fn(),
+    resumeLoader: vi.fn(),
+    loaderState: vi.fn(() => 'running' as const),
+    on: vi.fn(),
+    off: vi.fn(),
+    supportsCrossfade: vi.fn(() => true),
+    loadSecondary: vi.fn(() => Promise.resolve()),
+    disposeSecondary: vi.fn(),
+    primeSecondary: vi.fn(() => Promise.resolve()),
+    crossfade: vi.fn(() => Promise.resolve()),
+    secondaryGain: vi.fn(() => 0) as any,
+    ...overrides,
+  };
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeTrack(url = 'http://test/track.mp3'): MusicPlaylistItem {
-	return { id: '1', name: 'Test Track', url };
+  return {
+    id: '1',
+    name: 'Test Track',
+    url,
+  };
 }
 
 function setup(): { player: NMMusicPlayer; mock: IAudioBackend } {
-	const div = document.createElement('div');
-	div.id = 'xfade-test';
-	document.body.appendChild(div);
+  const div = document.createElement('div');
 
-	const player = new NMMusicPlayer('xfade-test');
-	player.setup({});
+  div.id = 'xfade-test';
+  document.body.appendChild(div);
 
-	const mock = makeMockBackend();
+  const player = new NMMusicPlayer('xfade-test');
 
-	// Inject the mock as the active backend via the public accessor.
-	// `backend()` is the getter overload; we replace _backend directly via
-	// a cast so the player delegates all crossfade calls to our mock.
-	(player as any)._backend = mock;
+  player.setup({});
 
-	return { player, mock };
+  const mock = makeMockBackend();
+
+  // Inject the mock as the active backend via the public accessor.
+  // `backend()` is the getter overload; we replace _backend directly via
+  // a cast so the player delegates all crossfade calls to our mock.
+  (player as any)._backend = mock;
+
+  return { player, mock };
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('NMMusicPlayer.crossfadeTo()', () => {
-	beforeEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  beforeEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	afterEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	describe('event sequence', () => {
-		it('emits crossfadeStart then crossfadeComplete', async () => {
-			const { player } = setup();
-			const events: string[] = [];
-			player.on('crossfadeStart' as any, () => events.push('crossfadeStart'));
-			player.on('crossfadeComplete' as any, () => events.push('crossfadeComplete'));
+  describe('event sequence', () => {
+    it('emits crossfadeStart then crossfadeComplete', async () => {
+      const { player } = setup();
+      const events: string[] = [];
 
-			await player.crossfadeTo(makeTrack());
+      player.on('crossfadeStart' as any, () =>
+        events.push('crossfadeStart'));
 
-			expect(events).toEqual(['crossfadeStart', 'crossfadeComplete']);
-		});
+      player.on('crossfadeComplete' as any, () =>
+        events.push('crossfadeComplete'));
 
-		it('crossfadeStart payload carries from, to, duration', async () => {
-			const { player } = setup();
-			let payload: any;
-			player.on('crossfadeStart' as any, (data: any) => { payload = data; });
+      await player.crossfadeTo(makeTrack());
 
-			const track = makeTrack();
-			await player.crossfadeTo(track, { duration: 4 });
+      expect(events).toEqual(['crossfadeStart', 'crossfadeComplete']);
+    });
 
-			expect(payload).toMatchObject({
-				to: track,
-				duration: 4000, // converted to ms
-			});
-		});
+    it('crossfadeStart payload carries from, to, duration', async () => {
+      const { player } = setup();
+      let payload: any;
 
-		it('crossfadeComplete payload carries the incoming item', async () => {
-			const { player } = setup();
-			let payload: any;
-			player.on('crossfadeComplete' as any, (data: any) => { payload = data; });
+      player.on('crossfadeStart' as any, (data: any) => { payload = data; });
 
-			const track = makeTrack();
-			await player.crossfadeTo(track);
+      const track = makeTrack();
 
-			expect(payload).toMatchObject({ item: track });
-		});
-	});
+      await player.crossfadeTo(track, { duration: 4 });
 
-	// ── M1 Connect-plugin effort: beforeCrossfade cancellation ────────────────
+      expect(payload).toMatchObject({
+        to: track,
+        duration: 4000, // converted to ms
+      });
+    });
 
-	describe('beforeCrossfade cancellation', () => {
-		it('preventDefault() blocks the crossfade entirely and fires crossfadePrevented', async () => {
-			const { player, mock } = setup();
+    it('crossfadeComplete payload carries the incoming item', async () => {
+      const { player } = setup();
+      let payload: any;
 
-			let prevented: { reason: string; cause?: unknown } | undefined;
-			player.on('beforeCrossfade' as any, (event: any) => {
-				event.preventDefault();
-			});
-			player.on('crossfadePrevented' as any, (data: any) => { prevented = data; });
+      player.on('crossfadeComplete' as any, (data: any) => { payload = data; });
 
-			const startedOrCompleted: string[] = [];
-			player.on('crossfadeStart' as any, () => startedOrCompleted.push('crossfadeStart'));
-			player.on('crossfadeComplete' as any, () => startedOrCompleted.push('crossfadeComplete'));
+      const track = makeTrack();
 
-			await player.crossfadeTo(makeTrack());
+      await player.crossfadeTo(track);
 
-			expect(prevented).toEqual({ reason: 'listener-prevented' });
-			// No buffers were touched — the cancellable gate ran before anything
-			// backend-facing happened.
-			expect(mock.loadSecondary).not.toHaveBeenCalled();
-			expect(mock.primeSecondary).not.toHaveBeenCalled();
-			expect(mock.crossfade).not.toHaveBeenCalled();
-			expect(startedOrCompleted).toEqual([]);
-			expect(player.isTransitioning()).toBe(false);
-		});
+      expect(payload).toMatchObject({ item: track });
+    });
+  });
 
-		it('beforeCrossfade payload carries from, to, duration — mirrors crossfadeStart', async () => {
-			const { player } = setup();
+  // ── M1 Connect-plugin effort: beforeCrossfade cancellation ────────────────
 
-			let captured: { from: unknown; to: unknown; duration: number } | undefined;
-			player.on('beforeCrossfade' as any, (event: any) => {
-				captured = { ...event.data };
-			});
+  describe('beforeCrossfade cancellation', () => {
+    it('preventDefault() blocks the crossfade entirely and fires crossfadePrevented', async () => {
+      const { player, mock } = setup();
 
-			const track = makeTrack();
-			await player.crossfadeTo(track, { duration: 4 });
+      let prevented: { reason: string; cause?: unknown } | undefined;
 
-			expect(captured).toMatchObject({ from: null, to: track, duration: 4000 });
-		});
+      player.on('beforeCrossfade' as any, (event: any) => {
+        event.preventDefault();
+      });
 
-		it('with no listener, crossfadeTo() still proceeds normally (baseline)', async () => {
-			const { player, mock } = setup();
+      player.on('crossfadePrevented' as any, (data: any) => { prevented = data; });
 
-			await player.crossfadeTo(makeTrack());
+      const startedOrCompleted: string[] = [];
 
-			expect(mock.loadSecondary).toHaveBeenCalledTimes(1);
-			expect(mock.crossfade).toHaveBeenCalledTimes(1);
-		});
-	});
+      player.on('crossfadeStart' as any, () =>
+        startedOrCompleted.push('crossfadeStart'));
 
-	describe('isTransitioning()', () => {
-		it('is false before a crossfade', () => {
-			const { player } = setup();
-			expect(player.isTransitioning()).toBe(false);
-		});
+      player.on('crossfadeComplete' as any, () =>
+        startedOrCompleted.push('crossfadeComplete'));
 
-		it('is true during the crossfade, false after', async () => {
-			const { player, mock } = setup();
-			const states: boolean[] = [];
+      await player.crossfadeTo(makeTrack());
 
-			(mock.crossfade as ReturnType<typeof vi.fn>).mockImplementation(() => {
-				states.push(player.isTransitioning());
-				return Promise.resolve();
-			});
+      expect(prevented).toEqual({ reason: 'listener-prevented' });
+      // No buffers were touched — the cancellable gate ran before anything
+      // backend-facing happened.
+      expect(mock.loadSecondary).not.toHaveBeenCalled();
+      expect(mock.primeSecondary).not.toHaveBeenCalled();
+      expect(mock.crossfade).not.toHaveBeenCalled();
+      expect(startedOrCompleted).toEqual([]);
+      expect(player.isTransitioning()).toBe(false);
+    });
 
-			await player.crossfadeTo(makeTrack());
+    it('beforeCrossfade payload carries from, to, duration — mirrors crossfadeStart', async () => {
+      const { player } = setup();
 
-			expect(states).toEqual([true]);
-			expect(player.isTransitioning()).toBe(false);
-		});
-	});
+      let captured: {
+        from: unknown;
+        to: unknown;
+        duration: number;
+      } | undefined;
 
-	describe('stacked call rejection', () => {
-		it('second simultaneous call returns without starting a second crossfade', async () => {
-			const { player, mock } = setup();
+      player.on('beforeCrossfade' as any, (event: any) => {
+        captured = { ...event.data };
+      });
 
-			let crossfadeCallCount = 0;
-			let resolveFirst!: () => void;
-			(mock.crossfade as ReturnType<typeof vi.fn>).mockImplementation(
-				() => new Promise<void>((res) => { crossfadeCallCount++; resolveFirst = res; }),
-			);
+      const track = makeTrack();
 
-			// Wait for `crossfadeStart` instead of counting microtask ticks —
-			// crossfadeTo() now dispatches the cancellable `beforeCrossfade` hook
-			// before anything else, which adds its own tick count that would
-			// make a fixed-tick drain fragile. `crossfadeStart` fires right after
-			// `_isTransitioning` flips true, which is the guard the second call
-			// below needs to observe.
-			const crossfadeStarted = new Promise<void>((resolve) => {
-				player.on('crossfadeStart', () => resolve());
-			});
+      await player.crossfadeTo(track, { duration: 4 });
 
-			// Start first — don't await yet.
-			const first = player.crossfadeTo(makeTrack('http://test/a.mp3'));
+      expect(captured).toMatchObject({
+        from: null,
+        to: track,
+        duration: 4000,
+      });
+    });
 
-			await crossfadeStarted;
-			// Wait for the crossfade() call itself rather than draining a fixed
-			// number of microtask ticks. The steps between crossfadeStart and
-			// crossfade() (URL resolution, loadSecondary, primeSecondary) each
-			// own their awaits, so a tick count is a hidden coupling to how many
-			// there happen to be today.
-			await vi.waitFor(() => expect(crossfadeCallCount).toBe(1));
+    it('with no listener, crossfadeTo() still proceeds normally (baseline)', async () => {
+      const { player, mock } = setup();
 
-			// Attempt a second while the first is mid-crossfade — should be a no-op.
-			await player.crossfadeTo(makeTrack('http://test/b.mp3'));
+      await player.crossfadeTo(makeTrack());
 
-			// Only the first crossfade was actually started.
-			expect(crossfadeCallCount).toBe(1);
-			// loadSecondary was called exactly once (for track a).
-			expect(mock.loadSecondary).toHaveBeenCalledTimes(1);
-			expect(mock.loadSecondary).toHaveBeenCalledWith('http://test/a.mp3');
+      expect(mock.loadSecondary).toHaveBeenCalledTimes(1);
+      expect(mock.crossfade).toHaveBeenCalledTimes(1);
+    });
+  });
 
-			// Resolve and clean up.
-			resolveFirst();
-			await first;
-		});
-	});
+  describe('isTransitioning()', () => {
+    it('is false before a crossfade', () => {
+      const { player } = setup();
 
-	describe('backend delegation', () => {
-		it('calls loadSecondary with the track URL', async () => {
-			const { player, mock } = setup();
-			const track = makeTrack('http://test/next.mp3');
+      expect(player.isTransitioning()).toBe(false);
+    });
 
-			await player.crossfadeTo(track);
+    it('is true during the crossfade, false after', async () => {
+      const { player, mock } = setup();
+      const states: boolean[] = [];
 
-			expect(mock.loadSecondary).toHaveBeenCalledWith('http://test/next.mp3');
-		});
+      (mock.crossfade as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        states.push(player.isTransitioning());
 
-		it('calls primeSecondary with startAt when provided', async () => {
-			const { player, mock } = setup();
+        return Promise.resolve();
+      });
 
-			await player.crossfadeTo(makeTrack(), { duration: 2, startAt: 500 });
+      await player.crossfadeTo(makeTrack());
 
-			expect(mock.primeSecondary).toHaveBeenCalledWith(500);
-		});
+      expect(states).toEqual([true]);
+      expect(player.isTransitioning()).toBe(false);
+    });
+  });
 
-		it('calls primeSecondary with undefined when startAt is omitted', async () => {
-			const { player, mock } = setup();
+  describe('stacked call rejection', () => {
+    it('second simultaneous call returns without starting a second crossfade', async () => {
+      const { player, mock } = setup();
 
-			await player.crossfadeTo(makeTrack(), { duration: 2 });
+      let crossfadeCallCount = 0;
+      let resolveFirst!: () => void;
 
-			expect(mock.primeSecondary).toHaveBeenCalledWith(undefined);
-		});
+      (mock.crossfade as ReturnType<typeof vi.fn>).mockImplementation(
+        () => new Promise<void>((res) => { crossfadeCallCount++; resolveFirst = res; }),
+      );
 
-		it('calls crossfade with duration converted to milliseconds', async () => {
-			const { player, mock } = setup();
+      // Wait for `crossfadeStart` instead of counting microtask ticks —
+      // crossfadeTo() now dispatches the cancellable `beforeCrossfade` hook
+      // before anything else, which adds its own tick count that would
+      // make a fixed-tick drain fragile. `crossfadeStart` fires right after
+      // `_isTransitioning` flips true, which is the guard the second call
+      // below needs to observe.
+      const crossfadeStarted = new Promise<void>((resolve) => {
+        player.on('crossfadeStart', () =>
+          resolve());
+      });
 
-			await player.crossfadeTo(makeTrack(), { duration: 3 });
+      // Start first — don't await yet.
+      const first = player.crossfadeTo(makeTrack('http://test/a.mp3'));
 
-			expect(mock.crossfade).toHaveBeenCalledWith(3000);
-		});
+      await crossfadeStarted;
+      // Wait for the crossfade() call itself rather than draining a fixed
+      // number of microtask ticks. The steps between crossfadeStart and
+      // crossfade() (URL resolution, loadSecondary, primeSecondary) each
+      // own their awaits, so a tick count is a hidden coupling to how many
+      // there happen to be today.
+      await vi.waitFor(() => expect(crossfadeCallCount).toBe(1));
 
-		it('uses crossfadeDefaults.duration when no per-call duration is given', async () => {
-			const div = document.createElement('div');
-			div.id = 'xfade-defaults';
-			document.body.appendChild(div);
+      // Attempt a second while the first is mid-crossfade — should be a no-op.
+      await player.crossfadeTo(makeTrack('http://test/b.mp3'));
 
-			const player = new NMMusicPlayer('xfade-defaults');
-			player.setup({ crossfadeDefaults: { duration: 7 } });
+      // Only the first crossfade was actually started.
+      expect(crossfadeCallCount).toBe(1);
+      // loadSecondary was called exactly once (for track a).
+      expect(mock.loadSecondary).toHaveBeenCalledTimes(1);
+      expect(mock.loadSecondary).toHaveBeenCalledWith('http://test/a.mp3');
 
-			const mock = makeMockBackend();
-			(player as any)._backend = mock;
+      // Resolve and clean up.
+      resolveFirst();
+      await first;
+    });
+  });
 
-			await player.crossfadeTo(makeTrack());
+  describe('backend delegation', () => {
+    it('calls loadSecondary with the track URL', async () => {
+      const { player, mock } = setup();
+      const track = makeTrack('http://test/next.mp3');
 
-			expect(mock.crossfade).toHaveBeenCalledWith(7000);
-		});
-	});
+      await player.crossfadeTo(track);
 
-	describe('missing URL guard', () => {
-		it('throws MediaFormatError when track.url is absent', async () => {
-			const { player } = setup();
-			const trackNoUrl = { id: '2', name: 'No URL' } as MusicPlaylistItem;
+      expect(mock.loadSecondary).toHaveBeenCalledWith('http://test/next.mp3');
+    });
 
-			await expect(player.crossfadeTo(trackNoUrl)).rejects.toThrow();
-		});
-	});
+    it('calls primeSecondary with startAt when provided', async () => {
+      const { player, mock } = setup();
+
+      await player.crossfadeTo(makeTrack(), { duration: 2, startAt: 500 });
+
+      expect(mock.primeSecondary).toHaveBeenCalledWith(500);
+    });
+
+    it('calls primeSecondary with undefined when startAt is omitted', async () => {
+      const { player, mock } = setup();
+
+      await player.crossfadeTo(makeTrack(), { duration: 2 });
+
+      expect(mock.primeSecondary).toHaveBeenCalledWith(undefined);
+    });
+
+    it('calls crossfade with duration converted to milliseconds', async () => {
+      const { player, mock } = setup();
+
+      await player.crossfadeTo(makeTrack(), { duration: 3 });
+
+      expect(mock.crossfade).toHaveBeenCalledWith(3000);
+    });
+
+    it('uses crossfadeDefaults.duration when no per-call duration is given', async () => {
+      const div = document.createElement('div');
+
+      div.id = 'xfade-defaults';
+      document.body.appendChild(div);
+
+      const player = new NMMusicPlayer('xfade-defaults');
+
+      player.setup({ crossfadeDefaults: { duration: 7 } });
+
+      const mock = makeMockBackend();
+
+      (player as any)._backend = mock;
+
+      await player.crossfadeTo(makeTrack());
+
+      expect(mock.crossfade).toHaveBeenCalledWith(7000);
+    });
+  });
+
+  describe('missing URL guard', () => {
+    it('throws MediaFormatError when track.url is absent', async () => {
+      const { player } = setup();
+      const trackNoUrl = { id: '2', name: 'No URL' } as MusicPlaylistItem;
+
+      await expect(player.crossfadeTo(trackNoUrl)).rejects.toThrow();
+    });
+  });
 });

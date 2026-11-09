@@ -15,7 +15,7 @@ import { PlayerError } from './player';
  * retry policy defaults to `attempts: 0`; ABR logic handles rendition fallback.
  */
 export class MediaFormatError extends PlayerError {
-	override readonly name = 'MediaFormatError';
+  override readonly name = 'MediaFormatError';
 }
 
 /**
@@ -25,7 +25,7 @@ export class MediaFormatError extends PlayerError {
  * `core:stream/<reason>`.
  */
 export class StreamError extends PlayerError {
-	override readonly name = 'StreamError';
+  override readonly name = 'StreamError';
 }
 
 /**
@@ -34,7 +34,7 @@ export class StreamError extends PlayerError {
  * `core:resource/<reason>`. Use `resourceError()` to construct.
  */
 export class ResourceError extends PlayerError {
-	override readonly name = 'ResourceError';
+  override readonly name = 'ResourceError';
 }
 
 /**
@@ -47,17 +47,17 @@ export class ResourceError extends PlayerError {
  * Code convention: `core:media/<reason>` — e.g. `core:media/codec-unsupported`.
  */
 export function mediaFormatError(
-	code: string,
-	message: string,
-	context?: Record<string, unknown>,
+  code: string,
+  message: string,
+  context?: Record<string, unknown>,
 ): MediaFormatError {
-	return new MediaFormatError({
-		code,
-		severity: 'error',
-		scope: { kind: 'core' },
-		message: `${code}: ${message}`,
-		context,
-	});
+  return new MediaFormatError({
+    code,
+    severity: 'error',
+    scope: { kind: 'core' },
+    message: `${code}: ${message}`,
+    context,
+  });
 }
 
 /**
@@ -69,15 +69,15 @@ export function mediaFormatError(
  * Code convention: `core:resource/<reason>` — e.g. `core:resource/worker-init-failed`.
  */
 export function resourceError(
-	code: string,
-	message: string,
-	context?: Record<string, unknown>,
+  code: string,
+  message: string,
+  context?: Record<string, unknown>,
 ): ResourceError {
-	return new ResourceError({
-		code,
-		severity: 'error',
-		scope: { kind: 'core' },
-		message: `${code}: ${message}`,
-		context,
-	});
+  return new ResourceError({
+    code,
+    severity: 'error',
+    scope: { kind: 'core' },
+    message: `${code}: ${message}`,
+    context,
+  });
 }

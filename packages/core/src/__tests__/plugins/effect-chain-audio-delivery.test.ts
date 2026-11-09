@@ -53,12 +53,12 @@
 import type { BaseEventMap, IPlayer } from '../../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
-	playerCoreMethods,
-	resolvePlayerConstructor,
-	setPlayerAudioContext,
+  composeMixins,
+  EventEmitter,
+  initPlayerCoreState,
+  playerCoreMethods,
+  resolvePlayerConstructor,
+  setPlayerAudioContext,
 } from '../../index';
 import { AudioGraphPlugin } from '../../plugins/audio-graph';
 import { EqualizerPlugin } from '../../plugins/equalizer/index';
@@ -69,100 +69,100 @@ import { MockPlayerBase } from '../helpers/mock-player-base';
 // ── Web Audio stubs ───────────────────────────────────────────────────────────
 
 class MockAudioNode {
-	_connections: MockAudioNode[] = [];
-	readonly label: string;
+  _connections: MockAudioNode[] = [];
+  readonly label: string;
 
-	constructor(label: string) {
-		this.label = label;
-	}
+  constructor(label: string) {
+    this.label = label;
+  }
 
-	connect(target: MockAudioNode): void {
-		this._connections.push(target);
-	}
+  connect(target: MockAudioNode): void {
+    this._connections.push(target);
+  }
 
-	disconnect(): void {
-		this._connections = [];
-	}
+  disconnect(): void {
+    this._connections = [];
+  }
 }
 
 class MockGainNode extends MockAudioNode {
-	gain = { value: 1, setTargetAtTime: vi.fn() };
+  gain = { value: 1, setTargetAtTime: vi.fn() };
 
-	constructor(label = 'gain') {
-		super(label);
-	}
+  constructor(label = 'gain') {
+    super(label);
+  }
 }
 
 class MockBiquadFilter extends MockAudioNode {
-	type: BiquadFilterType = 'peaking';
-	frequency = { value: 0 };
-	Q = { value: 1 };
-	gain = { value: 0, setTargetAtTime: vi.fn() };
+  type: BiquadFilterType = 'peaking';
+  frequency = { value: 0 };
+  Q = { value: 1 };
+  gain = { value: 0, setTargetAtTime: vi.fn() };
 
-	constructor(label = 'biquad') {
-		super(label);
-	}
+  constructor(label = 'biquad') {
+    super(label);
+  }
 }
 
 class MockAnalyserNode extends MockAudioNode {
-	fftSize = 2048;
-	smoothingTimeConstant = 0.8;
-	frequencyBinCount = 1024;
+  fftSize = 2048;
+  smoothingTimeConstant = 0.8;
+  frequencyBinCount = 1024;
 
-	constructor(label = 'analyser') {
-		super(label);
-	}
+  constructor(label = 'analyser') {
+    super(label);
+  }
 
-	getByteFrequencyData(_buf: Uint8Array): void { /* no-op */ }
-	getByteTimeDomainData(_buf: Uint8Array): void { /* no-op */ }
+  getByteFrequencyData(_buf: Uint8Array): void { /* no-op */ }
+  getByteTimeDomainData(_buf: Uint8Array): void { /* no-op */ }
 }
 
 class MockStereoPannerNode extends MockAudioNode {
-	pan = { value: 0, setTargetAtTime: vi.fn() };
+  pan = { value: 0, setTargetAtTime: vi.fn() };
 
-	constructor(label = 'panner') {
-		super(label);
-	}
+  constructor(label = 'panner') {
+    super(label);
+  }
 }
 
 class MockMediaElementSourceNode extends MockAudioNode {
-	constructor(label = 'source') {
-		super(label);
-	}
+  constructor(label = 'source') {
+    super(label);
+  }
 }
 
 class MockDestinationNode extends MockAudioNode {
-	constructor() {
-		super('destination');
-	}
+  constructor() {
+    super('destination');
+  }
 }
 
 class MockAudioContext {
-	state: AudioContextState = 'running';
-	currentTime = 0;
-	sampleRate = 44100;
-	destination = new MockDestinationNode() as unknown as AudioDestinationNode;
+  state: AudioContextState = 'running';
+  currentTime = 0;
+  sampleRate = 44100;
+  destination = new MockDestinationNode() as unknown as AudioDestinationNode;
 
-	createGain = vi.fn((): GainNode => new MockGainNode() as unknown as GainNode);
-	createBiquadFilter = vi.fn((): BiquadFilterNode => new MockBiquadFilter() as unknown as BiquadFilterNode);
-	createAnalyser = vi.fn((): AnalyserNode => new MockAnalyserNode() as unknown as AnalyserNode);
-	createStereoPanner = vi.fn((): StereoPannerNode => new MockStereoPannerNode() as unknown as StereoPannerNode);
-	createMediaElementSource = vi.fn((_el: HTMLMediaElement): MediaElementAudioSourceNode => new MockMediaElementSourceNode() as unknown as MediaElementAudioSourceNode);
-	resume = vi.fn(() => Promise.resolve());
-	close = vi.fn(() => Promise.resolve());
+  createGain = vi.fn((): GainNode => new MockGainNode() as unknown as GainNode);
+  createBiquadFilter = vi.fn((): BiquadFilterNode => new MockBiquadFilter() as unknown as BiquadFilterNode);
+  createAnalyser = vi.fn((): AnalyserNode => new MockAnalyserNode() as unknown as AnalyserNode);
+  createStereoPanner = vi.fn((): StereoPannerNode => new MockStereoPannerNode() as unknown as StereoPannerNode);
+  createMediaElementSource = vi.fn((_el: HTMLMediaElement): MediaElementAudioSourceNode => new MockMediaElementSourceNode() as unknown as MediaElementAudioSourceNode);
+  resume = vi.fn(() => Promise.resolve());
+  close = vi.fn(() => Promise.resolve());
 }
 
 // ── MockPlayer ────────────────────────────────────────────────────────────────
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: object) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare addPlugin: <_P>(PluginClass: unknown, opts?: unknown) => this;
-	declare getPlugin: <_P extends object>(PluginClass: { new(): _P }) => _P | undefined;
-	declare getPluginById: (id: string) => object | undefined;
-	declare removePlugin: (PluginClass: unknown) => void;
-	declare audioContext: () => AudioContext | undefined;
+  declare setup: (config: object) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare addPlugin: <_P>(PluginClass: unknown, opts?: unknown) => this;
+  declare getPlugin: <_P extends object>(PluginClass: { new(): _P }) => _P | undefined;
+  declare getPluginById: (id: string) => object | undefined;
+  declare removePlugin: (PluginClass: unknown) => void;
+  declare audioContext: () => AudioContext | undefined;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
@@ -172,74 +172,76 @@ composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 const _instancesLazy = new Map<string, MockPlayerLazyBackend>();
 
 class MockPlayerLazyBackend extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = document.createElement('div');
+  readonly playerId: string = '';
+  container: HTMLElement = document.createElement('div');
 
-	get id(): string {
-		return this.playerId;
-	}
+  get id(): string {
+    return this.playerId;
+  }
 
-	declare options: object;
-	declare setup: (config: object) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare addPlugin: <_P>(PluginClass: unknown, opts?: unknown) => this;
-	declare getPlugin: <_P extends object>(PluginClass: { new(): _P }) => _P | undefined;
-	declare getPluginById: (id: string) => object | undefined;
-	declare removePlugin: (PluginClass: unknown) => void;
-	declare audioContext: () => AudioContext | undefined;
+  declare options: object;
+  declare setup: (config: object) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare addPlugin: <_P>(PluginClass: unknown, opts?: unknown) => this;
+  declare getPlugin: <_P extends object>(PluginClass: { new(): _P }) => _P | undefined;
+  declare getPluginById: (id: string) => object | undefined;
+  declare removePlugin: (PluginClass: unknown) => void;
+  declare audioContext: () => AudioContext | undefined;
 
-	private _backendCtx!: MockAudioContext;
-	private _sourceNode!: MockMediaElementSourceNode;
-	private _audioEl!: HTMLAudioElement;
+  private _backendCtx!: MockAudioContext;
+  private _sourceNode!: MockMediaElementSourceNode;
+  private _audioEl!: HTMLAudioElement;
 
-	constructor(id?: string | number, backendCtx?: MockAudioContext) {
-		super();
-		initPlayerCoreState(this, { className: 'MockPlayerLazyBackend' });
-		const resolved = resolvePlayerConstructor(id, _instancesLazy, 'MockPlayerLazyBackend');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this;
-		}
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instancesLazy.set(resolved.id, this);
+  constructor(id?: string | number, backendCtx?: MockAudioContext) {
+    super();
+    initPlayerCoreState(this, { className: 'MockPlayerLazyBackend' });
+    const resolved = resolvePlayerConstructor(id, _instancesLazy, 'MockPlayerLazyBackend');
 
-		this._backendCtx = backendCtx ?? new MockAudioContext();
-		this._sourceNode = new MockMediaElementSourceNode('backend-source');
-		this._audioEl = document.createElement('audio');
-	}
+    if (resolved.kind === 'existing') {
+      return resolved.instance as unknown as this;
+    }
 
-	static _resetRegistry(): void {
-		_instancesLazy.clear();
-	}
+    (this as { playerId: string }).playerId = resolved.id;
+    this.container = resolved.div;
+    _instancesLazy.set(resolved.id, this);
 
-	/**
-	 * Simulates WebAudioBackend lazy initialization:
-	 * - Returns a backend object with outputNode() + mediaElement()
-	 * - Registers the backend's AudioContext on the player (mirroring _wireBackend)
-	 */
-	backend(): {
-		outputNode: (ctx: AudioContext) => AudioNode;
-		mediaElement: () => HTMLMediaElement;
-	} {
-		// Simulate _wireBackend registering the backend's context on the player.
-		// This is what NMMusicPlayer._wireBackend does when a WebAudioBackend
-		// is constructed — it calls setPlayerAudioContext(this, instance.audioContext()).
-		setPlayerAudioContext(this as unknown as IPlayer, this._backendCtx as unknown as AudioContext);
+    this._backendCtx = backendCtx ?? new MockAudioContext();
+    this._sourceNode = new MockMediaElementSourceNode('backend-source');
+    this._audioEl = document.createElement('audio');
+  }
 
-		return {
-			outputNode: (_ctx: AudioContext): AudioNode => this._sourceNode as unknown as AudioNode,
-			mediaElement: (): HTMLMediaElement => this._audioEl,
-		};
-	}
+  static _resetRegistry(): void {
+    _instancesLazy.clear();
+  }
 
-	get backendCtx(): MockAudioContext {
-		return this._backendCtx;
-	}
+  /**
+   * Simulates WebAudioBackend lazy initialization:
+   * - Returns a backend object with outputNode() + mediaElement()
+   * - Registers the backend's AudioContext on the player (mirroring _wireBackend)
+   */
+  backend(): {
+    outputNode: (ctx: AudioContext) => AudioNode;
+    mediaElement: () => HTMLMediaElement;
+  } {
+    // Simulate _wireBackend registering the backend's context on the player.
+    // This is what NMMusicPlayer._wireBackend does when a WebAudioBackend
+    // is constructed — it calls setPlayerAudioContext(this, instance.audioContext()).
+    setPlayerAudioContext(this as unknown as IPlayer, this._backendCtx as unknown as AudioContext);
 
-	get sourceNode(): MockMediaElementSourceNode {
-		return this._sourceNode;
-	}
+    return {
+      outputNode: (_ctx: AudioContext): AudioNode => this._sourceNode as unknown as AudioNode,
+      mediaElement: (): HTMLMediaElement => this._audioEl,
+    };
+  }
+
+  get backendCtx(): MockAudioContext {
+    return this._backendCtx;
+  }
+
+  get sourceNode(): MockMediaElementSourceNode {
+    return this._sourceNode;
+  }
 }
 
 composeMixins(MockPlayerLazyBackend.prototype, ...playerCoreMethods);
@@ -247,350 +249,383 @@ composeMixins(MockPlayerLazyBackend.prototype, ...playerCoreMethods);
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function installAudioContext(ctx: MockAudioContext): void {
-	const Ctor = class {
-		state = ctx.state;
-		currentTime = ctx.currentTime;
-		sampleRate = ctx.sampleRate;
-		destination = ctx.destination;
-		createGain = ctx.createGain.bind(ctx);
-		createBiquadFilter = ctx.createBiquadFilter.bind(ctx);
-		createAnalyser = ctx.createAnalyser.bind(ctx);
-		createStereoPanner = ctx.createStereoPanner.bind(ctx);
-		createMediaElementSource = ctx.createMediaElementSource.bind(ctx);
-		resume = ctx.resume.bind(ctx);
-		close = ctx.close.bind(ctx);
-	};
-	(globalThis as unknown as { AudioContext: unknown }).AudioContext = Ctor;
+  const Ctor = class {
+    state = ctx.state;
+    currentTime = ctx.currentTime;
+    sampleRate = ctx.sampleRate;
+    destination = ctx.destination;
+    createGain = ctx.createGain.bind(ctx);
+    createBiquadFilter = ctx.createBiquadFilter.bind(ctx);
+    createAnalyser = ctx.createAnalyser.bind(ctx);
+    createStereoPanner = ctx.createStereoPanner.bind(ctx);
+    createMediaElementSource = ctx.createMediaElementSource.bind(ctx);
+    resume = ctx.resume.bind(ctx);
+    close = ctx.close.bind(ctx);
+  };
+
+  (globalThis as unknown as { AudioContext: unknown }).AudioContext = Ctor;
 }
 
 function removeAudioContext(): void {
-	delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
+  delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
 }
 
 /** Collect all unique labels reachable from `node` following its connections. */
 function reachableLabels(node: MockAudioNode): Set<string> {
-	const visited = new Set<MockAudioNode>();
-	const labels = new Set<string>();
+  const visited = new Set<MockAudioNode>();
+  const labels = new Set<string>();
 
-	function walk(current: MockAudioNode): void {
-		if (visited.has(current))
-			return;
-		visited.add(current);
-		labels.add(current.label);
-		for (const next of current._connections) {
-			walk(next);
-		}
-	}
-	walk(node);
-	return labels;
+  function walk(current: MockAudioNode): void {
+    if (visited.has(current)) return;
+
+    visited.add(current);
+    labels.add(current.label);
+
+    for (const next of current._connections) {
+      walk(next);
+    }
+  }
+
+  walk(node);
+
+  return labels;
 }
 
 /** Returns true when `node` is connected (directly or transitively) to `target`. */
 function reachesDestination(node: MockAudioNode, target: MockAudioNode): boolean {
-	return reachableLabels(node).has(target.label);
+  return reachableLabels(node).has(target.label);
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('Effect-chain audio delivery — full-stack EQ + mixer + spectrum', () => {
-	let ctx: MockAudioContext;
-
-	beforeEach(async () => {
-		MockPlayer._resetRegistry();
-		MockPlayerLazyBackend._resetRegistry();
-		ctx = new MockAudioContext();
-		installAudioContext(ctx);
-	});
-
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		MockPlayerLazyBackend._resetRegistry();
-		removeAudioContext();
-		document.body.innerHTML = '';
-	});
-
-	// ── Scenario 1: happy path — audioGraphPlugin → EQ → mixer ────────────────
-
-	describe('source → EQ (preGain + 10 filters) → mixer (gain + panner) → destination', () => {
-		it('chain tail (panner) connects to ctx.destination', async () => {
-			const div = document.createElement('div');
-			div.id = 'chain-full-1';
-			document.body.appendChild(div);
-
-			const player = new MockPlayer('chain-full-1');
-			player.setup({});
-			await player.ready();
-
-			setPlayerAudioContext(player as unknown as IPlayer, ctx as unknown as AudioContext);
-
-			const audioEl = document.createElement('audio');
-			document.body.appendChild(audioEl);
-
-			// Provide a source node via a minimal backend mock (context pre-registered).
-			const sourceNode = new MockMediaElementSourceNode('source');
-			const rawPlayer = player as unknown as {
-				backend?: () => { outputNode: (audioContext: AudioContext) => AudioNode; mediaElement: () => HTMLMediaElement };
-			};
-			rawPlayer.backend = () => ({
-				outputNode: (_c: AudioContext): AudioNode => sourceNode as unknown as AudioNode,
-				mediaElement: () => audioEl,
-			});
-
-			player.addPlugin(AudioGraphPlugin, { fftSize: 2048 });
-			player.addPlugin(EqualizerPlugin, { preset: 'Flat' });
-			player.addPlugin(MixerPlugin, { pan: 0 });
-
-			// Wait for async plugin installs.
-			await new Promise(resolve => setTimeout(resolve, 0));
-
-			const destination = ctx.destination as unknown as MockAudioNode;
-
-			expect(reachesDestination(sourceNode, destination)).toBe(true);
-		});
-
-		it('no node in the EQ filter chain has duplicate edges to its successor', async () => {
-			const div = document.createElement('div');
-			div.id = 'chain-no-dup-1';
-			document.body.appendChild(div);
-
-			const player = new MockPlayer('chain-no-dup-1');
-			player.setup({});
-			await player.ready();
-
-			setPlayerAudioContext(player as unknown as IPlayer, ctx as unknown as AudioContext);
-
-			const audioEl = document.createElement('audio');
-			document.body.appendChild(audioEl);
-
-			const sourceNode = new MockMediaElementSourceNode('source');
-			const rawPlayer = player as unknown as {
-				backend?: () => { outputNode: (audioContext: AudioContext) => AudioNode; mediaElement: () => HTMLMediaElement };
-			};
-			rawPlayer.backend = () => ({
-				outputNode: (_c: AudioContext): AudioNode => sourceNode as unknown as AudioNode,
-				mediaElement: () => audioEl,
-			});
-
-			player.addPlugin(AudioGraphPlugin, { fftSize: 2048 });
-			player.addPlugin(EqualizerPlugin, { preset: 'Flat' });
-			player.addPlugin(MixerPlugin, { pan: 0 });
-
-			await new Promise(resolve => setTimeout(resolve, 0));
-
-			// Every node in the chain should have exactly ONE connection to the next.
-			// Walk source → first postEffect → ... → last postEffect.
-			const graph = player.getPlugin(AudioGraphPlugin)!;
-			const outputNode = graph.outputNode() as unknown as MockAudioNode;
-
-			// Walk the full chain from source and verify no node has >1 connection
-			// to the same successor.
-			const visited = new Set<MockAudioNode>();
-			const queue: MockAudioNode[] = [sourceNode];
-
-			while (queue.length > 0) {
-				const current = queue.shift()!;
-				if (visited.has(current))
-					continue;
-				visited.add(current);
-
-				// Each node should connect to each successor at most once.
-				const seen = new Set<MockAudioNode>();
-				for (const next of current._connections) {
-					expect(seen.has(next)).toBe(false);
-					seen.add(next);
-					queue.push(next);
-				}
-			}
-
-			// Verify the last node in the managed chain was visited.
-			expect(visited.has(outputNode)).toBe(true);
-		});
-	});
-
-	// ── Scenario 2: lazy-backend context reconciliation ────────────────────────
-
-	describe('lazy-backend context reconciliation (root cause A)', () => {
-		it('chain reaches destination when backend is initialised lazily inside AudioGraphPlugin.use()', async () => {
-			const backendCtx = new MockAudioContext();
-			// Do NOT pre-register the backend context on the player.
-			// The player's audioContext() returns undefined at addPlugin time.
-			// This simulates the case where addPlugin(audioGraphPlugin) is called
-			// before backend() is ever invoked.
-
-			const div = document.createElement('div');
-			div.id = 'lazy-backend-1';
-			document.body.appendChild(div);
-
-			const player = new MockPlayerLazyBackend('lazy-backend-1', backendCtx);
-			player.setup({});
-			await player.ready();
-
-			// AudioContext exposed to AudioGraphPlugin will initially be the
-			// globally-installed mock (ctx from beforeEach), NOT backendCtx.
-			// When AudioGraphPlugin.use() calls resolveMediaElement(), the
-			// player.backend() method runs, calls setPlayerAudioContext with
-			// backendCtx, and the plugin must pick it up.
-			player.addPlugin(AudioGraphPlugin, { fftSize: 2048 });
-			player.addPlugin(EqualizerPlugin, { preset: 'Flat' });
-			player.addPlugin(MixerPlugin, { pan: 0 });
-
-			await new Promise(resolve => setTimeout(resolve, 0));
-
-			// After all plugins install, the source (player.backendCtx's sourceNode)
-			// must reach the backend context's destination.
-			const sourceNode = player.sourceNode as unknown as MockAudioNode;
-			const backendDest = backendCtx.destination as unknown as MockAudioNode;
-
-			expect(reachesDestination(sourceNode, backendDest)).toBe(true);
-		});
-
-		it('plugin audioContext() returns the backend context after lazy init', async () => {
-			const backendCtx = new MockAudioContext();
-
-			const div = document.createElement('div');
-			div.id = 'lazy-backend-ctx-1';
-			document.body.appendChild(div);
-
-			const player = new MockPlayerLazyBackend('lazy-backend-ctx-1', backendCtx);
-			player.setup({});
-			await player.ready();
-
-			player.addPlugin(AudioGraphPlugin, { fftSize: 2048 });
-
-			await new Promise(resolve => setTimeout(resolve, 0));
-
-			const graph = player.getPlugin(AudioGraphPlugin)!;
-			expect(graph.context()).toBe(backendCtx as unknown as AudioContext);
-		});
-	});
-
-	// ── Scenario 3: spectrum plugin tap does not break the main chain ──────────
-
-	describe('spectrum analyserSource() tap does not disrupt the main chain', () => {
-		it('chain remains connected to destination after SpectrumPlugin mounts', async () => {
-			const div = document.createElement('div');
-			div.id = 'spectrum-tap-1';
-			document.body.appendChild(div);
-
-			const player = new MockPlayer('spectrum-tap-1');
-			player.setup({});
-			await player.ready();
-
-			setPlayerAudioContext(player as unknown as IPlayer, ctx as unknown as AudioContext);
-
-			const audioEl = document.createElement('audio');
-			document.body.appendChild(audioEl);
-
-			const sourceNode = new MockMediaElementSourceNode('source');
-			const rawPlayer = player as unknown as {
-				backend?: () => { outputNode: (audioContext: AudioContext) => AudioNode; mediaElement: () => HTMLMediaElement };
-			};
-			rawPlayer.backend = () => ({
-				outputNode: (_c: AudioContext): AudioNode => sourceNode as unknown as AudioNode,
-				mediaElement: () => audioEl,
-			});
-
-			player.addPlugin(AudioGraphPlugin, { fftSize: 2048 });
-			player.addPlugin(EqualizerPlugin, { preset: 'Flat' });
-			player.addPlugin(MixerPlugin, { pan: 0 });
-
-			await new Promise(resolve => setTimeout(resolve, 0));
-
-			// Simulate the app mounting SpectrumPlugin later (on a DOM ref).
-			player.addPlugin(SpectrumPlugin, { fftSize: 2048 });
-
-			await new Promise(resolve => setTimeout(resolve, 0));
-
-			const destination = ctx.destination as unknown as MockAudioNode;
-			expect(reachesDestination(sourceNode, destination)).toBe(true);
-		});
-
-		it('spectrum analyser tap does not add duplicate edges to the chain destination', async () => {
-			const div = document.createElement('div');
-			div.id = 'spectrum-tap-2';
-			document.body.appendChild(div);
-
-			const player = new MockPlayer('spectrum-tap-2');
-			player.setup({});
-			await player.ready();
-
-			setPlayerAudioContext(player as unknown as IPlayer, ctx as unknown as AudioContext);
-
-			const audioEl = document.createElement('audio');
-			document.body.appendChild(audioEl);
-
-			const sourceNode = new MockMediaElementSourceNode('source');
-			const rawPlayer = player as unknown as {
-				backend?: () => { outputNode: (audioContext: AudioContext) => AudioNode; mediaElement: () => HTMLMediaElement };
-			};
-			rawPlayer.backend = () => ({
-				outputNode: (_c: AudioContext): AudioNode => sourceNode as unknown as AudioNode,
-				mediaElement: () => audioEl,
-			});
-
-			player.addPlugin(AudioGraphPlugin, { fftSize: 2048 });
-			player.addPlugin(EqualizerPlugin, { preset: 'Flat' });
-			player.addPlugin(MixerPlugin, { pan: 0 });
-			player.addPlugin(SpectrumPlugin, { fftSize: 2048 });
-
-			await new Promise(resolve => setTimeout(resolve, 0));
-
-			// The analyser is a parallel tap — it must NOT be connected to
-			// ctx.destination. Destination receives signal only through the panner
-			// (last mixer effect). The analyser hangs off source as a dead-end branch.
-			const graph = player.getPlugin(AudioGraphPlugin)!;
-			const analyserNode = graph.analyserSource() as unknown as MockAudioNode;
-			const destination = ctx.destination as unknown as MockAudioNode;
-
-			expect(analyserNode._connections).not.toContain(destination);
-		});
-	});
-
-	// Note: a real-audio render proof (signal reaches destination through the
-	// EQ + mixer chain) lives in nomercy-music-player's e2e suite
-	// (webaudio-analyser.spec.ts asserts maxValue > 0; equalizer.spec.ts asserts
-	// EQ boost/cut in dB), which runs against a real browser AudioContext where
-	// our plugins actually shape audio. A unit-env OfflineAudioContext render
-	// would only exercise the Web Audio API itself, not our plugin code.
-
-	// ── Scenario 5: chain integrity after plugin removal ──────────────────────
-
-	describe('chain integrity — removePlugin does not break remaining effects', () => {
-		it('removing EQ leaves the mixer still wired to destination', async () => {
-			const div = document.createElement('div');
-			div.id = 'remove-eq-1';
-			document.body.appendChild(div);
-
-			const player = new MockPlayer('remove-eq-1');
-			player.setup({});
-			await player.ready();
-
-			setPlayerAudioContext(player as unknown as IPlayer, ctx as unknown as AudioContext);
-
-			const audioEl = document.createElement('audio');
-			document.body.appendChild(audioEl);
-
-			const sourceNode = new MockMediaElementSourceNode('source');
-			const rawPlayer = player as unknown as {
-				backend?: () => { outputNode: (audioContext: AudioContext) => AudioNode; mediaElement: () => HTMLMediaElement };
-			};
-			rawPlayer.backend = () => ({
-				outputNode: (_c: AudioContext): AudioNode => sourceNode as unknown as AudioNode,
-				mediaElement: () => audioEl,
-			});
-
-			player.addPlugin(AudioGraphPlugin, { fftSize: 2048 });
-			player.addPlugin(EqualizerPlugin, { preset: 'Flat' });
-			player.addPlugin(MixerPlugin, { pan: 0 });
-
-			await new Promise(resolve => setTimeout(resolve, 0));
-
-			player.removePlugin(EqualizerPlugin);
-
-			await new Promise(resolve => setTimeout(resolve, 0));
-
-			const destination = ctx.destination as unknown as MockAudioNode;
-			expect(reachesDestination(sourceNode, destination)).toBe(true);
-		});
-	});
+  let ctx: MockAudioContext;
+
+  beforeEach(async () => {
+    MockPlayer._resetRegistry();
+    MockPlayerLazyBackend._resetRegistry();
+    ctx = new MockAudioContext();
+    installAudioContext(ctx);
+  });
+
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    MockPlayerLazyBackend._resetRegistry();
+    removeAudioContext();
+    document.body.innerHTML = '';
+  });
+
+  // ── Scenario 1: happy path — audioGraphPlugin → EQ → mixer ────────────────
+
+  describe('source → EQ (preGain + 10 filters) → mixer (gain + panner) → destination', () => {
+    it('chain tail (panner) connects to ctx.destination', async () => {
+      const div = document.createElement('div');
+
+      div.id = 'chain-full-1';
+      document.body.appendChild(div);
+
+      const player = new MockPlayer('chain-full-1');
+
+      player.setup({});
+      await player.ready();
+
+      setPlayerAudioContext(player as unknown as IPlayer, ctx as unknown as AudioContext);
+
+      const audioEl = document.createElement('audio');
+
+      document.body.appendChild(audioEl);
+
+      // Provide a source node via a minimal backend mock (context pre-registered).
+      const sourceNode = new MockMediaElementSourceNode('source');
+      const rawPlayer = player as unknown as {
+        backend?: () => { outputNode: (audioContext: AudioContext) => AudioNode; mediaElement: () => HTMLMediaElement };
+      };
+
+      rawPlayer.backend = () => ({
+        outputNode: (_c: AudioContext): AudioNode => sourceNode as unknown as AudioNode,
+        mediaElement: () => audioEl,
+      });
+
+      player.addPlugin(AudioGraphPlugin, { fftSize: 2048 });
+      player.addPlugin(EqualizerPlugin, { preset: 'Flat' });
+      player.addPlugin(MixerPlugin, { pan: 0 });
+
+      // Wait for async plugin installs.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const destination = ctx.destination as unknown as MockAudioNode;
+
+      expect(reachesDestination(sourceNode, destination)).toBe(true);
+    });
+
+    it('no node in the EQ filter chain has duplicate edges to its successor', async () => {
+      const div = document.createElement('div');
+
+      div.id = 'chain-no-dup-1';
+      document.body.appendChild(div);
+
+      const player = new MockPlayer('chain-no-dup-1');
+
+      player.setup({});
+      await player.ready();
+
+      setPlayerAudioContext(player as unknown as IPlayer, ctx as unknown as AudioContext);
+
+      const audioEl = document.createElement('audio');
+
+      document.body.appendChild(audioEl);
+
+      const sourceNode = new MockMediaElementSourceNode('source');
+      const rawPlayer = player as unknown as {
+        backend?: () => { outputNode: (audioContext: AudioContext) => AudioNode; mediaElement: () => HTMLMediaElement };
+      };
+
+      rawPlayer.backend = () => ({
+        outputNode: (_c: AudioContext): AudioNode => sourceNode as unknown as AudioNode,
+        mediaElement: () => audioEl,
+      });
+
+      player.addPlugin(AudioGraphPlugin, { fftSize: 2048 });
+      player.addPlugin(EqualizerPlugin, { preset: 'Flat' });
+      player.addPlugin(MixerPlugin, { pan: 0 });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // Every node in the chain should have exactly ONE connection to the next.
+      // Walk source → first postEffect → ... → last postEffect.
+      const graph = player.getPlugin(AudioGraphPlugin)!;
+      const outputNode = graph.outputNode() as unknown as MockAudioNode;
+
+      // Walk the full chain from source and verify no node has >1 connection
+      // to the same successor.
+      const visited = new Set<MockAudioNode>();
+      const queue: MockAudioNode[] = [sourceNode];
+
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+
+        if (visited.has(current)) continue;
+
+        visited.add(current);
+
+        // Each node should connect to each successor at most once.
+        const seen = new Set<MockAudioNode>();
+
+        for (const next of current._connections) {
+          expect(seen.has(next)).toBe(false);
+          seen.add(next);
+          queue.push(next);
+        }
+      }
+
+      // Verify the last node in the managed chain was visited.
+      expect(visited.has(outputNode)).toBe(true);
+    });
+  });
+
+  // ── Scenario 2: lazy-backend context reconciliation ────────────────────────
+
+  describe('lazy-backend context reconciliation (root cause A)', () => {
+    it('chain reaches destination when backend is initialised lazily inside AudioGraphPlugin.use()', async () => {
+      const backendCtx = new MockAudioContext();
+      // Do NOT pre-register the backend context on the player.
+      // The player's audioContext() returns undefined at addPlugin time.
+      // This simulates the case where addPlugin(audioGraphPlugin) is called
+      // before backend() is ever invoked.
+
+      const div = document.createElement('div');
+
+      div.id = 'lazy-backend-1';
+      document.body.appendChild(div);
+
+      const player = new MockPlayerLazyBackend('lazy-backend-1', backendCtx);
+
+      player.setup({});
+      await player.ready();
+
+      // AudioContext exposed to AudioGraphPlugin will initially be the
+      // globally-installed mock (ctx from beforeEach), NOT backendCtx.
+      // When AudioGraphPlugin.use() calls resolveMediaElement(), the
+      // player.backend() method runs, calls setPlayerAudioContext with
+      // backendCtx, and the plugin must pick it up.
+      player.addPlugin(AudioGraphPlugin, { fftSize: 2048 });
+      player.addPlugin(EqualizerPlugin, { preset: 'Flat' });
+      player.addPlugin(MixerPlugin, { pan: 0 });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // After all plugins install, the source (player.backendCtx's sourceNode)
+      // must reach the backend context's destination.
+      const sourceNode = player.sourceNode as unknown as MockAudioNode;
+      const backendDest = backendCtx.destination as unknown as MockAudioNode;
+
+      expect(reachesDestination(sourceNode, backendDest)).toBe(true);
+    });
+
+    it('plugin audioContext() returns the backend context after lazy init', async () => {
+      const backendCtx = new MockAudioContext();
+
+      const div = document.createElement('div');
+
+      div.id = 'lazy-backend-ctx-1';
+      document.body.appendChild(div);
+
+      const player = new MockPlayerLazyBackend('lazy-backend-ctx-1', backendCtx);
+
+      player.setup({});
+      await player.ready();
+
+      player.addPlugin(AudioGraphPlugin, { fftSize: 2048 });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const graph = player.getPlugin(AudioGraphPlugin)!;
+
+      expect(graph.context()).toBe(backendCtx as unknown as AudioContext);
+    });
+  });
+
+  // ── Scenario 3: spectrum plugin tap does not break the main chain ──────────
+
+  describe('spectrum analyserSource() tap does not disrupt the main chain', () => {
+    it('chain remains connected to destination after SpectrumPlugin mounts', async () => {
+      const div = document.createElement('div');
+
+      div.id = 'spectrum-tap-1';
+      document.body.appendChild(div);
+
+      const player = new MockPlayer('spectrum-tap-1');
+
+      player.setup({});
+      await player.ready();
+
+      setPlayerAudioContext(player as unknown as IPlayer, ctx as unknown as AudioContext);
+
+      const audioEl = document.createElement('audio');
+
+      document.body.appendChild(audioEl);
+
+      const sourceNode = new MockMediaElementSourceNode('source');
+      const rawPlayer = player as unknown as {
+        backend?: () => { outputNode: (audioContext: AudioContext) => AudioNode; mediaElement: () => HTMLMediaElement };
+      };
+
+      rawPlayer.backend = () => ({
+        outputNode: (_c: AudioContext): AudioNode => sourceNode as unknown as AudioNode,
+        mediaElement: () => audioEl,
+      });
+
+      player.addPlugin(AudioGraphPlugin, { fftSize: 2048 });
+      player.addPlugin(EqualizerPlugin, { preset: 'Flat' });
+      player.addPlugin(MixerPlugin, { pan: 0 });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // Simulate the app mounting SpectrumPlugin later (on a DOM ref).
+      player.addPlugin(SpectrumPlugin, { fftSize: 2048 });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const destination = ctx.destination as unknown as MockAudioNode;
+
+      expect(reachesDestination(sourceNode, destination)).toBe(true);
+    });
+
+    it('spectrum analyser tap does not add duplicate edges to the chain destination', async () => {
+      const div = document.createElement('div');
+
+      div.id = 'spectrum-tap-2';
+      document.body.appendChild(div);
+
+      const player = new MockPlayer('spectrum-tap-2');
+
+      player.setup({});
+      await player.ready();
+
+      setPlayerAudioContext(player as unknown as IPlayer, ctx as unknown as AudioContext);
+
+      const audioEl = document.createElement('audio');
+
+      document.body.appendChild(audioEl);
+
+      const sourceNode = new MockMediaElementSourceNode('source');
+      const rawPlayer = player as unknown as {
+        backend?: () => { outputNode: (audioContext: AudioContext) => AudioNode; mediaElement: () => HTMLMediaElement };
+      };
+
+      rawPlayer.backend = () => ({
+        outputNode: (_c: AudioContext): AudioNode => sourceNode as unknown as AudioNode,
+        mediaElement: () => audioEl,
+      });
+
+      player.addPlugin(AudioGraphPlugin, { fftSize: 2048 });
+      player.addPlugin(EqualizerPlugin, { preset: 'Flat' });
+      player.addPlugin(MixerPlugin, { pan: 0 });
+      player.addPlugin(SpectrumPlugin, { fftSize: 2048 });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // The analyser is a parallel tap — it must NOT be connected to
+      // ctx.destination. Destination receives signal only through the panner
+      // (last mixer effect). The analyser hangs off source as a dead-end branch.
+      const graph = player.getPlugin(AudioGraphPlugin)!;
+      const analyserNode = graph.analyserSource() as unknown as MockAudioNode;
+      const destination = ctx.destination as unknown as MockAudioNode;
+
+      expect(analyserNode._connections).not.toContain(destination);
+    });
+  });
+
+  // Note: a real-audio render proof (signal reaches destination through the
+  // EQ + mixer chain) lives in nomercy-music-player's e2e suite
+  // (webaudio-analyser.spec.ts asserts maxValue > 0; equalizer.spec.ts asserts
+  // EQ boost/cut in dB), which runs against a real browser AudioContext where
+  // our plugins actually shape audio. A unit-env OfflineAudioContext render
+  // would only exercise the Web Audio API itself, not our plugin code.
+
+  // ── Scenario 5: chain integrity after plugin removal ──────────────────────
+
+  describe('chain integrity — removePlugin does not break remaining effects', () => {
+    it('removing EQ leaves the mixer still wired to destination', async () => {
+      const div = document.createElement('div');
+
+      div.id = 'remove-eq-1';
+      document.body.appendChild(div);
+
+      const player = new MockPlayer('remove-eq-1');
+
+      player.setup({});
+      await player.ready();
+
+      setPlayerAudioContext(player as unknown as IPlayer, ctx as unknown as AudioContext);
+
+      const audioEl = document.createElement('audio');
+
+      document.body.appendChild(audioEl);
+
+      const sourceNode = new MockMediaElementSourceNode('source');
+      const rawPlayer = player as unknown as {
+        backend?: () => { outputNode: (audioContext: AudioContext) => AudioNode; mediaElement: () => HTMLMediaElement };
+      };
+
+      rawPlayer.backend = () => ({
+        outputNode: (_c: AudioContext): AudioNode => sourceNode as unknown as AudioNode,
+        mediaElement: () => audioEl,
+      });
+
+      player.addPlugin(AudioGraphPlugin, { fftSize: 2048 });
+      player.addPlugin(EqualizerPlugin, { preset: 'Flat' });
+      player.addPlugin(MixerPlugin, { pan: 0 });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      player.removePlugin(EqualizerPlugin);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const destination = ctx.destination as unknown as MockAudioNode;
+
+      expect(reachesDestination(sourceNode, destination)).toBe(true);
+    });
+  });
 });

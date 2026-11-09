@@ -23,85 +23,86 @@ import { describe, expect, it, vi } from 'vitest';
 import { streamRegistrationMethods } from '../../core/mixins/stream-registration';
 
 interface RegistryHost {
-	_streamRegistry: StreamRegistry | undefined;
-	registerStream: (factory: IStreamFactory, prepend?: boolean) => unknown;
-	streams: () => ReadonlyArray<string>;
+  _streamRegistry: StreamRegistry | undefined;
+  registerStream: (factory: IStreamFactory, prepend?: boolean) => unknown;
+  streams: () => ReadonlyArray<string>;
 }
 
 function host(): RegistryHost {
-	return {
-		_streamRegistry: undefined,
-		registerStream: streamRegistrationMethods.registerStream,
-		streams: streamRegistrationMethods.streams,
-	} as unknown as RegistryHost;
+  return {
+    _streamRegistry: undefined,
+    registerStream: streamRegistrationMethods.registerStream,
+    streams: streamRegistrationMethods.streams,
+  } as unknown as RegistryHost;
 }
 
 function factory(id: string): IStreamFactory {
-	return {
-		id,
-		canPlay: () => true,
-		create: () => ({} as IStreamSource),
-	} as unknown as IStreamFactory;
+  return {
+    id,
+    canPlay: () => true,
+    create: () => ({} as IStreamSource),
+  } as unknown as IStreamFactory;
 }
 
 describe('a factory registered before setup', () => {
-	it('outranks the built-ins, which are seeded with the registry', () => {
-		const player = host();
+  it('outranks the built-ins, which are seeded with the registry', () => {
+    const player = host();
 
-		player.registerStream(factory('mine'));
+    player.registerStream(factory('mine'));
 
-		expect(player.streams()[0], 'newest-first, so the consumer is asked first').toBe('mine');
-	});
+    expect(player.streams()[0], 'newest-first, so the consumer is asked first').toBe('mine');
+  });
 
-	it('is asked before native and hls, not after them', () => {
-		const player = host();
+  it('is asked before native and hls, not after them', () => {
+    const player = host();
 
-		player.registerStream(factory('mine'));
+    player.registerStream(factory('mine'));
 
-		const order = player.streams();
+    const order = player.streams();
 
-		expect(order).toContain('native');
-		expect(order).toContain('hls');
-		expect(order.indexOf('mine')).toBeLessThan(order.indexOf('hls'));
-		expect(order.indexOf('mine')).toBeLessThan(order.indexOf('native'));
-	});
+    expect(order).toContain('native');
+    expect(order).toContain('hls');
+    expect(order.indexOf('mine')).toBeLessThan(order.indexOf('hls'));
+    expect(order.indexOf('mine')).toBeLessThan(order.indexOf('native'));
+  });
 
-	it('still yields to a factory registered after it', () => {
-		const player = host();
+  it('still yields to a factory registered after it', () => {
+    const player = host();
 
-		player.registerStream(factory('first'));
-		player.registerStream(factory('second'));
+    player.registerStream(factory('first'));
+    player.registerStream(factory('second'));
 
-		expect(player.streams()[0]).toBe('second');
-	});
+    expect(player.streams()[0]).toBe('second');
+  });
 
-	it('goes to the back when it asks to, and stays behind the built-ins', () => {
-		const player = host();
+  it('goes to the back when it asks to, and stays behind the built-ins', () => {
+    const player = host();
 
-		player.registerStream(factory('mine'), true);
+    player.registerStream(factory('mine'), true);
 
-		const order = player.streams();
+    const order = player.streams();
 
-		expect(order.indexOf('mine')).toBeGreaterThan(order.indexOf('hls'));
-	});
+    expect(order.indexOf('mine')).toBeGreaterThan(order.indexOf('hls'));
+  });
 });
 
 describe('the registry a player starts with', () => {
-	it('already carries both built-ins before anything is registered', () => {
-		const player = host();
+  it('already carries both built-ins before anything is registered', () => {
+    const player = host();
 
-		expect(new Set(player.streams())).toEqual(new Set(['hls', 'native']));
-	});
+    expect(new Set(player.streams())).toEqual(new Set(['hls', 'native']));
+  });
 
-	it('never allocates a second registry', () => {
-		const player = host();
-		const created = vi.fn();
+  it('never allocates a second registry', () => {
+    const player = host();
+    const created = vi.fn();
 
-		player.streams();
-		const first = player._streamRegistry;
-		player.registerStream(factory('mine'));
+    player.streams();
+    const first = player._streamRegistry;
 
-		expect(player._streamRegistry).toBe(first);
-		expect(created).not.toHaveBeenCalled();
-	});
+    player.registerStream(factory('mine'));
+
+    expect(player._streamRegistry).toBe(first);
+    expect(created).not.toHaveBeenCalled();
+  });
 });

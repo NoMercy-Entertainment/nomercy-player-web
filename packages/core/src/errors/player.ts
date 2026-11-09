@@ -10,28 +10,28 @@ import type { ErrorScope } from './code';
 import type { Severity } from './severity';
 
 export interface PlayerErrorInit {
-	code: string;
-	id?: number;
-	severity?: Severity;
-	scope: ErrorScope;
-	message?: string;
-	cause?: unknown;
-	context?: Record<string, unknown>;
-	/**
-	 * Best-effort actionable hint for the consumer's UI / for the user.
-	 *
-	 * Examples:
-	 *  - HEVC unsupported in Firefox: "HEVC requires a Chromium-based browser
-	 *    with the codec installed. Try Chrome, Edge, or Brave."
-	 *  - Autoplay blocked: "Tap or click anywhere to start playback."
-	 *  - 403: "Your account doesn't have access to this content."
-	 *  - 5xx: "The server is having issues. Try again in a moment."
-	 *
-	 * Default suggestions live in the registry per code; consumers can override
-	 * at construction. Always present-tense and actionable when possible —
-	 * never "an error has occurred".
-	 */
-	suggestion?: string;
+  code: string;
+  id?: number;
+  severity?: Severity;
+  scope: ErrorScope;
+  message?: string;
+  cause?: unknown;
+  context?: Record<string, unknown>;
+  /**
+   * Best-effort actionable hint for the consumer's UI / for the user.
+   *
+   * Examples:
+   *  - HEVC unsupported in Firefox: "HEVC requires a Chromium-based browser
+   *    with the codec installed. Try Chrome, Edge, or Brave."
+   *  - Autoplay blocked: "Tap or click anywhere to start playback."
+   *  - 403: "Your account doesn't have access to this content."
+   *  - 5xx: "The server is having issues. Try again in a moment."
+   *
+   * Default suggestions live in the registry per code; consumers can override
+   * at construction. Always present-tense and actionable when possible —
+   * never "an error has occurred".
+   */
+  suggestion?: string;
 }
 
 /**
@@ -44,31 +44,32 @@ export interface PlayerErrorInit {
  *  - `context` — current track id, time, url, status, etc.
  */
 export class PlayerError extends Error {
-	override readonly name: string = 'PlayerError';
-	readonly code: string;
-	readonly id?: number;
-	readonly severity: Severity;
-	readonly scope: ErrorScope;
-	override readonly cause?: unknown;
-	readonly context?: Record<string, unknown>;
-	readonly suggestion?: string;
+  override readonly name: string = 'PlayerError';
+  readonly code: string;
+  readonly id?: number;
+  readonly severity: Severity;
+  readonly scope: ErrorScope;
+  override readonly cause?: unknown;
+  readonly context?: Record<string, unknown>;
+  readonly suggestion?: string;
 
-	constructor(init: PlayerErrorInit) {
-		super(init.message ?? init.code);
-		this.code = init.code;
-		this.id = init.id;
-		this.severity = init.severity ?? 'error';
-		this.scope = init.scope;
-		this.cause = init.cause;
-		this.context = init.context;
-		this.suggestion = init.suggestion;
-	}
+  constructor(init: PlayerErrorInit) {
+    super(init.message ?? init.code);
+    this.code = init.code;
+    this.id = init.id;
+    this.severity = init.severity ?? 'error';
+    this.scope = init.scope;
+    this.cause = init.cause;
+    this.context = init.context;
+    this.suggestion = init.suggestion;
+  }
 
-	/** True if context.httpStatus is in the requested 1xx-5xx century. */
-	isHttp(century: 1 | 2 | 3 | 4 | 5): boolean {
-		const status = this.context?.['httpStatus'];
-		return typeof status === 'number' && status >= century * 100 && status < (century + 1) * 100;
-	}
+  /** True if context.httpStatus is in the requested 1xx-5xx century. */
+  isHttp(century: 1 | 2 | 3 | 4 | 5): boolean {
+    const status = this.context?.['httpStatus'];
+
+    return typeof status === 'number' && status >= century * 100 && status < (century + 1) * 100;
+  }
 }
 
 /**
@@ -77,7 +78,7 @@ export class PlayerError extends Error {
  * `core:state/<reason>`. Use `stateError()` to construct.
  */
 export class StateError extends PlayerError {
-	override readonly name = 'StateError';
+  override readonly name = 'StateError';
 }
 
 /**
@@ -89,17 +90,17 @@ export class StateError extends PlayerError {
  *  - `preventDefault()`         — kit-side default action (e.g. auto-retry) is suppressed
  */
 export interface PlayerErrorEvent {
-	error: PlayerError;
-	severity: Severity;
-	scope: ErrorScope;
-	timestamp: number;
+  error: PlayerError;
+  severity: Severity;
+  scope: ErrorScope;
+  timestamp: number;
 
-	markHandled(): void;
-	isHandled(): boolean;
-	stopImmediatePropagation(): void;
-	isPropagationStopped(): boolean;
-	preventDefault(): void;
-	isDefaultPrevented(): boolean;
+  markHandled(): void;
+  isHandled(): boolean;
+  stopImmediatePropagation(): void;
+  isPropagationStopped(): boolean;
+  preventDefault(): void;
+  isDefaultPrevented(): boolean;
 }
 
 /**
@@ -113,26 +114,27 @@ export interface PlayerErrorEvent {
  * methods get classic fire-and-forget behaviour.
  */
 export function makePlayerErrorEvent(
-	error: PlayerError,
-	severity: Severity,
-	scope: ErrorScope,
-	timestamp: number = Date.now(),
+  error: PlayerError,
+  severity: Severity,
+  scope: ErrorScope,
+  timestamp: number = Date.now(),
 ): PlayerErrorEvent {
-	let handled = false;
-	let propagationStopped = false;
-	let defaultPrevented = false;
-	return {
-		error,
-		severity,
-		scope,
-		timestamp,
-		markHandled: () => { handled = true; },
-		isHandled: () => handled,
-		stopImmediatePropagation: () => { propagationStopped = true; },
-		isPropagationStopped: () => propagationStopped,
-		preventDefault: () => { defaultPrevented = true; },
-		isDefaultPrevented: () => defaultPrevented,
-	};
+  let handled = false;
+  let propagationStopped = false;
+  let defaultPrevented = false;
+
+  return {
+    error,
+    severity,
+    scope,
+    timestamp,
+    markHandled: () => { handled = true; },
+    isHandled: () => handled,
+    stopImmediatePropagation: () => { propagationStopped = true; },
+    isPropagationStopped: () => propagationStopped,
+    preventDefault: () => { defaultPrevented = true; },
+    isDefaultPrevented: () => defaultPrevented,
+  };
 }
 
 /**
@@ -145,15 +147,15 @@ export function makePlayerErrorEvent(
  * Code convention: `core:state/<reason>` — e.g. `core:state/queue-empty`.
  */
 export function stateError(
-	code: string,
-	message: string,
-	context?: Record<string, unknown>,
+  code: string,
+  message: string,
+  context?: Record<string, unknown>,
 ): StateError {
-	return new StateError({
-		code,
-		severity: 'error',
-		scope: { kind: 'core' },
-		message: `${code}: ${message}`,
-		context,
-	});
+  return new StateError({
+    code,
+    severity: 'error',
+    scope: { kind: 'core' },
+    message: `${code}: ${message}`,
+    context,
+  });
 }

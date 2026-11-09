@@ -16,8 +16,8 @@ import { browserPlatform } from '../../adapters/platform/browser';
  * Declared here, beside the `bandwidthEstimator()` method that writes it.
  */
 export interface AbrState {
-	/** Override estimator function. When set, ABR queries this instead of stream defaults. */
-	_bandwidthEstimator: (() => number) | undefined;
+  /** Override estimator function. When set, ABR queries this instead of stream defaults. */
+  _bandwidthEstimator: (() => number) | undefined;
 }
 
 /**
@@ -32,7 +32,7 @@ export interface AbrState {
  * backend pass-through — no second name to silently diverge from it.
  */
 interface _BackendWithBandwidthEstimate {
-	bandwidthEstimate?: () => number;
+  bandwidthEstimate?: () => number;
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -40,42 +40,51 @@ interface _BackendWithBandwidthEstimate {
 // ──────────────────────────────────────────────────────────────────────────
 
 export const abrMethods = {
-	/**
-	 * Last-known throughput estimate in bits per second. A consumer-set
-	 * `bandwidthEstimator(fn)` always wins. Otherwise queries the active
-	 * backend's own live estimate (e.g. hls.js's EWMA `bandwidthEstimate`)
-	 * when the backend exposes one. Returns 0 when neither is available —
-	 * never `NaN`, never a stale cache.
-	 */
-	bandwidth(this: Internals): number {
-		if (this._bandwidthEstimator)
-			return this._bandwidthEstimator();
+  /**
+   * Last-known throughput estimate in bits per second. A consumer-set
+   * `bandwidthEstimator(fn)` always wins. Otherwise queries the active
+   * backend's own live estimate (e.g. hls.js's EWMA `bandwidthEstimate`)
+   * when the backend exposes one. Returns 0 when neither is available —
+   * never `NaN`, never a stale cache.
+   */
+  bandwidth(this: Internals): number {
+    if (this._bandwidthEstimator)
+      return this._bandwidthEstimator();
 
-		const backend = this._peekBackendTyped<_BackendWithBandwidthEstimate>();
-		return backend?.bandwidthEstimate?.() ?? 0;
-	},
-	/**
-	 * Read or override the bandwidth estimator. Reading returns the current
-	 * estimator function (or undefined). Writing replaces it; the new
-	 * function is queried by the active stream source on every level decision.
-	 */
-	bandwidthEstimator(this: Internals, fn?: () => number): (() => number) | void {
-		if (fn === undefined)
-			return this._bandwidthEstimator;
-		this._bandwidthEstimator = fn;
-	},
-	/**
-	 * Probe whether a media profile can be decoded smoothly. Delegates to the
-	 * platform's `capabilities.canDecode` bridge. Returns the standard
-	 * `MediaCapabilitiesDecodingInfo` shape.
-	 */
-	async canPlay(this: Internals, profile: { contentType: string; width?: number; height?: number; bitrate?: number; framerate?: number }): Promise<CanPlayResult> {
-		const platform = this._platform ?? browserPlatform;
-		const result = await platform.capabilities.canDecode(profile);
-		return {
-			supported: result.supported,
-			smooth: result.smooth,
-			powerEfficient: result.powerEfficient,
-		};
-	},
+    const backend = this._peekBackendTyped<_BackendWithBandwidthEstimate>();
+
+    return backend?.bandwidthEstimate?.() ?? 0;
+  },
+  /**
+   * Read or override the bandwidth estimator. Reading returns the current
+   * estimator function (or undefined). Writing replaces it; the new
+   * function is queried by the active stream source on every level decision.
+   */
+  bandwidthEstimator(this: Internals, fn?: () => number): (() => number) | void {
+    if (fn === undefined)
+      return this._bandwidthEstimator;
+
+    this._bandwidthEstimator = fn;
+  },
+  /**
+   * Probe whether a media profile can be decoded smoothly. Delegates to the
+   * platform's `capabilities.canDecode` bridge. Returns the standard
+   * `MediaCapabilitiesDecodingInfo` shape.
+   */
+  async canPlay(this: Internals, profile: {
+    contentType: string;
+    width?: number;
+    height?: number;
+    bitrate?: number;
+    framerate?: number;
+  }): Promise<CanPlayResult> {
+    const platform = this._platform ?? browserPlatform;
+    const result = await platform.capabilities.canDecode(profile);
+
+    return {
+      supported: result.supported,
+      smooth: result.smooth,
+      powerEfficient: result.powerEfficient,
+    };
+  },
 } as const;

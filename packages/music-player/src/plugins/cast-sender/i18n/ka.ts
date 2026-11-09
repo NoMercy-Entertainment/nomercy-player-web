@@ -9,9 +9,9 @@
 import type { CastSenderTranslationKey } from './en';
 
 export default {
-	'plugin.cast-sender.casting.track': 'ტრანსლირდება „{title}“ — {artist}',
-	'plugin.cast-sender.casting.album': 'ტრანსლირდება ალბომი „{album}“',
-	'plugin.cast-sender.casting.queue': 'ტრანსლირდება {count} ტრეკი',
-	'plugin.cast-sender.action.cast-album': 'ალბომის ტრანსლაცია',
-	'plugin.cast-sender.action.cast-queue': 'რიგის ტრანსლაცია',
+  'plugin.cast-sender.casting.track': 'ტრანსლირდება „{title}“ — {artist}',
+  'plugin.cast-sender.casting.album': 'ტრანსლირდება ალბომი „{album}“',
+  'plugin.cast-sender.casting.queue': 'ტრანსლირდება {count} ტრეკი',
+  'plugin.cast-sender.action.cast-album': 'ალბომის ტრანსლაცია',
+  'plugin.cast-sender.action.cast-queue': 'რიგის ტრანსლაცია',
 } satisfies Record<CastSenderTranslationKey, string>;

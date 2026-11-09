@@ -7,11 +7,11 @@
 // -----------------------------------------------------------------------------
 
 const translations = {
-	'plugin.twitch.error.clip-unavailable': 'I-Twitch ayinayo ifayela elidlalekayo le-clip {slug}',
-	'plugin.twitch.channel.offline': '{channel} akaku-inthanethi',
-	'plugin.twitch.channel.ended': 'Ukusakaza kwe-{channel} kuphelile',
-	'plugin.twitch.setting.use-twitch-player': 'Sebenzisa isidlali sikaTwitch uqobo',
-	'plugin.twitch.subtitle.enabled': 'Kuvuliwe',
+  'plugin.twitch.error.clip-unavailable': 'I-Twitch ayinayo ifayela elidlalekayo le-clip {slug}',
+  'plugin.twitch.channel.offline': '{channel} akaku-inthanethi',
+  'plugin.twitch.channel.ended': 'Ukusakaza kwe-{channel} kuphelile',
+  'plugin.twitch.setting.use-twitch-player': 'Sebenzisa isidlali sikaTwitch uqobo',
+  'plugin.twitch.subtitle.enabled': 'Kuvuliwe',
 };
 
 export default translations;

@@ -27,35 +27,35 @@ import { NMMusicPlayer } from '../index';
 // ── Web Audio stubs ───────────────────────────────────────────────────────────
 
 class MockGainNode {
-	gain = {
-		value: 1,
-		setTargetAtTime: vi.fn(),
-		setValueAtTime: vi.fn(),
-		linearRampToValueAtTime: vi.fn(),
-		cancelScheduledValues: vi.fn(),
-	};
+  gain = {
+    value: 1,
+    setTargetAtTime: vi.fn(),
+    setValueAtTime: vi.fn(),
+    linearRampToValueAtTime: vi.fn(),
+    cancelScheduledValues: vi.fn(),
+  };
 
-	connect = vi.fn();
-	disconnect = vi.fn();
+  connect = vi.fn();
+  disconnect = vi.fn();
 }
 
 class MockAudioContext {
-	state: AudioContextState = 'running';
-	currentTime = 0;
-	destination = {} as AudioDestinationNode;
+  state: AudioContextState = 'running';
+  currentTime = 0;
+  destination = {} as AudioDestinationNode;
 
-	createGain = vi.fn(() => new MockGainNode());
-	createAnalyser = vi.fn(() => new MockAnalyserNode());
-	createMediaElementSource = vi.fn(() => new MockSourceNode());
-	resume = vi.fn(() => Promise.resolve());
+  createGain = vi.fn(() => new MockGainNode());
+  createAnalyser = vi.fn(() => new MockAnalyserNode());
+  createMediaElementSource = vi.fn(() => new MockSourceNode());
+  resume = vi.fn(() => Promise.resolve());
 }
 
 function installAudioContext(): void {
-	(globalThis as unknown as { AudioContext: typeof MockAudioContext }).AudioContext = MockAudioContext;
+  (globalThis as unknown as { AudioContext: typeof MockAudioContext }).AudioContext = MockAudioContext;
 }
 
 function removeAudioContext(): void {
-	delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
+  delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -65,182 +65,197 @@ function removeAudioContext(): void {
  * Returns the player + the audio element the backend created.
  */
 async function makeReadyPlayer(id: string, opts?: { backend?: 'webaudio' | 'audio-element'; controls?: boolean }): Promise<{
-	player: NMMusicPlayer;
-	audioEl: HTMLAudioElement;
+  player: NMMusicPlayer;
+  audioEl: HTMLAudioElement;
 }> {
-	const player = new NMMusicPlayer(id);
-	player.setup({ backend: opts?.backend, controls: opts?.controls });
+  const player = new NMMusicPlayer(id);
 
-	// Trigger lazy backend init before ready() so the <audio> element exists.
-	const backend = player.backend();
-	void backend;
+  player.setup({ backend: opts?.backend, controls: opts?.controls });
 
-	await player.ready();
+  // Trigger lazy backend init before ready() so the <audio> element exists.
+  const backend = player.backend();
 
-	const audioEl = player.container.querySelector('audio');
-	if (!audioEl)
-		throw new Error('AudioElementBackend did not append <audio> to container');
+  void backend;
 
-	return { player, audioEl };
+  await player.ready();
+
+  const audioEl = player.container.querySelector('audio');
+
+  if (!audioEl)
+    throw new Error('AudioElementBackend did not append <audio> to container');
+
+  return { player, audioEl };
 }
 
 // ── Test suite ────────────────────────────────────────────────────────────────
 
 describe('_wireBackend regression', () => {
-	beforeEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'wire-backend-test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		removeAudioContext();
-	});
+    div.id = 'wire-backend-test';
+    document.body.appendChild(div);
+  });
 
-	// ── Phase 'starting' → 'playing' ────────────────────────────────────────
+  afterEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    removeAudioContext();
+  });
 
-	describe('phase transitions to "playing" from backend play event', () => {
-		it('transitions "starting" → "playing" when DOM play fires after _firstFrameEmitted is true', async () => {
-			const { player, audioEl } = await makeReadyPlayer('wire-backend-test');
+  // ── Phase 'starting' → 'playing' ────────────────────────────────────────
 
-			// Simulate canplay during load — sets _firstFrameEmitted = true.
-			audioEl.dispatchEvent(new Event('canplay'));
+  describe('phase transitions to "playing" from backend play event', () => {
+    it('transitions "starting" → "playing" when DOM play fires after _firstFrameEmitted is true', async () => {
+      const { player, audioEl } = await makeReadyPlayer('wire-backend-test');
 
-			// Stub element.play() so it resolves without browser-side playback.
-			Object.defineProperty(audioEl, 'play', {
-				value: vi.fn(() => Promise.resolve()),
-				writable: true,
-				configurable: true,
-			});
+      // Simulate canplay during load — sets _firstFrameEmitted = true.
+      audioEl.dispatchEvent(new Event('canplay'));
 
-			// play() transitions ready → starting.
-			await player.play();
-			expect(player.phase()).toBe('starting');
+      // Stub element.play() so it resolves without browser-side playback.
+      Object.defineProperty(audioEl, 'play', {
+        value: vi.fn(() => Promise.resolve()),
+        writable: true,
+        configurable: true,
+      });
 
-			// The backend's DOM bridge emits 'play' when the audio element fires.
-			audioEl.dispatchEvent(new Event('play'));
+      // play() transitions ready → starting.
+      await player.play();
+      expect(player.phase()).toBe('starting');
 
-			expect(player.phase()).toBe('playing');
-		});
+      // The backend's DOM bridge emits 'play' when the audio element fires.
+      audioEl.dispatchEvent(new Event('play'));
 
-		it('transitions to "playing" even when canplay does NOT re-fire after play()', async () => {
-			const { player, audioEl } = await makeReadyPlayer('wire-backend-test');
+      expect(player.phase()).toBe('playing');
+    });
 
-			// Simulate a load that already fired canplay — _firstFrameEmitted = true.
-			audioEl.dispatchEvent(new Event('canplay'));
+    it('transitions to "playing" even when canplay does NOT re-fire after play()', async () => {
+      const { player, audioEl } = await makeReadyPlayer('wire-backend-test');
 
-			Object.defineProperty(audioEl, 'play', {
-				value: vi.fn(() => Promise.resolve()),
-				writable: true,
-				configurable: true,
-			});
+      // Simulate a load that already fired canplay — _firstFrameEmitted = true.
+      audioEl.dispatchEvent(new Event('canplay'));
 
-			await player.play();
+      Object.defineProperty(audioEl, 'play', {
+        value: vi.fn(() => Promise.resolve()),
+        writable: true,
+        configurable: true,
+      });
 
-			// canplay does NOT fire again (audio was already buffered when play() ran).
-			// Only the DOM 'play' event fires.
-			audioEl.dispatchEvent(new Event('play'));
+      await player.play();
 
-			expect(player.phase()).toBe('playing');
-		});
-	});
+      // canplay does NOT fire again (audio was already buffered when play() ran).
+      // Only the DOM 'play' event fires.
+      audioEl.dispatchEvent(new Event('play'));
 
-	// ── Duration from instance.duration() ────────────────────────────────────
+      expect(player.phase()).toBe('playing');
+    });
+  });
 
-	describe('"duration" event carries value from backend.duration()', () => {
-		it('emits "duration" with the audio element\'s duration after loadedmetadata', async () => {
-			const { player, audioEl } = await makeReadyPlayer('wire-backend-test');
+  // ── Duration from instance.duration() ────────────────────────────────────
 
-			let emittedDuration: number | undefined;
-			player.on('duration' as never, (data: { duration: number }) => {
-				emittedDuration = data.duration;
-			});
+  describe('"duration" event carries value from backend.duration()', () => {
+    it('emits "duration" with the audio element\'s duration after loadedmetadata', async () => {
+      const { player, audioEl } = await makeReadyPlayer('wire-backend-test');
 
-			// Set the duration on the audio element before firing loadedmetadata.
-			Object.defineProperty(audioEl, 'duration', {
-				value: 93.5,
-				writable: true,
-				configurable: true,
-			});
+      let emittedDuration: number | undefined;
 
-			audioEl.dispatchEvent(new Event('loadedmetadata'));
+      player.on('duration' as never, (data: { duration: number }) => {
+        emittedDuration = data.duration;
+      });
 
-			expect(emittedDuration).toBe(93.5);
-		});
+      // Set the duration on the audio element before firing loadedmetadata.
+      Object.defineProperty(audioEl, 'duration', {
+        value: 93.5,
+        writable: true,
+        configurable: true,
+      });
 
-		it('does NOT emit "duration" when audio element duration is NaN', async () => {
-			const { player, audioEl } = await makeReadyPlayer('wire-backend-test');
+      audioEl.dispatchEvent(new Event('loadedmetadata'));
 
-			let emitCount = 0;
-			player.on('duration' as never, () => { emitCount++; });
+      expect(emittedDuration).toBe(93.5);
+    });
 
-			// NaN duration — happens before valid metadata loads.
-			Object.defineProperty(audioEl, 'duration', {
-				value: Number.NaN,
-				writable: true,
-				configurable: true,
-			});
+    it('does NOT emit "duration" when audio element duration is NaN', async () => {
+      const { player, audioEl } = await makeReadyPlayer('wire-backend-test');
 
-			audioEl.dispatchEvent(new Event('loadedmetadata'));
+      let emitCount = 0;
 
-			expect(emitCount).toBe(0);
-		});
-	});
+      player.on('duration' as never, () => { emitCount++; });
 
-	// ── Backend config 'webaudio' honored on lazy init ───────────────────────
+      // NaN duration — happens before valid metadata loads.
+      Object.defineProperty(audioEl, 'duration', {
+        value: Number.NaN,
+        writable: true,
+        configurable: true,
+      });
 
-	describe('backend() lazy init respects MusicPlayerConfig.backend', () => {
-		it('creates AudioElementBackend by default (no backend config)', () => {
-			const player = new NMMusicPlayer('wire-backend-test').setup({});
-			expect(player.backend()).toBeInstanceOf(AudioElementBackend);
-		});
+      audioEl.dispatchEvent(new Event('loadedmetadata'));
 
-		it('creates AudioElementBackend when backend config is "audio-element"', () => {
-			const player = new NMMusicPlayer('wire-backend-test').setup({ backend: 'audio-element' });
-			expect(player.backend()).toBeInstanceOf(AudioElementBackend);
-		});
+      expect(emitCount).toBe(0);
+    });
+  });
 
-		it('creates WebAudioBackend when backend config is "webaudio"', () => {
-			installAudioContext();
-			const player = new NMMusicPlayer('wire-backend-test').setup({ backend: 'webaudio' });
-			expect(player.backend()).toBeInstanceOf(WebAudioBackend);
-		});
+  // ── Backend config 'webaudio' honored on lazy init ───────────────────────
 
-		it('backend() getter is idempotent — same instance on repeat calls', () => {
-			const player = new NMMusicPlayer('wire-backend-test').setup({});
-			const first = player.backend();
-			const second = player.backend();
-			expect(first).toBe(second);
-		});
-	});
+  describe('backend() lazy init respects MusicPlayerConfig.backend', () => {
+    it('creates AudioElementBackend by default (no backend config)', () => {
+      const player = new NMMusicPlayer('wire-backend-test').setup({});
 
-	// ── Native <audio controls> ──────────────────────────────────────────────
+      expect(player.backend()).toBeInstanceOf(AudioElementBackend);
+    });
 
-	describe('controls config sets the native controls attribute', () => {
-		it('sets audioEl.controls = true when controls: true', async () => {
-			const { audioEl } = await makeReadyPlayer('wire-backend-test', { controls: true });
-			expect(audioEl.controls).toBe(true);
-		});
+    it('creates AudioElementBackend when backend config is "audio-element"', () => {
+      const player = new NMMusicPlayer('wire-backend-test').setup({ backend: 'audio-element' });
 
-		it('leaves audioEl.controls = false by default', async () => {
-			const { audioEl } = await makeReadyPlayer('wire-backend-test');
-			expect(audioEl.controls).toBe(false);
-		});
+      expect(player.backend()).toBeInstanceOf(AudioElementBackend);
+    });
 
-		it('re-applies controls: true after a runtime backend(kind) swap', async () => {
-			installAudioContext();
-			const { player, audioEl: initialAudioEl } = await makeReadyPlayer('wire-backend-test', { controls: true });
-			expect(initialAudioEl.controls).toBe(true);
+    it('creates WebAudioBackend when backend config is "webaudio"', () => {
+      installAudioContext();
+      const player = new NMMusicPlayer('wire-backend-test').setup({ backend: 'webaudio' });
 
-			await player.backend('webaudio');
+      expect(player.backend()).toBeInstanceOf(WebAudioBackend);
+    });
 
-			const swappedAudioEl = player.container.querySelector('audio');
-			if (!swappedAudioEl)
-				throw new Error('WebAudioBackend did not append <audio> to container');
-			expect(swappedAudioEl.controls).toBe(true);
-		});
-	});
+    it('backend() getter is idempotent — same instance on repeat calls', () => {
+      const player = new NMMusicPlayer('wire-backend-test').setup({});
+      const first = player.backend();
+      const second = player.backend();
+
+      expect(first).toBe(second);
+    });
+  });
+
+  // ── Native <audio controls> ──────────────────────────────────────────────
+
+  describe('controls config sets the native controls attribute', () => {
+    it('sets audioEl.controls = true when controls: true', async () => {
+      const { audioEl } = await makeReadyPlayer('wire-backend-test', { controls: true });
+
+      expect(audioEl.controls).toBe(true);
+    });
+
+    it('leaves audioEl.controls = false by default', async () => {
+      const { audioEl } = await makeReadyPlayer('wire-backend-test');
+
+      expect(audioEl.controls).toBe(false);
+    });
+
+    it('re-applies controls: true after a runtime backend(kind) swap', async () => {
+      installAudioContext();
+      const { player, audioEl: initialAudioEl } = await makeReadyPlayer('wire-backend-test', { controls: true });
+
+      expect(initialAudioEl.controls).toBe(true);
+
+      await player.backend('webaudio');
+
+      const swappedAudioEl = player.container.querySelector('audio');
+
+      if (!swappedAudioEl)
+        throw new Error('WebAudioBackend did not append <audio> to container');
+
+      expect(swappedAudioEl.controls).toBe(true);
+    });
+  });
 });

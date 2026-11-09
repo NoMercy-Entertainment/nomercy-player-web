@@ -29,49 +29,54 @@ import { clampVolume } from '../data/utils';
  * destroying the `.tooltip` span attached by `addTooltip()`.
  */
 function setBtnIcon(btn: HTMLElement, html: string): void {
-	const target = btn.querySelector('.btn-icon') ?? btn;
-	target.innerHTML = html;
+  const target = btn.querySelector('.btn-icon') ?? btn;
+
+  target.innerHTML = html;
 }
 
 // ── Volume ─────────────────────────────────────────────────────────────────────
 
 /** Sync the volume slider value and CSS custom property. `volume` is 0-100 (kit scale). */
 export function applyVolume(
-	volSlider: HTMLInputElement,
-	applyMutedIconFn: () => void,
-	volume: number,
+  volSlider: HTMLInputElement,
+  applyMutedIconFn: () => void,
+  volume: number,
 ): void {
-	const clamped = clampVolume(volume);
-	volSlider.value = String(clamped);
-	volSlider.style.setProperty('--vol-pct', `${clamped}%`);
-	applyMutedIconFn();
+  const clamped = clampVolume(volume);
+
+  volSlider.value = String(clamped);
+  volSlider.style.setProperty('--vol-pct', `${clamped}%`);
+  applyMutedIconFn();
 }
 
 /** Toggle the muted CSS class on the volume button. */
 export function applyMuted(volBtn: HTMLButtonElement, applyMutedIconFn: () => void, muted: boolean): void {
-	volBtn.classList.toggle('muted', muted);
-	applyMutedIconFn();
+  volBtn.classList.toggle('muted', muted);
+  applyMutedIconFn();
 }
 
 /** Update the volume button icon and aria-label to reflect current mute + level. */
 export function applyMutedIcon(
-	volBtn: HTMLButtonElement,
-	player: IVideoPlayer<VideoPlaylistItem>,
-	translate: ITranslator['t'],
+  volBtn: HTMLButtonElement,
+  player: IVideoPlayer<VideoPlaylistItem>,
+  translate: ITranslator['t'],
 ): void {
-	const muted = player.volumeState() === VolumeState.MUTED;
-	const volume = player.volume?.() ?? 100;
-	let icon: typeof fluentIcons.volumeMuted;
-	if (muted || volume === 0)
-		icon = fluentIcons.volumeMuted;
-	else if (volume < 30)
-		icon = fluentIcons.volumeLow;
-	else if (volume <= 60)
-		icon = fluentIcons.volumeMedium;
-	else
-		icon = fluentIcons.volumeHigh;
-	setBtnIcon(volBtn, svgFromIcon(icon));
-	volBtn.setAttribute('aria-label', translate('tooltip.mute'));
+  const muted = player.volumeState() === VolumeState.MUTED;
+  const volume = player.volume?.() ?? 100;
+  let icon: typeof fluentIcons.volumeMuted;
+
+  if (muted || volume === 0) {
+    icon = fluentIcons.volumeMuted;
+  } else if (volume < 30) {
+    icon = fluentIcons.volumeLow;
+  } else if (volume <= 60) {
+    icon = fluentIcons.volumeMedium;
+  } else {
+    icon = fluentIcons.volumeHigh;
+  }
+
+  setBtnIcon(volBtn, svgFromIcon(icon));
+  volBtn.setAttribute('aria-label', translate('tooltip.mute'));
 }
 
 // ── Playback rate ──────────────────────────────────────────────────────────────
@@ -84,10 +89,13 @@ export function applyMutedIcon(
  * users know the active speed without opening the menu.
  */
 export function applyRate(speedBtn: HTMLButtonElement, rate: number, translate: ITranslator['t']): void {
-	setBtnIcon(speedBtn, svgFromIcon(fluentIcons.speed));
-	speedBtn.classList.toggle('is-active', rate !== 1);
-	const base = translate('tooltip.speed');
-	speedBtn.setAttribute('aria-label', rate !== 1 ? `${base} (${rate}×)` : base);
+  setBtnIcon(speedBtn, svgFromIcon(fluentIcons.speed));
+  speedBtn.classList.toggle('is-active', rate !== 1);
+  const base = translate('tooltip.speed');
+
+  speedBtn.setAttribute('aria-label', rate !== 1
+    ? `${base} (${rate}×)`
+    : base);
 }
 
 // ── Quality ────────────────────────────────────────────────────────────────────
@@ -100,31 +108,40 @@ export function applyRate(speedBtn: HTMLButtonElement, rate: number, translate: 
  * The aria-label includes the playing level when known.
  */
 export function applyQualityIcon(
-	qualityBtn: HTMLButtonElement,
-	translate: ITranslator['t'],
-	playingLabel?: string,
-	isManual = false,
+  qualityBtn: HTMLButtonElement,
+  translate: ITranslator['t'],
+  playingLabel?: string,
+  isManual = false,
 ): void {
-	setBtnIcon(qualityBtn, svgFromIcon(fluentIcons.quality));
-	qualityBtn.classList.toggle('is-active', isManual);
-	const base = translate('tooltip.quality');
-	qualityBtn.setAttribute('aria-label', playingLabel ? `${base}: ${playingLabel}` : base);
+  setBtnIcon(qualityBtn, svgFromIcon(fluentIcons.quality));
+  qualityBtn.classList.toggle('is-active', isManual);
+  const base = translate('tooltip.quality');
+
+  qualityBtn.setAttribute('aria-label', playingLabel
+    ? `${base}: ${playingLabel}`
+    : base);
 }
 
 // ── Fullscreen ─────────────────────────────────────────────────────────────────
 
 /** Sync the fullscreen button icon to the current fullscreen state. */
 export function applyFullscreen(fsBtn: HTMLButtonElement): void {
-	const fs = Boolean(document.fullscreenElement);
-	setBtnIcon(fsBtn, svgFromIcon(fs ? fluentIcons.exitFullscreen : fluentIcons.fullscreen));
+  const fs = Boolean(document.fullscreenElement);
+
+  setBtnIcon(fsBtn, svgFromIcon(fs
+    ? fluentIcons.exitFullscreen
+    : fluentIcons.fullscreen));
 }
 
 // ── Theater ────────────────────────────────────────────────────────────────────
 
 /** Update the theater button icon and aria-label. */
 export function applyTheaterIcon(theaterBtn: HTMLButtonElement, active: boolean, translate: ITranslator['t']): void {
-	setBtnIcon(theaterBtn, svgFromIcon(active ? fluentIcons.theaterExit : fluentIcons.theater));
-	theaterBtn.setAttribute('aria-label', translate('tooltip.theater'));
+  setBtnIcon(theaterBtn, svgFromIcon(active
+    ? fluentIcons.theaterExit
+    : fluentIcons.theater));
+
+  theaterBtn.setAttribute('aria-label', translate('tooltip.theater'));
 }
 
 // ── Subtitles ──────────────────────────────────────────────────────────────────
@@ -135,10 +152,14 @@ export function applyTheaterIcon(theaterBtn: HTMLButtonElement, active: boolean,
  * non-default, so both the filled icon and `is-active` are applied together.
  */
 export function applySubsIcon(subsBtn: HTMLButtonElement, activeSubtitleIdx: number | null, translate: ITranslator['t']): void {
-	const on = activeSubtitleIdx !== null && activeSubtitleIdx !== -1;
-	setBtnIcon(subsBtn, svgFromIcon(on ? fluentIcons.subtitles : fluentIcons.subtitlesOff));
-	subsBtn.classList.toggle('is-active', on);
-	subsBtn.setAttribute('aria-label', translate('tooltip.subtitles'));
+  const on = activeSubtitleIdx !== null && activeSubtitleIdx !== -1;
+
+  setBtnIcon(subsBtn, svgFromIcon(on
+    ? fluentIcons.subtitles
+    : fluentIcons.subtitlesOff));
+
+  subsBtn.classList.toggle('is-active', on);
+  subsBtn.setAttribute('aria-label', translate('tooltip.subtitles'));
 }
 
 // ── Picture-in-picture ─────────────────────────────────────────────────────────
@@ -149,9 +170,12 @@ export function applySubsIcon(subsBtn: HTMLButtonElement, activeSubtitleIdx: num
  * exit-pip icon — matching the aspect-ratio and speed pattern exactly.
  */
 export function applyPipIcon(pipBtn: HTMLButtonElement, active: boolean, translate: ITranslator['t']): void {
-	setBtnIcon(pipBtn, svgFromIcon(active ? fluentIcons.pipExit : fluentIcons.pipEnter));
-	pipBtn.classList.toggle('is-active', active);
-	pipBtn.setAttribute('aria-label', translate('tooltip.pip'));
+  setBtnIcon(pipBtn, svgFromIcon(active
+    ? fluentIcons.pipExit
+    : fluentIcons.pipEnter));
+
+  pipBtn.classList.toggle('is-active', active);
+  pipBtn.setAttribute('aria-label', translate('tooltip.pip'));
 }
 
 // ── Audio track ────────────────────────────────────────────────────────────────
@@ -164,9 +188,9 @@ export function applyPipIcon(pipBtn: HTMLButtonElement, active: boolean, transla
  * pip, and speed.
  */
 export function applyAudioIcon(audioBtn: HTMLButtonElement, translate: ITranslator['t'], isNonDefault = false): void {
-	setBtnIcon(audioBtn, svgFromIcon(fluentIcons.language));
-	audioBtn.classList.toggle('is-active', isNonDefault);
-	audioBtn.setAttribute('aria-label', translate('tooltip.audio'));
+  setBtnIcon(audioBtn, svgFromIcon(fluentIcons.language));
+  audioBtn.classList.toggle('is-active', isNonDefault);
+  audioBtn.setAttribute('aria-label', translate('tooltip.audio'));
 }
 
 // ── Aspect ratio ───────────────────────────────────────────────────────────────
@@ -177,7 +201,7 @@ export function applyAudioIcon(audioBtn: HTMLButtonElement, translate: ITranslat
  * filled icon variant via the CSS `.btn.is-active` rule.
  */
 export function applyAspectRatioIcon(aspectRatioBtn: HTMLButtonElement, isDefault: boolean, translate: ITranslator['t']): void {
-	setBtnIcon(aspectRatioBtn, svgFromIcon(fluentIcons.aspectFit));
-	aspectRatioBtn.classList.toggle('is-active', !isDefault);
-	aspectRatioBtn.setAttribute('aria-label', translate('tooltip.aspectRatio'));
+  setBtnIcon(aspectRatioBtn, svgFromIcon(fluentIcons.aspectFit));
+  aspectRatioBtn.classList.toggle('is-active', !isDefault);
+  aspectRatioBtn.setAttribute('aria-label', translate('tooltip.aspectRatio'));
 }

@@ -32,37 +32,37 @@
  * publish their own numeric counters under a namespaced key.
  */
 export interface PlaybackMetrics {
-	/**
-	 * Time-to-first-byte: ms from `load()` to the first network response byte.
-	 * `null` — no backend currently reports this; reserved for a future
-	 * HLS/DASH segment-timing probe.
-	 */
-	ttfb: number | null;
-	/** Time-to-first-frame: ms from `play()` to the `firstFrame` event. */
-	ttff: number;
-	/** Ratio of stalled time to total playback time (0–1). */
-	rebufferRatio: number;
-	/**
-	 * Average received bitrate over the session (bits per second).
-	 * `null` — no backend currently reports this; reserved for HLS level-change
-	 * tracking in a future instrumentation pass.
-	 */
-	avgBitrate: number | null;
-	/**
-	 * Cumulative dropped video frames reported by `HTMLVideoElement.getVideoPlaybackQuality()`.
-	 * `null` on audio-only backends where no video element exists.
-	 */
-	droppedFrames: number | null;
-	/**
-	 * Number of times the decoder stalled waiting for data.
-	 * `null` — no backend currently reports this; reserved for future MSE
-	 * `QueuingStrategy` instrumentation.
-	 */
-	decoderStalls: number | null;
-	/** ms from page load to the first `play()` call (session join latency). */
-	joinTime: number;
-	/** Total active playback time in this session (ms). */
-	sessionDurationMs: number;
-	/** Extension slot — plugins add namespaced numeric counters here. */
-	[customMetric: string]: number | null;
+  /**
+   * Time-to-first-byte: ms from `load()` to the first network response byte.
+   * `null` — no backend currently reports this; reserved for a future
+   * HLS/DASH segment-timing probe.
+   */
+  ttfb: number | null;
+  /** Time-to-first-frame: ms from `play()` to the `firstFrame` event. */
+  ttff: number;
+  /** Ratio of stalled time to total playback time (0–1). */
+  rebufferRatio: number;
+  /**
+   * Average received bitrate over the session (bits per second).
+   * `null` — no backend currently reports this; reserved for HLS level-change
+   * tracking in a future instrumentation pass.
+   */
+  avgBitrate: number | null;
+  /**
+   * Cumulative dropped video frames reported by `HTMLVideoElement.getVideoPlaybackQuality()`.
+   * `null` on audio-only backends where no video element exists.
+   */
+  droppedFrames: number | null;
+  /**
+   * Number of times the decoder stalled waiting for data.
+   * `null` — no backend currently reports this; reserved for future MSE
+   * `QueuingStrategy` instrumentation.
+   */
+  decoderStalls: number | null;
+  /** ms from page load to the first `play()` call (session join latency). */
+  joinTime: number;
+  /** Total active playback time in this session (ms). */
+  sessionDurationMs: number;
+  /** Extension slot — plugins add namespaced numeric counters here. */
+  [customMetric: string]: number | null;
 }

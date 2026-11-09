@@ -19,16 +19,16 @@ import type { Translations } from './translations';
  * but permitted) satisfy the constraint without widening the instance type.
  */
 export type PluginCtorWithId = (new (...args: never[]) => unknown) & {
-	readonly id: string;
-	readonly version?: string;
-	readonly description?: string;
-	readonly minCoreVersion?: string;
-	readonly requires?: ReadonlyArray<RequireSpec>;
-	readonly replaces?: string;
-	readonly priority?: number;
-	readonly onError?: Readonly<Record<string, string>>;
-	readonly advisories?: ReadonlyArray<PluginAdvisory>;
-	readonly translations?: Translations;
+  readonly id: string;
+  readonly version?: string;
+  readonly description?: string;
+  readonly minCoreVersion?: string;
+  readonly requires?: ReadonlyArray<RequireSpec>;
+  readonly replaces?: string;
+  readonly priority?: number;
+  readonly onError?: Readonly<Record<string, string>>;
+  readonly advisories?: ReadonlyArray<PluginAdvisory>;
+  readonly translations?: Translations;
 };
 
 /**
@@ -56,9 +56,13 @@ export type PluginCtorWithId = (new (...args: never[]) => unknown) & {
  * optional-missing logs a debug warning and the dependent plugin runs anyway.
  * Version mismatch throws `core:plugin/version-mismatch`.
  */
-export type RequireSpec
-	= | PluginCtorWithId
-		| { plugin: PluginCtorWithId; optional?: boolean; minVersion?: string };
+export type RequireSpec =
+  | PluginCtorWithId |
+  {
+    plugin: PluginCtorWithId;
+    optional?: boolean;
+    minVersion?: string;
+  };
 
 /**
  * Declarative plugin registration used in `BasePlayerConfig.plugins`. Same
@@ -84,9 +88,9 @@ export type RequireSpec
  * config-declared plugin and a manually-`addPlugin`'d one resolve identically
  * regardless of which route added which.
  */
-export type PluginSpec
-	= | PluginCtorWithId
-		| { plugin: PluginCtorWithId; opts?: unknown };
+export type PluginSpec =
+  | PluginCtorWithId |
+  { plugin: PluginCtorWithId; opts?: unknown };
 
 /**
  * Declarative advisory — `static advisories` on a Plugin class. Lets plugins
@@ -102,24 +106,24 @@ export type PluginSpec
  * If neither is set, the advisory matches any time the method is called.
  */
 export interface PluginAdvisory {
-	/** The mutating method this advisory watches (e.g. `'setCurrent'`, `'volume'`). */
-	method: string;
-	/** Coarse playback phase(s) that trigger the advisory. Optional — omit to match any phase. */
-	duringPhase?: PlayerPhase | ReadonlyArray<PlayerPhase>;
-	/**
-	 * Event name(s) whose dispatch must be in flight for the advisory to match.
-	 * Use this to advise specifically inside a `before*` handler — works for
-	 * core events AND plugin-defined custom events.
-	 *
-	 * E.g. `duringEvent: 'beforePlay'` matches mutations inside a beforePlay
-	 * handler. `duringEvent: 'plugin:my-plugin:beforeFoo'` matches mutations
-	 * inside another plugin's custom before-event handler.
-	 */
-	duringEvent?: string | ReadonlyArray<string>;
-	/** Severity tier — controls which event channel the advisory fires on. */
-	severity: 'info' | 'warning' | 'error';
-	/** Short slug for the error code suffix. Final code: `plugin:<plugin-id>/<reason>`. */
-	reason: string;
-	/** Human-readable message shown to consumers / devtools. */
-	message: string;
+  /** The mutating method this advisory watches (e.g. `'setCurrent'`, `'volume'`). */
+  method: string;
+  /** Coarse playback phase(s) that trigger the advisory. Optional — omit to match any phase. */
+  duringPhase?: PlayerPhase | ReadonlyArray<PlayerPhase>;
+  /**
+   * Event name(s) whose dispatch must be in flight for the advisory to match.
+   * Use this to advise specifically inside a `before*` handler — works for
+   * core events AND plugin-defined custom events.
+   *
+   * E.g. `duringEvent: 'beforePlay'` matches mutations inside a beforePlay
+   * handler. `duringEvent: 'plugin:my-plugin:beforeFoo'` matches mutations
+   * inside another plugin's custom before-event handler.
+   */
+  duringEvent?: string | ReadonlyArray<string>;
+  /** Severity tier — controls which event channel the advisory fires on. */
+  severity: 'info' | 'warning' | 'error';
+  /** Short slug for the error code suffix. Final code: `plugin:<plugin-id>/<reason>`. */
+  reason: string;
+  /** Human-readable message shown to consumers / devtools. */
+  message: string;
 }

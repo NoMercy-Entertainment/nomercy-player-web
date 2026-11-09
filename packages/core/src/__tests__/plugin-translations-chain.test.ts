@@ -23,113 +23,119 @@
 import type { PluginCtorWithId, Translations } from '../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
-	Plugin,
-	translationsFromGlob,
+  composeMixins,
+  playerCoreMethods,
+  Plugin,
+  translationsFromGlob,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare addPlugin: (PluginClass: any) => this;
-	declare removePlugin: (PluginClass: any) => void;
-	declare t: {
-		(key: string, vars?: Record<string, string>): string;
-		(PluginClass: PluginCtorWithId, key: string, vars?: Record<string, string>): string;
-	};
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare addPlugin: (PluginClass: any) => this;
+  declare removePlugin: (PluginClass: any) => void;
+  declare t: {
+    (key: string, vars?: Record<string, string>): string;
+    (PluginClass: PluginCtorWithId, key: string, vars?: Record<string, string>): string;
+  };
 
-	declare language: (lang: string) => Promise<void>;
+  declare language: (lang: string) => Promise<void>;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 class BasePlugin extends Plugin {
-	static override readonly id: string = 'chain-test';
-	static override readonly description: string = 'base';
-	static override readonly translations: Translations = {
-		en: { 'plugin.chain-test.base-only': 'BASE-EN', 'plugin.chain-test.shared': 'BASE-shared-EN' },
-		nl: { 'plugin.chain-test.base-only': 'BASIS-NL', 'plugin.chain-test.shared': 'BASIS-shared-NL' },
-	};
+  static override readonly id: string = 'chain-test';
+  static override readonly description: string = 'base';
+  static override readonly translations: Translations = {
+    en: { 'plugin.chain-test.base-only': 'BASE-EN', 'plugin.chain-test.shared': 'BASE-shared-EN' },
+    nl: { 'plugin.chain-test.base-only': 'BASIS-NL', 'plugin.chain-test.shared': 'BASIS-shared-NL' },
+  };
 }
 
 class ChildPlugin extends BasePlugin {
-	static override readonly description: string = 'child';
-	static override readonly translations: Translations = {
-		en: { 'plugin.chain-test.child-only': 'CHILD-EN', 'plugin.chain-test.shared': 'CHILD-shared-EN' },
-		nl: { 'plugin.chain-test.child-only': 'KIND-NL', 'plugin.chain-test.shared': 'KIND-shared-NL' },
-	};
+  static override readonly description: string = 'child';
+  static override readonly translations: Translations = {
+    en: { 'plugin.chain-test.child-only': 'CHILD-EN', 'plugin.chain-test.shared': 'CHILD-shared-EN' },
+    nl: { 'plugin.chain-test.child-only': 'KIND-NL', 'plugin.chain-test.shared': 'KIND-shared-NL' },
+  };
 }
 
 describe('Plugin translation chain registration', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
+  beforeEach(() => MockPlayer._resetRegistry());
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('registers BOTH base and child translations when only the child is added', async () => {
-		const mockPlayer = makePlayer('chain1').setup({});
-		await mockPlayer.ready();
-		mockPlayer.addPlugin(ChildPlugin);
+  it('registers BOTH base and child translations when only the child is added', async () => {
+    const mockPlayer = makePlayer('chain1').setup({});
 
-		// Base-only key — would be missing if child shadowed the parent.
-		expect(mockPlayer.t('plugin.chain-test.base-only')).toBe('BASE-EN');
-		// Child-only key.
-		expect(mockPlayer.t('plugin.chain-test.child-only')).toBe('CHILD-EN');
-		// Shared key — child wins on collision (registered last in chain order).
-		expect(mockPlayer.t('plugin.chain-test.shared')).toBe('CHILD-shared-EN');
-	});
+    await mockPlayer.ready();
+    mockPlayer.addPlugin(ChildPlugin);
 
-	it('registers Dutch keys from both ancestors', async () => {
-		const mockPlayer = makePlayer('chain2').setup({});
-		await mockPlayer.ready();
-		mockPlayer.addPlugin(ChildPlugin);
-		await mockPlayer.language('nl');
-		expect(mockPlayer.t('plugin.chain-test.base-only')).toBe('BASIS-NL');
-		expect(mockPlayer.t('plugin.chain-test.child-only')).toBe('KIND-NL');
-		expect(mockPlayer.t('plugin.chain-test.shared')).toBe('KIND-shared-NL');
-	});
+    // Base-only key — would be missing if child shadowed the parent.
+    expect(mockPlayer.t('plugin.chain-test.base-only')).toBe('BASE-EN');
+    // Child-only key.
+    expect(mockPlayer.t('plugin.chain-test.child-only')).toBe('CHILD-EN');
+    // Shared key — child wins on collision (registered last in chain order).
+    expect(mockPlayer.t('plugin.chain-test.shared')).toBe('CHILD-shared-EN');
+  });
 
-	it('removing the plugin clears every key under its id', async () => {
-		const mockPlayer = makePlayer('chain3').setup({});
-		await mockPlayer.ready();
-		// Post-setup addPlugin registers asynchronously (translation loads +
-		// use() are awaited internally) — wait for it via ready() before acting
-		// on the plugin, same contract `addPlugin(X).ready()` guarantees
-		// everywhere else. Removing before registration settles would find
-		// nothing in `_plugins` and skip the translation cleanup entirely.
-		await mockPlayer.addPlugin(ChildPlugin).ready();
-		mockPlayer.removePlugin(ChildPlugin);
-		// Removal walks the `plugin.<id>.` prefix so both parent + child
-		// keys are gone in one pass.
-		expect(mockPlayer.t('plugin.chain-test.base-only')).toBe('plugin.chain-test.base-only');
-		expect(mockPlayer.t('plugin.chain-test.child-only')).toBe('plugin.chain-test.child-only');
-	});
+  it('registers Dutch keys from both ancestors', async () => {
+    const mockPlayer = makePlayer('chain2').setup({});
 
-	it('a plain (no-ancestor-translations) plugin still works', async () => {
-		class Loner extends Plugin {
-			static override readonly id: string = 'loner';
-			static override readonly description: string = 'loner';
-			static override readonly translations: Translations = {
-				en: { 'plugin.loner.x': 'X' },
-			};
-		}
-		const mockPlayer = makePlayer('loner').setup({});
-		await mockPlayer.ready();
-		mockPlayer.addPlugin(Loner);
-		expect(mockPlayer.t('plugin.loner.x')).toBe('X');
-	});
+    await mockPlayer.ready();
+    mockPlayer.addPlugin(ChildPlugin);
+    await mockPlayer.language('nl');
+    expect(mockPlayer.t('plugin.chain-test.base-only')).toBe('BASIS-NL');
+    expect(mockPlayer.t('plugin.chain-test.child-only')).toBe('KIND-NL');
+    expect(mockPlayer.t('plugin.chain-test.shared')).toBe('KIND-shared-NL');
+  });
+
+  it('removing the plugin clears every key under its id', async () => {
+    const mockPlayer = makePlayer('chain3').setup({});
+
+    await mockPlayer.ready();
+    // Post-setup addPlugin registers asynchronously (translation loads +
+    // use() are awaited internally) — wait for it via ready() before acting
+    // on the plugin, same contract `addPlugin(X).ready()` guarantees
+    // everywhere else. Removing before registration settles would find
+    // nothing in `_plugins` and skip the translation cleanup entirely.
+    await mockPlayer.addPlugin(ChildPlugin).ready();
+    mockPlayer.removePlugin(ChildPlugin);
+    // Removal walks the `plugin.<id>.` prefix so both parent + child
+    // keys are gone in one pass.
+    expect(mockPlayer.t('plugin.chain-test.base-only')).toBe('plugin.chain-test.base-only');
+    expect(mockPlayer.t('plugin.chain-test.child-only')).toBe('plugin.chain-test.child-only');
+  });
+
+  it('a plain (no-ancestor-translations) plugin still works', async () => {
+    class Loner extends Plugin {
+      static override readonly id: string = 'loner';
+      static override readonly description: string = 'loner';
+      static override readonly translations: Translations = {
+        en: { 'plugin.loner.x': 'X' },
+      };
+    }
+    const mockPlayer = makePlayer('loner').setup({});
+
+    await mockPlayer.ready();
+    mockPlayer.addPlugin(Loner);
+    expect(mockPlayer.t('plugin.loner.x')).toBe('X');
+  });
 });
 
 /**
@@ -141,193 +147,208 @@ describe('Plugin translation chain registration', () => {
  * languages stay out of memory until `setLanguage` requests them.
  */
 describe('Plugin lazy translation chain', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => MockPlayer._resetRegistry());
 
-	/** addPlugin is fire-and-forget; wait for the install event before asserting. */
-	const waitForInstall = (mockPlayer: MockPlayer, id: string): Promise<void> => new Promise<void>((resolve) => {
-		const handler = (data: unknown): void => {
-			const payload = data as { id: string };
-			if (payload.id !== id)
-				return;
-			mockPlayer.off('plugin:installed', handler);
-			resolve();
-		};
-		mockPlayer.on('plugin:installed', handler);
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('loads ONLY the active language at addPlugin time — Chinese stays untouched', async () => {
-		const enLoader = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'EN' } }));
-		const nlLoader = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'NL' } }));
-		const zhLoader = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'ZH' } }));
+  /** addPlugin is fire-and-forget; wait for the install event before asserting. */
+  const waitForInstall = (mockPlayer: MockPlayer, id: string): Promise<void> => new Promise<void>((resolve) => {
+    const handler = (data: unknown): void => {
+      const payload = data as { id: string };
 
-		const lazy = translationsFromGlob({
-			'./i18n/en.ts': enLoader,
-			'./i18n/nl.ts': nlLoader,
-			'./i18n/zh.ts': zhLoader,
-		});
+      if (payload.id !== id) return;
 
-		class LazyPlugin extends Plugin {
-			static override readonly id: string = 'lazy';
-			static override readonly description: string = 'lazy';
-			static override readonly translations: Translations = lazy;
-		}
+      mockPlayer.off('plugin:installed', handler);
+      resolve();
+    };
 
-		const mockPlayer = makePlayer('lazy1').setup({});
-		await mockPlayer.ready();
-		await mockPlayer.language('nl');
-		const installed = waitForInstall(mockPlayer, 'lazy');
-		mockPlayer.addPlugin(LazyPlugin);
-		await installed;
+    mockPlayer.on('plugin:installed', handler);
+  });
 
-		expect(mockPlayer.t('plugin.lazy.k')).toBe('NL');
-		// Critical: ONLY the active language was loaded. The plugin add path
-		// walks the BCP-47 chain (`nl`) and stops there. Chinese never paid
-		// the cost of being parsed / merged.
-		expect(nlLoader).toHaveBeenCalledTimes(1);
-		expect(zhLoader).not.toHaveBeenCalled();
-	});
+  it('loads ONLY the active language at addPlugin time — Chinese stays untouched', async () => {
+    const enLoader = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'EN' } }));
+    const nlLoader = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'NL' } }));
+    const zhLoader = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'ZH' } }));
 
-	it('walks the BCP-47 parent chain — pt-BR loads pt-BR + pt only', async () => {
-		const ptBR = vi.fn(async () => ({ default: { 'plugin.lazy.regional': 'BR' } }));
-		const pt = vi.fn(async () => ({ default: { 'plugin.lazy.shared': 'PT' } }));
-		const en = vi.fn(async () => ({ default: { 'plugin.lazy.shared': 'EN' } }));
-		const zh = vi.fn(async () => ({ default: { 'plugin.lazy.shared': 'ZH' } }));
+    const lazy = translationsFromGlob({
+      './i18n/en.ts': enLoader,
+      './i18n/nl.ts': nlLoader,
+      './i18n/zh.ts': zhLoader,
+    });
 
-		class LazyPlugin extends Plugin {
-			static override readonly id: string = 'lazy';
-			static override readonly description: string = 'lazy';
-			static override readonly translations: Translations = translationsFromGlob({
-				'./i18n/pt-BR.ts': ptBR,
-				'./i18n/pt.ts': pt,
-				'./i18n/en.ts': en,
-				'./i18n/zh.ts': zh,
-			});
-		}
+    class LazyPlugin extends Plugin {
+      static override readonly id: string = 'lazy';
+      static override readonly description: string = 'lazy';
+      static override readonly translations: Translations = lazy;
+    }
 
-		const mockPlayer = makePlayer('lazy2').setup({});
-		await mockPlayer.ready();
-		await mockPlayer.language('pt-BR');
-		const installed = waitForInstall(mockPlayer, 'lazy');
-		mockPlayer.addPlugin(LazyPlugin);
-		await installed;
+    const mockPlayer = makePlayer('lazy1').setup({});
 
-		expect(ptBR).toHaveBeenCalledTimes(1);
-		expect(pt).toHaveBeenCalledTimes(1);
-		// English is the translator's fallback, so it loads; Chinese stays out of memory.
-		expect(en).toHaveBeenCalledTimes(1);
-		expect(zh).not.toHaveBeenCalled();
+    await mockPlayer.ready();
+    await mockPlayer.language('nl');
+    const installed = waitForInstall(mockPlayer, 'lazy');
 
-		// pt-BR-specific key resolves from pt-BR.
-		expect(mockPlayer.t('plugin.lazy.regional')).toBe('BR');
-		// Shared key falls back to pt (pt-BR doesn't define it).
-		expect(mockPlayer.t('plugin.lazy.shared')).toBe('PT');
-	});
+    mockPlayer.addPlugin(LazyPlugin);
+    await installed;
 
-	it('a language with no bundle falls back to the English bundle, never the raw key', async () => {
-		const en = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'EN' } }));
-		const nl = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'NL' } }));
+    expect(mockPlayer.t('plugin.lazy.k')).toBe('NL');
+    // Critical: ONLY the active language was loaded. The plugin add path
+    // walks the BCP-47 chain (`nl`) and stops there. Chinese never paid
+    // the cost of being parsed / merged.
+    expect(nlLoader).toHaveBeenCalledTimes(1);
+    expect(zhLoader).not.toHaveBeenCalled();
+  });
 
-		class LazyPlugin extends Plugin {
-			static override readonly id: string = 'lazy';
-			static override readonly description: string = 'lazy';
-			static override readonly translations: Translations = translationsFromGlob({
-				'./i18n/en.ts': en,
-				'./i18n/nl.ts': nl,
-			});
-		}
+  it('walks the BCP-47 parent chain — pt-BR loads pt-BR + pt only', async () => {
+    const ptBR = vi.fn(async () => ({ default: { 'plugin.lazy.regional': 'BR' } }));
+    const pt = vi.fn(async () => ({ default: { 'plugin.lazy.shared': 'PT' } }));
+    const en = vi.fn(async () => ({ default: { 'plugin.lazy.shared': 'EN' } }));
+    const zh = vi.fn(async () => ({ default: { 'plugin.lazy.shared': 'ZH' } }));
 
-		const mockPlayer = makePlayer('lazy-fallback').setup({});
-		await mockPlayer.ready();
-		await mockPlayer.language('zz');
-		const installed = waitForInstall(mockPlayer, 'lazy');
-		mockPlayer.addPlugin(LazyPlugin);
-		await installed;
+    class LazyPlugin extends Plugin {
+      static override readonly id: string = 'lazy';
+      static override readonly description: string = 'lazy';
+      static override readonly translations: Translations = translationsFromGlob({
+        './i18n/pt-BR.ts': ptBR,
+        './i18n/pt.ts': pt,
+        './i18n/en.ts': en,
+        './i18n/zh.ts': zh,
+      });
+    }
 
-		expect(mockPlayer.t('plugin.lazy.k')).toBe('EN');
-	});
+    const mockPlayer = makePlayer('lazy2').setup({});
 
-	it('switching to a language with no bundle keeps the English fallback loaded', async () => {
-		const en = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'EN' } }));
-		const nl = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'NL' } }));
+    await mockPlayer.ready();
+    await mockPlayer.language('pt-BR');
+    const installed = waitForInstall(mockPlayer, 'lazy');
 
-		class LazyPlugin extends Plugin {
-			static override readonly id: string = 'lazy';
-			static override readonly description: string = 'lazy';
-			static override readonly translations: Translations = translationsFromGlob({
-				'./i18n/en.ts': en,
-				'./i18n/nl.ts': nl,
-			});
-		}
+    mockPlayer.addPlugin(LazyPlugin);
+    await installed;
 
-		const mockPlayer = makePlayer('lazy-switch').setup({});
-		await mockPlayer.ready();
-		await mockPlayer.language('nl');
-		const installed = waitForInstall(mockPlayer, 'lazy');
-		mockPlayer.addPlugin(LazyPlugin);
-		await installed;
-		expect(mockPlayer.t('plugin.lazy.k')).toBe('NL');
+    expect(ptBR).toHaveBeenCalledTimes(1);
+    expect(pt).toHaveBeenCalledTimes(1);
+    // English is the translator's fallback, so it loads; Chinese stays out of memory.
+    expect(en).toHaveBeenCalledTimes(1);
+    expect(zh).not.toHaveBeenCalled();
 
-		await mockPlayer.language('zz');
-		expect(mockPlayer.t('plugin.lazy.k')).toBe('EN');
-	});
+    // pt-BR-specific key resolves from pt-BR.
+    expect(mockPlayer.t('plugin.lazy.regional')).toBe('BR');
+    // Shared key falls back to pt (pt-BR doesn't define it).
+    expect(mockPlayer.t('plugin.lazy.shared')).toBe('PT');
+  });
 
-	it('language() to a NEW language fires the lazy loader for that language', async () => {
-		const en = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'EN' } }));
-		const fr = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'FR' } }));
+  it('a language with no bundle falls back to the English bundle, never the raw key', async () => {
+    const en = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'EN' } }));
+    const nl = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'NL' } }));
 
-		class LazyPlugin extends Plugin {
-			static override readonly id: string = 'lazy';
-			static override readonly description: string = 'lazy';
-			static override readonly translations: Translations = translationsFromGlob({
-				'./i18n/en.ts': en,
-				'./i18n/fr.ts': fr,
-			});
-		}
+    class LazyPlugin extends Plugin {
+      static override readonly id: string = 'lazy';
+      static override readonly description: string = 'lazy';
+      static override readonly translations: Translations = translationsFromGlob({
+        './i18n/en.ts': en,
+        './i18n/nl.ts': nl,
+      });
+    }
 
-		const mockPlayer = makePlayer('lazy3').setup({});
-		await mockPlayer.ready();
-		const installed = waitForInstall(mockPlayer, 'lazy');
-		mockPlayer.addPlugin(LazyPlugin);
-		await installed;
+    const mockPlayer = makePlayer('lazy-fallback').setup({});
 
-		expect(en).toHaveBeenCalledTimes(1);
-		expect(fr).not.toHaveBeenCalled();
+    await mockPlayer.ready();
+    await mockPlayer.language('zz');
+    const installed = waitForInstall(mockPlayer, 'lazy');
 
-		await mockPlayer.language('fr');
-		expect(fr).toHaveBeenCalledTimes(1);
-		expect(mockPlayer.t('plugin.lazy.k')).toBe('FR');
-	});
+    mockPlayer.addPlugin(LazyPlugin);
+    await installed;
 
-	it('eager bundles (no lazy marker) still work alongside lazy ones', async () => {
-		// Subclass eager + base lazy — both must register correctly.
-		const baseEn = vi.fn(async () => ({ default: { 'plugin.lazy.base': 'BASE-EN' } }));
+    expect(mockPlayer.t('plugin.lazy.k')).toBe('EN');
+  });
 
-		class LazyBase extends Plugin {
-			static override readonly id: string = 'lazy';
-			static override readonly description: string = 'lazy-base';
-			static override readonly translations: Translations = translationsFromGlob({
-				'./i18n/en.ts': baseEn,
-			});
-		}
+  it('switching to a language with no bundle keeps the English fallback loaded', async () => {
+    const en = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'EN' } }));
+    const nl = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'NL' } }));
 
-		class EagerChild extends LazyBase {
-			static override readonly description: string = 'eager-child';
-			static override readonly translations: Translations = {
-				en: { 'plugin.lazy.child': 'CHILD-EN' },
-			};
-		}
+    class LazyPlugin extends Plugin {
+      static override readonly id: string = 'lazy';
+      static override readonly description: string = 'lazy';
+      static override readonly translations: Translations = translationsFromGlob({
+        './i18n/en.ts': en,
+        './i18n/nl.ts': nl,
+      });
+    }
 
-		const mockPlayer = makePlayer('lazy4').setup({});
-		await mockPlayer.ready();
-		const installed = waitForInstall(mockPlayer, 'lazy');
-		mockPlayer.addPlugin(EagerChild);
-		await installed;
+    const mockPlayer = makePlayer('lazy-switch').setup({});
 
-		expect(mockPlayer.t('plugin.lazy.base')).toBe('BASE-EN');
-		expect(mockPlayer.t('plugin.lazy.child')).toBe('CHILD-EN');
-	});
+    await mockPlayer.ready();
+    await mockPlayer.language('nl');
+    const installed = waitForInstall(mockPlayer, 'lazy');
+
+    mockPlayer.addPlugin(LazyPlugin);
+    await installed;
+    expect(mockPlayer.t('plugin.lazy.k')).toBe('NL');
+
+    await mockPlayer.language('zz');
+    expect(mockPlayer.t('plugin.lazy.k')).toBe('EN');
+  });
+
+  it('language() to a NEW language fires the lazy loader for that language', async () => {
+    const en = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'EN' } }));
+    const fr = vi.fn(async () => ({ default: { 'plugin.lazy.k': 'FR' } }));
+
+    class LazyPlugin extends Plugin {
+      static override readonly id: string = 'lazy';
+      static override readonly description: string = 'lazy';
+      static override readonly translations: Translations = translationsFromGlob({
+        './i18n/en.ts': en,
+        './i18n/fr.ts': fr,
+      });
+    }
+
+    const mockPlayer = makePlayer('lazy3').setup({});
+
+    await mockPlayer.ready();
+    const installed = waitForInstall(mockPlayer, 'lazy');
+
+    mockPlayer.addPlugin(LazyPlugin);
+    await installed;
+
+    expect(en).toHaveBeenCalledTimes(1);
+    expect(fr).not.toHaveBeenCalled();
+
+    await mockPlayer.language('fr');
+    expect(fr).toHaveBeenCalledTimes(1);
+    expect(mockPlayer.t('plugin.lazy.k')).toBe('FR');
+  });
+
+  it('eager bundles (no lazy marker) still work alongside lazy ones', async () => {
+    // Subclass eager + base lazy — both must register correctly.
+    const baseEn = vi.fn(async () => ({ default: { 'plugin.lazy.base': 'BASE-EN' } }));
+
+    class LazyBase extends Plugin {
+      static override readonly id: string = 'lazy';
+      static override readonly description: string = 'lazy-base';
+      static override readonly translations: Translations = translationsFromGlob({
+        './i18n/en.ts': baseEn,
+      });
+    }
+
+    class EagerChild extends LazyBase {
+      static override readonly description: string = 'eager-child';
+      static override readonly translations: Translations = {
+        en: { 'plugin.lazy.child': 'CHILD-EN' },
+      };
+    }
+
+    const mockPlayer = makePlayer('lazy4').setup({});
+
+    await mockPlayer.ready();
+    const installed = waitForInstall(mockPlayer, 'lazy');
+
+    mockPlayer.addPlugin(EagerChild);
+    await installed;
+
+    expect(mockPlayer.t('plugin.lazy.base')).toBe('BASE-EN');
+    expect(mockPlayer.t('plugin.lazy.child')).toBe('CHILD-EN');
+  });
 });

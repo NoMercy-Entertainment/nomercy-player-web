@@ -20,255 +20,300 @@ import { SpectrumPlugin } from '../../plugins/spectrum';
 import { VisualizationPlugin } from '../../plugins/visualization';
 
 class GpuTestVisualization extends VisualizationPlugin {
-	static override readonly id: string = 'gpu-viz';
+  static override readonly id: string = 'gpu-viz';
 
-	renderCalls = 0;
+  renderCalls = 0;
 
-	protected override render(_ctx: CanvasRenderingContext2D, _frame: VisualizationFrame): void {
-		this.renderCalls++;
-	}
+  protected override render(_ctx: CanvasRenderingContext2D, _frame: VisualizationFrame): void {
+    this.renderCalls++;
+  }
 
-	mountSurface(parent: HTMLElement): GpuSurface {
-		return this.createGpuSurface(parent, { scale: 1 });
-	}
+  mountSurface(parent: HTMLElement): GpuSurface {
+    return this.createGpuSurface(parent, { scale: 1 });
+  }
 }
 
 const sampleFrame: VisualizationFrame = {
-	frequency: new Uint8Array([100, 150, 200]),
-	waveform: new Uint8Array([128, 130, 125]),
-	time: 5.5,
-	deltaMs: 16,
-	energy: 0.4,
-	bandEnergies: { bass: 0.3, mid: 0.2, treble: 0.1 },
-	frequencyFloat: new Float32Array([-40, -30, -20]),
-	waveformFloat: new Float32Array([0, 0.5, -0.5]),
-	sampleRate: 44100,
-	binHz: 44100 / 2048,
-	peakHz: 2 * (44100 / 2048),
-	peakBandEnergies: { bass: 0.3, mid: 0.2, treble: 0.1 },
+  frequency: new Uint8Array([100, 150, 200]),
+  waveform: new Uint8Array([128, 130, 125]),
+  time: 5.5,
+  deltaMs: 16,
+  energy: 0.4,
+  bandEnergies: {
+    bass: 0.3,
+    mid: 0.2,
+    treble: 0.1,
+  },
+  frequencyFloat: new Float32Array([-40, -30, -20]),
+  waveformFloat: new Float32Array([0, 0.5, -0.5]),
+  sampleRate: 44100,
+  binHz: 44100 / 2048,
+  peakHz: 2 * (44100 / 2048),
+  peakBandEnergies: {
+    bass: 0.3,
+    mid: 0.2,
+    treble: 0.1,
+  },
 };
 
 function install(opts: VisualizationOptions = {}) {
-	const canvasElement = document.createElement('canvas');
-	document.body.appendChild(canvasElement);
-	const fakeCanvas = { addRenderer: vi.fn(), removeRenderer: vi.fn(), canvas: () => canvasElement };
-	const fakeSpectrum = { enabled: () => true, syntheticMode: () => false, currentFrame: () => sampleFrame };
-	const events: Array<{ event: string; data: unknown }> = [];
-	const player = {
-		options: {},
-		container: document.body,
-		emit: (event: string, data: unknown) => events.push({ event, data }),
-		on: vi.fn(),
-		off: vi.fn(),
-		getPlugin: (ctor: unknown) => {
-			if (ctor === CanvasPlugin)
-				return fakeCanvas;
-			return ctor === SpectrumPlugin ? fakeSpectrum : undefined;
-		},
-	};
-	const lifecycle = new LifecycleRegistry();
-	const plugin = new GpuTestVisualization();
-	plugin.initialize(player as never, opts, lifecycle);
-	plugin.use();
+  const canvasElement = document.createElement('canvas');
 
-	const ctx = {} as CanvasRenderingContext2D;
-	const tick = (count = 1): void => {
-		const renderer = fakeCanvas.addRenderer.mock.calls[0]![0] as (context: CanvasRenderingContext2D, deltaMs: number, time: number) => void;
-		for (let i = 0; i < count; i++)
-			renderer(ctx, 16, i);
-	};
-	return { plugin, fakeCanvas, canvasElement, events, lifecycle, tick };
+  document.body.appendChild(canvasElement);
+  const fakeCanvas = {
+    addRenderer: vi.fn(),
+    removeRenderer: vi.fn(),
+    canvas: () => canvasElement,
+  };
+  const fakeSpectrum = {
+    enabled: () => true,
+    syntheticMode: () => false,
+    currentFrame: () => sampleFrame,
+  };
+  const events: Array<{ event: string; data: unknown }> = [];
+  const player = {
+    options: {},
+    container: document.body,
+    emit: (event: string, data: unknown) => events.push({ event, data }),
+    on: vi.fn(),
+    off: vi.fn(),
+    getPlugin: (ctor: unknown) => {
+      if (ctor === CanvasPlugin)
+        return fakeCanvas;
+
+      return ctor === SpectrumPlugin
+        ? fakeSpectrum
+        : undefined;
+    },
+  };
+  const lifecycle = new LifecycleRegistry();
+  const plugin = new GpuTestVisualization();
+
+  plugin.initialize(player as never, opts, lifecycle);
+  plugin.use();
+
+  const ctx = {} as CanvasRenderingContext2D;
+
+  const tick = (count = 1): void => {
+    const renderer = fakeCanvas.addRenderer.mock.calls[0]![0] as (context: CanvasRenderingContext2D, deltaMs: number, time: number) => void;
+
+    for (let i = 0; i < count; i++) {
+      renderer(ctx, 16, i);
+    }
+  };
+
+  return {
+    plugin,
+    fakeCanvas,
+    canvasElement,
+    events,
+    lifecycle,
+    tick,
+  };
 }
 
 function stubWebGl2(gl: unknown): void {
-	vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(((type: string) => (type === 'webgl2' ? gl : null)) as never);
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(((type: string) =>
+    type === 'webgl2'
+      ? gl
+      : null) as never);
 }
 
 let documentHidden = false;
 
 function setDocumentHidden(hidden: boolean): void {
-	documentHidden = hidden;
-	document.dispatchEvent(new Event('visibilitychange'));
+  documentHidden = hidden;
+  document.dispatchEvent(new Event('visibilitychange'));
 }
 
 describe('VisualizationPlugin GPU surface hooks', () => {
-	afterEach(() => {
-		vi.restoreAllMocks();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.body.innerHTML = '';
+  });
 
-	it('emits unsupported with the webgl2 reason and does not throw when webgl2 is missing', () => {
-		stubWebGl2(null);
-		const { plugin, events } = install();
+  it('emits unsupported with the webgl2 reason and does not throw when webgl2 is missing', () => {
+    stubWebGl2(null);
+    const { plugin, events } = install();
 
-		expect(() => plugin.mountSurface(document.body)).not.toThrow();
+    expect(() => plugin.mountSurface(document.body)).not.toThrow();
 
-		expect(events).toContainEqual({ event: 'plugin:gpu-viz:unsupported', data: { reason: 'webgl2-unavailable' } });
-	});
+    expect(events).toContainEqual({ event: 'plugin:gpu-viz:unsupported', data: { reason: 'webgl2-unavailable' } });
+  });
 
-	it('emits plugin events when the context is lost and restored', () => {
-		const gl = { getExtension: vi.fn(() => null) };
-		stubWebGl2(gl);
-		const { plugin, events } = install();
-		const surface = plugin.mountSurface(document.body);
+  it('emits plugin events when the context is lost and restored', () => {
+    const gl = { getExtension: vi.fn(() => null) };
 
-		surface.canvas().dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
-		surface.canvas().dispatchEvent(new Event('webglcontextrestored'));
+    stubWebGl2(gl);
+    const { plugin, events } = install();
+    const surface = plugin.mountSurface(document.body);
 
-		expect(events.map(entry => entry.event)).toEqual(['plugin:gpu-viz:gpu:contextlost', 'plugin:gpu-viz:gpu:contextrestored']);
-	});
+    surface.canvas().dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+    surface.canvas().dispatchEvent(new Event('webglcontextrestored'));
 
-	it('releases the surface on dispose, and a second dispose does not throw', () => {
-		const loseContext = vi.fn();
-		stubWebGl2({ getExtension: vi.fn(() => ({ loseContext })) });
-		const { plugin } = install();
-		const surface = plugin.mountSurface(document.body);
-		const canvas = surface.canvas();
+    expect(events.map((entry) => entry.event)).toEqual(['plugin:gpu-viz:gpu:contextlost', 'plugin:gpu-viz:gpu:contextrestored']);
+  });
 
-		plugin.dispose();
+  it('releases the surface on dispose, and a second dispose does not throw', () => {
+    const loseContext = vi.fn();
 
-		expect(loseContext).toHaveBeenCalledOnce();
-		expect(canvas.isConnected).toBe(false);
-		expect(() => plugin.dispose()).not.toThrow();
-	});
+    stubWebGl2({ getExtension: vi.fn(() => ({ loseContext })) });
+    const { plugin } = install();
+    const surface = plugin.mountSurface(document.body);
+    const canvas = surface.canvas();
 
-	it('replaces the earlier surface when a second one is created', () => {
-		const loseContext = vi.fn();
-		stubWebGl2({ getExtension: vi.fn(() => ({ loseContext })) });
-		const { plugin } = install();
+    plugin.dispose();
 
-		plugin.mountSurface(document.body);
-		plugin.mountSurface(document.body);
+    expect(loseContext).toHaveBeenCalledOnce();
+    expect(canvas.isConnected).toBe(false);
+    expect(() => plugin.dispose()).not.toThrow();
+  });
 
-		expect(loseContext).toHaveBeenCalledOnce();
-		expect(document.body.querySelectorAll('canvas')).toHaveLength(2);
-	});
+  it('replaces the earlier surface when a second one is created', () => {
+    const loseContext = vi.fn();
+
+    stubWebGl2({ getExtension: vi.fn(() => ({ loseContext })) });
+    const { plugin } = install();
+
+    plugin.mountSurface(document.body);
+    plugin.mountSurface(document.body);
+
+    expect(loseContext).toHaveBeenCalledOnce();
+    expect(document.body.querySelectorAll('canvas')).toHaveLength(2);
+  });
 });
 
 describe('VisualizationPlugin pause', () => {
-	beforeEach(() => {
-		documentHidden = false;
-		Object.defineProperty(document, 'hidden', { configurable: true, get: () => documentHidden });
-	});
+  beforeEach(() => {
+    documentHidden = false;
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => documentHidden });
+  });
 
-	afterEach(() => {
-		delete (document as unknown as { hidden?: boolean }).hidden;
-		vi.unstubAllGlobals();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    delete (document as unknown as { hidden?: boolean }).hidden;
+    vi.unstubAllGlobals();
+    document.body.innerHTML = '';
+  });
 
-	it('renders nothing across 30 ticks while inactive, and resumes after reactivation', () => {
-		const { plugin, fakeCanvas, tick } = install();
+  it('renders nothing across 30 ticks while inactive, and resumes after reactivation', () => {
+    const { plugin, fakeCanvas, tick } = install();
 
-		tick(2);
-		expect(plugin.renderCalls).toBe(2);
+    tick(2);
+    expect(plugin.renderCalls).toBe(2);
 
-		plugin.setActive(false);
-		expect(plugin.isActive()).toBe(false);
-		tick(30);
-		expect(plugin.renderCalls).toBe(2);
+    plugin.setActive(false);
+    expect(plugin.isActive()).toBe(false);
+    tick(30);
+    expect(plugin.renderCalls).toBe(2);
 
-		plugin.setActive(false);
-		plugin.setActive(true);
-		plugin.setActive(true);
-		expect(plugin.isActive()).toBe(true);
-		expect(() => tick(3)).not.toThrow();
-		expect(plugin.renderCalls).toBe(5);
-		expect(fakeCanvas.addRenderer).toHaveBeenCalledOnce();
-	});
+    plugin.setActive(false);
+    plugin.setActive(true);
+    plugin.setActive(true);
+    expect(plugin.isActive()).toBe(true);
+    expect(() => tick(3)).not.toThrow();
+    expect(plugin.renderCalls).toBe(5);
+    expect(fakeCanvas.addRenderer).toHaveBeenCalledOnce();
+  });
 
-	it('does no frame work while inactive', () => {
-		const { plugin, tick } = install();
-		const rendered = vi.fn();
-		(plugin as unknown as { emit: unknown }).emit = rendered;
+  it('does no frame work while inactive', () => {
+    const { plugin, tick } = install();
+    const rendered = vi.fn();
 
-		plugin.setActive(false);
-		tick(30);
+    (plugin as unknown as { emit: unknown }).emit = rendered;
 
-		expect(rendered).not.toHaveBeenCalled();
-		expect(plugin.currentFrame()).toBeUndefined();
-	});
+    plugin.setActive(false);
+    tick(30);
 
-	it('goes inactive while the document is hidden when pauseWhenHidden is set', () => {
-		const { plugin, tick } = install({ pauseWhenHidden: true });
+    expect(rendered).not.toHaveBeenCalled();
+    expect(plugin.currentFrame()).toBeUndefined();
+  });
 
-		setDocumentHidden(true);
-		tick(30);
-		expect(plugin.renderCalls).toBe(0);
-		expect(plugin.isActive()).toBe(false);
+  it('goes inactive while the document is hidden when pauseWhenHidden is set', () => {
+    const { plugin, tick } = install({ pauseWhenHidden: true });
 
-		setDocumentHidden(false);
-		tick(2);
-		expect(plugin.renderCalls).toBe(2);
-	});
+    setDocumentHidden(true);
+    tick(30);
+    expect(plugin.renderCalls).toBe(0);
+    expect(plugin.isActive()).toBe(false);
 
-	it('starts inactive when the document is already hidden at use() time', () => {
-		documentHidden = true;
-		const { plugin, tick } = install({ pauseWhenHidden: true });
+    setDocumentHidden(false);
+    tick(2);
+    expect(plugin.renderCalls).toBe(2);
+  });
 
-		tick(5);
+  it('starts inactive when the document is already hidden at use() time', () => {
+    documentHidden = true;
+    const { plugin, tick } = install({ pauseWhenHidden: true });
 
-		expect(plugin.renderCalls).toBe(0);
-	});
+    tick(5);
 
-	it('ignores a hidden document by default', () => {
-		const { plugin, tick } = install();
+    expect(plugin.renderCalls).toBe(0);
+  });
 
-		setDocumentHidden(true);
-		tick(3);
+  it('ignores a hidden document by default', () => {
+    const { plugin, tick } = install();
 
-		expect(plugin.renderCalls).toBe(3);
-	});
+    setDocumentHidden(true);
+    tick(3);
 
-	it('goes inactive while the observer reports not intersecting when pauseWhenOffscreen is set', () => {
-		const observers: Array<{ callback: (entries: Array<{ isIntersecting: boolean }>) => void; observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> }> = [];
-		class FakeIntersectionObserver {
-			observe = vi.fn();
-			disconnect = vi.fn();
-			constructor(public callback: (entries: Array<{ isIntersecting: boolean }>) => void) {
-				observers.push(this);
-			}
-		}
-		vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver);
-		const { plugin, canvasElement, lifecycle, tick } = install({ pauseWhenOffscreen: true });
+    expect(plugin.renderCalls).toBe(3);
+  });
 
-		expect(observers).toHaveLength(1);
-		expect(observers[0]!.observe).toHaveBeenCalledWith(canvasElement);
+  it('goes inactive while the observer reports not intersecting when pauseWhenOffscreen is set', () => {
+    const observers: Array<{
+      callback: (entries: Array<{ isIntersecting: boolean }>) => void;
+      observe: ReturnType<typeof vi.fn>;
+      disconnect: ReturnType<typeof vi.fn>;
+    }> = [];
 
-		observers[0]!.callback([{ isIntersecting: false }]);
-		tick(30);
-		expect(plugin.renderCalls).toBe(0);
+    class FakeIntersectionObserver {
+      observe = vi.fn();
+      disconnect = vi.fn();
+      constructor(public callback: (entries: Array<{ isIntersecting: boolean }>) => void) {
+        observers.push(this);
+      }
+    }
+    vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver);
+    const { plugin, canvasElement, lifecycle, tick } = install({ pauseWhenOffscreen: true });
 
-		observers[0]!.callback([{ isIntersecting: true }]);
-		tick(2);
-		expect(plugin.renderCalls).toBe(2);
+    expect(observers).toHaveLength(1);
+    expect(observers[0]!.observe).toHaveBeenCalledWith(canvasElement);
 
-		lifecycle.dispose();
-		expect(observers[0]!.disconnect).toHaveBeenCalled();
-	});
+    observers[0]!.callback([{ isIntersecting: false }]);
+    tick(30);
+    expect(plugin.renderCalls).toBe(0);
 
-	it('creates no observer unless pauseWhenOffscreen is set', () => {
-		const construct = vi.fn();
-		vi.stubGlobal('IntersectionObserver', class {
-			constructor() {
-				construct();
-			}
-		});
+    observers[0]!.callback([{ isIntersecting: true }]);
+    tick(2);
+    expect(plugin.renderCalls).toBe(2);
 
-		install();
+    lifecycle.dispose();
+    expect(observers[0]!.disconnect).toHaveBeenCalled();
+  });
 
-		expect(construct).not.toHaveBeenCalled();
-	});
+  it('creates no observer unless pauseWhenOffscreen is set', () => {
+    const construct = vi.fn();
 
-	it('stays inactive after the document shows again when it was set inactive by hand', () => {
-		const { plugin, tick } = install({ pauseWhenHidden: true });
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor() {
+        construct();
+      }
+    });
 
-		plugin.setActive(false);
-		setDocumentHidden(true);
-		setDocumentHidden(false);
-		tick(5);
+    install();
 
-		expect(plugin.renderCalls).toBe(0);
-		expect(plugin.isActive()).toBe(false);
-	});
+    expect(construct).not.toHaveBeenCalled();
+  });
+
+  it('stays inactive after the document shows again when it was set inactive by hand', () => {
+    const { plugin, tick } = install({ pauseWhenHidden: true });
+
+    plugin.setActive(false);
+    setDocumentHidden(true);
+    setDocumentHidden(false);
+    tick(5);
+
+    expect(plugin.renderCalls).toBe(0);
+    expect(plugin.isActive()).toBe(false);
+  });
 });

@@ -37,112 +37,125 @@ import { NMMusicPlayer } from '../index';
 // ── Shared DOM helpers ────────────────────────────────────────────────────────
 
 function makeContainer(): HTMLDivElement {
-	const div = document.createElement('div');
-	document.body.appendChild(div);
-	return div;
+  const div = document.createElement('div');
+
+  document.body.appendChild(div);
+
+  return div;
 }
 
 function fireMetadata(container: HTMLElement): void {
-	const audios = container.querySelectorAll('audio');
-	const last = audios[audios.length - 1];
-	if (last)
-		last.dispatchEvent(new Event('loadedmetadata'));
+  const audios = container.querySelectorAll('audio');
+  const last = audios[audios.length - 1];
+
+  if (last) {
+    last.dispatchEvent(new Event('loadedmetadata'));
+  }
 }
 
 function fireCanPlay(container: HTMLElement): void {
-	const audios = container.querySelectorAll('audio');
-	const last = audios[audios.length - 1];
-	if (last)
-		last.dispatchEvent(new Event('canplay'));
+  const audios = container.querySelectorAll('audio');
+  const last = audios[audios.length - 1];
+
+  if (last) {
+    last.dispatchEvent(new Event('canplay'));
+  }
 }
 
 function stubPlay(el: HTMLAudioElement): void {
-	Object.defineProperty(el, 'play', {
-		value: vi.fn(() => Promise.resolve()),
-		writable: true,
-		configurable: true,
-	});
+  Object.defineProperty(el, 'play', {
+    value: vi.fn(() => Promise.resolve()),
+    writable: true,
+    configurable: true,
+  });
 }
 
 // ── Web Audio stubs (established class-based pattern) ─────────────────────────
 
 function installAudioContext(): void {
-	(globalThis as unknown as { AudioContext: typeof MockAudioContext }).AudioContext = MockAudioContext;
-	MockAudioContext.lastInstance = null;
+  (globalThis as unknown as { AudioContext: typeof MockAudioContext }).AudioContext = MockAudioContext;
+  MockAudioContext.lastInstance = null;
 }
 
 function removeAudioContext(): void {
-	delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
-	MockAudioContext.lastInstance = null;
+  delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
+  MockAudioContext.lastInstance = null;
 }
 
 // ── Mock backend for facade routing tests ─────────────────────────────────────
 
 function makeMockBackend(overrides: Partial<IAudioBackend> = {}): IAudioBackend {
-	return {
-		kind: 'audio-element',
-		load: vi.fn(() => Promise.resolve()),
-		unload: vi.fn(),
-		dispose: vi.fn(),
-		play: vi.fn(() => Promise.resolve()),
-		pause: vi.fn(),
-		stop: vi.fn(),
-		currentTime: vi.fn(() => 0) as IAudioBackend['currentTime'],
-		duration: vi.fn(() => 0),
-		buffered: vi.fn(() => 0),
-		bufferedRanges: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
-		seekable: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
-		playbackRate: vi.fn(() => 1) as IAudioBackend['playbackRate'],
-		volume: vi.fn(() => 0.8) as IAudioBackend['volume'],
-		mute: vi.fn(),
-		unmute: vi.fn(),
-		state: vi.fn(() => 'idle' as const),
-		outputNode: vi.fn(() => ({} as AudioNode)),
-		analyserSource: vi.fn(() => ({} as AudioNode)),
-		mediaElement: vi.fn(() => document.createElement('audio')),
-		captureStream: vi.fn(() => ({} as MediaStream)),
-		setSinkId: vi.fn(() => Promise.resolve()),
-		getSinkId: vi.fn(() => ''),
-		mediaKeys: vi.fn(() => undefined),
-		setMediaKeys: vi.fn(() => Promise.resolve()),
-		outputProtectionState: vi.fn(() => 'unsupported' as const),
-		pauseLoader: vi.fn(),
-		resumeLoader: vi.fn(),
-		loaderState: vi.fn(() => 'running' as const),
-		on: vi.fn(),
-		off: vi.fn(),
-		supportsCrossfade: vi.fn(() => true),
-		loadSecondary: vi.fn(() => Promise.resolve()),
-		disposeSecondary: vi.fn(),
-		primeSecondary: vi.fn(() => Promise.resolve()),
-		crossfade: vi.fn(() => Promise.resolve()),
-		secondaryGain: vi.fn(() => 0) as IAudioBackend['secondaryGain'],
-		...overrides,
-	};
+  return {
+    kind: 'audio-element',
+    load: vi.fn(() => Promise.resolve()),
+    unload: vi.fn(),
+    dispose: vi.fn(),
+    play: vi.fn(() => Promise.resolve()),
+    pause: vi.fn(),
+    stop: vi.fn(),
+    currentTime: vi.fn(() => 0) as IAudioBackend['currentTime'],
+    duration: vi.fn(() => 0),
+    buffered: vi.fn(() => 0),
+    bufferedRanges: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
+    seekable: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
+    playbackRate: vi.fn(() => 1) as IAudioBackend['playbackRate'],
+    volume: vi.fn(() => 0.8) as IAudioBackend['volume'],
+    mute: vi.fn(),
+    unmute: vi.fn(),
+    state: vi.fn(() => 'idle' as const),
+    outputNode: vi.fn(() => ({} as AudioNode)),
+    analyserSource: vi.fn(() => ({} as AudioNode)),
+    mediaElement: vi.fn(() => document.createElement('audio')),
+    captureStream: vi.fn(() => ({} as MediaStream)),
+    setSinkId: vi.fn(() => Promise.resolve()),
+    getSinkId: vi.fn(() => ''),
+    mediaKeys: vi.fn(() => undefined),
+    setMediaKeys: vi.fn(() => Promise.resolve()),
+    outputProtectionState: vi.fn(() => 'unsupported' as const),
+    pauseLoader: vi.fn(),
+    resumeLoader: vi.fn(),
+    loaderState: vi.fn(() => 'running' as const),
+    on: vi.fn(),
+    off: vi.fn(),
+    supportsCrossfade: vi.fn(() => true),
+    loadSecondary: vi.fn(() => Promise.resolve()),
+    disposeSecondary: vi.fn(),
+    primeSecondary: vi.fn(() => Promise.resolve()),
+    crossfade: vi.fn(() => Promise.resolve()),
+    secondaryGain: vi.fn(() => 0) as IAudioBackend['secondaryGain'],
+    ...overrides,
+  };
 }
 
 function makeTrack(url = 'http://test/track.mp3'): MusicPlaylistItem {
-	return { id: '1', name: 'Test Track', url };
+  return {
+    id: '1',
+    name: 'Test Track',
+    url,
+  };
 }
 
 let idCounter = 0;
 
 function setupPlayer(
-	config: MusicPlayerConfig = {},
-	backendOverrides: Partial<IAudioBackend> = {},
+  config: MusicPlayerConfig = {},
+  backendOverrides: Partial<IAudioBackend> = {},
 ): { player: NMMusicPlayer; mock: IAudioBackend } {
-	idCounter += 1;
-	const div = document.createElement('div');
-	div.id = `curve-test-${idCounter}`;
-	document.body.appendChild(div);
+  idCounter += 1;
+  const div = document.createElement('div');
 
-	const player = new NMMusicPlayer(div.id);
-	player.setup(config);
+  div.id = `curve-test-${idCounter}`;
+  document.body.appendChild(div);
 
-	const mock = makeMockBackend(backendOverrides);
-	(player as unknown as { _backend?: IAudioBackend })._backend = mock;
+  const player = new NMMusicPlayer(div.id);
 
-	return { player, mock };
+  player.setup(config);
+
+  const mock = makeMockBackend(backendOverrides);
+
+  (player as unknown as { _backend?: IAudioBackend })._backend = mock;
+
+  return { player, mock };
 }
 
 // =============================================================================
@@ -150,48 +163,49 @@ function setupPlayer(
 // =============================================================================
 
 describe('NMMusicPlayer.crossfadeTo() — curve resolution', () => {
-	beforeEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  beforeEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	afterEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('forwards the per-call curve to backend.crossfade', async () => {
-		const { player, mock } = setupPlayer();
+  it('forwards the per-call curve to backend.crossfade', async () => {
+    const { player, mock } = setupPlayer();
 
-		await player.crossfadeTo(makeTrack(), { duration: 3, curve: 'equal-power' });
+    await player.crossfadeTo(makeTrack(), { duration: 3, curve: 'equal-power' });
 
-		expect(mock.crossfade).toHaveBeenCalledWith(3000, 'equal-power');
-	});
+    expect(mock.crossfade).toHaveBeenCalledWith(3000, 'equal-power');
+  });
 
-	it('falls back to crossfadeDefaults.curve from the config', async () => {
-		const { player, mock } = setupPlayer({ crossfadeDefaults: { duration: 7, curve: 'equal-power' } });
+  it('falls back to crossfadeDefaults.curve from the config', async () => {
+    const { player, mock } = setupPlayer({ crossfadeDefaults: { duration: 7, curve: 'equal-power' } });
 
-		await player.crossfadeTo(makeTrack());
+    await player.crossfadeTo(makeTrack());
 
-		expect(mock.crossfade).toHaveBeenCalledWith(7000, 'equal-power');
-	});
+    expect(mock.crossfade).toHaveBeenCalledWith(7000, 'equal-power');
+  });
 
-	it('per-call curve wins over the config default', async () => {
-		const { player, mock } = setupPlayer({ crossfadeDefaults: { duration: 7, curve: 'equal-power' } });
+  it('per-call curve wins over the config default', async () => {
+    const { player, mock } = setupPlayer({ crossfadeDefaults: { duration: 7, curve: 'equal-power' } });
 
-		await player.crossfadeTo(makeTrack(), { duration: 3, curve: 'linear' });
+    await player.crossfadeTo(makeTrack(), { duration: 3, curve: 'linear' });
 
-		expect(mock.crossfade).toHaveBeenCalledWith(3000, 'linear');
-	});
+    expect(mock.crossfade).toHaveBeenCalledWith(3000, 'linear');
+  });
 
-	it('omits the curve argument entirely when neither the call nor the config declares one', async () => {
-		const { player, mock } = setupPlayer();
+  it('omits the curve argument entirely when neither the call nor the config declares one', async () => {
+    const { player, mock } = setupPlayer();
 
-		await player.crossfadeTo(makeTrack(), { duration: 3 });
+    await player.crossfadeTo(makeTrack(), { duration: 3 });
 
-		const call = (mock.crossfade as ReturnType<typeof vi.fn>).mock.calls[0]!;
-		expect(call).toHaveLength(1);
-		expect(call[0]).toBe(3000);
-	});
+    const call = (mock.crossfade as ReturnType<typeof vi.fn>).mock.calls[0]!;
+
+    expect(call).toHaveLength(1);
+    expect(call[0]).toBe(3000);
+  });
 });
 
 // =============================================================================
@@ -199,50 +213,51 @@ describe('NMMusicPlayer.crossfadeTo() — curve resolution', () => {
 // =============================================================================
 
 describe('NMMusicPlayer.crossfadeTo() — supportsCrossfade() gate', () => {
-	beforeEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  beforeEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	afterEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('throws StateError core:player/crossfade-unsupported when the backend cannot crossfade', async () => {
-		const { player, mock } = setupPlayer({}, { supportsCrossfade: vi.fn(() => false) });
+  it('throws StateError core:player/crossfade-unsupported when the backend cannot crossfade', async () => {
+    const { player, mock } = setupPlayer({}, { supportsCrossfade: vi.fn(() => false) });
 
-		await expect(player.crossfadeTo(makeTrack())).rejects.toMatchObject({
-			name: 'StateError',
-			code: 'core:player/crossfade-unsupported',
-		});
+    await expect(player.crossfadeTo(makeTrack())).rejects.toMatchObject({
+      name: 'StateError',
+      code: 'core:player/crossfade-unsupported',
+    });
 
-		expect(mock.loadSecondary).not.toHaveBeenCalled();
-		expect(mock.primeSecondary).not.toHaveBeenCalled();
-		expect(mock.crossfade).not.toHaveBeenCalled();
-		expect(player.isTransitioning()).toBe(false);
-	});
+    expect(mock.loadSecondary).not.toHaveBeenCalled();
+    expect(mock.primeSecondary).not.toHaveBeenCalled();
+    expect(mock.crossfade).not.toHaveBeenCalled();
+    expect(player.isTransitioning()).toBe(false);
+  });
 
-	it('rejects before beforeCrossfade dispatch — no crossfade events fire', async () => {
-		const { player } = setupPlayer({}, { supportsCrossfade: vi.fn(() => false) });
+  it('rejects before beforeCrossfade dispatch — no crossfade events fire', async () => {
+    const { player } = setupPlayer({}, { supportsCrossfade: vi.fn(() => false) });
 
-		const events: string[] = [];
-		player.on('beforeCrossfade', () => { events.push('beforeCrossfade'); });
-		player.on('crossfadeStart', () => { events.push('crossfadeStart'); });
-		player.on('crossfadePrevented', () => { events.push('crossfadePrevented'); });
+    const events: string[] = [];
 
-		await expect(player.crossfadeTo(makeTrack())).rejects.toThrow();
+    player.on('beforeCrossfade', () => { events.push('beforeCrossfade'); });
+    player.on('crossfadeStart', () => { events.push('crossfadeStart'); });
+    player.on('crossfadePrevented', () => { events.push('crossfadePrevented'); });
 
-		expect(events).toEqual([]);
-	});
+    await expect(player.crossfadeTo(makeTrack())).rejects.toThrow();
 
-	it('a missing item.url is still validated before the capability gate', async () => {
-		const { player } = setupPlayer({}, { supportsCrossfade: vi.fn(() => false) });
-		const trackNoUrl = { id: 'x', name: 'No URL' } as MusicPlaylistItem;
+    expect(events).toEqual([]);
+  });
 
-		await expect(player.crossfadeTo(trackNoUrl)).rejects.toMatchObject({
-			code: 'core:media/missing-url',
-		});
-	});
+  it('a missing item.url is still validated before the capability gate', async () => {
+    const { player } = setupPlayer({}, { supportsCrossfade: vi.fn(() => false) });
+    const trackNoUrl = { id: 'x', name: 'No URL' } as MusicPlaylistItem;
+
+    await expect(player.crossfadeTo(trackNoUrl)).rejects.toMatchObject({
+      code: 'core:media/missing-url',
+    });
+  });
 });
 
 // =============================================================================
@@ -250,112 +265,121 @@ describe('NMMusicPlayer.crossfadeTo() — supportsCrossfade() gate', () => {
 // =============================================================================
 
 describe('AudioElementBackend.crossfade() — curve-shaped RAF loop', () => {
-	let originalRaf: typeof requestAnimationFrame;
-	let rafCallbacks: Array<FrameRequestCallback>;
-	let nowValue: number;
+  let originalRaf: typeof requestAnimationFrame;
+  let rafCallbacks: Array<FrameRequestCallback>;
+  let nowValue: number;
 
-	beforeEach(() => {
-		originalRaf = globalThis.requestAnimationFrame;
-		rafCallbacks = [];
-		nowValue = 0;
+  beforeEach(() => {
+    originalRaf = globalThis.requestAnimationFrame;
+    rafCallbacks = [];
+    nowValue = 0;
 
-		globalThis.requestAnimationFrame = (cb: FrameRequestCallback): number => {
-			rafCallbacks.push(cb);
-			return rafCallbacks.length;
-		};
+    globalThis.requestAnimationFrame = (cb: FrameRequestCallback): number => {
+      rafCallbacks.push(cb);
 
-		vi.spyOn(performance, 'now').mockImplementation(() => nowValue);
-	});
+      return rafCallbacks.length;
+    };
 
-	afterEach(() => {
-		globalThis.requestAnimationFrame = originalRaf;
-		vi.restoreAllMocks();
-		document.body.innerHTML = '';
-	});
+    vi.spyOn(performance, 'now').mockImplementation(() => nowValue);
+  });
 
-	/** Run the currently queued rAF callbacks exactly once — mid-fade sampling. */
-	function runOneRafBatch(): void {
-		const batch = rafCallbacks.splice(0);
-		for (const cb of batch) {
-			cb(nowValue);
-		}
-	}
+  afterEach(() => {
+    globalThis.requestAnimationFrame = originalRaf;
+    vi.restoreAllMocks();
+    document.body.innerHTML = '';
+  });
 
-	function flushRaf(): void {
-		while (rafCallbacks.length > 0) {
-			runOneRafBatch();
-		}
-	}
+  /** Run the currently queued rAF callbacks exactly once — mid-fade sampling. */
+  function runOneRafBatch(): void {
+    const batch = rafCallbacks.splice(0);
 
-	async function startCrossfade(durationMs: number, curve?: CrossfadeCurve): Promise<{
-		backend: AudioElementBackend;
-		primaryEl: HTMLAudioElement;
-		secondaryEl: HTMLAudioElement;
-		crossfadePromise: Promise<void>;
-	}> {
-		const container = makeContainer();
-		const backend = new AudioElementBackend(container);
+    for (const cb of batch) {
+      cb(nowValue);
+    }
+  }
 
-		const loadPromise = backend.loadSecondary('http://test/next.mp3');
-		fireMetadata(container);
-		await loadPromise;
+  function flushRaf(): void {
+    while (rafCallbacks.length > 0) {
+      runOneRafBatch();
+    }
+  }
 
-		const primePromise = backend.primeSecondary();
-		fireCanPlay(container);
-		await primePromise;
+  async function startCrossfade(durationMs: number, curve?: CrossfadeCurve): Promise<{
+    backend: AudioElementBackend;
+    primaryEl: HTMLAudioElement;
+    secondaryEl: HTMLAudioElement;
+    crossfadePromise: Promise<void>;
+  }> {
+    const container = makeContainer();
+    const backend = new AudioElementBackend(container);
 
-		container.querySelectorAll('audio').forEach(el => stubPlay(el as HTMLAudioElement));
+    const loadPromise = backend.loadSecondary('http://test/next.mp3');
 
-		const primaryEl = backend.mediaElement();
-		const secondaryEl = (backend as unknown as { _secondary?: HTMLAudioElement })._secondary!;
+    fireMetadata(container);
+    await loadPromise;
 
-		const crossfadePromise = backend.crossfade(durationMs, curve);
+    const primePromise = backend.primeSecondary();
 
-		// Yield to let secondary.play() resolve and the first rAF callback register.
-		await Promise.resolve();
-		await Promise.resolve();
+    fireCanPlay(container);
+    await primePromise;
 
-		return { backend, primaryEl, secondaryEl, crossfadePromise };
-	}
+    container.querySelectorAll('audio').forEach((el) => stubPlay(el as HTMLAudioElement));
 
-	it('equal-power puts both volumes at ≈ 0.707 × start at the midpoint — not the linear 0.5', async () => {
-		const { primaryEl, secondaryEl, crossfadePromise } = await startCrossfade(300, 'equal-power');
+    const primaryEl = backend.mediaElement();
+    const secondaryEl = (backend as unknown as { _secondary?: HTMLAudioElement })._secondary!;
 
-		nowValue = 150;
-		runOneRafBatch();
+    const crossfadePromise = backend.crossfade(durationMs, curve);
 
-		expect(secondaryEl.volume).toBeCloseTo(Math.SQRT1_2, 3);
-		expect(primaryEl.volume).toBeCloseTo(Math.SQRT1_2, 3);
+    // Yield to let secondary.play() resolve and the first rAF callback register.
+    await Promise.resolve();
+    await Promise.resolve();
 
-		nowValue = 301;
-		flushRaf();
-		await crossfadePromise;
-	});
+    return {
+      backend,
+      primaryEl,
+      secondaryEl,
+      crossfadePromise,
+    };
+  }
 
-	it('omitted curve keeps the linear midpoint at exactly 0.5', async () => {
-		const { primaryEl, secondaryEl, crossfadePromise } = await startCrossfade(300);
+  it('equal-power puts both volumes at ≈ 0.707 × start at the midpoint — not the linear 0.5', async () => {
+    const { primaryEl, secondaryEl, crossfadePromise } = await startCrossfade(300, 'equal-power');
 
-		nowValue = 150;
-		runOneRafBatch();
+    nowValue = 150;
+    runOneRafBatch();
 
-		expect(secondaryEl.volume).toBeCloseTo(0.5, 6);
-		expect(primaryEl.volume).toBeCloseTo(0.5, 6);
+    expect(secondaryEl.volume).toBeCloseTo(Math.SQRT1_2, 3);
+    expect(primaryEl.volume).toBeCloseTo(Math.SQRT1_2, 3);
 
-		nowValue = 301;
-		flushRaf();
-		await crossfadePromise;
-	});
+    nowValue = 301;
+    flushRaf();
+    await crossfadePromise;
+  });
 
-	it('equal-power completes at full incoming volume and swaps the elements', async () => {
-		const { backend, secondaryEl, crossfadePromise } = await startCrossfade(200, 'equal-power');
+  it('omitted curve keeps the linear midpoint at exactly 0.5', async () => {
+    const { primaryEl, secondaryEl, crossfadePromise } = await startCrossfade(300);
 
-		nowValue = 201;
-		flushRaf();
-		await crossfadePromise;
+    nowValue = 150;
+    runOneRafBatch();
 
-		expect(backend.mediaElement()).toBe(secondaryEl);
-		expect(secondaryEl.volume).toBe(1);
-	});
+    expect(secondaryEl.volume).toBeCloseTo(0.5, 6);
+    expect(primaryEl.volume).toBeCloseTo(0.5, 6);
+
+    nowValue = 301;
+    flushRaf();
+    await crossfadePromise;
+  });
+
+  it('equal-power completes at full incoming volume and swaps the elements', async () => {
+    const { backend, secondaryEl, crossfadePromise } = await startCrossfade(200, 'equal-power');
+
+    nowValue = 201;
+    flushRaf();
+    await crossfadePromise;
+
+    expect(backend.mediaElement()).toBe(secondaryEl);
+    expect(secondaryEl.volume).toBe(1);
+  });
 });
 
 // =============================================================================
@@ -363,118 +387,130 @@ describe('AudioElementBackend.crossfade() — curve-shaped RAF loop', () => {
 // =============================================================================
 
 describe('WebAudioBackend.crossfade() — curve scheduling', () => {
-	beforeEach(() => {
-		installAudioContext();
-		vi.useFakeTimers();
-	});
+  beforeEach(() => {
+    installAudioContext();
+    vi.useFakeTimers();
+  });
 
-	afterEach(() => {
-		vi.useRealTimers();
-		removeAudioContext();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    vi.useRealTimers();
+    removeAudioContext();
+    document.body.innerHTML = '';
+  });
 
-	async function primeBackend(): Promise<{
-		backend: WebAudioBackend;
-		primaryGain: MockGainNode;
-		secondaryGain: MockGainNode;
-	}> {
-		const container = makeContainer();
-		const backend = new WebAudioBackend(container);
+  async function primeBackend(): Promise<{
+    backend: WebAudioBackend;
+    primaryGain: MockGainNode;
+    secondaryGain: MockGainNode;
+  }> {
+    const container = makeContainer();
+    const backend = new WebAudioBackend(container);
 
-		const ctx = MockAudioContext.lastInstance! as unknown as AudioContext;
-		backend.outputNode(ctx);
+    const ctx = MockAudioContext.lastInstance! as unknown as AudioContext;
 
-		const raw = backend as unknown as Record<string, unknown>;
-		const primaryGain = raw['gainNode'] as MockGainNode;
+    backend.outputNode(ctx);
 
-		const loadPromise = backend.loadSecondary('http://test/next.mp3');
-		fireMetadata(container);
-		await loadPromise;
+    const raw = backend as unknown as Record<string, unknown>;
+    const primaryGain = raw['gainNode'] as MockGainNode;
 
-		const primePromise = backend.primeSecondary();
-		fireCanPlay(container);
-		await primePromise;
+    const loadPromise = backend.loadSecondary('http://test/next.mp3');
 
-		container.querySelectorAll('audio').forEach(el => stubPlay(el as HTMLAudioElement));
+    fireMetadata(container);
+    await loadPromise;
 
-		const secondaryGain = raw['_secondaryGain'] as MockGainNode;
-		return { backend, primaryGain, secondaryGain };
-	}
+    const primePromise = backend.primeSecondary();
 
-	it('equal-power schedules setValueCurveAtTime with the constant-power trajectory (midpoint ≈ 0.707)', async () => {
-		const { backend, primaryGain, secondaryGain } = await primeBackend();
+    fireCanPlay(container);
+    await primePromise;
 
-		const crossfadePromise = backend.crossfade(300, 'equal-power');
+    container.querySelectorAll('audio').forEach((el) => stubPlay(el as HTMLAudioElement));
 
-		const upCall = (secondaryGain.gain.setValueCurveAtTime as ReturnType<typeof vi.fn>).mock.calls[0]!;
-		const upCurve = upCall[0] as Float32Array;
-		const midIndex = (upCurve.length - 1) / 2;
-		expect(upCurve[0]!).toBeCloseTo(0, 5);
-		expect(upCurve[upCurve.length - 1]!).toBeCloseTo(1, 5);
-		expect(upCurve[midIndex]!).toBeCloseTo(Math.SQRT1_2, 3);
-		expect(upCall[2]).toBeCloseTo(0.3, 6);
+    const secondaryGain = raw['_secondaryGain'] as MockGainNode;
 
-		const downCall = (primaryGain.gain.setValueCurveAtTime as ReturnType<typeof vi.fn>).mock.calls[0]!;
-		const downCurve = downCall[0] as Float32Array;
-		expect(downCurve[0]!).toBeCloseTo(1, 5);
-		expect(downCurve[downCurve.length - 1]!).toBeCloseTo(0, 5);
-		expect(downCurve[midIndex]!).toBeCloseTo(Math.SQRT1_2, 3);
+    return {
+      backend,
+      primaryGain,
+      secondaryGain,
+    };
+  }
 
-		expect(secondaryGain.gain.linearRampToValueAtTime).not.toHaveBeenCalled();
-		expect(primaryGain.gain.linearRampToValueAtTime).not.toHaveBeenCalled();
+  it('equal-power schedules setValueCurveAtTime with the constant-power trajectory (midpoint ≈ 0.707)', async () => {
+    const { backend, primaryGain, secondaryGain } = await primeBackend();
 
-		await vi.advanceTimersByTimeAsync(300);
-		await crossfadePromise;
+    const crossfadePromise = backend.crossfade(300, 'equal-power');
 
-		expect((backend as unknown as Record<string, unknown>)['_secondaryGain']).toBeUndefined();
-	});
+    const upCall = (secondaryGain.gain.setValueCurveAtTime as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    const upCurve = upCall[0] as Float32Array;
+    const midIndex = (upCurve.length - 1) / 2;
 
-	it('accepts volume changes while equal-power curves are active', async () => {
-		const { backend, primaryGain, secondaryGain } = await primeBackend();
-		const fade = backend.crossfade(300, 'equal-power');
+    expect(upCurve[0]!).toBeCloseTo(0, 5);
+    expect(upCurve[upCurve.length - 1]!).toBeCloseTo(1, 5);
+    expect(upCurve[midIndex]!).toBeCloseTo(Math.SQRT1_2, 3);
+    expect(upCall[2]).toBeCloseTo(0.3, 6);
 
-		for (const node of [primaryGain, secondaryGain]) {
-			let curveActive = true;
-			node.gain.setTargetAtTime.mockImplementation(() => {
-				if (curveActive)
-					throw new DOMException('Target time is inside a value curve', 'NotSupportedError');
-			});
-			node.gain.cancelScheduledValues.mockImplementation(() => { curveActive = false; });
-		}
+    const downCall = (primaryGain.gain.setValueCurveAtTime as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    const downCurve = downCall[0] as Float32Array;
 
-		expect(() => backend.volume(0.5)).not.toThrow();
-		expect(() => backend.secondaryGain(0.5)).not.toThrow();
-		expect(primaryGain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 0.3);
-		expect(secondaryGain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(expect.any(Number), 0.3);
-		await vi.advanceTimersByTimeAsync(300);
-		await fade;
-	});
+    expect(downCurve[0]!).toBeCloseTo(1, 5);
+    expect(downCurve[downCurve.length - 1]!).toBeCloseTo(0, 5);
+    expect(downCurve[midIndex]!).toBeCloseTo(Math.SQRT1_2, 3);
 
-	it('omitted curve keeps the linearRampToValueAtTime path — setValueCurveAtTime untouched', async () => {
-		const { backend, primaryGain, secondaryGain } = await primeBackend();
+    expect(secondaryGain.gain.linearRampToValueAtTime).not.toHaveBeenCalled();
+    expect(primaryGain.gain.linearRampToValueAtTime).not.toHaveBeenCalled();
 
-		const crossfadePromise = backend.crossfade(300);
+    await vi.advanceTimersByTimeAsync(300);
+    await crossfadePromise;
 
-		expect(secondaryGain.gain.linearRampToValueAtTime).toHaveBeenCalled();
-		expect(primaryGain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, expect.any(Number));
-		expect(secondaryGain.gain.setValueCurveAtTime).not.toHaveBeenCalled();
-		expect(primaryGain.gain.setValueCurveAtTime).not.toHaveBeenCalled();
+    expect((backend as unknown as Record<string, unknown>)['_secondaryGain']).toBeUndefined();
+  });
 
-		await vi.advanceTimersByTimeAsync(300);
-		await crossfadePromise;
-	});
+  it('accepts volume changes while equal-power curves are active', async () => {
+    const { backend, primaryGain, secondaryGain } = await primeBackend();
+    const fade = backend.crossfade(300, 'equal-power');
 
-	it('explicit linear curve resolves to the linear ramp path too', async () => {
-		const { backend, primaryGain, secondaryGain } = await primeBackend();
+    for (const node of [primaryGain, secondaryGain]) {
+      let curveActive = true;
 
-		const crossfadePromise = backend.crossfade(300, 'linear');
+      node.gain.setTargetAtTime.mockImplementation(() => {
+        if (curveActive)
+          throw new DOMException('Target time is inside a value curve', 'NotSupportedError');
+      });
 
-		expect(secondaryGain.gain.linearRampToValueAtTime).toHaveBeenCalled();
-		expect(secondaryGain.gain.setValueCurveAtTime).not.toHaveBeenCalled();
-		expect(primaryGain.gain.setValueCurveAtTime).not.toHaveBeenCalled();
+      node.gain.cancelScheduledValues.mockImplementation(() => { curveActive = false; });
+    }
 
-		await vi.advanceTimersByTimeAsync(300);
-		await crossfadePromise;
-	});
+    expect(() => backend.volume(0.5)).not.toThrow();
+    expect(() => backend.secondaryGain(0.5)).not.toThrow();
+    expect(primaryGain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 0.3);
+    expect(secondaryGain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(expect.any(Number), 0.3);
+    await vi.advanceTimersByTimeAsync(300);
+    await fade;
+  });
+
+  it('omitted curve keeps the linearRampToValueAtTime path — setValueCurveAtTime untouched', async () => {
+    const { backend, primaryGain, secondaryGain } = await primeBackend();
+
+    const crossfadePromise = backend.crossfade(300);
+
+    expect(secondaryGain.gain.linearRampToValueAtTime).toHaveBeenCalled();
+    expect(primaryGain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, expect.any(Number));
+    expect(secondaryGain.gain.setValueCurveAtTime).not.toHaveBeenCalled();
+    expect(primaryGain.gain.setValueCurveAtTime).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(300);
+    await crossfadePromise;
+  });
+
+  it('explicit linear curve resolves to the linear ramp path too', async () => {
+    const { backend, primaryGain, secondaryGain } = await primeBackend();
+
+    const crossfadePromise = backend.crossfade(300, 'linear');
+
+    expect(secondaryGain.gain.linearRampToValueAtTime).toHaveBeenCalled();
+    expect(secondaryGain.gain.setValueCurveAtTime).not.toHaveBeenCalled();
+    expect(primaryGain.gain.setValueCurveAtTime).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(300);
+    await crossfadePromise;
+  });
 });

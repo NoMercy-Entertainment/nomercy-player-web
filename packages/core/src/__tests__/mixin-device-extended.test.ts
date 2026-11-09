@@ -32,115 +32,121 @@
 import type { IPlatform } from '../adapters/platform/IPlatform';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare options: Record<string, unknown>;
-	declare setup: (config: Record<string, unknown>) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare isTv: () => boolean;
-	declare isMobile: () => boolean;
-	declare isDesktop: () => boolean;
-	declare device: () => {
-		isTv: boolean;
-		isMobile: boolean;
-		isDesktop: boolean;
-		preferred: string;
-		fullscreenSupported: boolean;
-		pipSupported: boolean;
-		webLocksSupported: boolean;
-		autoplayAllowed: boolean | 'unknown';
-	};
+  declare options: Record<string, unknown>;
+  declare setup: (config: Record<string, unknown>) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare isTv: () => boolean;
+  declare isMobile: () => boolean;
+  declare isDesktop: () => boolean;
+  declare device: () => {
+    isTv: boolean;
+    isMobile: boolean;
+    isDesktop: boolean;
+    preferred: string;
+    fullscreenSupported: boolean;
+    pipSupported: boolean;
+    webLocksSupported: boolean;
+    autoplayAllowed: boolean | 'unknown';
+  };
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 function wirePlatform(player: MockPlayer, platform: Partial<IPlatform>): void {
-	(player as unknown as { _platform: Partial<IPlatform> })._platform = platform;
+  (player as unknown as { _platform: Partial<IPlatform> })._platform = platform;
 }
 
 describe('deviceMethods - extended (DEV-E)', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('DEV-E4: device() fullscreenSupported is true when platform.fullscreen.isSupported() returns true', () => {
-		const player = makePlayer('dev-e4');
-		wirePlatform(player, {
-			fullscreen: {
-				isSupported: (): boolean => true,
-				enter: async (): Promise<void> => {},
-				exit: async (): Promise<void> => {},
-				isActive: (): boolean => false,
-				subscribe: (): (() => void) => () => {},
-			},
-		});
+  it('DEV-E4: device() fullscreenSupported is true when platform.fullscreen.isSupported() returns true', () => {
+    const player = makePlayer('dev-e4');
 
-		expect(player.device().fullscreenSupported).toBe(true);
-	});
+    wirePlatform(player, {
+      fullscreen: {
+        isSupported: (): boolean => true,
+        enter: async (): Promise<void> => {},
+        exit: async (): Promise<void> => {},
+        isActive: (): boolean => false,
+        subscribe: (): (() => void) => () => {},
+      },
+    });
 
-	it('DEV-E4b: device() fullscreenSupported is false when fullscreen not in platform', () => {
-		const player = makePlayer('dev-e4b');
-		wirePlatform(player, {});
+    expect(player.device().fullscreenSupported).toBe(true);
+  });
 
-		expect(player.device().fullscreenSupported).toBe(false);
-	});
+  it('DEV-E4b: device() fullscreenSupported is false when fullscreen not in platform', () => {
+    const player = makePlayer('dev-e4b');
 
-	it('DEV-E5: device() pipSupported is true when platform.pip.isSupported() returns true', () => {
-		const player = makePlayer('dev-e5');
-		wirePlatform(player, {
-			pip: {
-				isSupported: (): boolean => true,
-				enter: async (): Promise<void> => {},
-				exit: async (): Promise<void> => {},
-				isActive: (): boolean => false,
-				subscribe: (): (() => void) => () => {},
-			},
-		});
+    wirePlatform(player, {});
 
-		expect(player.device().pipSupported).toBe(true);
-	});
+    expect(player.device().fullscreenSupported).toBe(false);
+  });
 
-	it('DEV-E5b: device() pipSupported is false when pip not in platform', () => {
-		const player = makePlayer('dev-e5b');
-		wirePlatform(player, {});
+  it('DEV-E5: device() pipSupported is true when platform.pip.isSupported() returns true', () => {
+    const player = makePlayer('dev-e5');
 
-		expect(player.device().pipSupported).toBe(false);
-	});
+    wirePlatform(player, {
+      pip: {
+        isSupported: (): boolean => true,
+        enter: async (): Promise<void> => {},
+        exit: async (): Promise<void> => {},
+        isActive: (): boolean => false,
+        subscribe: (): (() => void) => () => {},
+      },
+    });
 
-	it('DEV-E6: device() autoplayAllowed is always "unknown"', () => {
-		const player = makePlayer('dev-e6');
+    expect(player.device().pipSupported).toBe(true);
+  });
 
-		expect(player.device().autoplayAllowed).toBe('unknown');
-	});
+  it('DEV-E5b: device() pipSupported is false when pip not in platform', () => {
+    const player = makePlayer('dev-e5b');
 
-	it('DEV-E8: device() preferred is "smooth" for desktop (jsdom UA = no TV/mobile hints)', () => {
-		const player = makePlayer('dev-e8');
+    wirePlatform(player, {});
 
-		expect(player.device().preferred).toBe('smooth');
-	});
+    expect(player.device().pipSupported).toBe(false);
+  });
 
-	it('isTv(), isMobile(), isDesktop() all delegate to _detectDevice() — desktop in jsdom', () => {
-		const player = makePlayer('dev-e9');
+  it('DEV-E6: device() autoplayAllowed is always "unknown"', () => {
+    const player = makePlayer('dev-e6');
 
-		expect(player.isDesktop()).toBe(true);
-		expect(player.isTv()).toBe(false);
-		expect(player.isMobile()).toBe(false);
-	});
+    expect(player.device().autoplayAllowed).toBe('unknown');
+  });
+
+  it('DEV-E8: device() preferred is "smooth" for desktop (jsdom UA = no TV/mobile hints)', () => {
+    const player = makePlayer('dev-e8');
+
+    expect(player.device().preferred).toBe('smooth');
+  });
+
+  it('isTv(), isMobile(), isDesktop() all delegate to _detectDevice() — desktop in jsdom', () => {
+    const player = makePlayer('dev-e9');
+
+    expect(player.isDesktop()).toBe(true);
+    expect(player.isTv()).toBe(false);
+    expect(player.isMobile()).toBe(false);
+  });
 });

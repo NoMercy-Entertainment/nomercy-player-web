@@ -21,17 +21,17 @@
  * @param str - The raw string to escape.
  */
 export function escapeHtml(str: string): string {
-	return str.replace(/[&<>"']/g, (char) => {
-		const entities: Record<string, string> = {
-			'&': '&amp;',
-			'<': '&lt;',
-			'>': '&gt;',
-			'"': '&quot;',
-			'\'': '&#39;',
-		};
+  return str.replace(/[&<>"']/g, (char) => {
+    const entities: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      '\'': '&#39;',
+    };
 
-		return entities[char]!;
-	});
+    return entities[char]!;
+  });
 }
 
 /**
@@ -42,16 +42,16 @@ export function escapeHtml(str: string): string {
  * @param seconds - Total duration in seconds (non-negative finite number).
  */
 export function formatSeconds(seconds: number): string {
-	if (!Number.isFinite(seconds) || seconds < 0)
-		return '0:00';
+  if (!Number.isFinite(seconds) || seconds < 0)
+    return '0:00';
 
-	const hours = Math.floor(seconds / 3600);
-	const minutes = Math.floor((seconds % 3600) / 60);
-	const secs = Math.floor(seconds % 60);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
 
-	return hours > 0
-		? `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-		: `${minutes}:${secs.toString().padStart(2, '0')}`;
+  return hours > 0
+    ? `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    : `${minutes}:${secs.toString().padStart(2, '0')}`;
 }
 
 /**
@@ -63,7 +63,7 @@ export function formatSeconds(seconds: number): string {
  * @param value - Raw volume value (kit scale, 0-100).
  */
 export function clampVolume(value: number): number {
-	return Math.round(Math.max(0, Math.min(100, value)));
+  return Math.round(Math.max(0, Math.min(100, value)));
 }
 
 /**
@@ -81,14 +81,14 @@ export function clampVolume(value: number): number {
  * @param duration - Seconds as a number, a pre-formatted string, or nullish.
  */
 export function formatDuration(duration: number | string | undefined): string {
-	if (duration == null)
-		return '';
+  if (duration == null)
+    return '';
 
-	if (typeof duration === 'string')
-		return duration.replace(/^00:/u, '');
+  if (typeof duration === 'string')
+    return duration.replace(/^00:/u, '');
 
-	if (!Number.isFinite(duration) || duration <= 0)
-		return '';
+  if (!Number.isFinite(duration) || duration <= 0)
+    return '';
 
-	return formatSeconds(duration);
+  return formatSeconds(duration);
 }

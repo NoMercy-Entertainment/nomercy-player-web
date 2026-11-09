@@ -20,36 +20,36 @@ import { authFetch } from '../auth-fetch';
  * `fetch:*` telemetry names or `'silent'` to emit nothing.
  */
 interface FetchHttp {
-	method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
-	body?: BodyInit;
-	headers?: Record<string, string>;
-	timeoutMs?: number;
-	retry?: RetryConfig;
-	scope?: 'plugin' | 'player' | 'silent';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
+  body?: BodyInit;
+  headers?: Record<string, string>;
+  timeoutMs?: number;
+  retry?: RetryConfig;
+  scope?: 'plugin' | 'player' | 'silent';
 }
 
-export type FetchOptions<T>
-	= | (FetchHttp & { responseType?: 'text'; parser?: (raw: string) => T })
-		| (FetchHttp & { responseType: 'json' })
-		| (FetchHttp & { responseType: 'arrayBuffer' });
+export type FetchOptions<T> =
+	| (FetchHttp & { responseType?: 'text'; parser?: (raw: string) => T }) |
+	(FetchHttp & { responseType: 'json' }) |
+	(FetchHttp & { responseType: 'arrayBuffer' });
 
 type InternalFetchOptions<T> = AuthFetchOptions<T> & {
-	pluginId: string;
-	scope: 'plugin' | 'player' | 'silent';
+  pluginId: string;
+  scope: 'plugin' | 'player' | 'silent';
 };
 
 /** Structural view of the player state `pluginFetch` reads. */
 type PluginFetchPlayer = IPlayer & {
-	options?: BasePlayerConfig;
-	_rawAuth?: () => AuthConfig | undefined;
-	emit: (event: string, data?: unknown) => void;
+  options?: BasePlayerConfig;
+  _rawAuth?: () => AuthConfig | undefined;
+  emit: (event: string, data?: unknown) => void;
 };
 
 /** State `pluginFetch` needs from the calling plugin. */
 interface PluginFetchHost {
-	id: string;
-	lifecycle: LifecycleRegistry;
-	player: PluginFetchPlayer;
+  id: string;
+  lifecycle: LifecycleRegistry;
+  player: PluginFetchPlayer;
 }
 
 /**
@@ -58,21 +58,22 @@ interface PluginFetchHost {
  * on `dispose()`. Backs `Plugin.fetch()`.
  */
 export function pluginFetch<T = string>(host: PluginFetchHost, url: string, options?: FetchOptions<T>): Promise<T> {
-	const ctrl = host.lifecycle.abortable();
-	const config = host.player.options ?? {};
-	const liveAuth = host.player._rawAuth?.();
-	const auth = liveAuth ?? config.auth;
-	const scope = options?.scope ?? 'plugin';
-	const fetchOpts: InternalFetchOptions<T> = {
-		...options,
-		url,
-		auth,
-		fetch: config.fetch,
-		liveAuth: () => host.player._rawAuth?.() ?? config.auth,
-		signal: ctrl.signal,
-		pluginId: host.id,
-		scope,
-		emit: (event: string, data: unknown) => host.player.emit(event, data),
-	};
-	return authFetch<T>(fetchOpts);
+  const ctrl = host.lifecycle.abortable();
+  const config = host.player.options ?? {};
+  const liveAuth = host.player._rawAuth?.();
+  const auth = liveAuth ?? config.auth;
+  const scope = options?.scope ?? 'plugin';
+  const fetchOpts: InternalFetchOptions<T> = {
+    ...options,
+    url,
+    auth,
+    fetch: config.fetch,
+    liveAuth: () => host.player._rawAuth?.() ?? config.auth,
+    signal: ctrl.signal,
+    pluginId: host.id,
+    scope,
+    emit: (event: string, data: unknown) => host.player.emit(event, data),
+  };
+
+  return authFetch<T>(fetchOpts);
 }

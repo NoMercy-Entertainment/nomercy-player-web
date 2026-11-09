@@ -15,5 +15,5 @@ import { NetworkError } from './network';
  * before raising this class; 403 propagates immediately with `attempts: 0`.
  */
 export class AuthError extends NetworkError {
-	override readonly name: string = 'AuthError';
+  override readonly name: string = 'AuthError';
 }

@@ -27,15 +27,18 @@ import { expect, test } from '@playwright/test';
 // ── fixture ────────────────────────────────────────────────────────────────────
 
 async function loadFixture(page: import('@playwright/test').Page): Promise<void> {
-	await page.goto('/e2e/fixture-full.html');
-	await page.waitForFunction(
-		() => (window as any).__playerReady === true,
-		{ timeout: 10_000 },
-	);
-	const error = await page.evaluate(() => (window as any).__playerError);
-	if (error) {
-		throw new Error(`Player init failed: ${error}`);
-	}
+  await page.goto('/e2e/fixture-full.html');
+
+  await page.waitForFunction(
+    () => (window as any).__playerReady === true,
+    { timeout: 10_000 },
+  );
+
+  const error = await page.evaluate(() => (window as any).__playerError);
+
+  if (error) {
+    throw new Error(`Player init failed: ${error}`);
+  }
 }
 
 /**
@@ -44,213 +47,222 @@ async function loadFixture(page: import('@playwright/test').Page): Promise<void>
  * Returns after loadedmetadata + playback has started.
  */
 async function loadAndPlay(page: import('@playwright/test').Page): Promise<void> {
-	await page.evaluate(() => {
-		(window as any).player.setup({
-			playlist: [{
-				id: 'kb-src',
-				file: '/e2e/media/sample.mp4',
-			}],
-			muted: true,
-			autoPlay: true,
-		});
-	});
+  await page.evaluate(() => {
+    (window as any).player.setup({
+      playlist: [{
+        id: 'kb-src',
+        file: '/e2e/media/sample.mp4',
+      }],
+      muted: true,
+      autoPlay: true,
+    });
+  });
 
-	await page.waitForFunction(
-		() => {
-			const el = (window as any).player.videoElement;
-			return el && typeof el.duration === 'number' && Number.isFinite(el.duration) && el.duration > 0;
-		},
-		{ timeout: 20_000 },
-	);
+  await page.waitForFunction(
+    () => {
+      const el = (window as any).player.videoElement;
+
+      return el && typeof el.duration === 'number' && Number.isFinite(el.duration) && el.duration > 0;
+    },
+    { timeout: 20_000 },
+  );
 }
 
 // ── tests ──────────────────────────────────────────────────────────────────────
 
 test.describe('KeyHandlerPlugin — Space toggles playback', () => {
-	test('Space pauses a playing video', async ({ page }) => {
-		await loadFixture(page);
-		await loadAndPlay(page);
+  test('Space pauses a playing video', async ({ page }) => {
+    await loadFixture(page);
+    await loadAndPlay(page);
 
-		// Ensure playing.
-		await page.waitForFunction(
-			() => (window as any).player.videoElement?.paused === false,
-			{ timeout: 5_000 },
-		);
+    // Ensure playing.
+    await page.waitForFunction(
+      () => (window as any).player.videoElement?.paused === false,
+      { timeout: 5_000 },
+    );
 
-		// Dispatch keydown directly on document — the KeyHandlerPlugin binds to
-		// document-level keydown events.
-		await page.evaluate(() => {
-			document.dispatchEvent(new KeyboardEvent('keydown', {
-				key: ' ',
-				code: 'Space',
-				bubbles: true,
-				cancelable: true,
-			}));
-		});
+    // Dispatch keydown directly on document — the KeyHandlerPlugin binds to
+    // document-level keydown events.
+    await page.evaluate(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        key: ' ',
+        code: 'Space',
+        bubbles: true,
+        cancelable: true,
+      }));
+    });
 
-		await page.waitForFunction(
-			() => (window as any).player.videoElement?.paused === true,
-			{ timeout: 3_000 },
-		);
+    await page.waitForFunction(
+      () => (window as any).player.videoElement?.paused === true,
+      { timeout: 3_000 },
+    );
 
-		const paused = await page.evaluate(() => (window as any).player.videoElement.paused);
-		expect(paused).toBe(true);
-	});
+    const paused = await page.evaluate(() => (window as any).player.videoElement.paused);
 
-	test('Space plays a paused video', async ({ page }) => {
-		await loadFixture(page);
-		await loadAndPlay(page);
+    expect(paused).toBe(true);
+  });
 
-		// Pause first via the player API.
-		await page.evaluate(async () => {
-			await (window as any).player.pause().catch(() => {});
-		});
+  test('Space plays a paused video', async ({ page }) => {
+    await loadFixture(page);
+    await loadAndPlay(page);
 
-		await page.waitForFunction(
-			() => (window as any).player.videoElement?.paused === true,
-			{ timeout: 3_000 },
-		);
+    // Pause first via the player API.
+    await page.evaluate(async () => {
+      await (window as any).player.pause().catch(() => {});
+    });
 
-		await page.evaluate(() => {
-			document.dispatchEvent(new KeyboardEvent('keydown', {
-				key: ' ',
-				code: 'Space',
-				bubbles: true,
-				cancelable: true,
-			}));
-		});
+    await page.waitForFunction(
+      () => (window as any).player.videoElement?.paused === true,
+      { timeout: 3_000 },
+    );
 
-		await page.waitForFunction(
-			() => (window as any).player.videoElement?.paused === false,
-			{ timeout: 3_000 },
-		);
+    await page.evaluate(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        key: ' ',
+        code: 'Space',
+        bubbles: true,
+        cancelable: true,
+      }));
+    });
 
-		const paused = await page.evaluate(() => (window as any).player.videoElement.paused);
-		expect(paused).toBe(false);
-	});
+    await page.waitForFunction(
+      () => (window as any).player.videoElement?.paused === false,
+      { timeout: 3_000 },
+    );
+
+    const paused = await page.evaluate(() => (window as any).player.videoElement.paused);
+
+    expect(paused).toBe(false);
+  });
 });
 
 test.describe('KeyHandlerPlugin — ArrowRight seeks forward', () => {
-	test('ArrowRight advances currentTime', async ({ page }) => {
-		await loadFixture(page);
-		await loadAndPlay(page);
+  test('ArrowRight advances currentTime', async ({ page }) => {
+    await loadFixture(page);
+    await loadAndPlay(page);
 
-		// Pause to get a stable start time, then seek to a safe position.
-		await page.evaluate(async () => {
-			const player = (window as any).player;
-			await player.pause().catch(() => {});
-			player.videoElement.currentTime = 0;
-		});
+    // Pause to get a stable start time, then seek to a safe position.
+    await page.evaluate(async () => {
+      const player = (window as any).player;
 
-		const timeBefore = await page.evaluate(() => (window as any).player.videoElement.currentTime);
+      await player.pause().catch(() => {});
+      player.videoElement.currentTime = 0;
+    });
 
-		await page.evaluate(() => {
-			document.dispatchEvent(new KeyboardEvent('keydown', {
-				key: 'ArrowRight',
-				code: 'ArrowRight',
-				bubbles: true,
-				cancelable: true,
-			}));
-		});
+    const timeBefore = await page.evaluate(() => (window as any).player.videoElement.currentTime);
 
-		// forward() skips by the player default. Wait for the seek to be applied.
-		await page.waitForFunction(
-			(before: number) => {
-				const t = (window as any).player.videoElement?.currentTime ?? 0;
-				return t > before;
-			},
-			timeBefore,
-			{ timeout: 3_000 },
-		);
+    await page.evaluate(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'ArrowRight',
+        code: 'ArrowRight',
+        bubbles: true,
+        cancelable: true,
+      }));
+    });
 
-		const timeAfter = await page.evaluate(() => (window as any).player.videoElement.currentTime);
-		expect(timeAfter).toBeGreaterThan(timeBefore);
-	});
+    // forward() skips by the player default. Wait for the seek to be applied.
+    await page.waitForFunction(
+      (before: number) => {
+        const t = (window as any).player.videoElement?.currentTime ?? 0;
+
+        return t > before;
+      },
+      timeBefore,
+      { timeout: 3_000 },
+    );
+
+    const timeAfter = await page.evaluate(() => (window as any).player.videoElement.currentTime);
+
+    expect(timeAfter).toBeGreaterThan(timeBefore);
+  });
 });
 
 test.describe('KeyHandlerPlugin — ArrowUp/Down changes volume', () => {
-	test('ArrowUp increases volume', async ({ page }) => {
-		await loadFixture(page);
-		await loadAndPlay(page);
+  test('ArrowUp increases volume', async ({ page }) => {
+    await loadFixture(page);
+    await loadAndPlay(page);
 
-		// Set a known base volume.
-		await page.evaluate(() => {
-			(window as any).player.volume(50);
-		});
+    // Set a known base volume.
+    await page.evaluate(() => {
+      (window as any).player.volume(50);
+    });
 
-		const volBefore = await page.evaluate(() => (window as any).player.volume());
+    const volBefore = await page.evaluate(() => (window as any).player.volume());
 
-		await page.evaluate(() => {
-			document.dispatchEvent(new KeyboardEvent('keydown', {
-				key: 'ArrowUp',
-				code: 'ArrowUp',
-				bubbles: true,
-				cancelable: true,
-			}));
-		});
+    await page.evaluate(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'ArrowUp',
+        code: 'ArrowUp',
+        bubbles: true,
+        cancelable: true,
+      }));
+    });
 
-		// volumeUp() is synchronous — wait one tick.
-		await page.waitForFunction(
-			(before: number) => (window as any).player.volume() > before,
-			volBefore,
-			{ timeout: 2_000 },
-		);
+    // volumeUp() is synchronous — wait one tick.
+    await page.waitForFunction(
+      (before: number) => (window as any).player.volume() > before,
+      volBefore,
+      { timeout: 2_000 },
+    );
 
-		const volAfter = await page.evaluate(() => (window as any).player.volume());
-		expect(volAfter).toBeGreaterThan(volBefore);
-	});
+    const volAfter = await page.evaluate(() => (window as any).player.volume());
 
-	test('ArrowDown decreases volume', async ({ page }) => {
-		await loadFixture(page);
-		await loadAndPlay(page);
+    expect(volAfter).toBeGreaterThan(volBefore);
+  });
 
-		await page.evaluate(() => {
-			(window as any).player.volume(50);
-		});
+  test('ArrowDown decreases volume', async ({ page }) => {
+    await loadFixture(page);
+    await loadAndPlay(page);
 
-		const volBefore = await page.evaluate(() => (window as any).player.volume());
+    await page.evaluate(() => {
+      (window as any).player.volume(50);
+    });
 
-		await page.evaluate(() => {
-			document.dispatchEvent(new KeyboardEvent('keydown', {
-				key: 'ArrowDown',
-				code: 'ArrowDown',
-				bubbles: true,
-				cancelable: true,
-			}));
-		});
+    const volBefore = await page.evaluate(() => (window as any).player.volume());
 
-		await page.waitForFunction(
-			(before: number) => (window as any).player.volume() < before,
-			volBefore,
-			{ timeout: 2_000 },
-		);
+    await page.evaluate(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'ArrowDown',
+        code: 'ArrowDown',
+        bubbles: true,
+        cancelable: true,
+      }));
+    });
 
-		const volAfter = await page.evaluate(() => (window as any).player.volume());
-		expect(volAfter).toBeLessThan(volBefore);
-	});
+    await page.waitForFunction(
+      (before: number) => (window as any).player.volume() < before,
+      volBefore,
+      { timeout: 2_000 },
+    );
+
+    const volAfter = await page.evaluate(() => (window as any).player.volume());
+
+    expect(volAfter).toBeLessThan(volBefore);
+  });
 });
 
 test.describe('KeyHandlerPlugin — f key toggles fullscreen', () => {
-	test('f key does not throw', async ({ page }) => {
-		await loadFixture(page);
-		await loadAndPlay(page);
+  test('f key does not throw', async ({ page }) => {
+    await loadFixture(page);
+    await loadAndPlay(page);
 
-		const threw = await page.evaluate(async () => {
-			try {
-				document.dispatchEvent(new KeyboardEvent('keydown', {
-					key: 'f',
-					code: 'KeyF',
-					bubbles: true,
-					cancelable: true,
-				}));
-				await new Promise(r => setTimeout(r, 100));
-				return false;
-			}
-			catch {
-				return true;
-			}
-		});
+    const threw = await page.evaluate(async () => {
+      try {
+        document.dispatchEvent(new KeyboardEvent('keydown', {
+          key: 'f',
+          code: 'KeyF',
+          bubbles: true,
+          cancelable: true,
+        }));
 
-		expect(threw).toBe(false);
-	});
+        await new Promise((r) => setTimeout(r, 100));
+
+        return false;
+      } catch {
+        return true;
+      }
+    });
+
+    expect(threw).toBe(false);
+  });
 });

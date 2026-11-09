@@ -6,7 +6,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
-import { ESLintUtils, type TSESLint, type TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import { ESLintUtils } from '@typescript-eslint/utils';
 
 // Owner 2026-10-13 asked to wrap `type PanelQuery<T> = { data: ...; isPending: ...; isError: ... }`
 // into a formatted object, and preferred `return {\n ...labels,\n ...words(...),\n roles: ... }`

@@ -27,12 +27,12 @@ import type { IVideoPlayer, VideoPlaylistItem } from '@nomercy-entertainment/nom
  * Returns `undefined` when no chapter covers the position.
  */
 export function findChapterTitle(
-	player: IVideoPlayer<VideoPlaylistItem>,
-	time: number,
+  player: IVideoPlayer<VideoPlaylistItem>,
+  time: number,
 ): string | undefined {
-	return player.chapters()
-		.find(chapter => time >= chapter.start && time <= chapter.end)
-		?.title;
+  return player.chapters()
+    .find((chapter) => time >= chapter.start && time <= chapter.end)
+    ?.title;
 }
 
 /**
@@ -41,15 +41,18 @@ export function findChapterTitle(
  * chapter before it. Falls back to time 0 when no earlier chapter exists.
  */
 export function previousChapter(player: IVideoPlayer<VideoPlaylistItem>): void {
-	const chapters = player.chapters();
-	const currentTime = player.time?.() ?? 0;
-	for (let i = chapters.length - 1; i >= 0; i--) {
-		if (chapters[i]!.start < currentTime - 1) {
-			void player.time?.(chapters[i]!.start);
-			return;
-		}
-	}
-	void player.time?.(0);
+  const chapters = player.chapters();
+  const currentTime = player.time?.() ?? 0;
+
+  for (let i = chapters.length - 1; i >= 0; i--) {
+    if (chapters[i]!.start < currentTime - 1) {
+      void player.time?.(chapters[i]!.start);
+
+      return;
+    }
+  }
+
+  void player.time?.(0);
 }
 
 /**
@@ -57,12 +60,14 @@ export function previousChapter(player: IVideoPlayer<VideoPlaylistItem>): void {
  * No-ops when already past the last chapter boundary.
  */
 export function nextChapter(player: IVideoPlayer<VideoPlaylistItem>): void {
-	const chapters = player.chapters();
-	const currentTime = player.time?.() ?? 0;
-	for (let i = 0; i < chapters.length; i++) {
-		if (chapters[i]!.start > currentTime + 1) {
-			void player.time?.(chapters[i]!.start);
-			return;
-		}
-	}
+  const chapters = player.chapters();
+  const currentTime = player.time?.() ?? 0;
+
+  for (let i = 0; i < chapters.length; i++) {
+    if (chapters[i]!.start > currentTime + 1) {
+      void player.time?.(chapters[i]!.start);
+
+      return;
+    }
+  }
 }

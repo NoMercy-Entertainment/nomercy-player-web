@@ -20,127 +20,141 @@
 import type { BasePlaylistItem } from '../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	composeMixins,
-	MediaFormatError,
-	playerCoreMethods,
-	PlayerError,
+  composeMixins,
+  MediaFormatError,
+  playerCoreMethods,
+  PlayerError,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare load: (item: BasePlaylistItem, opts?: any) => Promise<void>;
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare load: (item: BasePlaylistItem, opts?: any) => Promise<void>;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makeSetupPlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId).setup({});
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId).setup({});
 }
 
 describe('loadingMethods (slice 03)', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('load(item) with no URL rejects with MediaFormatError code "core:media/missing-url"', async () => {
-		const player = makeSetupPlayer('load-1');
-		const item: BasePlaylistItem = { id: 'track-1', title: 'Missing URL track' } as BasePlaylistItem;
+  it('load(item) with no URL rejects with MediaFormatError code "core:media/missing-url"', async () => {
+    const player = makeSetupPlayer('load-1');
+    const item: BasePlaylistItem = { id: 'track-1', title: 'Missing URL track' } as BasePlaylistItem;
 
-		let thrown: unknown;
-		try {
-			await player.load(item);
-		}
-		catch (err) {
-			thrown = err;
-		}
+    let thrown: unknown;
 
-		expect(thrown).toBeInstanceOf(PlayerError);
-		expect(thrown).toBeInstanceOf(MediaFormatError);
-		expect((thrown as PlayerError).code).toBe('core:media/missing-url');
-	});
+    try {
+      await player.load(item);
+    } catch (err) {
+      thrown = err;
+    }
 
-	it('load(item) names the missing backend or the missing backend.load in backend-missing', async () => {
-		const player = makeSetupPlayer('load-backend-missing');
-		const item: BasePlaylistItem = { id: 'track-3', url: 'https://example.com/track.mp3' } as BasePlaylistItem;
-		const internals = player as unknown as { _resolveBackend: () => unknown };
+    expect(thrown).toBeInstanceOf(PlayerError);
+    expect(thrown).toBeInstanceOf(MediaFormatError);
+    expect((thrown as PlayerError).code).toBe('core:media/missing-url');
+  });
 
-		internals._resolveBackend = (): unknown => undefined;
-		const noBackend = await player.load(item).catch((err: PlayerError) => err);
-		expect((noBackend as PlayerError).code).toBe('core:player/backend-missing');
-		expect((noBackend as PlayerError).message).toContain('returned null/undefined');
+  it('load(item) names the missing backend or the missing backend.load in backend-missing', async () => {
+    const player = makeSetupPlayer('load-backend-missing');
+    const item: BasePlaylistItem = { id: 'track-3', url: 'https://example.com/track.mp3' } as BasePlaylistItem;
+    const internals = player as unknown as { _resolveBackend: () => unknown };
 
-		internals._resolveBackend = (): unknown => ({});
-		const noLoad = await player.load(item).catch((err: PlayerError) => err);
-		expect((noLoad as PlayerError).code).toBe('core:player/backend-missing');
-		expect((noLoad as PlayerError).message).toContain('no load()');
-	});
+    internals._resolveBackend = (): unknown => undefined;
+    const noBackend = await player.load(item).catch((err: PlayerError) => err);
 
-	it('the latest load() call wins even when an earlier call resolves its URL later', async () => {
-		const div = document.createElement('div');
-		div.id = 'load-epoch-order';
-		document.body.appendChild(div);
-		const player = new MockPlayer('load-epoch-order').setup({
-			auth: {
-				transformUrl: async (url: string): Promise<string> => {
-					if (url.includes('slow'))
-						await new Promise(resolve => setTimeout(resolve, 30));
-					return url;
-				},
-			},
-		});
-		const loaded: string[] = [];
-		(player as unknown as { _resolveBackend: () => unknown })._resolveBackend = (): unknown => ({
-			load: async (url: string): Promise<void> => {
-				loaded.push(url);
-			},
-		});
+    expect((noBackend as PlayerError).code).toBe('core:player/backend-missing');
+    expect((noBackend as PlayerError).message).toContain('returned null/undefined');
 
-		const slow = { id: 'slow', url: 'https://example.com/slow.mp3' } as BasePlaylistItem;
-		const fast = { id: 'fast', url: 'https://example.com/fast.mp3' } as BasePlaylistItem;
-		await Promise.all([player.load(slow), player.load(fast)]);
+    internals._resolveBackend = (): unknown => ({});
+    const noLoad = await player.load(item).catch((err: PlayerError) => err);
 
-		expect(loaded).toEqual(['https://example.com/fast.mp3']);
-	});
+    expect((noLoad as PlayerError).code).toBe('core:player/backend-missing');
+    expect((noLoad as PlayerError).message).toContain('no load()');
+  });
 
-	it('load(item) emits "beforeLoad" before calling backend; preventDefault suppresses backend and emits "loadPrevented"', async () => {
-		const player = makeSetupPlayer('load-2');
+  it('the latest load() call wins even when an earlier call resolves its URL later', async () => {
+    const div = document.createElement('div');
 
-		let backendLoadCalled = false;
-		(player as unknown as { _resolveBackend: () => unknown })._resolveBackend = (): unknown => ({
-			load: async (): Promise<void> => {
-				backendLoadCalled = true;
-			},
-		});
+    div.id = 'load-epoch-order';
+    document.body.appendChild(div);
+    const player = new MockPlayer('load-epoch-order').setup({
+      auth: {
+        transformUrl: async (url: string): Promise<string> => {
+          if (url.includes('slow')) {
+            await new Promise((resolve) => setTimeout(resolve, 30));
+          }
 
-		let beforeLoadFired = false;
-		let loadPreventedFired = false;
+          return url;
+        },
+      },
+    });
+    const loaded: string[] = [];
 
-		player.on('beforeLoad' as any, (event: { preventDefault: () => void }) => {
-			beforeLoadFired = true;
-			event.preventDefault();
-		});
+    (player as unknown as { _resolveBackend: () => unknown })._resolveBackend = (): unknown => ({
+      load: async (url: string): Promise<void> => {
+        loaded.push(url);
+      },
+    });
 
-		player.on('loadPrevented' as any, () => {
-			loadPreventedFired = true;
-		});
+    const slow = { id: 'slow', url: 'https://example.com/slow.mp3' } as BasePlaylistItem;
+    const fast = { id: 'fast', url: 'https://example.com/fast.mp3' } as BasePlaylistItem;
 
-		const item: BasePlaylistItem = { id: 'track-2', title: 'Prevented track', url: 'https://example.com/track.mp3' } as BasePlaylistItem;
+    await Promise.all([player.load(slow), player.load(fast)]);
 
-		await player.load(item);
+    expect(loaded).toEqual(['https://example.com/fast.mp3']);
+  });
 
-		expect(beforeLoadFired).toBe(true);
-		expect(loadPreventedFired).toBe(true);
-		expect(backendLoadCalled).toBe(false);
-	});
+  it('load(item) emits "beforeLoad" before calling backend; preventDefault suppresses backend and emits "loadPrevented"', async () => {
+    const player = makeSetupPlayer('load-2');
+
+    let backendLoadCalled = false;
+
+    (player as unknown as { _resolveBackend: () => unknown })._resolveBackend = (): unknown => ({
+      load: async (): Promise<void> => {
+        backendLoadCalled = true;
+      },
+    });
+
+    let beforeLoadFired = false;
+    let loadPreventedFired = false;
+
+    player.on('beforeLoad' as any, (event: { preventDefault: () => void }) => {
+      beforeLoadFired = true;
+      event.preventDefault();
+    });
+
+    player.on('loadPrevented' as any, () => {
+      loadPreventedFired = true;
+    });
+
+    const item: BasePlaylistItem = {
+      id: 'track-2',
+      title: 'Prevented track',
+      url: 'https://example.com/track.mp3',
+    } as BasePlaylistItem;
+
+    await player.load(item);
+
+    expect(beforeLoadFired).toBe(true);
+    expect(loadPreventedFired).toBe(true);
+    expect(backendLoadCalled).toBe(false);
+  });
 });

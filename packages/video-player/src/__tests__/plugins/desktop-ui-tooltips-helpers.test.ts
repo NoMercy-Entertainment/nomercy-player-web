@@ -26,382 +26,444 @@ import { NMVideoPlayer } from '../../index';
 import { addTooltip, clampTooltip, wireTooltips } from '../../plugins/desktop-ui/helpers/tooltips';
 
 const BUTTON_NAMES = [
-	'playBtn',
-	'rewindBtn',
-	'forwardBtn',
-	'volBtn',
-	'aspectRatioBtn',
-	'theaterBtn',
-	'pipBtn',
-	'speedBtn',
-	'subsBtn',
-	'audioBtn',
-	'qualityBtn',
-	'playlistBtn',
-	'settingsBtn',
-	'fsBtn',
-	'prevBtn',
-	'nextBtn',
-	'chapBackBtn',
-	'chapFwdBtn',
+  'playBtn',
+  'rewindBtn',
+  'forwardBtn',
+  'volBtn',
+  'aspectRatioBtn',
+  'theaterBtn',
+  'pipBtn',
+  'speedBtn',
+  'subsBtn',
+  'audioBtn',
+  'qualityBtn',
+  'playlistBtn',
+  'settingsBtn',
+  'fsBtn',
+  'prevBtn',
+  'nextBtn',
+  'chapBackBtn',
+  'chapFwdBtn',
 ] as const;
 
 interface TooltipHarness {
-	tokenValue: () => number | null;
-	getToken: () => number | null;
-	setToken: (token: number | null) => void;
-	scheduled: Array<() => void>;
-	delays: number[];
-	scheduleTimeout: (fn: () => void, ms: number) => number;
-	runLastScheduled: () => void;
-	listen: (target: EventTarget, event: string, fn: (event: Event) => void) => void;
+  tokenValue: () => number | null;
+  getToken: () => number | null;
+  setToken: (token: number | null) => void;
+  scheduled: Array<() => void>;
+  delays: number[];
+  scheduleTimeout: (fn: () => void, ms: number) => number;
+  runLastScheduled: () => void;
+  listen: (target: EventTarget, event: string, fn: (event: Event) => void) => void;
 }
 
 function buildHarness(): TooltipHarness {
-	let token: number | null = null;
-	const scheduled: Array<() => void> = [];
-	const delays: number[] = [];
+  let token: number | null = null;
+  const scheduled: Array<() => void> = [];
+  const delays: number[] = [];
 
-	return {
-		tokenValue: () => token,
-		getToken: () => token,
-		setToken: (value) => { token = value; },
-		scheduled,
-		delays,
-		scheduleTimeout: (fn, ms) => {
-			scheduled.push(fn);
-			delays.push(ms);
-			return scheduled.length;
-		},
-		runLastScheduled: () => { scheduled[scheduled.length - 1]!(); },
-		listen: (target, event, fn) => { target.addEventListener(event, fn); },
-	};
+  return {
+    tokenValue: () => token,
+    getToken: () => token,
+    setToken: (value) => { token = value; },
+    scheduled,
+    delays,
+    scheduleTimeout: (fn, ms) => {
+      scheduled.push(fn);
+      delays.push(ms);
+
+      return scheduled.length;
+    },
+    runLastScheduled: () => { scheduled[scheduled.length - 1]!(); },
+    listen: (target, event, fn) => { target.addEventListener(event, fn); },
+  };
 }
 
 function buildSliderRefs(): SliderBarRefs {
-	const make = (): HTMLDivElement => document.createElement('div');
-	return {
-		sliderBar: make(),
-		sliderBuffer: make(),
-		sliderHover: make(),
-		sliderProgress: make(),
-		chapterBar: make(),
-		sliderNipple: make(),
-		sliderPop: make(),
-		sliderPopImage: make(),
-		sliderPopText: make(),
-		chapterText: make(),
-	};
+  const make = (): HTMLDivElement => document.createElement('div');
+
+  return {
+    sliderBar: make(),
+    sliderBuffer: make(),
+    sliderHover: make(),
+    sliderProgress: make(),
+    chapterBar: make(),
+    sliderNipple: make(),
+    sliderPop: make(),
+    sliderPopImage: make(),
+    sliderPopText: make(),
+    chapterText: make(),
+  };
 }
 
-function stubRect(el: HTMLElement, rect: { left: number; right: number; width: number }): void {
-	Object.assign(el, {
-		getBoundingClientRect: () => ({
-			left: rect.left,
-			right: rect.right,
-			width: rect.width,
-			top: 0,
-			bottom: 0,
-			height: 0,
-			x: rect.left,
-			y: 0,
-			toJSON: () => ({}),
-		}),
-	});
+function stubRect(el: HTMLElement, rect: {
+  left: number;
+  right: number;
+  width: number;
+}): void {
+  Object.assign(el, {
+    getBoundingClientRect: () => ({
+      left: rect.left,
+      right: rect.right,
+      width: rect.width,
+      top: 0,
+      bottom: 0,
+      height: 0,
+      x: rect.left,
+      y: 0,
+      toJSON: () => ({}),
+    }),
+  });
 }
 
 function stubOffsetWidth(el: HTMLElement, width: number): void {
-	Object.defineProperty(el, 'offsetWidth', { value: width, configurable: true });
+  Object.defineProperty(el, 'offsetWidth', { value: width, configurable: true });
 }
 
 describe('desktop-ui tooltip helpers', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+  });
 
-	// ── addTooltip ──────────────────────────────────────────────────────────────
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	describe('addTooltip', () => {
-		function buildButton(): HTMLButtonElement {
-			const btn = document.createElement('button');
-			btn.setAttribute('title', 'native tooltip');
-			document.body.appendChild(btn);
-			return btn;
-		}
+  // ── addTooltip ──────────────────────────────────────────────────────────────
 
-		it('appends a span.tooltip to the button and strips the native title attribute', () => {
-			const harness = buildHarness();
-			const btn = buildButton();
+  describe('addTooltip', () => {
+    function buildButton(): HTMLButtonElement {
+      const btn = document.createElement('button');
 
-			addTooltip(btn, () => 'Play', harness.listen, buildSliderRefs(), document.body, harness.getToken, harness.setToken, harness.scheduleTimeout);
+      btn.setAttribute('title', 'native tooltip');
+      document.body.appendChild(btn);
 
-			expect(btn.querySelector('span.tooltip')).not.toBeNull();
-			expect(btn.hasAttribute('title')).toBe(false);
-		});
+      return btn;
+    }
 
-		it('mouseenter schedules the show after 500 ms; running it reveals the lazy text', () => {
-			const harness = buildHarness();
-			const btn = buildButton();
-			let label = 'Play';
+    it('appends a span.tooltip to the button and strips the native title attribute', () => {
+      const harness = buildHarness();
+      const btn = buildButton();
 
-			addTooltip(btn, () => label, harness.listen, buildSliderRefs(), document.body, harness.getToken, harness.setToken, harness.scheduleTimeout);
-			const tip = btn.querySelector<HTMLSpanElement>('span.tooltip')!;
+      addTooltip(btn, () => 'Play', harness.listen, buildSliderRefs(), document.body, harness.getToken, harness.setToken, harness.scheduleTimeout);
 
-			btn.dispatchEvent(new MouseEvent('mouseenter'));
-			expect(harness.delays).toEqual([500]);
-			expect(harness.tokenValue()).toBe(1);
-			expect(tip.classList.contains('tooltip-visible')).toBe(false);
+      expect(btn.querySelector('span.tooltip')).not.toBeNull();
+      expect(btn.hasAttribute('title')).toBe(false);
+    });
 
-			harness.runLastScheduled();
-			expect(tip.classList.contains('tooltip-visible')).toBe(true);
-			expect(tip.textContent).toBe('Play');
+    it('mouseenter schedules the show after 500 ms; running it reveals the lazy text', () => {
+      const harness = buildHarness();
+      const btn = buildButton();
+      let label = 'Play';
 
-			// The label is re-evaluated on each hover — dynamic labels stay current.
-			label = 'Pause';
-			btn.dispatchEvent(new MouseEvent('mouseenter'));
-			harness.runLastScheduled();
-			expect(tip.textContent).toBe('Pause');
-		});
+      addTooltip(btn, () => label, harness.listen, buildSliderRefs(), document.body, harness.getToken, harness.setToken, harness.scheduleTimeout);
+      const tip = btn.querySelector<HTMLSpanElement>('span.tooltip')!;
 
-		it('re-entering replaces the pending token in the shared slot', () => {
-			const harness = buildHarness();
-			const btn = buildButton();
+      btn.dispatchEvent(new MouseEvent('mouseenter'));
+      expect(harness.delays).toEqual([500]);
+      expect(harness.tokenValue()).toBe(1);
+      expect(tip.classList.contains('tooltip-visible')).toBe(false);
 
-			addTooltip(btn, () => 'Play', harness.listen, buildSliderRefs(), document.body, harness.getToken, harness.setToken, harness.scheduleTimeout);
+      harness.runLastScheduled();
+      expect(tip.classList.contains('tooltip-visible')).toBe(true);
+      expect(tip.textContent).toBe('Play');
 
-			btn.dispatchEvent(new MouseEvent('mouseenter'));
-			btn.dispatchEvent(new MouseEvent('mouseenter'));
+      // The label is re-evaluated on each hover — dynamic labels stay current.
+      label = 'Pause';
+      btn.dispatchEvent(new MouseEvent('mouseenter'));
+      harness.runLastScheduled();
+      expect(tip.textContent).toBe('Pause');
+    });
 
-			expect(harness.scheduled).toHaveLength(2);
-			expect(harness.tokenValue()).toBe(2);
-		});
+    it('re-entering replaces the pending token in the shared slot', () => {
+      const harness = buildHarness();
+      const btn = buildButton();
 
-		it('mouseleave hides the tooltip and clears the pending token', () => {
-			const harness = buildHarness();
-			const btn = buildButton();
+      addTooltip(btn, () => 'Play', harness.listen, buildSliderRefs(), document.body, harness.getToken, harness.setToken, harness.scheduleTimeout);
 
-			addTooltip(btn, () => 'Play', harness.listen, buildSliderRefs(), document.body, harness.getToken, harness.setToken, harness.scheduleTimeout);
-			const tip = btn.querySelector<HTMLSpanElement>('span.tooltip')!;
+      btn.dispatchEvent(new MouseEvent('mouseenter'));
+      btn.dispatchEvent(new MouseEvent('mouseenter'));
 
-			btn.dispatchEvent(new MouseEvent('mouseenter'));
-			harness.runLastScheduled();
-			expect(tip.classList.contains('tooltip-visible')).toBe(true);
-			expect(harness.tokenValue()).not.toBeNull();
+      expect(harness.scheduled).toHaveLength(2);
+      expect(harness.tokenValue()).toBe(2);
+    });
 
-			btn.dispatchEvent(new MouseEvent('mouseleave'));
-			expect(tip.classList.contains('tooltip-visible')).toBe(false);
-			expect(harness.tokenValue()).toBeNull();
-		});
+    it('mouseleave hides the tooltip and clears the pending token', () => {
+      const harness = buildHarness();
+      const btn = buildButton();
 
-		it('click hides the tooltip', () => {
-			const harness = buildHarness();
-			const btn = buildButton();
+      addTooltip(btn, () => 'Play', harness.listen, buildSliderRefs(), document.body, harness.getToken, harness.setToken, harness.scheduleTimeout);
+      const tip = btn.querySelector<HTMLSpanElement>('span.tooltip')!;
 
-			addTooltip(btn, () => 'Play', harness.listen, buildSliderRefs(), document.body, harness.getToken, harness.setToken, harness.scheduleTimeout);
-			const tip = btn.querySelector<HTMLSpanElement>('span.tooltip')!;
+      btn.dispatchEvent(new MouseEvent('mouseenter'));
+      harness.runLastScheduled();
+      expect(tip.classList.contains('tooltip-visible')).toBe(true);
+      expect(harness.tokenValue()).not.toBeNull();
 
-			btn.dispatchEvent(new MouseEvent('mouseenter'));
-			harness.runLastScheduled();
-			expect(tip.classList.contains('tooltip-visible')).toBe(true);
+      btn.dispatchEvent(new MouseEvent('mouseleave'));
+      expect(tip.classList.contains('tooltip-visible')).toBe(false);
+      expect(harness.tokenValue()).toBeNull();
+    });
 
-			btn.dispatchEvent(new MouseEvent('click'));
-			expect(tip.classList.contains('tooltip-visible')).toBe(false);
-		});
-	});
+    it('click hides the tooltip', () => {
+      const harness = buildHarness();
+      const btn = buildButton();
 
-	// ── clampTooltip ────────────────────────────────────────────────────────────
+      addTooltip(btn, () => 'Play', harness.listen, buildSliderRefs(), document.body, harness.getToken, harness.setToken, harness.scheduleTimeout);
+      const tip = btn.querySelector<HTMLSpanElement>('span.tooltip')!;
 
-	describe('clampTooltip', () => {
-		function buildClampFixture(btnLeft: number): { tip: HTMLSpanElement; btn: HTMLButtonElement; sliderRefs: SliderBarRefs } {
-			const sliderRefs = buildSliderRefs();
-			stubRect(sliderRefs.sliderBar, { left: 100, right: 500, width: 400 });
+      btn.dispatchEvent(new MouseEvent('mouseenter'));
+      harness.runLastScheduled();
+      expect(tip.classList.contains('tooltip-visible')).toBe(true);
 
-			const btn = document.createElement('button');
-			stubRect(btn, { left: btnLeft, right: btnLeft + 40, width: 40 });
+      btn.dispatchEvent(new MouseEvent('click'));
+      expect(tip.classList.contains('tooltip-visible')).toBe(false);
+    });
+  });
 
-			const tip = document.createElement('span');
-			stubOffsetWidth(tip, 100);
+  // ── clampTooltip ────────────────────────────────────────────────────────────
 
-			return { tip, btn, sliderRefs };
-		}
+  describe('clampTooltip', () => {
+    function buildClampFixture(btnLeft: number): {
+      tip: HTMLSpanElement;
+      btn: HTMLButtonElement;
+      sliderRefs: SliderBarRefs;
+    } {
+      const sliderRefs = buildSliderRefs();
 
-		it('keeps a centered tooltip unshifted', () => {
-			const { tip, btn, sliderRefs } = buildClampFixture(280); // center 300, tip spans 250..350
+      stubRect(sliderRefs.sliderBar, {
+        left: 100,
+        right: 500,
+        width: 400,
+      });
 
-			clampTooltip(tip, btn, sliderRefs, document.body);
+      const btn = document.createElement('button');
 
-			expect(tip.style.transform).toBe('translateX(calc(-50% + 0px))');
-			expect(tip.style.getPropertyValue('--arrow-x')).toBe('calc(50% - 0px)');
-		});
+      stubRect(btn, {
+        left: btnLeft,
+        right: btnLeft + 40,
+        width: 40,
+      });
 
-		it('shifts right when the tooltip would escape the left fence', () => {
-			const { tip, btn, sliderRefs } = buildClampFixture(100); // center 120, raw left 70 < fence 100
+      const tip = document.createElement('span');
 
-			clampTooltip(tip, btn, sliderRefs, document.body);
+      stubOffsetWidth(tip, 100);
 
-			expect(tip.style.transform).toBe('translateX(calc(-50% + 30px))');
-			expect(tip.style.getPropertyValue('--arrow-x')).toBe('calc(50% - 30px)');
-		});
+      return {
+        tip,
+        btn,
+        sliderRefs,
+      };
+    }
 
-		it('shifts left when the tooltip would escape the right fence', () => {
-			const { tip, btn, sliderRefs } = buildClampFixture(460); // center 480, raw right 530 > fence 500
+    it('keeps a centered tooltip unshifted', () => {
+      const { tip, btn, sliderRefs } = buildClampFixture(280); // center 300, tip spans 250..350
 
-			clampTooltip(tip, btn, sliderRefs, document.body);
+      clampTooltip(tip, btn, sliderRefs, document.body);
 
-			expect(tip.style.transform).toBe('translateX(calc(-50% + -30px))');
-			expect(tip.style.getPropertyValue('--arrow-x')).toBe('calc(50% - -30px)');
-		});
-	});
+      expect(tip.style.transform).toBe('translateX(calc(-50% + 0px))');
+      expect(tip.style.getPropertyValue('--arrow-x')).toBe('calc(50% - 0px)');
+    });
 
-	// ── wireTooltips ────────────────────────────────────────────────────────────
+    it('shifts right when the tooltip would escape the left fence', () => {
+      const { tip, btn, sliderRefs } = buildClampFixture(100); // center 120, raw left 70 < fence 100
 
-	describe('wireTooltips', () => {
-		interface WireFixture {
-			refs: TooltipButtonRefs;
-			harness: TooltipHarness;
-			translateCalls: Array<{ key: string; params: Record<string, string> | undefined }>;
-			showTooltip: (btn: HTMLButtonElement) => string;
-		}
+      clampTooltip(tip, btn, sliderRefs, document.body);
 
-		async function buildWireFixture(opts: {
-			queue?: VideoPlaylistItem[];
-			currentIndex?: number;
-			chapters?: Chapter[];
-			currentTime?: number;
-		} = {}): Promise<WireFixture> {
-			const player = new NMVideoPlayer('test').setup({});
-			await player.ready();
-			Object.assign(player, {
-				queue: () => opts.queue ?? [],
-				chapters: () => opts.chapters ?? [],
-				time: (seconds?: number) => {
-					if (seconds === undefined)
-						return opts.currentTime ?? 0;
-					return Promise.resolve();
-				},
-			});
+      expect(tip.style.transform).toBe('translateX(calc(-50% + 30px))');
+      expect(tip.style.getPropertyValue('--arrow-x')).toBe('calc(50% - 30px)');
+    });
 
-			const harness = buildHarness();
-			const translateCalls: Array<{ key: string; params: Record<string, string> | undefined }> = [];
-			const translate = (key: string, params?: Record<string, string>): string => {
-				translateCalls.push({ key, params });
-				return key;
-			};
+    it('shifts left when the tooltip would escape the right fence', () => {
+      const { tip, btn, sliderRefs } = buildClampFixture(460); // center 480, raw right 530 > fence 500
 
-			const refs = Object.fromEntries(
-				BUTTON_NAMES.map((name) => {
-					const btn = document.createElement('button');
-					btn.dataset.ref = name;
-					player.container.appendChild(btn);
-					return [name, btn];
-				}),
-			) as unknown as TooltipButtonRefs;
+      clampTooltip(tip, btn, sliderRefs, document.body);
 
-			wireTooltips(
-				player as unknown as IVideoPlayer<VideoPlaylistItem>,
-				refs,
-				buildSliderRefs(),
-				harness.listen,
-				harness.getToken,
-				harness.setToken,
-				harness.scheduleTimeout,
-				translate,
-				() => opts.currentIndex ?? 0,
-			);
+      expect(tip.style.transform).toBe('translateX(calc(-50% + -30px))');
+      expect(tip.style.getPropertyValue('--arrow-x')).toBe('calc(50% - -30px)');
+    });
+  });
 
-			const showTooltip = (btn: HTMLButtonElement): string => {
-				btn.dispatchEvent(new MouseEvent('mouseenter'));
-				harness.runLastScheduled();
-				return btn.querySelector<HTMLSpanElement>('span.tooltip')!.textContent ?? '';
-			};
+  // ── wireTooltips ────────────────────────────────────────────────────────────
 
-			return { refs, harness, translateCalls, showTooltip };
-		}
+  describe('wireTooltips', () => {
+    interface WireFixture {
+      refs: TooltipButtonRefs;
+      harness: TooltipHarness;
+      translateCalls: Array<{ key: string; params: Record<string, string> | undefined }>;
+      showTooltip: (btn: HTMLButtonElement) => string;
+    }
 
-		it('attaches a tooltip span to every control-bar button', async () => {
-			const fixture = await buildWireFixture();
-			for (const name of BUTTON_NAMES) {
-				expect(fixture.refs[name].querySelector('span.tooltip'), name).not.toBeNull();
-			}
-		});
+    async function buildWireFixture(opts: {
+      queue?: VideoPlaylistItem[];
+      currentIndex?: number;
+      chapters?: Chapter[];
+      currentTime?: number;
+    } = {}): Promise<WireFixture> {
+      const player = new NMVideoPlayer('test').setup({});
 
-		it('static buttons resolve their fixed translation keys on hover', async () => {
-			const fixture = await buildWireFixture();
-			expect(fixture.showTooltip(fixture.refs.playBtn)).toBe('tooltip.play');
-			expect(fixture.showTooltip(fixture.refs.fsBtn)).toBe('tooltip.fullscreen');
-			expect(fixture.showTooltip(fixture.refs.settingsBtn)).toBe('tooltip.settings');
-			expect(fixture.showTooltip(fixture.refs.volBtn)).toBe('tooltip.mute');
-		});
+      await player.ready();
 
-		it('prev/next tooltips include the adjacent item title when available', async () => {
-			const fixture = await buildWireFixture({
-				queue: [
-					{ id: 'a', title: 'Episode One' },
-					{ id: 'b', title: 'Episode Two' },
-					{ id: 'c', title: 'Episode Three' },
-				],
-				currentIndex: 1,
-			});
+      Object.assign(player, {
+        queue: () => opts.queue ?? [],
+        chapters: () => opts.chapters ?? [],
+        time: (seconds?: number) => {
+          if (seconds === undefined)
+            return opts.currentTime ?? 0;
 
-			expect(fixture.showTooltip(fixture.refs.prevBtn)).toBe('tooltip.previousWithTitle');
-			expect(fixture.translateCalls.at(-1)).toEqual({
-				key: 'tooltip.previousWithTitle',
-				params: { title: 'Episode One' },
-			});
+          return Promise.resolve();
+        },
+      });
 
-			expect(fixture.showTooltip(fixture.refs.nextBtn)).toBe('tooltip.nextWithTitle');
-			expect(fixture.translateCalls.at(-1)).toEqual({
-				key: 'tooltip.nextWithTitle',
-				params: { title: 'Episode Three' },
-			});
-		});
+      const harness = buildHarness();
+      const translateCalls: Array<{ key: string; params: Record<string, string> | undefined }> = [];
 
-		it('prev/next fall back to the plain keys at the queue edges', async () => {
-			const fixture = await buildWireFixture({
-				queue: [{ id: 'only', title: 'Solo' }],
-				currentIndex: 0,
-			});
+      const translate = (key: string, params?: Record<string, string>): string => {
+        translateCalls.push({ key, params });
 
-			expect(fixture.showTooltip(fixture.refs.prevBtn)).toBe('tooltip.previous');
-			expect(fixture.showTooltip(fixture.refs.nextBtn)).toBe('tooltip.next');
-		});
+        return key;
+      };
 
-		it('chapter tooltips include the adjacent chapter title when available', async () => {
-			const fixture = await buildWireFixture({
-				chapters: [
-					{ index: 0, start: 0, end: 10, title: 'Intro' },
-					{ index: 1, start: 10, end: 20, title: 'Verse' },
-					{ index: 2, start: 20, end: 30, title: 'Outro' },
-				],
-				currentTime: 15,
-			});
+      const refs = Object.fromEntries(
+        BUTTON_NAMES.map((name) => {
+          const btn = document.createElement('button');
 
-			expect(fixture.showTooltip(fixture.refs.chapBackBtn)).toBe('tooltip.previousChapterWithTitle');
-			expect(fixture.translateCalls.at(-1)).toEqual({
-				key: 'tooltip.previousChapterWithTitle',
-				params: { title: 'Verse' },
-			});
+          btn.dataset.ref = name;
+          player.container.appendChild(btn);
 
-			expect(fixture.showTooltip(fixture.refs.chapFwdBtn)).toBe('tooltip.nextChapterWithTitle');
-			expect(fixture.translateCalls.at(-1)).toEqual({
-				key: 'tooltip.nextChapterWithTitle',
-				params: { title: 'Outro' },
-			});
-		});
+          return [name, btn];
+        }),
+      ) as unknown as TooltipButtonRefs;
 
-		it('chapter tooltips fall back to the plain keys without chapters', async () => {
-			const fixture = await buildWireFixture({ chapters: [], currentTime: 5 });
+      wireTooltips(
+        player as unknown as IVideoPlayer<VideoPlaylistItem>,
+        refs,
+        buildSliderRefs(),
+        harness.listen,
+        harness.getToken,
+        harness.setToken,
+        harness.scheduleTimeout,
+        translate,
+        () => opts.currentIndex ?? 0,
+      );
 
-			expect(fixture.showTooltip(fixture.refs.chapBackBtn)).toBe('tooltip.chapterPrev');
-			expect(fixture.showTooltip(fixture.refs.chapFwdBtn)).toBe('tooltip.chapterNext');
-		});
-	});
+      const showTooltip = (btn: HTMLButtonElement): string => {
+        btn.dispatchEvent(new MouseEvent('mouseenter'));
+        harness.runLastScheduled();
+
+        return btn.querySelector<HTMLSpanElement>('span.tooltip')!.textContent ?? '';
+      };
+
+      return {
+        refs,
+        harness,
+        translateCalls,
+        showTooltip,
+      };
+    }
+
+    it('attaches a tooltip span to every control-bar button', async () => {
+      const fixture = await buildWireFixture();
+
+      for (const name of BUTTON_NAMES) {
+        expect(fixture.refs[name].querySelector('span.tooltip'), name).not.toBeNull();
+      }
+    });
+
+    it('static buttons resolve their fixed translation keys on hover', async () => {
+      const fixture = await buildWireFixture();
+
+      expect(fixture.showTooltip(fixture.refs.playBtn)).toBe('tooltip.play');
+      expect(fixture.showTooltip(fixture.refs.fsBtn)).toBe('tooltip.fullscreen');
+      expect(fixture.showTooltip(fixture.refs.settingsBtn)).toBe('tooltip.settings');
+      expect(fixture.showTooltip(fixture.refs.volBtn)).toBe('tooltip.mute');
+    });
+
+    it('prev/next tooltips include the adjacent item title when available', async () => {
+      const fixture = await buildWireFixture({
+        queue: [
+          { id: 'a', title: 'Episode One' },
+          { id: 'b', title: 'Episode Two' },
+          { id: 'c', title: 'Episode Three' },
+        ],
+        currentIndex: 1,
+      });
+
+      expect(fixture.showTooltip(fixture.refs.prevBtn)).toBe('tooltip.previousWithTitle');
+
+      expect(fixture.translateCalls.at(-1)).toEqual({
+        key: 'tooltip.previousWithTitle',
+        params: { title: 'Episode One' },
+      });
+
+      expect(fixture.showTooltip(fixture.refs.nextBtn)).toBe('tooltip.nextWithTitle');
+
+      expect(fixture.translateCalls.at(-1)).toEqual({
+        key: 'tooltip.nextWithTitle',
+        params: { title: 'Episode Three' },
+      });
+    });
+
+    it('prev/next fall back to the plain keys at the queue edges', async () => {
+      const fixture = await buildWireFixture({
+        queue: [{ id: 'only', title: 'Solo' }],
+        currentIndex: 0,
+      });
+
+      expect(fixture.showTooltip(fixture.refs.prevBtn)).toBe('tooltip.previous');
+      expect(fixture.showTooltip(fixture.refs.nextBtn)).toBe('tooltip.next');
+    });
+
+    it('chapter tooltips include the adjacent chapter title when available', async () => {
+      const fixture = await buildWireFixture({
+        chapters: [
+          {
+            index: 0,
+            start: 0,
+            end: 10,
+            title: 'Intro',
+          },
+          {
+            index: 1,
+            start: 10,
+            end: 20,
+            title: 'Verse',
+          },
+          {
+            index: 2,
+            start: 20,
+            end: 30,
+            title: 'Outro',
+          },
+        ],
+        currentTime: 15,
+      });
+
+      expect(fixture.showTooltip(fixture.refs.chapBackBtn)).toBe('tooltip.previousChapterWithTitle');
+
+      expect(fixture.translateCalls.at(-1)).toEqual({
+        key: 'tooltip.previousChapterWithTitle',
+        params: { title: 'Verse' },
+      });
+
+      expect(fixture.showTooltip(fixture.refs.chapFwdBtn)).toBe('tooltip.nextChapterWithTitle');
+
+      expect(fixture.translateCalls.at(-1)).toEqual({
+        key: 'tooltip.nextChapterWithTitle',
+        params: { title: 'Outro' },
+      });
+    });
+
+    it('chapter tooltips fall back to the plain keys without chapters', async () => {
+      const fixture = await buildWireFixture({ chapters: [], currentTime: 5 });
+
+      expect(fixture.showTooltip(fixture.refs.chapBackBtn)).toBe('tooltip.chapterPrev');
+      expect(fixture.showTooltip(fixture.refs.chapFwdBtn)).toBe('tooltip.chapterNext');
+    });
+  });
 });

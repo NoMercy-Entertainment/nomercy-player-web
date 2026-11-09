@@ -26,50 +26,55 @@ import { loadSpriteSet, lookupCue } from '../../plugins/desktop-ui/helpers/sprit
  * JW Player sprite format).
  */
 export class VttSpriteThumbnailSource implements IThumbnailSource {
-	private _cache: SpriteSet | null = null;
+  private _cache: SpriteSet | null = null;
 
-	async load(item: BasePlaylistItem): Promise<boolean> {
-		this._cache = null;
+  async load(item: BasePlaylistItem): Promise<boolean> {
+    this._cache = null;
 
-		const spriteUrl = this._resolveSpriteUrl(item);
-		if (!spriteUrl)
-			return false;
+    const spriteUrl = this._resolveSpriteUrl(item);
 
-		const spriteSet = await loadSpriteSet(spriteUrl);
-		if (!spriteSet)
-			return false;
+    if (!spriteUrl)
+      return false;
 
-		this._cache = spriteSet;
-		return true;
-	}
+    const spriteSet = await loadSpriteSet(spriteUrl);
 
-	lookup(timeSeconds: number): ThumbnailFrame | null {
-		if (!this._cache)
-			return null;
+    if (!spriteSet)
+      return false;
 
-		const cue = lookupCue(this._cache, timeSeconds);
-		if (!cue)
-			return null;
+    this._cache = spriteSet;
 
-		return {
-			spriteUrl: cue.url,
-			x: cue.x,
-			y: cue.y,
-			w: cue.w,
-			h: cue.h,
-			start: cue.start,
-			end: cue.end,
-		};
-	}
+    return true;
+  }
 
-	unload(): void {
-		this._cache = null;
-	}
+  lookup(timeSeconds: number): ThumbnailFrame | null {
+    if (!this._cache)
+      return null;
 
-	private _resolveSpriteUrl(item: BasePlaylistItem): string | undefined {
-		const typed = item as BasePlaylistItem & { previewSpriteUrl?: string };
-		return typeof typed.previewSpriteUrl === 'string' && typed.previewSpriteUrl
-			? typed.previewSpriteUrl
-			: undefined;
-	}
+    const cue = lookupCue(this._cache, timeSeconds);
+
+    if (!cue)
+      return null;
+
+    return {
+      spriteUrl: cue.url,
+      x: cue.x,
+      y: cue.y,
+      w: cue.w,
+      h: cue.h,
+      start: cue.start,
+      end: cue.end,
+    };
+  }
+
+  unload(): void {
+    this._cache = null;
+  }
+
+  private _resolveSpriteUrl(item: BasePlaylistItem): string | undefined {
+    const typed = item as BasePlaylistItem & { previewSpriteUrl?: string };
+
+    return typeof typed.previewSpriteUrl === 'string' && typed.previewSpriteUrl
+      ? typed.previewSpriteUrl
+      : undefined;
+  }
 }

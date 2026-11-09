@@ -23,72 +23,80 @@ import type { DesktopUiInternals } from '../internals';
 
 import { findChapterTitle, nextChapter, previousChapter } from '../helpers/chapters';
 import {
-	buildChapterMarkers,
-	updateChapterBuffer,
-	updateChapterHover,
-	updateChapterProgress,
+  buildChapterMarkers,
+  updateChapterBuffer,
+  updateChapterHover,
+  updateChapterProgress,
 } from '../helpers/progressBar';
 
 export const chapterMethods = {
-	resolveDuration(this: DesktopUiInternals): number {
-		const fromPlayer = this.player.duration?.() ?? 0;
-		if (fromPlayer > 0)
-			return fromPlayer;
-		if (this.cachedDuration > 0)
-			return this.cachedDuration;
-		const el = this.player.videoElement;
-		return Number.isFinite(el?.duration) ? (el!.duration ?? 0) : 0;
-	},
+  resolveDuration(this: DesktopUiInternals): number {
+    const fromPlayer = this.player.duration?.() ?? 0;
 
-	refreshChaptersAndDuration(this: DesktopUiInternals): void {
-		const dur = this.player.duration?.() ?? 0;
-		if (dur)
-			this.applyDuration(dur);
-		this.renderChapterMarkers();
-	},
+    if (fromPlayer > 0)
+      return fromPlayer;
 
-	/** Rebuild the segmented chapter-marker DOM for the current item. */
-	renderChapterMarkers(this: DesktopUiInternals): void {
-		const chapters = this.player.chapters();
-		const dur = this.resolveDuration();
+    if (this.cachedDuration > 0)
+      return this.cachedDuration;
 
-		if (!dur || chapters.length === 0) {
-			this.sliderRefs.sliderBar.classList.remove('has-chapters');
-		}
-		else {
-			this.sliderRefs.sliderBar.classList.add('has-chapters');
-		}
+    const el = this.player.videoElement;
 
-		this.chapterRefs = buildChapterMarkers(
-			this.sliderRefs.chapterBar,
-			chapters,
-			dur,
-			(index) => { void this.player.seekToChapter?.(index); },
-			this.listen.bind(this),
-		);
-	},
+    return Number.isFinite(el?.duration)
+      ? (el!.duration ?? 0)
+      : 0;
+  },
 
-	updateChapterProgress(this: DesktopUiInternals, percentage: number): void {
-		updateChapterProgress(this.chapterRefs, percentage);
-	},
+  refreshChaptersAndDuration(this: DesktopUiInternals): void {
+    const dur = this.player.duration?.() ?? 0;
 
-	updateChapterBuffer(this: DesktopUiInternals, bufferedPct: number): void {
-		updateChapterBuffer(this.chapterRefs, bufferedPct);
-	},
+    if (dur) {
+      this.applyDuration(dur);
+    }
 
-	updateChapterHover(this: DesktopUiInternals, scrubPct: number): void {
-		updateChapterHover(this.chapterRefs, scrubPct);
-	},
+    this.renderChapterMarkers();
+  },
 
-	findChapterTitle(this: DesktopUiInternals, time: number): string | undefined {
-		return findChapterTitle(this.player, time);
-	},
+  /** Rebuild the segmented chapter-marker DOM for the current item. */
+  renderChapterMarkers(this: DesktopUiInternals): void {
+    const chapters = this.player.chapters();
+    const dur = this.resolveDuration();
 
-	previousChapter(this: DesktopUiInternals): void {
-		previousChapter(this.player);
-	},
+    if (!dur || chapters.length === 0) {
+      this.sliderRefs.sliderBar.classList.remove('has-chapters');
+    } else {
+      this.sliderRefs.sliderBar.classList.add('has-chapters');
+    }
 
-	nextChapter(this: DesktopUiInternals): void {
-		nextChapter(this.player);
-	},
+    this.chapterRefs = buildChapterMarkers(
+      this.sliderRefs.chapterBar,
+      chapters,
+      dur,
+      (index) => { void this.player.seekToChapter?.(index); },
+      this.listen.bind(this),
+    );
+  },
+
+  updateChapterProgress(this: DesktopUiInternals, percentage: number): void {
+    updateChapterProgress(this.chapterRefs, percentage);
+  },
+
+  updateChapterBuffer(this: DesktopUiInternals, bufferedPct: number): void {
+    updateChapterBuffer(this.chapterRefs, bufferedPct);
+  },
+
+  updateChapterHover(this: DesktopUiInternals, scrubPct: number): void {
+    updateChapterHover(this.chapterRefs, scrubPct);
+  },
+
+  findChapterTitle(this: DesktopUiInternals, time: number): string | undefined {
+    return findChapterTitle(this.player, time);
+  },
+
+  previousChapter(this: DesktopUiInternals): void {
+    previousChapter(this.player);
+  },
+
+  nextChapter(this: DesktopUiInternals): void {
+    nextChapter(this.player);
+  },
 } as const;

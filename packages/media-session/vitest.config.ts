@@ -9,7 +9,7 @@
 import { playerVitestConfig } from '../../config/vitest';
 
 export default playerVitestConfig({
-	configUrl: import.meta.url,
-	environment: 'node',
-	include: ['src/**/*.test.ts'],
+  configUrl: import.meta.url,
+  environment: 'node',
+  include: ['src/**/*.test.ts'],
 });

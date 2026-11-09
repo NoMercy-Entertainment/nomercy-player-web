@@ -36,313 +36,356 @@ import { AudioGraphPlugin } from '../../plugins/audio-graph';
 // ─── Fake AudioContext + nodes ─────────────────────────────────────────────────
 
 function makeAudioNode(): AudioNode {
-	return {
-		connect: vi.fn(),
-		disconnect: vi.fn(),
-	} as unknown as AudioNode;
+  return {
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  } as unknown as AudioNode;
 }
 
 function makeAnalyserNode(fftSize: number = 2048): AnalyserNode {
-	let _fftSize = fftSize;
-	let _smoothing = 0.8;
-	return {
-		get fftSize() { return _fftSize; },
-		set fftSize(val: number) { _fftSize = val; },
-		get frequencyBinCount() { return _fftSize / 2; },
-		get smoothingTimeConstant() { return _smoothing; },
-		set smoothingTimeConstant(val: number) { _smoothing = val; },
-		connect: vi.fn(),
-		disconnect: vi.fn(),
-		getByteFrequencyData: vi.fn(),
-		getByteTimeDomainData: vi.fn(),
-	} as unknown as AnalyserNode;
+  let _fftSize = fftSize;
+  let _smoothing = 0.8;
+
+  return {
+    get fftSize() { return _fftSize; },
+    set fftSize(val: number) { _fftSize = val; },
+    get frequencyBinCount() { return _fftSize / 2; },
+    get smoothingTimeConstant() { return _smoothing; },
+    set smoothingTimeConstant(val: number) { _smoothing = val; },
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    getByteFrequencyData: vi.fn(),
+    getByteTimeDomainData: vi.fn(),
+  } as unknown as AnalyserNode;
 }
 
 function makeGainNode(): GainNode {
-	return {
-		gain: { value: 1, setTargetAtTime: vi.fn() },
-		connect: vi.fn(),
-		disconnect: vi.fn(),
-	} as unknown as GainNode;
+  return {
+    gain: { value: 1, setTargetAtTime: vi.fn() },
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  } as unknown as GainNode;
 }
 
 function makeBiquadNode(): BiquadFilterNode {
-	return {
-		type: 'peaking',
-		frequency: { value: 0 },
-		Q: { value: 1 },
-		gain: { value: 0 },
-		connect: vi.fn(),
-		disconnect: vi.fn(),
-	} as unknown as BiquadFilterNode;
+  return {
+    type: 'peaking',
+    frequency: { value: 0 },
+    Q: { value: 1 },
+    gain: { value: 0 },
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  } as unknown as BiquadFilterNode;
 }
 
 function makeAudioContext(): AudioContext & { _analyser: AnalyserNode; _gain: GainNode } {
-	const analyser = makeAnalyserNode();
-	const gain = makeGainNode();
-	const destination = makeAudioNode();
-	return {
-		sampleRate: 44100,
-		currentTime: 0,
-		state: 'running' as AudioContextState,
-		_analyser: analyser,
-		_gain: gain,
-		destination,
-		createGain: vi.fn(() => gain),
-		createAnalyser: vi.fn(() => analyser),
-		createBiquadFilter: vi.fn(() => makeBiquadNode()),
-		createMediaElementSource: vi.fn(() => makeAudioNode()),
-		resume: vi.fn().mockResolvedValue(undefined),
-		close: vi.fn().mockResolvedValue(undefined),
-	} as unknown as AudioContext & { _analyser: AnalyserNode; _gain: GainNode };
+  const analyser = makeAnalyserNode();
+  const gain = makeGainNode();
+  const destination = makeAudioNode();
+
+  return {
+    sampleRate: 44100,
+    currentTime: 0,
+    state: 'running' as AudioContextState,
+    _analyser: analyser,
+    _gain: gain,
+    destination,
+    createGain: vi.fn(() => gain),
+    createAnalyser: vi.fn(() => analyser),
+    createBiquadFilter: vi.fn(() => makeBiquadNode()),
+    createMediaElementSource: vi.fn(() => makeAudioNode()),
+    resume: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+  } as unknown as AudioContext & { _analyser: AnalyserNode; _gain: GainNode };
 }
 
 // ─── Wire plugin helper ────────────────────────────────────────────────────────
 
 function wirePlugin(
-	opts: { latencyHint?: AudioContextLatencyCategory; fftSize?: number; smoothing?: number } = {},
-): { plugin: AudioGraphPlugin; player: EventEmitter<BaseEventMap>; ctx: ReturnType<typeof makeAudioContext> } {
-	const player = new EventEmitter<BaseEventMap>();
-	const fakeCtx = makeAudioContext();
+  opts: {
+    latencyHint?: AudioContextLatencyCategory;
+    fftSize?: number;
+    smoothing?: number;
+  } = {},
+): {
+  plugin: AudioGraphPlugin;
+  player: EventEmitter<BaseEventMap>;
+  ctx: ReturnType<typeof makeAudioContext>;
+} {
+  const player = new EventEmitter<BaseEventMap>();
+  const fakeCtx = makeAudioContext();
 
-	// Stub globalThis.AudioContext so plugin.use() picks it up.
-	// Must be a regular function (not arrow) so `new` works correctly.
-	const originalAudioContext = (globalThis as Record<string, unknown>)['AudioContext'];
-	(globalThis as Record<string, unknown>)['AudioContext'] = function () { return fakeCtx; };
+  // Stub globalThis.AudioContext so plugin.use() picks it up.
+  // Must be a regular function (not arrow) so `new` works correctly.
+  const originalAudioContext = (globalThis as Record<string, unknown>)['AudioContext'];
 
-	const plugin = new AudioGraphPlugin();
-	const lifecycle = new LifecycleRegistry();
+  (globalThis as Record<string, unknown>)['AudioContext'] = function () { return fakeCtx; };
 
-	(plugin as unknown as { player: typeof player }).player = player;
-	(plugin as unknown as { lifecycle: typeof lifecycle }).lifecycle = lifecycle;
-	(plugin as unknown as { opts: typeof opts }).opts = opts;
+  const plugin = new AudioGraphPlugin();
+  const lifecycle = new LifecycleRegistry();
 
-	// No media element — plugin will use a silent gain node as source.
-	(player as EventEmitter<BaseEventMap> & { backend: () => null }).backend = () => null;
+  (plugin as unknown as { player: typeof player }).player = player;
+  (plugin as unknown as { lifecycle: typeof lifecycle }).lifecycle = lifecycle;
+  (plugin as unknown as { opts: typeof opts }).opts = opts;
 
-	plugin.use();
+  // No media element — plugin will use a silent gain node as source.
+  (player as EventEmitter<BaseEventMap> & { backend: () => null }).backend = () => null;
 
-	// Restore
-	(globalThis as Record<string, unknown>)['AudioContext'] = originalAudioContext;
+  plugin.use();
 
-	return { plugin, player, ctx: fakeCtx };
+  // Restore
+  (globalThis as Record<string, unknown>)['AudioContext'] = originalAudioContext;
+
+  return {
+    plugin,
+    player,
+    ctx: fakeCtx,
+  };
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('AudioGraphPlugin — deep behavioral coverage', () => {
-	let savedAudioContext: unknown;
+  let savedAudioContext: unknown;
 
-	beforeEach(() => {
-		savedAudioContext = (globalThis as Record<string, unknown>)['AudioContext'];
-	});
+  beforeEach(() => {
+    savedAudioContext = (globalThis as Record<string, unknown>)['AudioContext'];
+  });
 
-	afterEach(() => {
-		(globalThis as Record<string, unknown>)['AudioContext'] = savedAudioContext;
-	});
+  afterEach(() => {
+    (globalThis as Record<string, unknown>)['AudioContext'] = savedAudioContext;
+  });
 
-	// ── pre() / post() shorthands ─────────────────────────────────────────────
+  // ── pre() / post() shorthands ─────────────────────────────────────────────
 
-	describe('pre() / post() shorthands', () => {
-		it('pre(node) inserts the node as a pre-effect and returns the same node', () => {
-			const { plugin } = wirePlugin();
-			const node = makeAudioNode();
-			const returned = plugin.pre(node);
-			expect(returned).toBe(node);
-		});
+  describe('pre() / post() shorthands', () => {
+    it('pre(node) inserts the node as a pre-effect and returns the same node', () => {
+      const { plugin } = wirePlugin();
+      const node = makeAudioNode();
+      const returned = plugin.pre(node);
 
-		it('post(node) inserts the node as a post-effect and returns the same node', () => {
-			const { plugin } = wirePlugin();
-			const node = makeAudioNode();
-			const returned = plugin.post(node);
-			expect(returned).toBe(node);
-		});
-	});
+      expect(returned).toBe(node);
+    });
 
-	// ── route() + unroute() ───────────────────────────────────────────────────
+    it('post(node) inserts the node as a post-effect and returns the same node', () => {
+      const { plugin } = wirePlugin();
+      const node = makeAudioNode();
+      const returned = plugin.post(node);
 
-	describe('route() / unroute()', () => {
-		it('route() calls from.connect(to)', () => {
-			const { plugin } = wirePlugin();
-			const from = makeAudioNode();
-			const to = makeAudioNode();
-			plugin.route(from, to);
-			expect((from.connect as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(to);
-		});
+      expect(returned).toBe(node);
+    });
+  });
 
-		it('unroute() calls from.disconnect(to) and removes from routes', () => {
-			const { plugin } = wirePlugin();
-			const from = makeAudioNode();
-			const to = makeAudioNode();
-			plugin.route(from, to);
-			plugin.unroute(from, to);
-			expect((from.disconnect as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(to);
-		});
+  // ── route() + unroute() ───────────────────────────────────────────────────
 
-		it('unroute() is a no-op for a pair that was never routed', () => {
-			const { plugin } = wirePlugin();
-			const from = makeAudioNode();
-			const to = makeAudioNode();
-			expect(() => plugin.unroute(from, to)).not.toThrow();
-		});
-	});
+  describe('route() / unroute()', () => {
+    it('route() calls from.connect(to)', () => {
+      const { plugin } = wirePlugin();
+      const from = makeAudioNode();
+      const to = makeAudioNode();
 
-	// ── outputNode() ──────────────────────────────────────────────────────────
+      plugin.route(from, to);
+      expect((from.connect as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(to);
+    });
 
-	describe('outputNode()', () => {
-		it('returns the source node when no effects are inserted', () => {
-			const { plugin } = wirePlugin();
-			const out = plugin.outputNode();
-			expect(out).toBeDefined();
-		});
+    it('unroute() calls from.disconnect(to) and removes from routes', () => {
+      const { plugin } = wirePlugin();
+      const from = makeAudioNode();
+      const to = makeAudioNode();
 
-		it('returns the last post-effect node after insertEffect', () => {
-			const { plugin } = wirePlugin();
-			const effect1 = makeAudioNode();
-			const effect2 = makeAudioNode();
-			plugin.insertEffect(effect1, 'post');
-			plugin.insertEffect(effect2, 'post');
-			expect(plugin.outputNode()).toBe(effect2);
-		});
+      plugin.route(from, to);
+      plugin.unroute(from, to);
+      expect((from.disconnect as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(to);
+    });
 
-		it('throws PluginError when called before use()', () => {
-			const plugin = new AudioGraphPlugin();
-			expect(() => plugin.outputNode()).toThrow('chain has no source');
-		});
-	});
+    it('unroute() is a no-op for a pair that was never routed', () => {
+      const { plugin } = wirePlugin();
+      const from = makeAudioNode();
+      const to = makeAudioNode();
 
-	// ── context() ────────────────────────────────────────────────────────────
+      expect(() => plugin.unroute(from, to)).not.toThrow();
+    });
+  });
 
-	describe('context()', () => {
-		it('returns the existing context after use()', () => {
-			const { plugin, ctx } = wirePlugin();
-			// context() returns what was set during use()
-			const returnedCtx = plugin.context();
-			expect(returnedCtx).toBe(ctx);
-		});
+  // ── outputNode() ──────────────────────────────────────────────────────────
 
-		it('throws BrowserPolicyError when AudioContext is not available', () => {
-			(globalThis as Record<string, unknown>)['AudioContext'] = undefined;
-			(globalThis as Record<string, unknown>)['webkitAudioContext'] = undefined;
+  describe('outputNode()', () => {
+    it('returns the source node when no effects are inserted', () => {
+      const { plugin } = wirePlugin();
+      const out = plugin.outputNode();
 
-			const plugin = new AudioGraphPlugin();
-			expect(() => plugin.context()).toThrow('AudioContext is not available');
-		});
-	});
+      expect(out).toBeDefined();
+    });
 
-	// ── analyserSource() ──────────────────────────────────────────────────────
+    it('returns the last post-effect node after insertEffect', () => {
+      const { plugin } = wirePlugin();
+      const effect1 = makeAudioNode();
+      const effect2 = makeAudioNode();
 
-	describe('analyserSource()', () => {
-		it('returns the same AnalyserNode on repeated calls (singleton)', () => {
-			const { plugin } = wirePlugin();
-			const analyser1 = plugin.analyserSource();
-			const analyser2 = plugin.analyserSource();
-			expect(analyser1).toBe(analyser2);
-		});
+      plugin.insertEffect(effect1, 'post');
+      plugin.insertEffect(effect2, 'post');
+      expect(plugin.outputNode()).toBe(effect2);
+    });
 
-		it('applies opts.fftSize to the analyser node', () => {
-			const { plugin, ctx } = wirePlugin({ fftSize: 4096 });
-			plugin.analyserSource();
-			expect(ctx._analyser.fftSize).toBe(4096);
-		});
+    it('throws PluginError when called before use()', () => {
+      const plugin = new AudioGraphPlugin();
 
-		it('applies opts.smoothing to the analyser node', () => {
-			const { plugin, ctx } = wirePlugin({ smoothing: 0.5 });
-			plugin.analyserSource();
-			expect(ctx._analyser.smoothingTimeConstant).toBeCloseTo(0.5);
-		});
-	});
+      expect(() => plugin.outputNode()).toThrow('chain has no source');
+    });
+  });
 
-	// ── chain:rebuilt event ───────────────────────────────────────────────────
+  // ── context() ────────────────────────────────────────────────────────────
 
-	describe('chain:rebuilt event', () => {
-		it('emitted on insertEffect()', () => {
-			const { plugin, player } = wirePlugin();
-			const rebuilt: unknown[] = [];
-			player.on('plugin:audio-graph:chain:rebuilt' as never, () => rebuilt.push(true));
+  describe('context()', () => {
+    it('returns the existing context after use()', () => {
+      const { plugin, ctx } = wirePlugin();
+      // context() returns what was set during use()
+      const returnedCtx = plugin.context();
 
-			plugin.insertEffect(makeAudioNode(), 'post');
+      expect(returnedCtx).toBe(ctx);
+    });
 
-			expect(rebuilt.length).toBeGreaterThan(0);
-		});
+    it('throws BrowserPolicyError when AudioContext is not available', () => {
+      (globalThis as Record<string, unknown>)['AudioContext'] = undefined;
+      (globalThis as Record<string, unknown>)['webkitAudioContext'] = undefined;
 
-		it('emitted on removeEffect()', () => {
-			const { plugin, player } = wirePlugin();
-			const node = makeAudioNode();
-			plugin.insertEffect(node, 'post');
+      const plugin = new AudioGraphPlugin();
 
-			const rebuilt: unknown[] = [];
-			player.on('plugin:audio-graph:chain:rebuilt' as never, () => rebuilt.push(true));
+      expect(() => plugin.context()).toThrow('AudioContext is not available');
+    });
+  });
 
-			plugin.removeEffect(node);
+  // ── analyserSource() ──────────────────────────────────────────────────────
 
-			expect(rebuilt.length).toBeGreaterThan(0);
-		});
-	});
+  describe('analyserSource()', () => {
+    it('returns the same AnalyserNode on repeated calls (singleton)', () => {
+      const { plugin } = wirePlugin();
+      const analyser1 = plugin.analyserSource();
+      const analyser2 = plugin.analyserSource();
 
-	// ── context:closed on dispose ─────────────────────────────────────────────
+      expect(analyser1).toBe(analyser2);
+    });
 
-	describe('dispose()', () => {
-		it('emits context:closed', () => {
-			const { plugin, player } = wirePlugin();
-			const closed: unknown[] = [];
-			player.on('plugin:audio-graph:context:closed' as never, () => closed.push(true));
+    it('applies opts.fftSize to the analyser node', () => {
+      const { plugin, ctx } = wirePlugin({ fftSize: 4096 });
 
-			plugin.dispose();
+      plugin.analyserSource();
+      expect(ctx._analyser.fftSize).toBe(4096);
+    });
 
-			expect(closed).toHaveLength(1);
-		});
+    it('applies opts.smoothing to the analyser node', () => {
+      const { plugin, ctx } = wirePlugin({ smoothing: 0.5 });
 
-		it('leaves a backend-owned context open and reconnects the backend output to it', () => {
-			const backendCtx = makeAudioContext();
-			const output = makeAudioNode();
-			const player = new EventEmitter<BaseEventMap>();
-			(player as unknown as { audioContext: () => AudioContext }).audioContext = () => backendCtx;
-			(player as unknown as { backend: () => unknown }).backend = () => ({
-				mediaElement: () => ({}),
-				outputNode: () => output,
-			});
-			(globalThis as Record<string, unknown>)['AudioContext'] = function () { return makeAudioContext(); };
-			const plugin = new AudioGraphPlugin();
-			(plugin as unknown as { player: typeof player }).player = player;
-			(plugin as unknown as { lifecycle: LifecycleRegistry }).lifecycle = new LifecycleRegistry();
-			plugin.use();
+      plugin.analyserSource();
+      expect(ctx._analyser.smoothingTimeConstant).toBeCloseTo(0.5);
+    });
+  });
 
-			plugin.dispose();
+  // ── chain:rebuilt event ───────────────────────────────────────────────────
 
-			expect(backendCtx.close).not.toHaveBeenCalled();
-			const connect = output.connect as ReturnType<typeof vi.fn>;
-			expect(connect.mock.calls.at(-1)?.[0]).toBe(backendCtx.destination);
-		});
+  describe('chain:rebuilt event', () => {
+    it('emitted on insertEffect()', () => {
+      const { plugin, player } = wirePlugin();
+      const rebuilt: unknown[] = [];
 
-		it('is idempotent — double dispose does not throw', () => {
-			const { plugin } = wirePlugin();
-			plugin.dispose();
-			expect(() => plugin.dispose()).not.toThrow();
-		});
-	});
+      player.on('plugin:audio-graph:chain:rebuilt' as never, () =>
+        rebuilt.push(true));
 
-	// ── unsupported event ─────────────────────────────────────────────────────
+      plugin.insertEffect(makeAudioNode(), 'post');
 
-	describe('unsupported() path', () => {
-		it('emits unsupported + throws BrowserPolicyError when AudioContext is missing', () => {
-			(globalThis as Record<string, unknown>)['AudioContext'] = undefined;
-			(globalThis as Record<string, unknown>)['webkitAudioContext'] = undefined;
+      expect(rebuilt.length).toBeGreaterThan(0);
+    });
 
-			const player = new EventEmitter<BaseEventMap>();
-			const plugin = new AudioGraphPlugin();
-			const lifecycle = new LifecycleRegistry();
+    it('emitted on removeEffect()', () => {
+      const { plugin, player } = wirePlugin();
+      const node = makeAudioNode();
 
-			(plugin as unknown as { player: typeof player }).player = player;
-			(plugin as unknown as { lifecycle: typeof lifecycle }).lifecycle = lifecycle;
-			(plugin as unknown as { opts: object }).opts = {};
+      plugin.insertEffect(node, 'post');
 
-			const unsupported: Array<{ reason: string }> = [];
-			player.on('plugin:audio-graph:unsupported' as never, (data: { reason: string }) => unsupported.push(data));
+      const rebuilt: unknown[] = [];
 
-			expect(() => plugin.use()).toThrow('AudioContext is not available');
-			expect(unsupported).toHaveLength(1);
-			expect(unsupported[0]!.reason).toContain('AudioContext');
-		});
-	});
+      player.on('plugin:audio-graph:chain:rebuilt' as never, () =>
+        rebuilt.push(true));
+
+      plugin.removeEffect(node);
+
+      expect(rebuilt.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── context:closed on dispose ─────────────────────────────────────────────
+
+  describe('dispose()', () => {
+    it('emits context:closed', () => {
+      const { plugin, player } = wirePlugin();
+      const closed: unknown[] = [];
+
+      player.on('plugin:audio-graph:context:closed' as never, () =>
+        closed.push(true));
+
+      plugin.dispose();
+
+      expect(closed).toHaveLength(1);
+    });
+
+    it('leaves a backend-owned context open and reconnects the backend output to it', () => {
+      const backendCtx = makeAudioContext();
+      const output = makeAudioNode();
+      const player = new EventEmitter<BaseEventMap>();
+
+      (player as unknown as { audioContext: () => AudioContext }).audioContext = () => backendCtx;
+
+      (player as unknown as { backend: () => unknown }).backend = () => ({
+        mediaElement: () => ({}),
+        outputNode: () => output,
+      });
+
+      (globalThis as Record<string, unknown>)['AudioContext'] = function () { return makeAudioContext(); };
+      const plugin = new AudioGraphPlugin();
+
+      (plugin as unknown as { player: typeof player }).player = player;
+      (plugin as unknown as { lifecycle: LifecycleRegistry }).lifecycle = new LifecycleRegistry();
+      plugin.use();
+
+      plugin.dispose();
+
+      expect(backendCtx.close).not.toHaveBeenCalled();
+      const connect = output.connect as ReturnType<typeof vi.fn>;
+
+      expect(connect.mock.calls.at(-1)?.[0]).toBe(backendCtx.destination);
+    });
+
+    it('is idempotent — double dispose does not throw', () => {
+      const { plugin } = wirePlugin();
+
+      plugin.dispose();
+      expect(() => plugin.dispose()).not.toThrow();
+    });
+  });
+
+  // ── unsupported event ─────────────────────────────────────────────────────
+
+  describe('unsupported() path', () => {
+    it('emits unsupported + throws BrowserPolicyError when AudioContext is missing', () => {
+      (globalThis as Record<string, unknown>)['AudioContext'] = undefined;
+      (globalThis as Record<string, unknown>)['webkitAudioContext'] = undefined;
+
+      const player = new EventEmitter<BaseEventMap>();
+      const plugin = new AudioGraphPlugin();
+      const lifecycle = new LifecycleRegistry();
+
+      (plugin as unknown as { player: typeof player }).player = player;
+      (plugin as unknown as { lifecycle: typeof lifecycle }).lifecycle = lifecycle;
+      (plugin as unknown as { opts: object }).opts = {};
+
+      const unsupported: Array<{ reason: string }> = [];
+
+      player.on('plugin:audio-graph:unsupported' as never, (data: { reason: string }) =>
+        unsupported.push(data));
+
+      expect(() => plugin.use()).toThrow('AudioContext is not available');
+      expect(unsupported).toHaveLength(1);
+      expect(unsupported[0]!.reason).toContain('AudioContext');
+    });
+  });
 });

@@ -18,81 +18,94 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare isTv: () => boolean;
-	declare isMobile: () => boolean;
-	declare isDesktop: () => boolean;
-	declare device: () => { isTv: boolean; isMobile: boolean; isDesktop: boolean; preferred: string; fullscreenSupported: boolean; pipSupported: boolean; webLocksSupported: boolean; autoplayAllowed: boolean | 'unknown'; hdrDisplay: boolean };
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare isTv: () => boolean;
+  declare isMobile: () => boolean;
+  declare isDesktop: () => boolean;
+  declare device: () => {
+    isTv: boolean;
+    isMobile: boolean;
+    isDesktop: boolean;
+    preferred: string;
+    fullscreenSupported: boolean;
+    pipSupported: boolean;
+    webLocksSupported: boolean;
+    autoplayAllowed: boolean | 'unknown';
+    hdrDisplay: boolean;
+  };
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 describe('deviceMethods (slice 03)', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('device() returns an object with isTv, isMobile, isDesktop, preferred, pipSupported fields; in jsdom isDesktop is true', () => {
-		const player = makePlayer('device-1');
+  it('device() returns an object with isTv, isMobile, isDesktop, preferred, pipSupported fields; in jsdom isDesktop is true', () => {
+    const player = makePlayer('device-1');
 
-		const caps = player.device();
+    const caps = player.device();
 
-		expect(typeof caps.isTv).toBe('boolean');
-		expect(typeof caps.isMobile).toBe('boolean');
-		expect(typeof caps.isDesktop).toBe('boolean');
-		expect(typeof caps.preferred).toBe('string');
-		expect(typeof caps.pipSupported).toBe('boolean');
+    expect(typeof caps.isTv).toBe('boolean');
+    expect(typeof caps.isMobile).toBe('boolean');
+    expect(typeof caps.isDesktop).toBe('boolean');
+    expect(typeof caps.preferred).toBe('string');
+    expect(typeof caps.pipSupported).toBe('boolean');
 
-		expect(caps.isDesktop).toBe(true);
-		expect(caps.isTv).toBe(false);
-		expect(caps.isMobile).toBe(false);
-	});
+    expect(caps.isDesktop).toBe(true);
+    expect(caps.isTv).toBe(false);
+    expect(caps.isMobile).toBe(false);
+  });
 
-	it('isTv(), isMobile(), isDesktop() return booleans and exactly one is true in jsdom', () => {
-		const player = makePlayer('device-2');
+  it('isTv(), isMobile(), isDesktop() return booleans and exactly one is true in jsdom', () => {
+    const player = makePlayer('device-2');
 
-		const tv = player.isTv();
-		const mobile = player.isMobile();
-		const desktop = player.isDesktop();
+    const tv = player.isTv();
+    const mobile = player.isMobile();
+    const desktop = player.isDesktop();
 
-		expect(typeof tv).toBe('boolean');
-		expect(typeof mobile).toBe('boolean');
-		expect(typeof desktop).toBe('boolean');
+    expect(typeof tv).toBe('boolean');
+    expect(typeof mobile).toBe('boolean');
+    expect(typeof desktop).toBe('boolean');
 
-		const trueCount = [tv, mobile, desktop].filter(Boolean).length;
-		expect(trueCount).toBe(1);
+    const trueCount = [tv, mobile, desktop].filter(Boolean).length;
 
-		expect(desktop).toBe(true);
-		expect(tv).toBe(false);
-		expect(mobile).toBe(false);
-	});
+    expect(trueCount).toBe(1);
 
-	it('device() reports hdrDisplay false in jsdom — no matchMedia to ask', () => {
-		const player = makePlayer('device-3');
+    expect(desktop).toBe(true);
+    expect(tv).toBe(false);
+    expect(mobile).toBe(false);
+  });
 
-		const caps = player.device();
+  it('device() reports hdrDisplay false in jsdom — no matchMedia to ask', () => {
+    const player = makePlayer('device-3');
 
-		expect(typeof caps.hdrDisplay).toBe('boolean');
-		expect(caps.hdrDisplay).toBe(false);
-	});
+    const caps = player.device();
+
+    expect(typeof caps.hdrDisplay).toBe('boolean');
+    expect(caps.hdrDisplay).toBe(false);
+  });
 });

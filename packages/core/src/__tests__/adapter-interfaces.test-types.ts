@@ -17,6 +17,7 @@ import type { IMediaList } from '../adapters/media-list/IMediaList';
 import type { BasePlaylistItem } from '../types';
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+
 declare function assertType<_T extends true>(): void;
 
 assertType<Equal<ReturnType<LifecycleRegistry['frame']>, ReturnType<ILifecycleRegistry['frame']>>>();

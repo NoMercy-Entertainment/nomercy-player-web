@@ -25,14 +25,14 @@ import type { Plugin } from '../core/plugin';
 import type { BaseEventMap, BasePlaylistItem } from '../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	composeMixins,
-	CrossfadeTransitionStrategy,
-	DefaultPreloadStrategy,
-	EventEmitter,
-	GaplessTransitionStrategy,
-	initPlayerCoreState,
-	playerCoreMethods,
-	resolvePlayerConstructor,
+  composeMixins,
+  CrossfadeTransitionStrategy,
+  DefaultPreloadStrategy,
+  EventEmitter,
+  GaplessTransitionStrategy,
+  initPlayerCoreState,
+  playerCoreMethods,
+  resolvePlayerConstructor,
 } from '../index';
 
 // ── MockPlayer (same shape as base-player.test.ts) ───────────────────────────
@@ -40,108 +40,110 @@ import {
 const _instances = new Map<string, PreloadTestPlayer>();
 
 class PreloadTestPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = <HTMLElement>{};
+  readonly playerId: string = '';
+  container: HTMLElement = <HTMLElement>{};
 
-	get id(): string {
-		return this.playerId;
-	}
+  get id(): string {
+    return this.playerId;
+  }
 
-	declare options: any;
-	declare setup: (config: any) => this;
-	declare dispose: () => void;
-	declare phase: () => string;
-	declare item: { (): any; (target: any, opts?: any): void };
-	declare queue: { (): ReadonlyArray<any>; (items: any[], opts?: any): void };
-	declare queueAppend: (item: any, opts?: any) => void;
-	declare queueLength: () => number;
-	declare peekNext: () => any;
-	declare time: { (): number; (seconds: number, opts?: any): Promise<void> };
-	declare duration: () => number;
-	declare play: (opts?: any) => Promise<void>;
-	declare pause: (opts?: any) => Promise<void>;
-	declare stop: (opts?: any) => Promise<void>;
-	declare next: (opts?: any) => Promise<void>;
-	declare previous: (opts?: any) => Promise<void>;
-	declare volume: { (): number; (level: number): void };
-	declare addPlugin: <P extends Plugin>(PluginClass: new () => P, opts?: P['opts']) => this;
-	declare getPlugin: (PluginClass: any) => any;
-	declare removePlugin: (PluginClass: any) => void;
-	declare removePluginById: (id: string) => void;
-	declare plugins: () => ReadonlyArray<any>;
-	declare enabledPlugins: () => ReadonlyArray<any>;
-	declare setPreloadStrategy: (strategy: IPreloadStrategy) => void;
-	declare setTransitionStrategy: (strategy: ITransitionStrategy) => void;
-	declare preloadStrategy: () => IPreloadStrategy;
-	declare transitionStrategy: () => ITransitionStrategy;
+  declare options: any;
+  declare setup: (config: any) => this;
+  declare dispose: () => void;
+  declare phase: () => string;
+  declare item: { (): any; (target: any, opts?: any): void };
+  declare queue: { (): ReadonlyArray<any>; (items: any[], opts?: any): void };
+  declare queueAppend: (item: any, opts?: any) => void;
+  declare queueLength: () => number;
+  declare peekNext: () => any;
+  declare time: { (): number; (seconds: number, opts?: any): Promise<void> };
+  declare duration: () => number;
+  declare play: (opts?: any) => Promise<void>;
+  declare pause: (opts?: any) => Promise<void>;
+  declare stop: (opts?: any) => Promise<void>;
+  declare next: (opts?: any) => Promise<void>;
+  declare previous: (opts?: any) => Promise<void>;
+  declare volume: { (): number; (level: number): void };
+  declare addPlugin: <P extends Plugin>(PluginClass: new () => P, opts?: P['opts']) => this;
+  declare getPlugin: (PluginClass: any) => any;
+  declare removePlugin: (PluginClass: any) => void;
+  declare removePluginById: (id: string) => void;
+  declare plugins: () => ReadonlyArray<any>;
+  declare enabledPlugins: () => ReadonlyArray<any>;
+  declare setPreloadStrategy: (strategy: IPreloadStrategy) => void;
+  declare setTransitionStrategy: (strategy: ITransitionStrategy) => void;
+  declare preloadStrategy: () => IPreloadStrategy;
+  declare transitionStrategy: () => ITransitionStrategy;
 
-	// stub remaining required mixin surfaces
-	declare ready: () => Promise<void>;
-	declare dispatching: () => ReadonlyArray<string>;
-	declare baseUrl: { (): string | undefined; (url: string): void };
-	declare audioContext: () => AudioContext | undefined;
-	declare experimental: any;
-	declare t: (key: string, vars?: Record<string, string>) => string;
-	declare language: { (): string; (lang: string): Promise<void> };
-	declare addTranslations: (bundle: any) => void;
-	declare translation: (lang: string, key: string, value: string) => void;
-	declare removeTranslations: (prefix: string, lang?: string) => void;
-	declare registerCueParser: (parser: any, prepend?: boolean) => void;
-	declare unregisterCueParser: (id: string) => void;
-	declare rewind: (seconds?: number, opts?: any) => Promise<void>;
-	declare forward: (seconds?: number, opts?: any) => Promise<void>;
-	declare restart: (opts?: any) => Promise<void>;
-	declare togglePlayback: (opts?: any) => Promise<void>;
-	declare buffered: () => number;
-	declare bufferedRanges: () => TimeRanges;
-	declare seekable: () => TimeRanges;
-	declare timeData: () => any;
-	declare seekByPercentage: (pct: number, opts?: any) => void;
-	declare playbackRate: { (): number; (rate: number): void };
-	declare playbackRates: () => number[];
-	declare mute: () => void;
-	declare unmute: () => void;
-	declare toggleMute: () => void;
-	declare volumeUp: (step?: number) => void;
-	declare volumeDown: (step?: number) => void;
-	declare playState: () => string;
-	declare volumeState: () => string;
-	declare repeatState: { (): string; (state: any): void };
-	declare shuffleState: { (): string; (state: any): void };
-	declare queuePrepend: (item: any, opts?: any) => void;
-	declare queueInsert: (item: any, index: number, opts?: any) => void;
-	declare queueRemove: (id: any, opts?: any) => void;
-	declare queueRemoveAt: (index: number, opts?: any) => void;
-	declare queueMove: (from: number, to: number, opts?: any) => void;
-	declare queueClear: (opts?: any) => void;
-	declare queueShuffle: (opts?: any) => void;
-	declare queueSort: (compare: any, opts?: any) => void;
-	declare peekPrevious: () => any;
-	declare index: () => number;
-	declare queueIndexOf: (id: any) => number;
-	declare backlog: { (): ReadonlyArray<any>; (items: any[]): void };
-	declare backlogAppend: (item: any) => void;
-	declare backlogRemove: (id: any) => void;
-	declare backlogClear: () => void;
-	declare getPluginById: (id: string) => any;
-	declare setupState: () => any;
+  // stub remaining required mixin surfaces
+  declare ready: () => Promise<void>;
+  declare dispatching: () => ReadonlyArray<string>;
+  declare baseUrl: { (): string | undefined; (url: string): void };
+  declare audioContext: () => AudioContext | undefined;
+  declare experimental: any;
+  declare t: (key: string, vars?: Record<string, string>) => string;
+  declare language: { (): string; (lang: string): Promise<void> };
+  declare addTranslations: (bundle: any) => void;
+  declare translation: (lang: string, key: string, value: string) => void;
+  declare removeTranslations: (prefix: string, lang?: string) => void;
+  declare registerCueParser: (parser: any, prepend?: boolean) => void;
+  declare unregisterCueParser: (id: string) => void;
+  declare rewind: (seconds?: number, opts?: any) => Promise<void>;
+  declare forward: (seconds?: number, opts?: any) => Promise<void>;
+  declare restart: (opts?: any) => Promise<void>;
+  declare togglePlayback: (opts?: any) => Promise<void>;
+  declare buffered: () => number;
+  declare bufferedRanges: () => TimeRanges;
+  declare seekable: () => TimeRanges;
+  declare timeData: () => any;
+  declare seekByPercentage: (pct: number, opts?: any) => void;
+  declare playbackRate: { (): number; (rate: number): void };
+  declare playbackRates: () => number[];
+  declare mute: () => void;
+  declare unmute: () => void;
+  declare toggleMute: () => void;
+  declare volumeUp: (step?: number) => void;
+  declare volumeDown: (step?: number) => void;
+  declare playState: () => string;
+  declare volumeState: () => string;
+  declare repeatState: { (): string; (state: any): void };
+  declare shuffleState: { (): string; (state: any): void };
+  declare queuePrepend: (item: any, opts?: any) => void;
+  declare queueInsert: (item: any, index: number, opts?: any) => void;
+  declare queueRemove: (id: any, opts?: any) => void;
+  declare queueRemoveAt: (index: number, opts?: any) => void;
+  declare queueMove: (from: number, to: number, opts?: any) => void;
+  declare queueClear: (opts?: any) => void;
+  declare queueShuffle: (opts?: any) => void;
+  declare queueSort: (compare: any, opts?: any) => void;
+  declare peekPrevious: () => any;
+  declare index: () => number;
+  declare queueIndexOf: (id: any) => number;
+  declare backlog: { (): ReadonlyArray<any>; (items: any[]): void };
+  declare backlogAppend: (item: any) => void;
+  declare backlogRemove: (id: any) => void;
+  declare backlogClear: () => void;
+  declare getPluginById: (id: string) => any;
+  declare setupState: () => any;
 
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'PreloadTestPlayer' });
+  constructor(id?: string | number) {
+    super();
+    initPlayerCoreState(this, { className: 'PreloadTestPlayer' });
 
-		const resolved = resolvePlayerConstructor(id, _instances, 'PreloadTestPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this;
-		}
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
+    const resolved = resolvePlayerConstructor(id, _instances, 'PreloadTestPlayer');
 
-	static _resetRegistry(): void {
-		_instances.clear();
-	}
+    if (resolved.kind === 'existing') {
+      return resolved.instance as unknown as this;
+    }
+
+    (this as { playerId: string }).playerId = resolved.id;
+    this.container = resolved.div;
+    _instances.set(resolved.id, this);
+  }
+
+  static _resetRegistry(): void {
+    _instances.clear();
+  }
 }
 
 composeMixins(PreloadTestPlayer.prototype, ...playerCoreMethods);
@@ -149,391 +151,489 @@ composeMixins(PreloadTestPlayer.prototype, ...playerCoreMethods);
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeDiv(id: string): HTMLDivElement {
-	const div = document.createElement('div');
-	div.id = id;
-	document.body.appendChild(div);
-	return div;
+  const div = document.createElement('div');
+
+  div.id = id;
+  document.body.appendChild(div);
+
+  return div;
 }
 
 function makeItem(id: string): BasePlaylistItem {
-	return { id };
+  return { id };
 }
 
 let divCounter = 0;
 
 function setupPlayer(config: Record<string, unknown> = {}): PreloadTestPlayer {
-	const divId = `preload-test-${++divCounter}`;
-	makeDiv(divId);
-	return new PreloadTestPlayer(divId).setup(config);
+  const divId = `preload-test-${++divCounter}`;
+
+  makeDiv(divId);
+
+  return new PreloadTestPlayer(divId).setup(config);
 }
 
 // ── DefaultPreloadStrategy ────────────────────────────────────────────────────
 
 describe('DefaultPreloadStrategy', () => {
-	it('returns false when duration is 0', () => {
-		const strategy = new DefaultPreloadStrategy(10);
-		expect(strategy.shouldPreload({ currentTime: 5, duration: 0, nextItem: makeItem('x') })).toBe(false);
-	});
+  it('returns false when duration is 0', () => {
+    const strategy = new DefaultPreloadStrategy(10);
 
-	it('returns false when nextItem is null', () => {
-		const strategy = new DefaultPreloadStrategy(10);
-		expect(strategy.shouldPreload({ currentTime: 55, duration: 60, nextItem: null })).toBe(false);
-	});
+    expect(strategy.shouldPreload({
+      currentTime: 5,
+      duration: 0,
+      nextItem: makeItem('x'),
+    })).toBe(false);
+  });
 
-	it('returns false before the lead window', () => {
-		const strategy = new DefaultPreloadStrategy(10);
-		expect(strategy.shouldPreload({ currentTime: 45, duration: 60, nextItem: makeItem('x') })).toBe(false);
-	});
+  it('returns false when nextItem is null', () => {
+    const strategy = new DefaultPreloadStrategy(10);
 
-	it('returns true exactly at duration - leadSeconds', () => {
-		const strategy = new DefaultPreloadStrategy(10);
-		expect(strategy.shouldPreload({ currentTime: 50, duration: 60, nextItem: makeItem('x') })).toBe(true);
-	});
+    expect(strategy.shouldPreload({
+      currentTime: 55,
+      duration: 60,
+      nextItem: null,
+    })).toBe(false);
+  });
 
-	it('returns true after the lead window', () => {
-		const strategy = new DefaultPreloadStrategy(10);
-		expect(strategy.shouldPreload({ currentTime: 58, duration: 60, nextItem: makeItem('x') })).toBe(true);
-	});
+  it('returns false before the lead window', () => {
+    const strategy = new DefaultPreloadStrategy(10);
 
-	it('never fires when leadSeconds is 0', () => {
-		const strategy = new DefaultPreloadStrategy(0);
-		expect(strategy.shouldPreload({ currentTime: 60, duration: 60, nextItem: makeItem('x') })).toBe(false);
-	});
+    expect(strategy.shouldPreload({
+      currentTime: 45,
+      duration: 60,
+      nextItem: makeItem('x'),
+    })).toBe(false);
+  });
 
-	it('assetsToPreload returns empty array by default', () => {
-		const strategy = new DefaultPreloadStrategy(10);
-		expect(strategy.assetsToPreload(makeItem('x'))).toEqual([]);
-	});
+  it('returns true exactly at duration - leadSeconds', () => {
+    const strategy = new DefaultPreloadStrategy(10);
 
-	it('cancel() is a no-op when nothing is in flight', () => {
-		const strategy = new DefaultPreloadStrategy(10);
-		expect(() => strategy.cancel()).not.toThrow();
-	});
+    expect(strategy.shouldPreload({
+      currentTime: 50,
+      duration: 60,
+      nextItem: makeItem('x'),
+    })).toBe(true);
+  });
+
+  it('returns true after the lead window', () => {
+    const strategy = new DefaultPreloadStrategy(10);
+
+    expect(strategy.shouldPreload({
+      currentTime: 58,
+      duration: 60,
+      nextItem: makeItem('x'),
+    })).toBe(true);
+  });
+
+  it('never fires when leadSeconds is 0', () => {
+    const strategy = new DefaultPreloadStrategy(0);
+
+    expect(strategy.shouldPreload({
+      currentTime: 60,
+      duration: 60,
+      nextItem: makeItem('x'),
+    })).toBe(false);
+  });
+
+  it('assetsToPreload returns empty array by default', () => {
+    const strategy = new DefaultPreloadStrategy(10);
+
+    expect(strategy.assetsToPreload(makeItem('x'))).toEqual([]);
+  });
+
+  it('cancel() is a no-op when nothing is in flight', () => {
+    const strategy = new DefaultPreloadStrategy(10);
+
+    expect(() => strategy.cancel()).not.toThrow();
+  });
 });
 
 // ── GaplessTransitionStrategy ─────────────────────────────────────────────────
 
 describe('GaplessTransitionStrategy', () => {
-	it('shouldTransition always returns false', () => {
-		const strategy = new GaplessTransitionStrategy();
-		expect(strategy.shouldTransition({ currentTime: 57, duration: 60, nextItem: makeItem('x') })).toBe(false);
-	});
+  it('shouldTransition always returns false', () => {
+    const strategy = new GaplessTransitionStrategy();
+
+    expect(strategy.shouldTransition({
+      currentTime: 57,
+      duration: 60,
+      nextItem: makeItem('x'),
+    })).toBe(false);
+  });
 });
 
 // ── CrossfadeTransitionStrategy ───────────────────────────────────────────────
 
 describe('CrossfadeTransitionStrategy', () => {
-	it('returns false before the lead window', () => {
-		const strategy = new CrossfadeTransitionStrategy({ leadSeconds: 3 });
-		expect(strategy.shouldTransition({ currentTime: 50, duration: 60, nextItem: makeItem('x') })).toBe(false);
-	});
+  it('returns false before the lead window', () => {
+    const strategy = new CrossfadeTransitionStrategy({ leadSeconds: 3 });
 
-	it('returns true at duration - leadSeconds', () => {
-		const strategy = new CrossfadeTransitionStrategy({ leadSeconds: 3 });
-		expect(strategy.shouldTransition({ currentTime: 57, duration: 60, nextItem: makeItem('x') })).toBe(true);
-	});
+    expect(strategy.shouldTransition({
+      currentTime: 50,
+      duration: 60,
+      nextItem: makeItem('x'),
+    })).toBe(false);
+  });
 
-	it('returns false when nextItem is null', () => {
-		const strategy = new CrossfadeTransitionStrategy({ leadSeconds: 3 });
-		expect(strategy.shouldTransition({ currentTime: 59, duration: 60, nextItem: null })).toBe(false);
-	});
+  it('returns true at duration - leadSeconds', () => {
+    const strategy = new CrossfadeTransitionStrategy({ leadSeconds: 3 });
+
+    expect(strategy.shouldTransition({
+      currentTime: 57,
+      duration: 60,
+      nextItem: makeItem('x'),
+    })).toBe(true);
+  });
+
+  it('returns false when nextItem is null', () => {
+    const strategy = new CrossfadeTransitionStrategy({ leadSeconds: 3 });
+
+    expect(strategy.shouldTransition({
+      currentTime: 59,
+      duration: 60,
+      nextItem: null,
+    })).toBe(false);
+  });
 });
 
 // ── Orchestration: preload events ─────────────────────────────────────────────
 
 describe('preload orchestration', () => {
-	beforeEach(() => { PreloadTestPlayer._resetRegistry(); });
-	afterEach(() => {
-		PreloadTestPlayer._resetRegistry();
-		document.body.innerHTML = '';
-		divCounter = 0;
-	});
+  beforeEach(() => { PreloadTestPlayer._resetRegistry(); });
 
-	it('emits preloadStart + preloadComplete when strategy fires and no assets returned', async () => {
-		const player = setupPlayer({ preloadLeadSeconds: 10 });
-		const nextItem = makeItem('next-1');
-		player.queue([makeItem('a'), nextItem]);
-		player.item('a');
+  afterEach(() => {
+    PreloadTestPlayer._resetRegistry();
+    document.body.innerHTML = '';
+    divCounter = 0;
+  });
 
-		const events: string[] = [];
-		player.on('preloadStart', () => events.push('preloadStart'));
-		player.on('preloadComplete', () => events.push('preloadComplete'));
+  it('emits preloadStart + preloadComplete when strategy fires and no assets returned', async () => {
+    const player = setupPlayer({ preloadLeadSeconds: 10 });
+    const nextItem = makeItem('next-1');
 
-		// Simulate _internalDuration + time tick that triggers the gate
-		const internals = player as any;
-		internals._internalDuration = 60;
-		internals._queueList.move(0, 0);
+    player.queue([makeItem('a'), nextItem]);
+    player.item('a');
 
-		// Emit a time event at duration - leadSeconds
-		player.emit('time', { time: 50 });
+    const events: string[] = [];
 
-		// Wait a tick for async preload to complete
-		await new Promise(resolve => setTimeout(resolve, 10));
+    player.on('preloadStart', () =>
+      events.push('preloadStart'));
 
-		expect(events).toContain('preloadStart');
-		expect(events).toContain('preloadComplete');
-	});
+    player.on('preloadComplete', () =>
+      events.push('preloadComplete'));
 
-	it('preloadStart fires only once per item', async () => {
-		const player = setupPlayer({ preloadLeadSeconds: 10 });
-		const nextItem = makeItem('next-2');
-		player.queue([makeItem('b'), nextItem]);
-		player.item('b');
+    // Simulate _internalDuration + time tick that triggers the gate
+    const internals = player as any;
 
-		let startCount = 0;
-		player.on('preloadStart', () => { startCount++; });
+    internals._internalDuration = 60;
+    internals._queueList.move(0, 0);
 
-		const internals = player as any;
-		internals._internalDuration = 60;
+    // Emit a time event at duration - leadSeconds
+    player.emit('time', { time: 50 });
 
-		player.emit('time', { time: 50 });
-		player.emit('time', { time: 51 });
-		player.emit('time', { time: 52 });
+    // Wait a tick for async preload to complete
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-		await new Promise(resolve => setTimeout(resolve, 10));
+    expect(events).toContain('preloadStart');
+    expect(events).toContain('preloadComplete');
+  });
 
-		expect(startCount).toBe(1);
-	});
+  it('preloadStart fires only once per item', async () => {
+    const player = setupPlayer({ preloadLeadSeconds: 10 });
+    const nextItem = makeItem('next-2');
 
-	it('cursor change resets the preload flag', async () => {
-		const player = setupPlayer({ preloadLeadSeconds: 10 });
-		const itemA = makeItem('cursor-a');
-		const itemB = makeItem('cursor-b');
-		const itemC = makeItem('cursor-c');
-		player.queue([itemA, itemB, itemC]);
-		player.item('cursor-a');
+    player.queue([makeItem('b'), nextItem]);
+    player.item('b');
 
-		let startCount = 0;
-		player.on('preloadStart', () => { startCount++; });
+    let startCount = 0;
 
-		const internals = player as any;
-		internals._internalDuration = 60;
+    player.on('preloadStart', () => { startCount++; });
 
-		// First preload fires
-		player.emit('time', { time: 50 });
-		await new Promise(resolve => setTimeout(resolve, 10));
-		expect(startCount).toBe(1);
+    const internals = player as any;
 
-		// Cursor change resets flag — next preload should fire again
-		player.item('cursor-b');
-		internals._internalDuration = 60;
+    internals._internalDuration = 60;
 
-		player.emit('time', { time: 50 });
-		await new Promise(resolve => setTimeout(resolve, 10));
-		expect(startCount).toBe(2);
-	});
+    player.emit('time', { time: 50 });
+    player.emit('time', { time: 51 });
+    player.emit('time', { time: 52 });
 
-	it('a rejected asset fetch emits preloadError and not preloadComplete', async () => {
-		const fetchMock = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
-		vi.stubGlobal('fetch', fetchMock);
-		const strategy: IPreloadStrategy = {
-			shouldPreload: () => true,
-			assetsToPreload: () => [{ url: 'https://cdn.example.test/poster.jpg', category: 'poster' }],
-			cancel: () => {},
-		};
-		const player = setupPlayer({ preloadStrategy: strategy });
-		player.queue([makeItem('fail-a'), makeItem('fail-b')]);
-		player.item('fail-a');
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-		const events: string[] = [];
-		player.on('preloadComplete', () => events.push('preloadComplete'));
-		player.on('preloadError', () => events.push('preloadError'));
+    expect(startCount).toBe(1);
+  });
 
-		(player as any)._internalDuration = 60;
-		player.emit('time', { time: 50 });
-		await new Promise(resolve => setTimeout(resolve, 10));
+  it('cursor change resets the preload flag', async () => {
+    const player = setupPlayer({ preloadLeadSeconds: 10 });
+    const itemA = makeItem('cursor-a');
+    const itemB = makeItem('cursor-b');
+    const itemC = makeItem('cursor-c');
 
-		expect(events).toEqual(['preloadError']);
-		vi.unstubAllGlobals();
-	});
+    player.queue([itemA, itemB, itemC]);
+    player.item('cursor-a');
 
-	it('asset fetch goes through auth and the url pipeline', async () => {
-		const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
-		vi.stubGlobal('fetch', fetchMock);
-		const strategy: IPreloadStrategy = {
-			shouldPreload: () => true,
-			assetsToPreload: () => [{ url: 'https://cdn.example.test/poster.jpg', category: 'poster' }],
-			cancel: () => {},
-		};
-		const player = setupPlayer({
-			preloadStrategy: strategy,
-			auth: { bearerToken: 'tok', transformUrl: (url: string) => `${url}?signed=1` },
-		});
-		player.queue([makeItem('auth-a'), makeItem('auth-b')]);
-		player.item('auth-a');
+    let startCount = 0;
 
-		let completed = false;
-		player.on('preloadComplete', () => { completed = true; });
-		(player as any)._internalDuration = 60;
-		player.emit('time', { time: 50 });
-		await new Promise(resolve => setTimeout(resolve, 10));
+    player.on('preloadStart', () => { startCount++; });
 
-		const request = fetchMock.mock.calls[0]![0] as Request;
-		expect(request.url).toBe('https://cdn.example.test/poster.jpg?signed=1');
-		expect(request.headers.get('Authorization')).toBe('Bearer tok');
-		expect(completed).toBe(true);
-		vi.unstubAllGlobals();
-	});
+    const internals = player as any;
 
-	it('a cursor change aborts the in-flight asset fetch', async () => {
-		let captured: Request | undefined;
-		const fetchMock = vi.fn((request: Request) => {
-			captured = request;
-			return new Promise<Response>((_resolve, reject) => {
-				request.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
-			});
-		});
-		vi.stubGlobal('fetch', fetchMock);
-		const strategy: IPreloadStrategy = {
-			shouldPreload: () => true,
-			assetsToPreload: () => [{ url: 'https://cdn.example.test/poster.jpg', category: 'poster' }],
-			cancel: () => {},
-		};
-		const player = setupPlayer({ preloadStrategy: strategy });
-		player.queue([makeItem('abort-a'), makeItem('abort-b'), makeItem('abort-c')]);
-		player.item('abort-a');
+    internals._internalDuration = 60;
 
-		(player as any)._internalDuration = 60;
-		player.emit('time', { time: 50 });
-		await new Promise(resolve => setTimeout(resolve, 10));
-		expect(captured).toBeDefined();
-		expect(captured!.signal.aborted).toBe(false);
+    // First preload fires
+    player.emit('time', { time: 50 });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(startCount).toBe(1);
 
-		player.item('abort-b');
-		expect(captured!.signal.aborted).toBe(true);
-		vi.unstubAllGlobals();
-	});
+    // Cursor change resets flag — next preload should fire again
+    player.item('cursor-b');
+    internals._internalDuration = 60;
+
+    player.emit('time', { time: 50 });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(startCount).toBe(2);
+  });
+
+  it('a rejected asset fetch emits preloadError and not preloadComplete', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+
+    vi.stubGlobal('fetch', fetchMock);
+    const strategy: IPreloadStrategy = {
+      shouldPreload: () => true,
+      assetsToPreload: () => [{ url: 'https://cdn.example.test/poster.jpg', category: 'poster' }],
+      cancel: () => {},
+    };
+    const player = setupPlayer({ preloadStrategy: strategy });
+
+    player.queue([makeItem('fail-a'), makeItem('fail-b')]);
+    player.item('fail-a');
+
+    const events: string[] = [];
+
+    player.on('preloadComplete', () =>
+      events.push('preloadComplete'));
+
+    player.on('preloadError', () =>
+      events.push('preloadError'));
+
+    (player as any)._internalDuration = 60;
+    player.emit('time', { time: 50 });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(events).toEqual(['preloadError']);
+    vi.unstubAllGlobals();
+  });
+
+  it('asset fetch goes through auth and the url pipeline', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+
+    vi.stubGlobal('fetch', fetchMock);
+    const strategy: IPreloadStrategy = {
+      shouldPreload: () => true,
+      assetsToPreload: () => [{ url: 'https://cdn.example.test/poster.jpg', category: 'poster' }],
+      cancel: () => {},
+    };
+    const player = setupPlayer({
+      preloadStrategy: strategy,
+      auth: { bearerToken: 'tok', transformUrl: (url: string) => `${url}?signed=1` },
+    });
+
+    player.queue([makeItem('auth-a'), makeItem('auth-b')]);
+    player.item('auth-a');
+
+    let completed = false;
+
+    player.on('preloadComplete', () => { completed = true; });
+    (player as any)._internalDuration = 60;
+    player.emit('time', { time: 50 });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    const request = fetchMock.mock.calls[0]![0] as Request;
+
+    expect(request.url).toBe('https://cdn.example.test/poster.jpg?signed=1');
+    expect(request.headers.get('Authorization')).toBe('Bearer tok');
+    expect(completed).toBe(true);
+    vi.unstubAllGlobals();
+  });
+
+  it('a cursor change aborts the in-flight asset fetch', async () => {
+    let captured: Request | undefined;
+    const fetchMock = vi.fn((request: Request) => {
+      captured = request;
+
+      return new Promise<Response>((_resolve, reject) => {
+        request.signal.addEventListener('abort', () =>
+          reject(new DOMException('aborted', 'AbortError')));
+      });
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+    const strategy: IPreloadStrategy = {
+      shouldPreload: () => true,
+      assetsToPreload: () => [{ url: 'https://cdn.example.test/poster.jpg', category: 'poster' }],
+      cancel: () => {},
+    };
+    const player = setupPlayer({ preloadStrategy: strategy });
+
+    player.queue([makeItem('abort-a'), makeItem('abort-b'), makeItem('abort-c')]);
+    player.item('abort-a');
+
+    (player as any)._internalDuration = 60;
+    player.emit('time', { time: 50 });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(captured).toBeDefined();
+    expect(captured!.signal.aborted).toBe(false);
+
+    player.item('abort-b');
+    expect(captured!.signal.aborted).toBe(true);
+    vi.unstubAllGlobals();
+  });
 });
 
 // ── Orchestration: transition events ─────────────────────────────────────────
 
 describe('transition orchestration', () => {
-	beforeEach(() => { PreloadTestPlayer._resetRegistry(); });
-	afterEach(() => {
-		PreloadTestPlayer._resetRegistry();
-		document.body.innerHTML = '';
-		divCounter = 0;
-		vi.restoreAllMocks();
-	});
+  beforeEach(() => { PreloadTestPlayer._resetRegistry(); });
 
-	it('does NOT emit transitionStart when crossfadeEnabled is false (default)', () => {
-		const player = setupPlayer({ crossfadeEnabled: false, crossfadeLeadSeconds: 3 });
-		const nextItem = makeItem('trans-next-1');
-		player.queue([makeItem('trans-a'), nextItem]);
-		player.item('trans-a');
+  afterEach(() => {
+    PreloadTestPlayer._resetRegistry();
+    document.body.innerHTML = '';
+    divCounter = 0;
+    vi.restoreAllMocks();
+  });
 
-		let transitionStartFired = false;
-		player.on('transitionStart', () => { transitionStartFired = true; });
+  it('does NOT emit transitionStart when crossfadeEnabled is false (default)', () => {
+    const player = setupPlayer({ crossfadeEnabled: false, crossfadeLeadSeconds: 3 });
+    const nextItem = makeItem('trans-next-1');
 
-		const internals = player as any;
-		internals._internalDuration = 60;
+    player.queue([makeItem('trans-a'), nextItem]);
+    player.item('trans-a');
 
-		player.emit('time', { time: 57 });
+    let transitionStartFired = false;
 
-		expect(transitionStartFired).toBe(false);
-	});
+    player.on('transitionStart', () => { transitionStartFired = true; });
 
-	it('emits transitionStart when crossfadeEnabled is true and lead window reached', () => {
-		vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(() => 0);
+    const internals = player as any;
 
-		const player = setupPlayer({
-			crossfadeEnabled: true,
-			crossfadeLeadSeconds: 3,
-			transitionStrategy: new CrossfadeTransitionStrategy({ leadSeconds: 3 }),
-		});
-		const nextItem = makeItem('trans-next-2');
-		player.queue([makeItem('trans-b'), nextItem]);
-		player.item('trans-b');
+    internals._internalDuration = 60;
 
-		let transitionStartPayload: unknown = null;
-		player.on('transitionStart', (data) => { transitionStartPayload = data; });
+    player.emit('time', { time: 57 });
 
-		const internals = player as any;
-		internals._internalDuration = 60;
+    expect(transitionStartFired).toBe(false);
+  });
 
-		player.emit('time', { time: 57 });
+  it('emits transitionStart when crossfadeEnabled is true and lead window reached', () => {
+    vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(() => 0);
 
-		expect(transitionStartPayload).not.toBeNull();
-		expect(transitionStartPayload).toMatchObject({
-			incoming: nextItem,
-		});
-	});
+    const player = setupPlayer({
+      crossfadeEnabled: true,
+      crossfadeLeadSeconds: 3,
+      transitionStrategy: new CrossfadeTransitionStrategy({ leadSeconds: 3 }),
+    });
+    const nextItem = makeItem('trans-next-2');
 
-	it('transitionStart fires only once per item even with repeated time ticks', () => {
-		vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(() => 0);
+    player.queue([makeItem('trans-b'), nextItem]);
+    player.item('trans-b');
 
-		const player = setupPlayer({
-			crossfadeEnabled: true,
-			crossfadeLeadSeconds: 3,
-			transitionStrategy: new CrossfadeTransitionStrategy({ leadSeconds: 3 }),
-		});
-		player.queue([makeItem('trans-c'), makeItem('trans-c-next')]);
-		player.item('trans-c');
+    let transitionStartPayload: unknown = null;
 
-		let startCount = 0;
-		player.on('transitionStart', () => { startCount++; });
+    player.on('transitionStart', (data) => { transitionStartPayload = data; });
 
-		const internals = player as any;
-		internals._internalDuration = 60;
+    const internals = player as any;
 
-		player.emit('time', { time: 57 });
-		player.emit('time', { time: 58 });
-		player.emit('time', { time: 59 });
+    internals._internalDuration = 60;
 
-		expect(startCount).toBe(1);
-	});
+    player.emit('time', { time: 57 });
+
+    expect(transitionStartPayload).not.toBeNull();
+
+    expect(transitionStartPayload).toMatchObject({
+      incoming: nextItem,
+    });
+  });
+
+  it('transitionStart fires only once per item even with repeated time ticks', () => {
+    vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(() => 0);
+
+    const player = setupPlayer({
+      crossfadeEnabled: true,
+      crossfadeLeadSeconds: 3,
+      transitionStrategy: new CrossfadeTransitionStrategy({ leadSeconds: 3 }),
+    });
+
+    player.queue([makeItem('trans-c'), makeItem('trans-c-next')]);
+    player.item('trans-c');
+
+    let startCount = 0;
+
+    player.on('transitionStart', () => { startCount++; });
+
+    const internals = player as any;
+
+    internals._internalDuration = 60;
+
+    player.emit('time', { time: 57 });
+    player.emit('time', { time: 58 });
+    player.emit('time', { time: 59 });
+
+    expect(startCount).toBe(1);
+  });
 });
 
 // ── setPreloadStrategy / setTransitionStrategy swappers ──────────────────────
 
 describe('strategy swappers', () => {
-	beforeEach(() => { PreloadTestPlayer._resetRegistry(); });
-	afterEach(() => {
-		PreloadTestPlayer._resetRegistry();
-		document.body.innerHTML = '';
-		divCounter = 0;
-	});
+  beforeEach(() => { PreloadTestPlayer._resetRegistry(); });
 
-	it('setPreloadStrategy replaces the active strategy', () => {
-		const player = setupPlayer({ preloadLeadSeconds: 10 });
-		const customStrategy: IPreloadStrategy = {
-			shouldPreload: () => false,
-			assetsToPreload: () => [],
-			cancel: () => {},
-		};
-		player.setPreloadStrategy(customStrategy);
-		expect(player.preloadStrategy()).toBe(customStrategy);
-	});
+  afterEach(() => {
+    PreloadTestPlayer._resetRegistry();
+    document.body.innerHTML = '';
+    divCounter = 0;
+  });
 
-	it('setTransitionStrategy replaces the active strategy', () => {
-		vi.spyOn(globalThis, 'cancelAnimationFrame').mockImplementation(() => {});
-		const player = setupPlayer({});
-		const customStrategy: ITransitionStrategy = {
-			shouldTransition: () => false,
-			tick: () => {},
-			start: () => {},
-			complete: () => {},
-			cancel: () => {},
-		};
-		player.setTransitionStrategy(customStrategy);
-		expect(player.transitionStrategy()).toBe(customStrategy);
-	});
+  it('setPreloadStrategy replaces the active strategy', () => {
+    const player = setupPlayer({ preloadLeadSeconds: 10 });
+    const customStrategy: IPreloadStrategy = {
+      shouldPreload: () => false,
+      assetsToPreload: () => [],
+      cancel: () => {},
+    };
 
-	it('custom preloadStrategy from config is respected', async () => {
-		const customShouldPreload = vi.fn().mockReturnValue(false);
-		const customStrategy: IPreloadStrategy = {
-			shouldPreload: customShouldPreload,
-			assetsToPreload: () => [],
-			cancel: () => {},
-		};
-		const player = setupPlayer({ preloadStrategy: customStrategy });
+    player.setPreloadStrategy(customStrategy);
+    expect(player.preloadStrategy()).toBe(customStrategy);
+  });
 
-		const internals = player as any;
-		internals._internalDuration = 60;
+  it('setTransitionStrategy replaces the active strategy', () => {
+    vi.spyOn(globalThis, 'cancelAnimationFrame').mockImplementation(() => {});
+    const player = setupPlayer({});
+    const customStrategy: ITransitionStrategy = {
+      shouldTransition: () => false,
+      tick: () => {},
+      start: () => {},
+      complete: () => {},
+      cancel: () => {},
+    };
 
-		player.emit('time', { time: 50 });
-		player.emit('time', { time: 55 });
+    player.setTransitionStrategy(customStrategy);
+    expect(player.transitionStrategy()).toBe(customStrategy);
+  });
 
-		expect(customShouldPreload).toHaveBeenCalled();
-	});
+  it('custom preloadStrategy from config is respected', async () => {
+    const customShouldPreload = vi.fn().mockReturnValue(false);
+    const customStrategy: IPreloadStrategy = {
+      shouldPreload: customShouldPreload,
+      assetsToPreload: () => [],
+      cancel: () => {},
+    };
+    const player = setupPlayer({ preloadStrategy: customStrategy });
+
+    const internals = player as any;
+
+    internals._internalDuration = 60;
+
+    player.emit('time', { time: 50 });
+    player.emit('time', { time: 55 });
+
+    expect(customShouldPreload).toHaveBeenCalled();
+  });
 });

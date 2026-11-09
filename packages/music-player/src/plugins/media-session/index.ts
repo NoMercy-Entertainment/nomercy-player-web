@@ -25,18 +25,19 @@ import { MediaSessionPlugin as BaseMediaSession } from '@nomercy-entertainment/n
  * should subclass and override `getMetadata()`.
  */
 export class MediaSessionPlugin<T extends MusicPlaylistItem = MusicPlaylistItem> extends BaseMediaSession<T, NMMusicPlayer<T>> {
-	static override readonly id: string = 'media-session';
+  static override readonly id: string = 'media-session';
 
-	protected override getMetadata(item: T): MediaSessionMetadata {
-		const title = item.name ?? '';
-		const artist = item.artist ?? '';
-		const album = item.album ?? '';
-		return {
-			title,
-			artist,
-			album,
-		};
-	}
+  protected override getMetadata(item: T): MediaSessionMetadata {
+    const title = item.name ?? '';
+    const artist = item.artist ?? '';
+    const album = item.album ?? '';
+
+    return {
+      title,
+      artist,
+      album,
+    };
+  }
 }
 
 export const mediaSessionPlugin = MediaSessionPlugin;

@@ -29,76 +29,82 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LifecycleRegistry } from '../../adapters/lifecycle-registry/default';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../../index';
 import { MixerPlugin } from '../../plugins/mixer';
 import { MockPlayerBase } from '../helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare addPlugin: (PluginClass: any, opts?: any) => this;
-	declare getPlugin: (PluginClass: any) => any;
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare addPlugin: (PluginClass: any, opts?: any) => this;
+  declare getPlugin: (PluginClass: any) => any;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 function makeMixerPlugin(player: MockPlayer): MixerPlugin {
-	const plugin = new MixerPlugin();
-	plugin.initialize(player as any, {}, new LifecycleRegistry());
-	return plugin;
+  const plugin = new MixerPlugin();
+
+  plugin.initialize(player as any, {}, new LifecycleRegistry());
+
+  return plugin;
 }
 
 describe('MixerPlugin (slice 03)', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('gain() returns 0 (default, 0 dB unity) before use(); gain(0.5) stores 0.5 and emits plugin:mixer:gain:changed', () => {
-		const player = makePlayer('mixer-1');
-		const mixer = makeMixerPlugin(player);
+  it('gain() returns 0 (default, 0 dB unity) before use(); gain(0.5) stores 0.5 and emits plugin:mixer:gain:changed', () => {
+    const player = makePlayer('mixer-1');
+    const mixer = makeMixerPlugin(player);
 
-		expect(mixer.gain()).toBe(0);
+    expect(mixer.gain()).toBe(0);
 
-		const emitted: Array<{ gain: number }> = [];
-		player.on('plugin:mixer:gain:changed' as any, (data: { gain: number }) => {
-			emitted.push(data);
-		});
+    const emitted: Array<{ gain: number }> = [];
 
-		mixer.gain(0.5);
+    player.on('plugin:mixer:gain:changed' as any, (data: { gain: number }) => {
+      emitted.push(data);
+    });
 
-		expect(mixer.gain()).toBe(0.5);
-		expect(emitted).toHaveLength(1);
-		expect(emitted[0]!.gain).toBe(0.5);
-	});
+    mixer.gain(0.5);
 
-	it('pan(0.3) stores 0.3; pan() returns 0.3; plugin emits plugin:mixer:pan:changed with { pan: 0.3 }', () => {
-		const player = makePlayer('mixer-2');
-		const mixer = makeMixerPlugin(player);
+    expect(mixer.gain()).toBe(0.5);
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0]!.gain).toBe(0.5);
+  });
 
-		const emitted: Array<{ pan: number }> = [];
-		player.on('plugin:mixer:pan:changed' as any, (data: { pan: number }) => {
-			emitted.push(data);
-		});
+  it('pan(0.3) stores 0.3; pan() returns 0.3; plugin emits plugin:mixer:pan:changed with { pan: 0.3 }', () => {
+    const player = makePlayer('mixer-2');
+    const mixer = makeMixerPlugin(player);
 
-		mixer.pan(0.3);
+    const emitted: Array<{ pan: number }> = [];
 
-		expect(mixer.pan()).toBe(0.3);
-		expect(emitted).toHaveLength(1);
-		expect(emitted[0]!.pan).toBeCloseTo(0.3);
-	});
+    player.on('plugin:mixer:pan:changed' as any, (data: { pan: number }) => {
+      emitted.push(data);
+    });
+
+    mixer.pan(0.3);
+
+    expect(mixer.pan()).toBe(0.3);
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0]!.pan).toBeCloseTo(0.3);
+  });
 });

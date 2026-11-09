@@ -17,66 +17,76 @@ import { describe, expect, it, vi } from 'vitest';
 import { AudioElementBackend } from '../adapters/audio-backend/html5-audio';
 
 describe('IAudioBackend typed events (A1 + A10)', () => {
-	it('BackendEvent union includes backend:loading and backend:loaded (A10)', () => {
-		// Type-level: confirm the keys are in the union by using them as typed strings.
-		const events: BackendEvent[] = ['backend:loading', 'backend:loaded'];
-		expect(events).toHaveLength(2);
-	});
+  it('BackendEvent union includes backend:loading and backend:loaded (A10)', () => {
+    // Type-level: confirm the keys are in the union by using them as typed strings.
+    const events: BackendEvent[] = ['backend:loading', 'backend:loaded'];
 
-	it('BackendEventPayload has entries for backend:loading and backend:loaded', () => {
-		const loading: BackendEventPayload['backend:loading'] = { url: 'http://x/a.mp3', kind: 'audio-element' };
-		const loaded: BackendEventPayload['backend:loaded'] = { url: 'http://x/a.mp3', kind: 'audio-element', duration: 180 };
-		expect(loading.url).toBe('http://x/a.mp3');
-		expect(loaded.duration).toBe(180);
-	});
+    expect(events).toHaveLength(2);
+  });
 
-	it('on() and off() accept a typed BackendEvent and handler — no any (A1)', () => {
-		const div = document.createElement('div');
-		const backend = new AudioElementBackend(div);
+  it('BackendEventPayload has entries for backend:loading and backend:loaded', () => {
+    const loading: BackendEventPayload['backend:loading'] = { url: 'http://x/a.mp3', kind: 'audio-element' };
+    const loaded: BackendEventPayload['backend:loaded'] = {
+      url: 'http://x/a.mp3',
+      kind: 'audio-element',
+      duration: 180,
+    };
 
-		// canplay handler — payload is Event.
-		const canplayHandler: (data?: BackendEventPayload['canplay']) => void = vi.fn();
-		backend.on('canplay', canplayHandler);
-		backend.off('canplay', canplayHandler);
+    expect(loading.url).toBe('http://x/a.mp3');
+    expect(loaded.duration).toBe(180);
+  });
 
-		// backend:loading handler — payload is { url, kind }.
-		const loadingHandler: (data?: BackendEventPayload['backend:loading']) => void = vi.fn();
-		backend.on('backend:loading', loadingHandler);
-		backend.off('backend:loading', loadingHandler);
+  it('on() and off() accept a typed BackendEvent and handler — no any (A1)', () => {
+    const div = document.createElement('div');
+    const backend = new AudioElementBackend(div);
 
-		// If this file type-checks, the generic overloads are working correctly.
-		expect(true).toBe(true);
-	});
+    // canplay handler — payload is Event.
+    const canplayHandler: (data?: BackendEventPayload['canplay']) => void = vi.fn();
 
-	it('AudioElementBackend emits backend:loading synchronously on load() entry', () => {
-		const div = document.createElement('div');
-		const backend = new AudioElementBackend(div);
-		const spy: (data?: BackendEventPayload['backend:loading']) => void = vi.fn();
-		backend.on('backend:loading', spy);
+    backend.on('canplay', canplayHandler);
+    backend.off('canplay', canplayHandler);
 
-		// backend:loading is emitted synchronously before the internal Promise
-		// await, so we start load() but don't await it — the spy fires immediately.
-		void backend.load('http://example.com/track.mp3');
+    // backend:loading handler — payload is { url, kind }.
+    const loadingHandler: (data?: BackendEventPayload['backend:loading']) => void = vi.fn();
 
-		expect(spy).toHaveBeenCalled();
-		const calls = (spy as ReturnType<typeof vi.fn>).mock.calls;
-		const payload = calls[0]?.[0] as BackendEventPayload['backend:loading'] | undefined;
-		expect(payload?.url).toBe('http://example.com/track.mp3');
-		expect(payload?.kind).toBe('audio-element');
-	});
+    backend.on('backend:loading', loadingHandler);
+    backend.off('backend:loading', loadingHandler);
+
+    // If this file type-checks, the generic overloads are working correctly.
+    expect(true).toBe(true);
+  });
+
+  it('AudioElementBackend emits backend:loading synchronously on load() entry', () => {
+    const div = document.createElement('div');
+    const backend = new AudioElementBackend(div);
+    const spy: (data?: BackendEventPayload['backend:loading']) => void = vi.fn();
+
+    backend.on('backend:loading', spy);
+
+    // backend:loading is emitted synchronously before the internal Promise
+    // await, so we start load() but don't await it — the spy fires immediately.
+    void backend.load('http://example.com/track.mp3');
+
+    expect(spy).toHaveBeenCalled();
+    const calls = (spy as ReturnType<typeof vi.fn>).mock.calls;
+    const payload = calls[0]?.[0] as BackendEventPayload['backend:loading'] | undefined;
+
+    expect(payload?.url).toBe('http://example.com/track.mp3');
+    expect(payload?.kind).toBe('audio-element');
+  });
 });
 
 describe('AudioElementBackend duration()', () => {
-	it('returns 0 when element.duration is NaN', () => {
-		const div = document.createElement('div');
-		const backend = new AudioElementBackend(div);
+  it('returns 0 when element.duration is NaN', () => {
+    const div = document.createElement('div');
+    const backend = new AudioElementBackend(div);
 
-		// A media element reports NaN duration until metadata loads.
-		Object.defineProperty(backend.mediaElement(), 'duration', {
-			value: Number.NaN,
-			configurable: true,
-		});
+    // A media element reports NaN duration until metadata loads.
+    Object.defineProperty(backend.mediaElement(), 'duration', {
+      value: Number.NaN,
+      configurable: true,
+    });
 
-		expect(backend.duration()).toBe(0);
-	});
+    expect(backend.duration()).toBe(0);
+  });
 });

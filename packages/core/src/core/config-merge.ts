@@ -21,50 +21,51 @@
  * not in `defaults` are preserved in the result.
  */
 export function mergeConfig<T>(defaults: T, user?: Partial<T> | undefined): T {
-	if (user === undefined || user === null) {
-		return defaults;
-	}
+  if (user === undefined || user === null) {
+    return defaults;
+  }
 
-	if (!isPlainObject(defaults) || !isPlainObject(user)) {
-		return (user as unknown as T) ?? defaults; // Non-plain-object branch: user value overrides entirely; T verified by caller's generic constraint.
-	}
+  if (!isPlainObject(defaults) || !isPlainObject(user)) {
+    return (user as unknown as T) ?? defaults; // Non-plain-object branch: user value overrides entirely; T verified by caller's generic constraint.
+  }
 
-	const result: Record<string, unknown> = { ...(defaults as Record<string, unknown>) };
+  const result: Record<string, unknown> = { ...(defaults as Record<string, unknown>) };
 
-	for (const key of Object.keys(user as Record<string, unknown>)) {
-		const userValue = (user as Record<string, unknown>)[key];
-		const defaultValue = (defaults as Record<string, unknown>)[key];
+  for (const key of Object.keys(user as Record<string, unknown>)) {
+    const userValue = (user as Record<string, unknown>)[key];
+    const defaultValue = (defaults as Record<string, unknown>)[key];
 
-		if (userValue === undefined) {
-			continue;
-		}
+    if (userValue === undefined) {
+      continue;
+    }
 
-		if (userValue === null) {
-			result[key] = null;
-			continue;
-		}
+    if (userValue === null) {
+      result[key] = null;
+      continue;
+    }
 
-		if (isPlainObject(userValue) && isPlainObject(defaultValue)) {
-			result[key] = mergeConfig(defaultValue, userValue as Partial<typeof defaultValue>);
-			continue;
-		}
+    if (isPlainObject(userValue) && isPlainObject(defaultValue)) {
+      result[key] = mergeConfig(defaultValue, userValue as Partial<typeof defaultValue>);
+      continue;
+    }
 
-		result[key] = userValue;
-	}
+    result[key] = userValue;
+  }
 
-	return result as T;
+  return result as T;
 }
 
 /** Returns true only for `{}` / `Object.create(null)` style objects — not Arrays, Dates, Maps, or class instances. */
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-	if (value === null || typeof value !== 'object') {
-		return false;
-	}
+  if (value === null || typeof value !== 'object') {
+    return false;
+  }
 
-	if (Array.isArray(value)) {
-		return false;
-	}
+  if (Array.isArray(value)) {
+    return false;
+  }
 
-	const proto = Object.getPrototypeOf(value);
-	return proto === null || proto === Object.prototype;
+  const proto = Object.getPrototypeOf(value);
+
+  return proto === null || proto === Object.prototype;
 }

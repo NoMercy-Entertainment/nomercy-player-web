@@ -13,5 +13,5 @@ import type { IClock } from './IClock';
  * in production; tests replace this with a controllable fake.
  */
 export const systemClock: IClock = {
-	now: () => Date.now(),
+  now: () => Date.now(),
 };

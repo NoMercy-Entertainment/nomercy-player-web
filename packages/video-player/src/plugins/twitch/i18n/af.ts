@@ -7,11 +7,11 @@
 // -----------------------------------------------------------------------------
 
 const translations = {
-	'plugin.twitch.error.clip-unavailable': 'Twitch het geen speelbare lêer vir snit {slug}',
-	'plugin.twitch.channel.offline': '{channel} is vanlyn af',
-	'plugin.twitch.channel.ended': 'Die stroom van {channel} het geëindig',
-	'plugin.twitch.setting.use-twitch-player': 'Gebruik Twitch se eie speler',
-	'plugin.twitch.subtitle.enabled': 'Aangeskakel',
+  'plugin.twitch.error.clip-unavailable': 'Twitch het geen speelbare lêer vir snit {slug}',
+  'plugin.twitch.channel.offline': '{channel} is vanlyn af',
+  'plugin.twitch.channel.ended': 'Die stroom van {channel} het geëindig',
+  'plugin.twitch.setting.use-twitch-player': 'Gebruik Twitch se eie speler',
+  'plugin.twitch.subtitle.enabled': 'Aangeskakel',
 };
 
 export default translations;

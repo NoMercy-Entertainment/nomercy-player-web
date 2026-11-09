@@ -23,132 +23,141 @@ import { expect, test } from '@playwright/test';
 // The fixture loads it dynamically so Vite's dev server resolves the package.
 
 async function mountMediaSessionPage(page: import('@playwright/test').Page): Promise<void> {
-	await page.goto('/e2e/fixture-audio.html');
-	await page.waitForFunction(() => (window as any).__playerReady !== undefined, { timeout: 15_000 });
-	const err = await page.evaluate(() => (window as any).__playerError);
-	if (err)
-		throw new Error(`Player mount error: ${err}`);
+  await page.goto('/e2e/fixture-audio.html');
+  await page.waitForFunction(() => (window as any).__playerReady !== undefined, { timeout: 15_000 });
+  const err = await page.evaluate(() => (window as any).__playerError);
 
-	// MediaSessionPlugin is pre-wired in the fixture at window.MediaSessionPlugin.
-	// Add it to the basic player here so each test starts with a fresh instance.
-	await page.evaluate(() => {
-		const MediaSessionPlugin = (window as any).MediaSessionPlugin;
-		const player = (window as any).playerBasic;
-		player.addPlugin(MediaSessionPlugin);
-	});
+  if (err)
+    throw new Error(`Player mount error: ${err}`);
+
+  // MediaSessionPlugin is pre-wired in the fixture at window.MediaSessionPlugin.
+  // Add it to the basic player here so each test starts with a fresh instance.
+  await page.evaluate(() => {
+    const MediaSessionPlugin = (window as any).MediaSessionPlugin;
+    const player = (window as any).playerBasic;
+
+    player.addPlugin(MediaSessionPlugin);
+  });
 }
 
 test.describe('media-session (MediaSessionPlugin)', () => {
-	test.beforeEach(async ({ page }) => {
-		await mountMediaSessionPage(page);
-	});
+  test.beforeEach(async ({ page }) => {
+    await mountMediaSessionPage(page);
+  });
 
-	test('navigator.mediaSession.metadata.title matches current track title', async ({ page }) => {
-		const title = await page.evaluate(async () => {
-			if (!('mediaSession' in navigator))
-				return '__unsupported__';
+  test('navigator.mediaSession.metadata.title matches current track title', async ({ page }) => {
+    const title = await page.evaluate(async () => {
+      if (!('mediaSession' in navigator))
+        return '__unsupported__';
 
-			const player = (window as any).playerBasic;
+      const player = (window as any).playerBasic;
 
-			// Queue a track and set it as current.
-			player.queue([
-				{
-					id: 'session-test-1',
-					url: '/e2e/media/trackA.mp3',
-					title: 'E2E Title Track',
-					artist: 'E2E Artist',
-					album: 'E2E Album',
-				},
-			]);
+      // Queue a track and set it as current.
+      player.queue([
+        {
+          id: 'session-test-1',
+          url: '/e2e/media/trackA.mp3',
+          title: 'E2E Title Track',
+          artist: 'E2E Artist',
+          album: 'E2E Album',
+        },
+      ]);
 
-			// item() setter triggers the 'item' event which MediaSessionPlugin
-			// listens to and pushes metadata from.
-			player.item('session-test-1');
+      // item() setter triggers the 'item' event which MediaSessionPlugin
+      // listens to and pushes metadata from.
+      player.item('session-test-1');
 
-			// _pushMetadata is async (resolveUrl). Wait a short tick.
-			await new Promise<void>(r => setTimeout(r, 200));
+      // _pushMetadata is async (resolveUrl). Wait a short tick.
+      await new Promise<void>((r) => setTimeout(r, 200));
 
-			return navigator.mediaSession.metadata?.title ?? null;
-		});
+      return navigator.mediaSession.metadata?.title ?? null;
+    });
 
-		// If the browser doesn't support MediaSession in headless, skip gracefully.
-		if (title === '__unsupported__') {
-			test.skip(true, 'navigator.mediaSession not available in this headless environment');
-			return;
-		}
+    // If the browser doesn't support MediaSession in headless, skip gracefully.
+    if (title === '__unsupported__') {
+      test.skip(true, 'navigator.mediaSession not available in this headless environment');
 
-		expect(title).toBe('E2E Title Track');
-	});
+      return;
+    }
 
-	test('playbackState is "playing" after play()', async ({ page }) => {
-		const state = await page.evaluate(async () => {
-			if (!('mediaSession' in navigator))
-				return '__unsupported__';
+    expect(title).toBe('E2E Title Track');
+  });
 
-			const player = (window as any).playerBasic;
-			const backend = player.backend();
+  test('playbackState is "playing" after play()', async ({ page }) => {
+    const state = await page.evaluate(async () => {
+      if (!('mediaSession' in navigator))
+        return '__unsupported__';
 
-			player.queue([{
-				id: 'ms-play',
-				url: '/e2e/media/short.mp3',
-				title: 'Short',
-			}]);
-			player.item('ms-play');
+      const player = (window as any).playerBasic;
+      const backend = player.backend();
 
-			await new Promise<void>((resolve, reject) => {
-				const timeout = setTimeout(() => reject(new Error('canplay timeout')), 10_000);
-				backend.on('canplay', () => { clearTimeout(timeout); resolve(); });
-				backend.load('/e2e/media/short.mp3');
-			});
+      player.queue([{
+        id: 'ms-play',
+        url: '/e2e/media/short.mp3',
+        title: 'Short',
+      }]);
 
-			await backend.play();
-			// Give the 'play' event listener in MediaSessionPlugin a tick.
-			await new Promise<void>(r => setTimeout(r, 50));
+      player.item('ms-play');
 
-			return navigator.mediaSession.playbackState;
-		});
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('canplay timeout')), 10_000);
 
-		if (state === '__unsupported__') {
-			test.skip(true, 'navigator.mediaSession not available in this headless environment');
-			return;
-		}
+        backend.on('canplay', () => { clearTimeout(timeout); resolve(); });
+        backend.load('/e2e/media/short.mp3');
+      });
 
-		expect(state).toBe('playing');
-	});
+      await backend.play();
+      // Give the 'play' event listener in MediaSessionPlugin a tick.
+      await new Promise<void>((r) => setTimeout(r, 50));
 
-	test('playbackState is "paused" after pause()', async ({ page }) => {
-		const state = await page.evaluate(async () => {
-			if (!('mediaSession' in navigator))
-				return '__unsupported__';
+      return navigator.mediaSession.playbackState;
+    });
 
-			const player = (window as any).playerBasic;
-			const backend = player.backend();
+    if (state === '__unsupported__') {
+      test.skip(true, 'navigator.mediaSession not available in this headless environment');
 
-			player.queue([{
-				id: 'ms-pause',
-				url: '/e2e/media/trackA.mp3',
-				title: 'A',
-			}]);
-			player.item('ms-pause');
+      return;
+    }
 
-			await new Promise<void>((resolve, reject) => {
-				const timeout = setTimeout(() => reject(new Error('canplay timeout')), 10_000);
-				backend.on('canplay', () => { clearTimeout(timeout); resolve(); });
-				backend.load('/e2e/media/trackA.mp3');
-			});
+    expect(state).toBe('playing');
+  });
 
-			await backend.play();
-			await backend.pause();
-			await new Promise<void>(r => setTimeout(r, 50));
+  test('playbackState is "paused" after pause()', async ({ page }) => {
+    const state = await page.evaluate(async () => {
+      if (!('mediaSession' in navigator))
+        return '__unsupported__';
 
-			return navigator.mediaSession.playbackState;
-		});
+      const player = (window as any).playerBasic;
+      const backend = player.backend();
 
-		if (state === '__unsupported__') {
-			test.skip(true, 'navigator.mediaSession not available in this headless environment');
-			return;
-		}
+      player.queue([{
+        id: 'ms-pause',
+        url: '/e2e/media/trackA.mp3',
+        title: 'A',
+      }]);
 
-		expect(state).toBe('paused');
-	});
+      player.item('ms-pause');
+
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('canplay timeout')), 10_000);
+
+        backend.on('canplay', () => { clearTimeout(timeout); resolve(); });
+        backend.load('/e2e/media/trackA.mp3');
+      });
+
+      await backend.play();
+      await backend.pause();
+      await new Promise<void>((r) => setTimeout(r, 50));
+
+      return navigator.mediaSession.playbackState;
+    });
+
+    if (state === '__unsupported__') {
+      test.skip(true, 'navigator.mediaSession not available in this headless environment');
+
+      return;
+    }
+
+    expect(state).toBe('paused');
+  });
 });

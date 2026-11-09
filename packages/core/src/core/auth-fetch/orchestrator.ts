@@ -34,52 +34,51 @@ import { prepareAttempt } from './prepare';
  * carry `code`, `httpStatus`, `url`, and `cause` for inspection.
  */
 export async function authFetch<T = string>(opts: AuthFetchOptions<T>): Promise<T> {
-	const ctx = await prepareAttempt<T>(opts);
+  const ctx = await prepareAttempt<T>(opts);
 
-	ctx.dispatch('start', {
-		url: ctx.url,
-		pluginId: ctx.pluginId,
-	});
+  ctx.dispatch('start', {
+    url: ctx.url,
+    pluginId: ctx.pluginId,
+  });
 
-	let attempt = 0;
+  let attempt = 0;
 
-	while (attempt < ctx.maxAttempts) {
-		const outcome = await attemptOnce<T>(ctx, attempt + 1);
+  while (attempt < ctx.maxAttempts) {
+    const outcome = await attemptOnce<T>(ctx, attempt + 1);
 
-		if (outcome.kind === 'value') {
-			ctx.complete(true, ctx.lastStatus);
-			return outcome.value;
-		}
+    if (outcome.kind === 'value') {
+      ctx.complete(true, ctx.lastStatus);
 
-		if (outcome.kind === 'throw') {
-			ctx.complete(false, ctx.lastStatus);
-			throw outcome.error;
-		}
+      return outcome.value;
+    }
 
-		if (outcome.consumesAttempt && attempt + 1 >= ctx.maxAttempts)
-			break;
+    if (outcome.kind === 'throw') {
+      ctx.complete(false, ctx.lastStatus);
+      throw outcome.error;
+    }
 
-		ctx.dispatch('retry', {
-			url: ctx.url,
-			attempt: attempt + 1,
-			reason: outcome.reason,
-			delayMs: outcome.delayMs,
-			pluginId: ctx.pluginId,
-		});
+    if (outcome.consumesAttempt && attempt + 1 >= ctx.maxAttempts) break;
 
-		if (outcome.consumesAttempt) {
-			attempt += 1;
-		}
+    ctx.dispatch('retry', {
+      url: ctx.url,
+      attempt: attempt + 1,
+      reason: outcome.reason,
+      delayMs: outcome.delayMs,
+      pluginId: ctx.pluginId,
+    });
 
-		try {
-			await sleep(outcome.delayMs, ctx.signal);
-		}
-		catch (err) {
-			ctx.complete(false, ctx.lastStatus);
-			throw ctx.netErr('core:network/aborted', ctx.lastStatus, 'fetch aborted during retry backoff', err, 'info');
-		}
-	}
+    if (outcome.consumesAttempt) {
+      attempt += 1;
+    }
 
-	ctx.complete(false, ctx.lastStatus);
-	throw ctx.lastError ?? ctx.netErr('core:network/timeout', undefined, 'fetch retry budget exhausted');
+    try {
+      await sleep(outcome.delayMs, ctx.signal);
+    } catch (err) {
+      ctx.complete(false, ctx.lastStatus);
+      throw ctx.netErr('core:network/aborted', ctx.lastStatus, 'fetch aborted during retry backoff', err, 'info');
+    }
+  }
+
+  ctx.complete(false, ctx.lastStatus);
+  throw ctx.lastError ?? ctx.netErr('core:network/timeout', undefined, 'fetch retry budget exhausted');
 }

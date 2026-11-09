@@ -30,34 +30,50 @@ import { NMVideoPlayer } from '../index';
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe('VttChapterSource', () => {
-	// Test 1
-	it('load(item) returns inline chapters when item.chapters is populated', async () => {
-		const src = new VttChapterSource();
-		const item = {
-			id: '1',
-			chapters: [{ index: 0, title: 'Intro', start: 0, end: 90 }],
-		};
+  // Test 1
+  it('load(item) returns inline chapters when item.chapters is populated', async () => {
+    const src = new VttChapterSource();
+    const item = {
+      id: '1',
+      chapters: [{
+        index: 0,
+        title: 'Intro',
+        start: 0,
+        end: 90,
+      }],
+    };
 
-		const result = await src.load(item as any);
+    const result = await src.load(item as any);
 
-		expect(result).toHaveLength(1);
-		expect(result[0]).toMatchObject({ title: 'Intro', start: 0, end: 90 });
+    expect(result).toHaveLength(1);
 
-		// all() returns the loaded list
-		const all = src.all();
-		expect(all).toHaveLength(1);
-		expect(all[0]).toMatchObject({ title: 'Intro', start: 0, end: 90 });
-	});
+    expect(result[0]).toMatchObject({
+      title: 'Intro',
+      start: 0,
+      end: 90,
+    });
 
-	// Test 2
-	it('load(item) returns [] when item has no chapters and no chaptersUrl', async () => {
-		const src = new VttChapterSource();
-		const item = { id: '2' };
+    // all() returns the loaded list
+    const all = src.all();
 
-		const result = await src.load(item as any);
+    expect(all).toHaveLength(1);
 
-		expect(result).toEqual([]);
-	});
+    expect(all[0]).toMatchObject({
+      title: 'Intro',
+      start: 0,
+      end: 90,
+    });
+  });
+
+  // Test 2
+  it('load(item) returns [] when item has no chapters and no chaptersUrl', async () => {
+    const src = new VttChapterSource();
+    const item = { id: '2' };
+
+    const result = await src.load(item as any);
+
+    expect(result).toEqual([]);
+  });
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -65,23 +81,23 @@ describe('VttChapterSource', () => {
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe('VttSpriteThumbnailSource', () => {
-	// Test 3
-	it('load(item) returns false when item.previewSpriteUrl is absent', async () => {
-		const src = new VttSpriteThumbnailSource();
-		const item = { id: '3' };
+  // Test 3
+  it('load(item) returns false when item.previewSpriteUrl is absent', async () => {
+    const src = new VttSpriteThumbnailSource();
+    const item = { id: '3' };
 
-		const loaded = await src.load(item as any);
+    const loaded = await src.load(item as any);
 
-		expect(loaded).toBe(false);
-		expect(src.lookup(10)).toBeNull();
-	});
+    expect(loaded).toBe(false);
+    expect(src.lookup(10)).toBeNull();
+  });
 
-	// Test 4
-	it('lookup(time) returns null before any load() call', () => {
-		const src = new VttSpriteThumbnailSource();
+  // Test 4
+  it('lookup(time) returns null before any load() call', () => {
+    const src = new VttSpriteThumbnailSource();
 
-		expect(src.lookup(5)).toBeNull();
-	});
+    expect(src.lookup(5)).toBeNull();
+  });
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -89,55 +105,55 @@ describe('VttSpriteThumbnailSource', () => {
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe('StorageBackedSubtitleStyleStore', () => {
-	// Test 5
-	it('save(style) then load() round-trips through IStorage', async () => {
-		const storage = new MemoryStorageBackend();
-		const store = new StorageBackedSubtitleStyleStore(storage);
+  // Test 5
+  it('save(style) then load() round-trips through IStorage', async () => {
+    const storage = new MemoryStorageBackend();
+    const store = new StorageBackedSubtitleStyleStore(storage);
 
-		const style = {
-			fontSize: 24,
-			fontFamily: 'Arial',
-			textColor: '#ffffff',
-			textOpacity: 100,
-			backgroundColor: '#000000',
-			backgroundOpacity: 0,
-			edgeStyle: 'textShadow' as const,
-			areaColor: 'black',
-			windowOpacity: 0,
-		};
+    const style = {
+      fontSize: 24,
+      fontFamily: 'Arial',
+      textColor: '#ffffff',
+      textOpacity: 100,
+      backgroundColor: '#000000',
+      backgroundOpacity: 0,
+      edgeStyle: 'textShadow' as const,
+      areaColor: 'black',
+      windowOpacity: 0,
+    };
 
-		await store.save(style);
-		const loaded = await store.load();
+    await store.save(style);
+    const loaded = await store.load();
 
-		expect(loaded).not.toBeNull();
-		expect(loaded!.fontSize).toBe(24);
-		expect(loaded!.textColor).toBe('#ffffff');
-	});
+    expect(loaded).not.toBeNull();
+    expect(loaded!.fontSize).toBe(24);
+    expect(loaded!.textColor).toBe('#ffffff');
+  });
 
-	// Test 6
-	it('clear() removes the stored style so load() returns null', async () => {
-		const storage = new MemoryStorageBackend();
-		const store = new StorageBackedSubtitleStyleStore(storage);
+  // Test 6
+  it('clear() removes the stored style so load() returns null', async () => {
+    const storage = new MemoryStorageBackend();
+    const store = new StorageBackedSubtitleStyleStore(storage);
 
-		const style = {
-			fontSize: 20,
-			fontFamily: 'Arial',
-			textColor: '#ffffff',
-			textOpacity: 100,
-			backgroundColor: '#000000',
-			backgroundOpacity: 0,
-			edgeStyle: 'none' as const,
-			areaColor: 'black',
-			windowOpacity: 0,
-		};
+    const style = {
+      fontSize: 20,
+      fontFamily: 'Arial',
+      textColor: '#ffffff',
+      textOpacity: 100,
+      backgroundColor: '#000000',
+      backgroundOpacity: 0,
+      edgeStyle: 'none' as const,
+      areaColor: 'black',
+      windowOpacity: 0,
+    };
 
-		await store.save(style);
-		await store.clear();
+    await store.save(style);
+    await store.clear();
 
-		const loaded = await store.load();
+    const loaded = await store.load();
 
-		expect(loaded).toBeNull();
-	});
+    expect(loaded).toBeNull();
+  });
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -145,79 +161,82 @@ describe('StorageBackedSubtitleStyleStore', () => {
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe('NMVideoPlayer — video domain API', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'vd-test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    div.id = 'vd-test';
+    document.body.appendChild(div);
+  });
 
-	const setup = (cfg: Record<string, unknown> = {}): NMVideoPlayer =>
-		new NMVideoPlayer('vd-test').setup(cfg);
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	// Test 7
-	it('subtitleStyle() read returns default style with canonical fields', () => {
-		const player = setup();
-		const style = player.subtitleStyle();
+  const setup = (cfg: Record<string, unknown> = {}): NMVideoPlayer =>
+    new NMVideoPlayer('vd-test').setup(cfg);
 
-		expect(typeof style.fontSize).toBe('number');
-		expect(typeof style.fontFamily).toBe('string');
-		expect(typeof style.textColor).toBe('string');
-		expect(typeof style.textOpacity).toBe('number');
-		expect(typeof style.backgroundColor).toBe('string');
-		expect(typeof style.backgroundOpacity).toBe('number');
-		expect(typeof style.edgeStyle).toBe('string');
-		expect(typeof style.areaColor).toBe('string');
-		expect(typeof style.windowOpacity).toBe('number');
-	});
+  // Test 7
+  it('subtitleStyle() read returns default style with canonical fields', () => {
+    const player = setup();
+    const style = player.subtitleStyle();
 
-	// Test 8
-	it('subtitleStyle(patch) merges and emits subtitleStyle event with merged result', () => {
-		const player = setup();
+    expect(typeof style.fontSize).toBe('number');
+    expect(typeof style.fontFamily).toBe('string');
+    expect(typeof style.textColor).toBe('string');
+    expect(typeof style.textOpacity).toBe('number');
+    expect(typeof style.backgroundColor).toBe('string');
+    expect(typeof style.backgroundOpacity).toBe('number');
+    expect(typeof style.edgeStyle).toBe('string');
+    expect(typeof style.areaColor).toBe('string');
+    expect(typeof style.windowOpacity).toBe('number');
+  });
 
-		const events: SubtitleStyle[] = [];
-		player.on('subtitleStyle', (payload) => { events.push(payload); });
+  // Test 8
+  it('subtitleStyle(patch) merges and emits subtitleStyle event with merged result', () => {
+    const player = setup();
 
-		player.subtitleStyle({ fontSize: 32 });
+    const events: SubtitleStyle[] = [];
 
-		expect(events).toHaveLength(1);
-		expect(events[0]!.fontSize).toBe(32);
+    player.on('subtitleStyle', (payload) => { events.push(payload); });
 
-		const current = player.subtitleStyle();
-		expect(current.fontSize).toBe(32);
-	});
+    player.subtitleStyle({ fontSize: 32 });
 
-	// Test 9
-	it('chapters() returns an array before any item is loaded', () => {
-		const player = setup();
+    expect(events).toHaveLength(1);
+    expect(events[0]!.fontSize).toBe(32);
 
-		const result = player.chapters();
+    const current = player.subtitleStyle();
 
-		expect(Array.isArray(result)).toBe(true);
-		expect(result).toHaveLength(0);
-	});
+    expect(current.fontSize).toBe(32);
+  });
 
-	// Test 10 — MEDIUM FINDING: videoWidth / videoHeight are NOT direct properties
-	// on NMVideoPlayer. The player exposes videoRect() which reads from the
-	// <video> element internally. Direct .videoWidth / .videoHeight accessors are
-	// absent from the public API. The test asserts videoRect() returns null in
-	// jsdom (no media element loaded) and documents the missing property finding.
-	it('videoRect() returns null before media is loaded (jsdom); videoWidth/videoHeight absent as direct props', () => {
-		const player = setup();
+  // Test 9
+  it('chapters() returns an array before any item is loaded', () => {
+    const player = setup();
 
-		// videoRect() is the available surface — returns null when no video loaded
-		expect(player.videoRect()).toBeNull();
+    const result = player.chapters();
 
-		// Direct videoWidth/videoHeight properties do not exist on NMVideoPlayer.
-		// This is a MEDIUM finding — see Findings table in slice-06 spec.
-		expect((player as unknown as Record<string, unknown>).videoWidth).toBeUndefined();
-		expect((player as unknown as Record<string, unknown>).videoHeight).toBeUndefined();
-	});
+    expect(Array.isArray(result)).toBe(true);
+    expect(result).toHaveLength(0);
+  });
+
+  // Test 10 — MEDIUM FINDING: videoWidth / videoHeight are NOT direct properties
+  // on NMVideoPlayer. The player exposes videoRect() which reads from the
+  // <video> element internally. Direct .videoWidth / .videoHeight accessors are
+  // absent from the public API. The test asserts videoRect() returns null in
+  // jsdom (no media element loaded) and documents the missing property finding.
+  it('videoRect() returns null before media is loaded (jsdom); videoWidth/videoHeight absent as direct props', () => {
+    const player = setup();
+
+    // videoRect() is the available surface — returns null when no video loaded
+    expect(player.videoRect()).toBeNull();
+
+    // Direct videoWidth/videoHeight properties do not exist on NMVideoPlayer.
+    // This is a MEDIUM finding — see Findings table in slice-06 spec.
+    expect((player as unknown as Record<string, unknown>).videoWidth).toBeUndefined();
+    expect((player as unknown as Record<string, unknown>).videoHeight).toBeUndefined();
+  });
 });
 
 /*

@@ -27,285 +27,293 @@ import { describe, expect, it, vi } from 'vitest';
 import { runDispatchBefore } from '../core/dispatch';
 
 function targetWithListeners(
-	listeners: Array<(data: unknown) => void>,
+  listeners: Array<(data: unknown) => void>,
 ): DispatchTarget & { pushed: string[]; popped: number } {
-	const record = {
-		pushed: [] as string[],
-		popped: 0,
-	};
-	return {
-		listenersOf: () => listeners,
-		pushDispatch: (name: string) => {
-			record.pushed.push(name);
-		},
-		popDispatch: () => {
-			record.popped += 1;
-			return record.pushed[record.pushed.length - 1];
-		},
-		get pushed() {
-			return record.pushed;
-		},
-		get popped() {
-			return record.popped;
-		},
-	};
+  const record = {
+    pushed: [] as string[],
+    popped: 0,
+  };
+
+  return {
+    listenersOf: () => listeners,
+    pushDispatch: (name: string) => {
+      record.pushed.push(name);
+    },
+    popDispatch: () => {
+      record.popped += 1;
+
+      return record.pushed[record.pushed.length - 1];
+    },
+    get pushed() {
+      return record.pushed;
+    },
+    get popped() {
+      return record.popped;
+    },
+  };
 }
 
 describe('runDispatchBefore()', () => {
-	describe('bare targets', () => {
-		it('resolves un-prevented against a completely empty target', async () => {
-			const outcome = await runDispatchBefore({}, 'beforeThing', { value: 1 });
-			expect(outcome).toEqual({
-				data: { value: 1 },
-				prevented: false,
-			});
-		});
+  describe('bare targets', () => {
+    it('resolves un-prevented against a completely empty target', async () => {
+      const outcome = await runDispatchBefore({}, 'beforeThing', { value: 1 });
 
-		it('returns the initial data unchanged when there are no listeners', async () => {
-			const data = { value: 7 };
-			const outcome = await runDispatchBefore({ listenersOf: () => [] }, 'beforeThing', data);
-			expect(outcome.data).toBe(data);
-			expect(outcome.prevented).toBe(false);
-		});
-	});
+      expect(outcome).toEqual({
+        data: { value: 1 },
+        prevented: false,
+      });
+    });
 
-	describe('listener ordering and data visibility', () => {
-		it('calls listeners in insertion order', async () => {
-			const order: string[] = [];
-			const target = targetWithListeners([
-				() => order.push('first'),
-				() => order.push('second'),
-				() => order.push('third'),
-			]);
+    it('returns the initial data unchanged when there are no listeners', async () => {
+      const data = { value: 7 };
+      const outcome = await runDispatchBefore({ listenersOf: () => [] }, 'beforeThing', data);
 
-			await runDispatchBefore(target, 'beforeThing', {});
+      expect(outcome.data).toBe(data);
+      expect(outcome.prevented).toBe(false);
+    });
+  });
 
-			expect(order).toEqual([
-				'first',
-				'second',
-				'third',
-			]);
-		});
+  describe('listener ordering and data visibility', () => {
+    it('calls listeners in insertion order', async () => {
+      const order: string[] = [];
+      const target = targetWithListeners([
+        () => order.push('first'),
+        () => order.push('second'),
+        () => order.push('third'),
+      ]);
 
-		it('a later listener sees an earlier listener\'s data mutation', async () => {
-			const seenBysecond: number[] = [];
-			const target = targetWithListeners([
-				(event) => {
-					(event as BeforeEvent<{ value: number }>).data = { value: 99 };
-				},
-				(event) => {
-					seenBysecond.push((event as BeforeEvent<{ value: number }>).data.value);
-				},
-			]);
+      await runDispatchBefore(target, 'beforeThing', {});
 
-			await runDispatchBefore(target, 'beforeThing', { value: 1 });
+      expect(order).toEqual([
+        'first',
+        'second',
+        'third',
+      ]);
+    });
 
-			expect(seenBysecond).toEqual([99]);
-		});
+    it('a later listener sees an earlier listener\'s data mutation', async () => {
+      const seenBysecond: number[] = [];
+      const target = targetWithListeners([
+        (event) => {
+          (event as BeforeEvent<{ value: number }>).data = { value: 99 };
+        },
+        (event) => {
+          seenBysecond.push((event as BeforeEvent<{ value: number }>).data.value);
+        },
+      ]);
 
-		it('the caller receives the mutated data in the outcome', async () => {
-			const target = targetWithListeners([
-				(event) => {
-					(event as BeforeEvent<{ value: number }>).data = { value: 42 };
-				},
-			]);
+      await runDispatchBefore(target, 'beforeThing', { value: 1 });
 
-			const outcome = await runDispatchBefore(target, 'beforeThing', { value: 1 });
+      expect(seenBysecond).toEqual([99]);
+    });
 
-			expect(outcome.data).toEqual({ value: 42 });
-			expect(outcome.prevented).toBe(false);
-		});
+    it('the caller receives the mutated data in the outcome', async () => {
+      const target = targetWithListeners([
+        (event) => {
+          (event as BeforeEvent<{ value: number }>).data = { value: 42 };
+        },
+      ]);
 
-		it('stopImmediatePropagation() skips the remaining listeners', async () => {
-			const secondListener = vi.fn();
-			const target = targetWithListeners([
-				(event) => {
-					(event as BeforeEvent<unknown>).stopImmediatePropagation();
-				},
-				secondListener,
-			]);
+      const outcome = await runDispatchBefore(target, 'beforeThing', { value: 1 });
 
-			const outcome = await runDispatchBefore(target, 'beforeThing', {});
+      expect(outcome.data).toEqual({ value: 42 });
+      expect(outcome.prevented).toBe(false);
+    });
 
-			expect(secondListener).not.toHaveBeenCalled();
-			expect(outcome.prevented).toBe(false);
-		});
-	});
+    it('stopImmediatePropagation() skips the remaining listeners', async () => {
+      const secondListener = vi.fn();
+      const target = targetWithListeners([
+        (event) => {
+          (event as BeforeEvent<unknown>).stopImmediatePropagation();
+        },
+        secondListener,
+      ]);
 
-	describe('prevented outcomes carry reason and cause', () => {
-		it('preventDefault() yields reason "listener-prevented" without a cause', async () => {
-			const target = targetWithListeners([
-				(event) => {
-					(event as BeforeEvent<unknown>).preventDefault();
-				},
-			]);
+      const outcome = await runDispatchBefore(target, 'beforeThing', {});
 
-			const outcome = await runDispatchBefore(target, 'beforeThing', {});
+      expect(secondListener).not.toHaveBeenCalled();
+      expect(outcome.prevented).toBe(false);
+    });
+  });
 
-			expect(outcome.prevented).toBe(true);
-			expect(outcome.reason).toBe('listener-prevented');
-			expect(outcome.cause).toBeUndefined();
-		});
+  describe('prevented outcomes carry reason and cause', () => {
+    it('preventDefault() yields reason "listener-prevented" without a cause', async () => {
+      const target = targetWithListeners([
+        (event) => {
+          (event as BeforeEvent<unknown>).preventDefault();
+        },
+      ]);
 
-		it('a prevented outcome still returns the mutated data', async () => {
-			const target = targetWithListeners([
-				(event) => {
-					const beforeEvent = event as BeforeEvent<{ value: number }>;
-					beforeEvent.data = { value: 5 };
-					beforeEvent.preventDefault();
-				},
-			]);
+      const outcome = await runDispatchBefore(target, 'beforeThing', {});
 
-			const outcome = await runDispatchBefore(target, 'beforeThing', { value: 1 });
+      expect(outcome.prevented).toBe(true);
+      expect(outcome.reason).toBe('listener-prevented');
+      expect(outcome.cause).toBeUndefined();
+    });
 
-			expect(outcome.prevented).toBe(true);
-			expect(outcome.data).toEqual({ value: 5 });
-		});
+    it('a prevented outcome still returns the mutated data', async () => {
+      const target = targetWithListeners([
+        (event) => {
+          const beforeEvent = event as BeforeEvent<{ value: number }>;
 
-		it('a rejected delay yields reason "delay-rejected" and carries the rejection as cause', async () => {
-			const rejection = new Error('gate failed');
-			const target = targetWithListeners([
-				(event) => {
-					(event as BeforeEvent<unknown>).delay(Promise.reject(rejection));
-				},
-			]);
+          beforeEvent.data = { value: 5 };
+          beforeEvent.preventDefault();
+        },
+      ]);
 
-			const outcome = await runDispatchBefore(target, 'beforeThing', {});
+      const outcome = await runDispatchBefore(target, 'beforeThing', { value: 1 });
 
-			expect(outcome.prevented).toBe(true);
-			expect(outcome.reason).toBe('delay-rejected');
-			expect(outcome.cause).toBe(rejection);
-		});
+      expect(outcome.prevented).toBe(true);
+      expect(outcome.data).toEqual({ value: 5 });
+    });
 
-		it('a delay rejected with undefined is still prevented as "delay-rejected"', async () => {
-			const target = targetWithListeners([
-				(event) => {
-					// eslint-disable-next-line prefer-promise-reject-errors -- deliberately rejecting with a non-Error to prove undefined is still treated as prevented
-					(event as BeforeEvent<unknown>).delay(Promise.reject(undefined));
-				},
-			]);
+    it('a rejected delay yields reason "delay-rejected" and carries the rejection as cause', async () => {
+      const rejection = new Error('gate failed');
+      const target = targetWithListeners([
+        (event) => {
+          (event as BeforeEvent<unknown>).delay(Promise.reject(rejection));
+        },
+      ]);
 
-			const outcome = await runDispatchBefore(target, 'beforeThing', {});
+      const outcome = await runDispatchBefore(target, 'beforeThing', {});
 
-			expect(outcome.prevented).toBe(true);
-			expect(outcome.reason).toBe('delay-rejected');
-		});
+      expect(outcome.prevented).toBe(true);
+      expect(outcome.reason).toBe('delay-rejected');
+      expect(outcome.cause).toBe(rejection);
+    });
 
-		it('an overrunning delay yields reason "delay-timeout"', async () => {
-			const neverSettles = new Promise<void>(() => {});
-			const target = targetWithListeners([
-				(event) => {
-					(event as BeforeEvent<unknown>).delay(neverSettles);
-				},
-			]);
+    it('a delay rejected with undefined is still prevented as "delay-rejected"', async () => {
+      const target = targetWithListeners([
+        (event) => {
+          // eslint-disable-next-line prefer-promise-reject-errors -- deliberately rejecting with a non-Error to prove undefined is still treated as prevented
+          (event as BeforeEvent<unknown>).delay(Promise.reject(undefined));
+        },
+      ]);
 
-			const outcome = await runDispatchBefore(target, 'beforeThing', {}, { timeoutMs: 20 });
+      const outcome = await runDispatchBefore(target, 'beforeThing', {});
 
-			expect(outcome.prevented).toBe(true);
-			expect(outcome.reason).toBe('delay-timeout');
-			expect(outcome.cause).toBeUndefined();
-		});
-	});
+      expect(outcome.prevented).toBe(true);
+      expect(outcome.reason).toBe('delay-rejected');
+    });
 
-	describe('delay gates', () => {
-		it('waits for every delay to settle before resolving', async () => {
-			let resolveFirst: (() => void) | undefined;
-			let resolveSecond: (() => void) | undefined;
-			const firstGate = new Promise<void>((resolve) => {
-				resolveFirst = resolve;
-			});
-			const secondGate = new Promise<void>((resolve) => {
-				resolveSecond = resolve;
-			});
-			const target = targetWithListeners([
-				(event) => {
-					const beforeEvent = event as BeforeEvent<unknown>;
-					beforeEvent.delay(firstGate);
-					beforeEvent.delay(secondGate);
-				},
-			]);
+    it('an overrunning delay yields reason "delay-timeout"', async () => {
+      const neverSettles = new Promise<void>(() => {});
+      const target = targetWithListeners([
+        (event) => {
+          (event as BeforeEvent<unknown>).delay(neverSettles);
+        },
+      ]);
 
-			let settled: BeforeDispatchOutcome<Record<string, never>> | undefined;
-			const pending = runDispatchBefore(target, 'beforeThing', {} as Record<string, never>).then((outcome) => {
-				settled = outcome;
-				return outcome;
-			});
+      const outcome = await runDispatchBefore(target, 'beforeThing', {}, { timeoutMs: 20 });
 
-			await new Promise(resolve => setTimeout(resolve, 5));
-			expect(settled).toBeUndefined();
+      expect(outcome.prevented).toBe(true);
+      expect(outcome.reason).toBe('delay-timeout');
+      expect(outcome.cause).toBeUndefined();
+    });
+  });
 
-			resolveFirst!();
-			await new Promise(resolve => setTimeout(resolve, 5));
-			expect(settled).toBeUndefined();
+  describe('delay gates', () => {
+    it('waits for every delay to settle before resolving', async () => {
+      let resolveFirst: (() => void) | undefined;
+      let resolveSecond: (() => void) | undefined;
+      const firstGate = new Promise<void>((resolve) => {
+        resolveFirst = resolve;
+      });
+      const secondGate = new Promise<void>((resolve) => {
+        resolveSecond = resolve;
+      });
+      const target = targetWithListeners([
+        (event) => {
+          const beforeEvent = event as BeforeEvent<unknown>;
 
-			resolveSecond!();
-			await pending;
-			expect(settled?.prevented).toBe(false);
-		});
+          beforeEvent.delay(firstGate);
+          beforeEvent.delay(secondGate);
+        },
+      ]);
 
-		it('exposes isDelayed() to listeners once a delay is registered', async () => {
-			const observed: boolean[] = [];
-			const target = targetWithListeners([
-				(event) => {
-					const beforeEvent = event as BeforeEvent<unknown>;
-					observed.push(beforeEvent.isDelayed());
-					beforeEvent.delay(Promise.resolve());
-					observed.push(beforeEvent.isDelayed());
-				},
-			]);
+      let settled: BeforeDispatchOutcome<Record<string, never>> | undefined;
+      const pending = runDispatchBefore(target, 'beforeThing', {} as Record<string, never>).then((outcome) => {
+        settled = outcome;
 
-			await runDispatchBefore(target, 'beforeThing', {});
+        return outcome;
+      });
 
-			expect(observed).toEqual([false, true]);
-		});
-	});
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      expect(settled).toBeUndefined();
 
-	describe('dispatch-stack bookkeeping', () => {
-		it('pushes the event name before listeners run and pops after', async () => {
-			const stackDuringListener: string[] = [];
-			const target = targetWithListeners([
-				() => {
-					stackDuringListener.push('ran');
-				},
-			]);
+      resolveFirst!();
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      expect(settled).toBeUndefined();
 
-			await runDispatchBefore(target, 'beforePlay', {});
+      resolveSecond!();
+      await pending;
+      expect(settled?.prevented).toBe(false);
+    });
 
-			expect(target.pushed).toEqual(['beforePlay']);
-			expect(target.popped).toBe(1);
-			expect(stackDuringListener).toEqual(['ran']);
-		});
+    it('exposes isDelayed() to listeners once a delay is registered', async () => {
+      const observed: boolean[] = [];
+      const target = targetWithListeners([
+        (event) => {
+          const beforeEvent = event as BeforeEvent<unknown>;
 
-		it('pops the stack on the timeout path too', async () => {
-			const target = targetWithListeners([
-				(event) => {
-					(event as BeforeEvent<unknown>).delay(new Promise<void>(() => {}));
-				},
-			]);
+          observed.push(beforeEvent.isDelayed());
+          beforeEvent.delay(Promise.resolve());
+          observed.push(beforeEvent.isDelayed());
+        },
+      ]);
 
-			await runDispatchBefore(target, 'beforePlay', {}, { timeoutMs: 10 });
+      await runDispatchBefore(target, 'beforeThing', {});
 
-			expect(target.popped).toBe(1);
-		});
-	});
+      expect(observed).toEqual([false, true]);
+    });
+  });
 
-	describe('throwing listeners', () => {
-		it('logs the throw and keeps running the remaining listeners', async () => {
-			const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-			const secondListener = vi.fn();
-			const target = targetWithListeners([
-				() => {
-					throw new Error('listener boom');
-				},
-				secondListener,
-			]);
+  describe('dispatch-stack bookkeeping', () => {
+    it('pushes the event name before listeners run and pops after', async () => {
+      const stackDuringListener: string[] = [];
+      const target = targetWithListeners([
+        () => {
+          stackDuringListener.push('ran');
+        },
+      ]);
 
-			const outcome = await runDispatchBefore(target, 'beforeThing', {});
+      await runDispatchBefore(target, 'beforePlay', {});
 
-			expect(secondListener).toHaveBeenCalledTimes(1);
-			expect(outcome.prevented).toBe(false);
-			expect(errorSpy).toHaveBeenCalledTimes(1);
-			errorSpy.mockRestore();
-		});
-	});
+      expect(target.pushed).toEqual(['beforePlay']);
+      expect(target.popped).toBe(1);
+      expect(stackDuringListener).toEqual(['ran']);
+    });
+
+    it('pops the stack on the timeout path too', async () => {
+      const target = targetWithListeners([
+        (event) => {
+          (event as BeforeEvent<unknown>).delay(new Promise<void>(() => {}));
+        },
+      ]);
+
+      await runDispatchBefore(target, 'beforePlay', {}, { timeoutMs: 10 });
+
+      expect(target.popped).toBe(1);
+    });
+  });
+
+  describe('throwing listeners', () => {
+    it('logs the throw and keeps running the remaining listeners', async () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const secondListener = vi.fn();
+      const target = targetWithListeners([
+        () => {
+          throw new Error('listener boom');
+        },
+        secondListener,
+      ]);
+
+      const outcome = await runDispatchBefore(target, 'beforeThing', {});
+
+      expect(secondListener).toHaveBeenCalledTimes(1);
+      expect(outcome.prevented).toBe(false);
+      expect(errorSpy).toHaveBeenCalledTimes(1);
+      errorSpy.mockRestore();
+    });
+  });
 });

@@ -15,5 +15,5 @@
  * controllable fake so time-dependent logic can be driven deterministically.
  */
 export interface IClock {
-	now(): number;
+  now(): number;
 }

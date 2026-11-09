@@ -58,33 +58,34 @@ import type { NMVideoPlayer, VideoPlaylistItem } from '@nomercy-entertainment/no
 import { Plugin, translationsFromGlob } from '@nomercy-entertainment/nomercy-player-core';
 
 export interface TouchZonesOptions {
-	/** Milliseconds between taps that still counts as a double-tap. Default 300. */
-	doubleTapThreshold?: number;
-	/** Seconds to seek on double-tap. Default 10. */
-	seekSeconds?: number;
-	/**
-	 * When true, single-click/tap on the center zone never toggles playback.
-	 * Mirrors `disableClickToPause` on DesktopUiPlugin — both plugins ship their
-	 * own click handlers (desktop-ui on the video element, touch-zones on the
-	 * overlay zones), so the user needs the same switch on both. Default false.
-	 */
-	disableClickToPause?: boolean;
+  /** Milliseconds between taps that still counts as a double-tap. Default 300. */
+  doubleTapThreshold?: number;
+  /** Seconds to seek on double-tap. Default 10. */
+  seekSeconds?: number;
+  /**
+   * When true, single-click/tap on the center zone never toggles playback.
+   * Mirrors `disableClickToPause` on DesktopUiPlugin — both plugins ship their
+   * own click handlers (desktop-ui on the video element, touch-zones on the
+   * overlay zones), so the user needs the same switch on both. Default false.
+   */
+  disableClickToPause?: boolean;
 }
 
 interface ZonePos {
-	x: { start: number; end: number };
-	y: { start: number; end: number };
+  x: { start: number; end: number };
+  y: { start: number; end: number };
 }
 
 const STYLE_ID = 'nmplayer-touch-zones-styles';
 
 function ensureStyles(): void {
-	if (document.getElementById(STYLE_ID))
-		return;
+  if (document.getElementById(STYLE_ID)) return;
 
-	const el = document.createElement('style');
-	el.id = STYLE_ID;
-	el.textContent = `
+  const el = document.createElement('style');
+
+  el.id = STYLE_ID;
+
+  el.textContent = `
 .nm-touch-zones-root {
     position: absolute; inset: 0; z-index: 10;
     display: grid;
@@ -133,436 +134,462 @@ function ensureStyles(): void {
     stroke-linejoin: round;
 }
 `;
-	document.head.appendChild(el);
+
+  document.head.appendChild(el);
 }
 
 interface SeekIndicatorState {
-	el: HTMLDivElement;
-	textEl: HTMLSpanElement;
-	accumulated: number;
-	collapseTimer: ReturnType<typeof setTimeout> | null;
-	hideTimer: ReturnType<typeof setTimeout> | null;
+  el: HTMLDivElement;
+  textEl: HTMLSpanElement;
+  accumulated: number;
+  collapseTimer: ReturnType<typeof setTimeout> | null;
+  hideTimer: ReturnType<typeof setTimeout> | null;
 }
 
 export class TouchZonesPlugin<T extends VideoPlaylistItem = VideoPlaylistItem> extends Plugin<NMVideoPlayer<T>, TouchZonesOptions> {
-	static override readonly id: string = 'touch-zones';
-	static override readonly version: string = '2.0.0';
-	static override readonly description: string = 'Tap-zone overlay: double-tap to seek, single-tap to toggle playback';
-	static override readonly translations: Translations = translationsFromGlob('./i18n/*.ts');
+  static override readonly id: string = 'touch-zones';
+  static override readonly version: string = '2.0.0';
+  static override readonly description: string = 'Tap-zone overlay: double-tap to seek, single-tap to toggle playback';
+  static override readonly translations: Translations = translationsFromGlob('./i18n/*.ts');
 
-	private root!: HTMLDivElement;
-	private _isMobile = false;
+  private root!: HTMLDivElement;
+  private _isMobile = false;
 
-	/**
-	 * Snapshot of control visibility captured at touchstart (capture phase),
-	 * BEFORE desktop-ui's bubble-phase touchstart handler runs and potentially
-	 * mutates the DOM. `onSingle` reads this snapshot to decide hide-vs-nothing
-	 * based on what the user SAW when the tap started, not the post-wake state.
-	 *
-	 * Without this, a tap from hidden would:
-	 *   1. touchstart (bubble) → desktop-ui bumpActivity → .active added
-	 *   2. onSingle (300 ms later) → live DOM reads .active=true → hides
-	 *   Net: show-then-hide flicker; tap appears to do nothing.
-	 *
-	 * Reset to null after each onSingle consumes it. Falls back to live DOM
-	 * for non-touch paths (mouse clicks on desktop have no touchstart).
-	 */
-	private _tapWasVisible: boolean | null = null;
+  /**
+   * Snapshot of control visibility captured at touchstart (capture phase),
+   * BEFORE desktop-ui's bubble-phase touchstart handler runs and potentially
+   * mutates the DOM. `onSingle` reads this snapshot to decide hide-vs-nothing
+   * based on what the user SAW when the tap started, not the post-wake state.
+   *
+   * Without this, a tap from hidden would:
+   *   1. touchstart (bubble) → desktop-ui bumpActivity → .active added
+   *   2. onSingle (300 ms later) → live DOM reads .active=true → hides
+   *   Net: show-then-hide flicker; tap appears to do nothing.
+   *
+   * Reset to null after each onSingle consumes it. Falls back to live DOM
+   * for non-touch paths (mouse clicks on desktop have no touchstart).
+   */
+  private _tapWasVisible: boolean | null = null;
 
-	private leftIndicator: SeekIndicatorState | null = null;
-	private rightIndicator: SeekIndicatorState | null = null;
+  private leftIndicator: SeekIndicatorState | null = null;
+  private rightIndicator: SeekIndicatorState | null = null;
 
-	override use(): void {
-		ensureStyles();
-		this.root = this.mount('root');
-		this.addClasses(this.root, ['nm-touch-zones-root']);
+  override use(): void {
+    ensureStyles();
+    this.root = this.mount('root');
+    this.addClasses(this.root, ['nm-touch-zones-root']);
 
-		this._isMobile = this.detectMobile();
+    this._isMobile = this.detectMobile();
 
-		// Capture-phase listener on the CONTAINER, bound to `pointerdown` — the
-		// FIRST event of any tap gesture. On touch the real order is
-		// pointerdown → touchstart → … and desktop-ui wakes the controls on the
-		// EARLIEST of those (it listens to pointerdown AND touchstart, both
-		// bubble-phase). So snapshotting on `touchstart` reads `.active` AFTER
-		// pointerdown already woke it — capturing the wrong (post-wake) state and
-		// making onSingle hide a just-shown overlay. Binding the snapshot to
-		// `pointerdown` in the CAPTURE phase guarantees it runs before ANY of
-		// desktop-ui's bubble-phase wake handlers, so it records the true pre-tap
-		// visibility. Capture on the container fires before bubble regardless of
-		// which child (zone box / overlay) the gesture started on.
-		if (this.player.container) {
-			this.listen(
-				this.player.container,
-				'pointerdown',
-				() => { this._tapWasVisible = this.player.container.classList.contains('active'); },
-				{ capture: true },
-			);
-		}
+    // Capture-phase listener on the CONTAINER, bound to `pointerdown` — the
+    // FIRST event of any tap gesture. On touch the real order is
+    // pointerdown → touchstart → … and desktop-ui wakes the controls on the
+    // EARLIEST of those (it listens to pointerdown AND touchstart, both
+    // bubble-phase). So snapshotting on `touchstart` reads `.active` AFTER
+    // pointerdown already woke it — capturing the wrong (post-wake) state and
+    // making onSingle hide a just-shown overlay. Binding the snapshot to
+    // `pointerdown` in the CAPTURE phase guarantees it runs before ANY of
+    // desktop-ui's bubble-phase wake handlers, so it records the true pre-tap
+    // visibility. Capture on the container fires before bubble regardless of
+    // which child (zone box / overlay) the gesture started on.
+    if (this.player.container) {
+      this.listen(
+        this.player.container,
+        'pointerdown',
+        () => { this._tapWasVisible = this.player.container.classList.contains('active'); },
+        { capture: true },
+      );
+    }
 
-		if (this._isMobile) {
-			this.buildSeekBack(this.root, {
-				x: {
-					start: 1,
-					end: 2,
-				},
-				y: {
-					start: 2,
-					end: 7,
-				},
-			});
-			this.buildPlayback(this.root, {
-				x: {
-					start: 2,
-					end: 3,
-				},
-				y: {
-					start: 3,
-					end: 6,
-				},
-			});
-			this.buildSeekForward(this.root, {
-				x: {
-					start: 3,
-					end: 4,
-				},
-				y: {
-					start: 2,
-					end: 7,
-				},
-			});
-			this.buildVolUp(this.root, {
-				x: {
-					start: 2,
-					end: 3,
-				},
-				y: {
-					start: 1,
-					end: 3,
-				},
-			});
-			this.buildVolDown(this.root, {
-				x: {
-					start: 2,
-					end: 3,
-				},
-				y: {
-					start: 5,
-					end: 7,
-				},
-			});
-		}
-		else {
-			this.buildSeekBack(this.root, {
-				x: {
-					start: 1,
-					end: 2,
-				},
-				y: {
-					start: 1,
-					end: 7,
-				},
-			});
-			this.buildPlayback(this.root, {
-				x: {
-					start: 2,
-					end: 3,
-				},
-				y: {
-					start: 1,
-					end: 7,
-				},
-			});
-			this.buildSeekForward(this.root, {
-				x: {
-					start: 3,
-					end: 4,
-				},
-				y: {
-					start: 1,
-					end: 7,
-				},
-			});
-		}
-	}
+    if (this._isMobile) {
+      this.buildSeekBack(this.root, {
+        x: {
+          start: 1,
+          end: 2,
+        },
+        y: {
+          start: 2,
+          end: 7,
+        },
+      });
 
-	override dispose(): void {
-		this.root?.remove();
-	}
+      this.buildPlayback(this.root, {
+        x: {
+          start: 2,
+          end: 3,
+        },
+        y: {
+          start: 3,
+          end: 6,
+        },
+      });
 
-	private detectMobile(): boolean {
-		return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-	}
+      this.buildSeekForward(this.root, {
+        x: {
+          start: 3,
+          end: 4,
+        },
+        y: {
+          start: 2,
+          end: 7,
+        },
+      });
 
-	/**
-	 * Returns the visibility of controls that should be used by the current
-	 * onSingle handler to decide whether to hide.
-	 *
-	 * On a touch path: returns the PRE-TAP snapshot captured at touchstart
-	 * (capture phase, before desktop-ui's bumpActivity may have added .active),
-	 * then clears the snapshot. Using the pre-tap value prevents the race where
-	 * "tap from hidden" shows controls (touchstart) then immediately hides them
-	 * (onSingle sees .active=true that was just added, emits activity:false).
-	 *
-	 * On a mouse/keyboard path: no touchstart fires, so the snapshot is null.
-	 * Falls back to the live `.active` class — correct for desktop where there
-	 * is no doubleTap deferred window that races against pointer input.
-	 */
-	private wasControlsVisibleAtTapStart(): boolean {
-		if (this._tapWasVisible !== null) {
-			const snapshot = this._tapWasVisible;
-			this._tapWasVisible = null;
-			return snapshot;
-		}
+      this.buildVolUp(this.root, {
+        x: {
+          start: 2,
+          end: 3,
+        },
+        y: {
+          start: 1,
+          end: 3,
+        },
+      });
 
-		return this.player.container.classList.contains('active');
-	}
+      this.buildVolDown(this.root, {
+        x: {
+          start: 2,
+          end: 3,
+        },
+        y: {
+          start: 5,
+          end: 7,
+        },
+      });
+    } else {
+      this.buildSeekBack(this.root, {
+        x: {
+          start: 1,
+          end: 2,
+        },
+        y: {
+          start: 1,
+          end: 7,
+        },
+      });
 
-	private makeBox(parent: HTMLElement, pos: ZonePos): HTMLDivElement {
-		const el = document.createElement('div');
-		el.className = 'nm-touch-box';
-		el.style.gridColumnStart = String(pos.x.start);
-		el.style.gridColumnEnd = String(pos.x.end);
-		el.style.gridRowStart = String(pos.y.start);
-		el.style.gridRowEnd = String(pos.y.end);
-		parent.appendChild(el);
-		return el;
-	}
+      this.buildPlayback(this.root, {
+        x: {
+          start: 2,
+          end: 3,
+        },
+        y: {
+          start: 1,
+          end: 7,
+        },
+      });
 
-	private doubleTap(
-		onDouble: (event: Event) => void,
-		onSingle?: (event: Event) => void,
-	): EventListener {
-		let lastTap = 0;
-		let singleTimer: ReturnType<typeof setTimeout> | null = null;
+      this.buildSeekForward(this.root, {
+        x: {
+          start: 3,
+          end: 4,
+        },
+        y: {
+          start: 1,
+          end: 7,
+        },
+      });
+    }
+  }
 
-		return (event: Event): void => {
-			const delay = this.opts?.doubleTapThreshold ?? 300;
-			const now = Date.now();
-			const gap = now - lastTap;
-			lastTap = now;
+  override dispose(): void {
+    this.root?.remove();
+  }
 
-			if (gap > 0 && gap < delay) {
-				if (singleTimer !== null) {
-					clearTimeout(singleTimer);
-					singleTimer = null;
-				}
-				event.preventDefault();
-				onDouble(event);
-			}
-			else {
-				// eslint-disable-next-line player/no-raw-timers-in-plugin -- tap-debounce timer with manual clearTimeout above for the double-tap cancel path; this.timeout() has no matching manual-cancel handle, so a raw timer is required here.
-				singleTimer = setTimeout(() => {
-					singleTimer = null;
-					onSingle?.(event);
-				}, delay);
-			}
-		};
-	}
+  private detectMobile(): boolean {
+    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  }
 
-	/**
-	 * Drive the PLAYER's activity state to hidden. `activity` is a player-level
-	 * event (desktop-ui listens to toggle control visibility), not a
-	 * touch-zones-scoped one, so it goes on the player bus directly — the scoped
-	 * `this.emit()` would namespace it to `plugin:touch-zones:activity`, where
-	 * nothing listens. Used by the single-tap paths to re-hide controls that were
-	 * already visible at tap start.
-	 */
-	private dismissControls(): void {
-		// eslint-disable-next-line player/no-raw-player-bus -- deliberate emit of the player-level `activity` event; see doc comment above.
-		this.player.emit('activity', { active: false });
-	}
+  /**
+   * Returns the visibility of controls that should be used by the current
+   * onSingle handler to decide whether to hide.
+   *
+   * On a touch path: returns the PRE-TAP snapshot captured at touchstart
+   * (capture phase, before desktop-ui's bumpActivity may have added .active),
+   * then clears the snapshot. Using the pre-tap value prevents the race where
+   * "tap from hidden" shows controls (touchstart) then immediately hides them
+   * (onSingle sees .active=true that was just added, emits activity:false).
+   *
+   * On a mouse/keyboard path: no touchstart fires, so the snapshot is null.
+   * Falls back to the live `.active` class — correct for desktop where there
+   * is no doubleTap deferred window that races against pointer input.
+   */
+  private wasControlsVisibleAtTapStart(): boolean {
+    if (this._tapWasVisible !== null) {
+      const snapshot = this._tapWasVisible;
 
-	private createSeekIndicator(parent: HTMLElement, side: 'left' | 'right'): SeekIndicatorState {
-		const el = document.createElement('div');
-		el.className = `nm-seek-indicator nm-seek-indicator--${side}`;
+      this._tapWasVisible = null;
 
-		const svgNs = 'http://www.w3.org/2000/svg';
-		const svg = document.createElementNS(svgNs, 'svg');
-		svg.setAttribute('viewBox', '0 0 24 24');
+      return snapshot;
+    }
 
-		if (side === 'left') {
-			const path = document.createElementNS(svgNs, 'path');
-			path.setAttribute('d', 'M11 17l-5-5 5-5M18 17l-5-5 5-5');
-			svg.appendChild(path);
-		}
-		else {
-			const path = document.createElementNS(svgNs, 'path');
-			path.setAttribute('d', 'M13 7l5 5-5 5M6 7l5 5-5 5');
-			svg.appendChild(path);
-		}
+    return this.player.container.classList.contains('active');
+  }
 
-		const textEl = document.createElement('span');
-		const seconds = this.opts?.seekSeconds ?? 10;
-		textEl.textContent = side === 'left'
-			? this.t('seek.back', { seconds: String(seconds) })
-			: this.t('seek.forward', { seconds: String(seconds) });
+  private makeBox(parent: HTMLElement, pos: ZonePos): HTMLDivElement {
+    const el = document.createElement('div');
 
-		el.appendChild(svg);
-		el.appendChild(textEl);
-		parent.appendChild(el);
+    el.className = 'nm-touch-box';
+    el.style.gridColumnStart = String(pos.x.start);
+    el.style.gridColumnEnd = String(pos.x.end);
+    el.style.gridRowStart = String(pos.y.start);
+    el.style.gridRowEnd = String(pos.y.end);
+    parent.appendChild(el);
 
-		return {
-			el,
-			textEl,
-			accumulated: 0,
-			collapseTimer: null,
-			hideTimer: null,
-		};
-	}
+    return el;
+  }
 
-	private showSeekIndicator(state: SeekIndicatorState, seconds: number, direction: 'back' | 'forward'): void {
-		if (state.collapseTimer !== null) {
-			clearTimeout(state.collapseTimer);
-			state.collapseTimer = null;
-		}
+  private doubleTap(
+    onDouble: (event: Event) => void,
+    onSingle?: (event: Event) => void,
+  ): EventListener {
+    let lastTap = 0;
+    let singleTimer: ReturnType<typeof setTimeout> | null = null;
 
-		if (state.hideTimer !== null) {
-			clearTimeout(state.hideTimer);
-			state.hideTimer = null;
-		}
+    return (event: Event): void => {
+      const delay = this.opts?.doubleTapThreshold ?? 300;
+      const now = Date.now();
+      const gap = now - lastTap;
 
-		// Position the indicator at the VIDEO's vertical centre, not the
-		// container's centre. The container may be taller than the video
-		// (letterboxing, bottom bar) so a CSS-only 50% sits off-centre on
-		// the actual frame.
-		const video = (this.player as { videoElement?: HTMLVideoElement }).videoElement;
-		const parent = state.el.parentElement;
-		if (video && parent) {
-			const videoRect = video.getBoundingClientRect();
-			const parentRect = parent.getBoundingClientRect();
-			const centreY = videoRect.top + videoRect.height / 2 - parentRect.top;
-			state.el.style.top = `${centreY}px`;
-		}
+      lastTap = now;
 
-		state.accumulated += seconds;
+      if (gap > 0 && gap < delay) {
+        if (singleTimer !== null) {
+          clearTimeout(singleTimer);
+          singleTimer = null;
+        }
 
-		const label = direction === 'back'
-			? this.t('seek.back', { seconds: String(state.accumulated) })
-			: this.t('seek.forward', { seconds: String(state.accumulated) });
-		state.textEl.textContent = label;
+        event.preventDefault();
+        onDouble(event);
+      } else {
+        // eslint-disable-next-line player/no-raw-timers-in-plugin -- tap-debounce timer with manual clearTimeout above for the double-tap cancel path; this.timeout() has no matching manual-cancel handle, so a raw timer is required here.
+        singleTimer = setTimeout(() => {
+          singleTimer = null;
+          onSingle?.(event);
+        }, delay);
+      }
+    };
+  }
 
-		state.el.classList.add('nm-seek-indicator--visible');
+  /**
+   * Drive the PLAYER's activity state to hidden. `activity` is a player-level
+   * event (desktop-ui listens to toggle control visibility), not a
+   * touch-zones-scoped one, so it goes on the player bus directly — the scoped
+   * `this.emit()` would namespace it to `plugin:touch-zones:activity`, where
+   * nothing listens. Used by the single-tap paths to re-hide controls that were
+   * already visible at tap start.
+   */
+  private dismissControls(): void {
+    // eslint-disable-next-line player/no-raw-player-bus -- deliberate emit of the player-level `activity` event; see doc comment above.
+    this.player.emit('activity', { active: false });
+  }
 
-		// eslint-disable-next-line player/no-raw-timers-in-plugin -- seek-indicator collapse timer, manually cleared/re-armed on each tap (see clearTimeout at the reset above); this.timeout() offers no manual-cancel handle for the re-arm path.
-		state.collapseTimer = setTimeout(() => {
-			state.accumulated = 0;
-			state.collapseTimer = null;
+  private createSeekIndicator(parent: HTMLElement, side: 'left' | 'right'): SeekIndicatorState {
+    const el = document.createElement('div');
 
-			// eslint-disable-next-line player/no-raw-timers-in-plugin -- nested hide timer, manually cleared/re-armed alongside collapseTimer; same manual-cancel requirement.
-			state.hideTimer = setTimeout(() => {
-				state.el.classList.remove('nm-seek-indicator--visible');
-				state.hideTimer = null;
-			}, 200);
-		}, 1000);
-	}
+    el.className = `nm-seek-indicator nm-seek-indicator--${side}`;
 
-	private buildSeekBack(parent: HTMLElement, pos: ZonePos): void {
-		const el = this.makeBox(parent, pos);
+    const svgNs = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNs, 'svg');
 
-		// Single-tap: hide if controls were visible AT TAP START (pre-wake snapshot).
-		// wasControlsVisibleAtTapStart() returns the capture-phase snapshot taken
-		// before desktop-ui's bumpActivity may have added .active. When controls
-		// were hidden at tap start, do nothing — desktop-ui already showed them
-		// via touchstart. Double-tap seeks regardless of state.
-		const handler = this.doubleTap(
-			() => {
-				const seconds = this.opts?.seekSeconds ?? 10;
-				void this.player.rewind?.(seconds);
+    svg.setAttribute('viewBox', '0 0 24 24');
 
-				if (this.leftIndicator === null) {
-					this.leftIndicator = this.createSeekIndicator(el, 'left');
-				}
+    if (side === 'left') {
+      const path = document.createElementNS(svgNs, 'path');
 
-				this.showSeekIndicator(this.leftIndicator, seconds, 'back');
-			},
-			() => {
-				if (this.wasControlsVisibleAtTapStart()) {
-					this.dismissControls();
-				}
-			},
-		);
-		this.listen(el, 'click', handler);
-	}
+      path.setAttribute('d', 'M11 17l-5-5 5-5M18 17l-5-5 5-5');
+      svg.appendChild(path);
+    } else {
+      const path = document.createElementNS(svgNs, 'path');
 
-	private buildSeekForward(parent: HTMLElement, pos: ZonePos): void {
-		const el = this.makeBox(parent, pos);
+      path.setAttribute('d', 'M13 7l5 5-5 5M6 7l5 5-5 5');
+      svg.appendChild(path);
+    }
 
-		const handler = this.doubleTap(
-			() => {
-				const seconds = this.opts?.seekSeconds ?? 10;
-				void this.player.forward?.(seconds);
+    const textEl = document.createElement('span');
+    const seconds = this.opts?.seekSeconds ?? 10;
 
-				if (this.rightIndicator === null) {
-					this.rightIndicator = this.createSeekIndicator(el, 'right');
-				}
+    textEl.textContent = side === 'left'
+      ? this.t('seek.back', { seconds: String(seconds) })
+      : this.t('seek.forward', { seconds: String(seconds) });
 
-				this.showSeekIndicator(this.rightIndicator, seconds, 'forward');
-			},
-			() => {
-				if (this.wasControlsVisibleAtTapStart()) {
-					this.dismissControls();
-				}
-			},
-		);
-		this.listen(el, 'click', handler);
-	}
+    el.appendChild(svg);
+    el.appendChild(textEl);
+    parent.appendChild(el);
 
-	private buildPlayback(parent: HTMLElement, pos: ZonePos): void {
-		const el = this.makeBox(parent, pos);
-		el.style.display = 'flex';
-		el.style.alignItems = 'center';
-		el.style.justifyContent = 'center';
+    return {
+      el,
+      textEl,
+      accumulated: 0,
+      collapseTimer: null,
+      hideTimer: null,
+    };
+  }
 
-		// Center zone contract:
-		//   double-tap → toggleFullscreen (unconditional — matches the unguarded
-		//                double-tap on every other zone)
-		//   single-tap → togglePlayback  (unconditional — the center zone's ONLY
-		//                purpose is play/pause; no "wake tap" concern applies here;
-		//                disableClickToPause is the explicit opt-out)
-		//
-		// The previous guard (`!this._isMobile || this.controlsVisible`) was wrong:
-		// _isMobile is a one-shot static capability flag that returns true on any
-		// touch-capable device — including touch laptops used with a mouse and any
-		// browser under DevTools touch emulation. A cold tap on mobile would always
-		// find controlsVisible=false (debounced by 310 ms), silently no-oping.
-		const handler = this.doubleTap(
-			() => { void this.player.toggleFullscreen?.(); },
-			() => {
-				if (this.opts?.disableClickToPause || this.player.options?.disableClickToPause)
-					return;
-				void this.player.togglePlayback?.();
-			},
-		);
-		this.listen(el, 'click', handler);
-	}
+  private showSeekIndicator(state: SeekIndicatorState, seconds: number, direction: 'back' | 'forward'): void {
+    if (state.collapseTimer !== null) {
+      clearTimeout(state.collapseTimer);
+      state.collapseTimer = null;
+    }
 
-	private buildVolUp(parent: HTMLElement, pos: ZonePos): void {
-		const el = this.makeBox(parent, pos);
+    if (state.hideTimer !== null) {
+      clearTimeout(state.hideTimer);
+      state.hideTimer = null;
+    }
 
-		const handler = this.doubleTap(
-			() => { this.player.volumeUp?.(); },
-			() => {
-				if (this.wasControlsVisibleAtTapStart()) {
-					this.dismissControls();
-				}
-			},
-		);
-		this.listen(el, 'click', handler);
-	}
+    // Position the indicator at the VIDEO's vertical centre, not the
+    // container's centre. The container may be taller than the video
+    // (letterboxing, bottom bar) so a CSS-only 50% sits off-centre on
+    // the actual frame.
+    const video = (this.player as { videoElement?: HTMLVideoElement }).videoElement;
+    const parent = state.el.parentElement;
 
-	private buildVolDown(parent: HTMLElement, pos: ZonePos): void {
-		const el = this.makeBox(parent, pos);
+    if (video && parent) {
+      const videoRect = video.getBoundingClientRect();
+      const parentRect = parent.getBoundingClientRect();
+      const centreY = videoRect.top + videoRect.height / 2 - parentRect.top;
 
-		const handler = this.doubleTap(
-			() => { this.player.volumeDown?.(); },
-			() => {
-				if (this.wasControlsVisibleAtTapStart()) {
-					this.dismissControls();
-				}
-			},
-		);
-		this.listen(el, 'click', handler);
-	}
+      state.el.style.top = `${centreY}px`;
+    }
+
+    state.accumulated += seconds;
+
+    const label = direction === 'back'
+      ? this.t('seek.back', { seconds: String(state.accumulated) })
+      : this.t('seek.forward', { seconds: String(state.accumulated) });
+
+    state.textEl.textContent = label;
+
+    state.el.classList.add('nm-seek-indicator--visible');
+
+    // eslint-disable-next-line player/no-raw-timers-in-plugin -- seek-indicator collapse timer, manually cleared/re-armed on each tap (see clearTimeout at the reset above); this.timeout() offers no manual-cancel handle for the re-arm path.
+    state.collapseTimer = setTimeout(() => {
+      state.accumulated = 0;
+      state.collapseTimer = null;
+
+      // eslint-disable-next-line player/no-raw-timers-in-plugin -- nested hide timer, manually cleared/re-armed alongside collapseTimer; same manual-cancel requirement.
+      state.hideTimer = setTimeout(() => {
+        state.el.classList.remove('nm-seek-indicator--visible');
+        state.hideTimer = null;
+      }, 200);
+    }, 1000);
+  }
+
+  private buildSeekBack(parent: HTMLElement, pos: ZonePos): void {
+    const el = this.makeBox(parent, pos);
+
+    // Single-tap: hide if controls were visible AT TAP START (pre-wake snapshot).
+    // wasControlsVisibleAtTapStart() returns the capture-phase snapshot taken
+    // before desktop-ui's bumpActivity may have added .active. When controls
+    // were hidden at tap start, do nothing — desktop-ui already showed them
+    // via touchstart. Double-tap seeks regardless of state.
+    const handler = this.doubleTap(
+      () => {
+        const seconds = this.opts?.seekSeconds ?? 10;
+
+        void this.player.rewind?.(seconds);
+
+        if (this.leftIndicator === null) {
+          this.leftIndicator = this.createSeekIndicator(el, 'left');
+        }
+
+        this.showSeekIndicator(this.leftIndicator, seconds, 'back');
+      },
+      () => {
+        if (this.wasControlsVisibleAtTapStart()) {
+          this.dismissControls();
+        }
+      },
+    );
+
+    this.listen(el, 'click', handler);
+  }
+
+  private buildSeekForward(parent: HTMLElement, pos: ZonePos): void {
+    const el = this.makeBox(parent, pos);
+
+    const handler = this.doubleTap(
+      () => {
+        const seconds = this.opts?.seekSeconds ?? 10;
+
+        void this.player.forward?.(seconds);
+
+        if (this.rightIndicator === null) {
+          this.rightIndicator = this.createSeekIndicator(el, 'right');
+        }
+
+        this.showSeekIndicator(this.rightIndicator, seconds, 'forward');
+      },
+      () => {
+        if (this.wasControlsVisibleAtTapStart()) {
+          this.dismissControls();
+        }
+      },
+    );
+
+    this.listen(el, 'click', handler);
+  }
+
+  private buildPlayback(parent: HTMLElement, pos: ZonePos): void {
+    const el = this.makeBox(parent, pos);
+
+    el.style.display = 'flex';
+    el.style.alignItems = 'center';
+    el.style.justifyContent = 'center';
+
+    // Center zone contract:
+    //   double-tap → toggleFullscreen (unconditional — matches the unguarded
+    //                double-tap on every other zone)
+    //   single-tap → togglePlayback  (unconditional — the center zone's ONLY
+    //                purpose is play/pause; no "wake tap" concern applies here;
+    //                disableClickToPause is the explicit opt-out)
+    //
+    // The previous guard (`!this._isMobile || this.controlsVisible`) was wrong:
+    // _isMobile is a one-shot static capability flag that returns true on any
+    // touch-capable device — including touch laptops used with a mouse and any
+    // browser under DevTools touch emulation. A cold tap on mobile would always
+    // find controlsVisible=false (debounced by 310 ms), silently no-oping.
+    const handler = this.doubleTap(
+      () => { void this.player.toggleFullscreen?.(); },
+      () => {
+        if (this.opts?.disableClickToPause || this.player.options?.disableClickToPause) return;
+
+        void this.player.togglePlayback?.();
+      },
+    );
+
+    this.listen(el, 'click', handler);
+  }
+
+  private buildVolUp(parent: HTMLElement, pos: ZonePos): void {
+    const el = this.makeBox(parent, pos);
+
+    const handler = this.doubleTap(
+      () => { this.player.volumeUp?.(); },
+      () => {
+        if (this.wasControlsVisibleAtTapStart()) {
+          this.dismissControls();
+        }
+      },
+    );
+
+    this.listen(el, 'click', handler);
+  }
+
+  private buildVolDown(parent: HTMLElement, pos: ZonePos): void {
+    const el = this.makeBox(parent, pos);
+
+    const handler = this.doubleTap(
+      () => { this.player.volumeDown?.(); },
+      () => {
+        if (this.wasControlsVisibleAtTapStart()) {
+          this.dismissControls();
+        }
+      },
+    );
+
+    this.listen(el, 'click', handler);
+  }
 }
 
 export const touchZonesPlugin = TouchZonesPlugin;

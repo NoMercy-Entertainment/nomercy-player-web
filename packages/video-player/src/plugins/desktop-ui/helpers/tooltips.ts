@@ -25,24 +25,24 @@ import type { SliderBarRefs } from './progressBar';
 // ── Button-refs bag ────────────────────────────────────────────────────────────
 
 export interface TooltipButtonRefs {
-	playBtn: HTMLButtonElement;
-	rewindBtn: HTMLButtonElement;
-	forwardBtn: HTMLButtonElement;
-	volBtn: HTMLButtonElement;
-	aspectRatioBtn: HTMLButtonElement;
-	theaterBtn: HTMLButtonElement;
-	pipBtn: HTMLButtonElement;
-	speedBtn: HTMLButtonElement;
-	subsBtn: HTMLButtonElement;
-	audioBtn: HTMLButtonElement;
-	qualityBtn: HTMLButtonElement;
-	playlistBtn: HTMLButtonElement;
-	settingsBtn: HTMLButtonElement;
-	fsBtn: HTMLButtonElement;
-	prevBtn: HTMLButtonElement;
-	nextBtn: HTMLButtonElement;
-	chapBackBtn: HTMLButtonElement;
-	chapFwdBtn: HTMLButtonElement;
+  playBtn: HTMLButtonElement;
+  rewindBtn: HTMLButtonElement;
+  forwardBtn: HTMLButtonElement;
+  volBtn: HTMLButtonElement;
+  aspectRatioBtn: HTMLButtonElement;
+  theaterBtn: HTMLButtonElement;
+  pipBtn: HTMLButtonElement;
+  speedBtn: HTMLButtonElement;
+  subsBtn: HTMLButtonElement;
+  audioBtn: HTMLButtonElement;
+  qualityBtn: HTMLButtonElement;
+  playlistBtn: HTMLButtonElement;
+  settingsBtn: HTMLButtonElement;
+  fsBtn: HTMLButtonElement;
+  prevBtn: HTMLButtonElement;
+  nextBtn: HTMLButtonElement;
+  chapBackBtn: HTMLButtonElement;
+  chapFwdBtn: HTMLButtonElement;
 }
 
 // ── Core tooltip primitive ─────────────────────────────────────────────────────
@@ -61,43 +61,54 @@ export interface TooltipButtonRefs {
  * debounce timer so all tooltips share one token slot.
  */
 export function addTooltip(
-	btn: HTMLButtonElement,
-	getText: () => string,
-	listen: (target: EventTarget, event: string, fn: (event: Event) => void) => void,
-	sliderRefs: SliderBarRefs,
-	container: HTMLElement,
-	getTooltipToken: () => number | null,
-	setTooltipToken: (token: number | null) => void,
-	scheduleTimeout: (fn: () => void, ms: number) => number,
+  btn: HTMLButtonElement,
+  getText: () => string,
+  listen: (target: EventTarget, event: string, fn: (event: Event) => void) => void,
+  sliderRefs: SliderBarRefs,
+  container: HTMLElement,
+  getTooltipToken: () => number | null,
+  setTooltipToken: (token: number | null) => void,
+  scheduleTimeout: (fn: () => void, ms: number) => number,
 ): void {
-	const tip = document.createElement('span');
-	tip.className = 'tooltip';
+  const tip = document.createElement('span');
 
-	const show = (): void => {
-		tip.textContent = getText();
-		tip.classList.add('tooltip-visible');
-		clampTooltip(tip, btn, sliderRefs, container);
-	};
-	const hide = (): void => {
-		const token = getTooltipToken();
-		if (token !== null) {
-			clearTimeout(token);
-			setTooltipToken(null);
-		}
-		tip.classList.remove('tooltip-visible');
-	};
+  tip.className = 'tooltip';
 
-	btn.removeAttribute('title');
-	btn.appendChild(tip);
+  const show = (): void => {
+    tip.textContent = getText();
+    tip.classList.add('tooltip-visible');
+    clampTooltip(tip, btn, sliderRefs, container);
+  };
 
-	listen(btn, 'mouseenter', () => {
-		const token = getTooltipToken();
-		if (token !== null)
-			clearTimeout(token);
-		setTooltipToken(scheduleTimeout(() => show(), 500));
-	});
-	listen(btn, 'mouseleave', () => hide());
-	listen(btn, 'click', () => hide());
+  const hide = (): void => {
+    const token = getTooltipToken();
+
+    if (token !== null) {
+      clearTimeout(token);
+      setTooltipToken(null);
+    }
+
+    tip.classList.remove('tooltip-visible');
+  };
+
+  btn.removeAttribute('title');
+  btn.appendChild(tip);
+
+  listen(btn, 'mouseenter', () => {
+    const token = getTooltipToken();
+
+    if (token !== null) {
+      clearTimeout(token);
+    }
+
+    setTooltipToken(scheduleTimeout(() => show(), 500));
+  });
+
+  listen(btn, 'mouseleave', () =>
+    hide());
+
+  listen(btn, 'click', () =>
+    hide());
 }
 
 /**
@@ -106,36 +117,39 @@ export function addTooltip(
  * slider-pop scrubbing preview.
  */
 export function clampTooltip(
-	tip: HTMLSpanElement,
-	btn: HTMLButtonElement,
-	sliderRefs: SliderBarRefs,
-	container: HTMLElement,
+  tip: HTMLSpanElement,
+  btn: HTMLButtonElement,
+  sliderRefs: SliderBarRefs,
+  container: HTMLElement,
 ): void {
-	const boundsRect = sliderRefs?.sliderBar.getBoundingClientRect()
-		?? container.getBoundingClientRect();
-	const btnRect = btn.getBoundingClientRect();
-	const tipWidth = tip.offsetWidth;
+  const boundsRect = sliderRefs?.sliderBar.getBoundingClientRect() ??
+    container.getBoundingClientRect();
+  const btnRect = btn.getBoundingClientRect();
+  const tipWidth = tip.offsetWidth;
 
-	const btnCenter = btnRect.left + btnRect.width / 2;
-	const halfTip = tipWidth / 2;
+  const btnCenter = btnRect.left + btnRect.width / 2;
+  const halfTip = tipWidth / 2;
 
-	const rawLeft = btnCenter - halfTip;
-	const rawRight = btnCenter + halfTip;
+  const rawLeft = btnCenter - halfTip;
+  const rawRight = btnCenter + halfTip;
 
-	const clampedLeft = Math.max(boundsRect.left, rawLeft);
-	const clampedRight = Math.min(boundsRect.right, rawRight);
+  const clampedLeft = Math.max(boundsRect.left, rawLeft);
+  const clampedRight = Math.min(boundsRect.right, rawRight);
 
-	let actualLeft: number;
-	if (rawLeft < clampedLeft)
-		actualLeft = clampedLeft;
-	else if (rawRight > clampedRight)
-		actualLeft = clampedRight - tipWidth;
-	else
-		actualLeft = rawLeft;
+  let actualLeft: number;
 
-	const shift = actualLeft - btnCenter + halfTip;
-	tip.style.transform = `translateX(calc(-50% + ${shift}px))`;
-	tip.style.setProperty('--arrow-x', `calc(50% - ${shift}px)`);
+  if (rawLeft < clampedLeft) {
+    actualLeft = clampedLeft;
+  } else if (rawRight > clampedRight) {
+    actualLeft = clampedRight - tipWidth;
+  } else {
+    actualLeft = rawLeft;
+  }
+
+  const shift = actualLeft - btnCenter + halfTip;
+
+  tip.style.transform = `translateX(calc(-50% + ${shift}px))`;
+  tip.style.setProperty('--arrow-x', `calc(50% - ${shift}px)`);
 }
 
 // ── Wire all tooltips ──────────────────────────────────────────────────────────
@@ -147,71 +161,108 @@ export function clampTooltip(
  * directly — no token resolver.
  */
 export function wireTooltips(
-	player: IVideoPlayer<VideoPlaylistItem>,
-	refs: TooltipButtonRefs,
-	sliderRefs: SliderBarRefs,
-	listen: (target: EventTarget, event: string, fn: (event: Event) => void) => void,
-	getTooltipToken: () => number | null,
-	setTooltipToken: (token: number | null) => void,
-	scheduleTimeout: (fn: () => void, ms: number) => number,
-	translate: (key: string, params?: Record<string, string>) => string,
-	safeCurrentIndex: () => number,
+  player: IVideoPlayer<VideoPlaylistItem>,
+  refs: TooltipButtonRefs,
+  sliderRefs: SliderBarRefs,
+  listen: (target: EventTarget, event: string, fn: (event: Event) => void) => void,
+  getTooltipToken: () => number | null,
+  setTooltipToken: (token: number | null) => void,
+  scheduleTimeout: (fn: () => void, ms: number) => number,
+  translate: (key: string, params?: Record<string, string>) => string,
+  safeCurrentIndex: () => number,
 ): void {
-	const attach = (btn: HTMLButtonElement, getText: () => string): void =>
-		addTooltip(btn, getText, listen, sliderRefs, player.container, getTooltipToken, setTooltipToken, scheduleTimeout);
+  const attach = (btn: HTMLButtonElement, getText: () => string): void =>
+    addTooltip(btn, getText, listen, sliderRefs, player.container, getTooltipToken, setTooltipToken, scheduleTimeout);
 
-	attach(refs.playBtn, () => translate('tooltip.play', {}));
-	attach(refs.rewindBtn, () => translate('tooltip.seekBack', {}));
-	attach(refs.forwardBtn, () => translate('tooltip.seekForward', {}));
-	attach(refs.volBtn, () => translate('tooltip.mute', {}));
-	attach(refs.aspectRatioBtn, () => translate('tooltip.aspectRatio', {}));
-	attach(refs.theaterBtn, () => translate('tooltip.theater', {}));
-	attach(refs.pipBtn, () => translate('tooltip.pip', {}));
-	attach(refs.speedBtn, () => translate('tooltip.speed', {}));
-	attach(refs.subsBtn, () => translate('tooltip.subtitles', {}));
-	attach(refs.audioBtn, () => translate('tooltip.audio', {}));
-	attach(refs.qualityBtn, () => translate('tooltip.quality', {}));
-	attach(refs.playlistBtn, () => translate('tooltip.playlist', {}));
-	attach(refs.settingsBtn, () => translate('tooltip.settings', {}));
-	attach(refs.fsBtn, () => translate('tooltip.fullscreen', {}));
+  attach(refs.playBtn, () =>
+    translate('tooltip.play', {}));
 
-	attach(refs.prevBtn, () => {
-		const idx = safeCurrentIndex();
-		const queue = player.queue() ?? [];
-		const prevItem = idx > 0 ? queue[idx - 1] : undefined;
-		if (prevItem?.title) {
-			return translate('tooltip.previousWithTitle', { title: prevItem.title });
-		}
-		return translate('tooltip.previous', {});
-	});
+  attach(refs.rewindBtn, () =>
+    translate('tooltip.seekBack', {}));
 
-	attach(refs.nextBtn, () => {
-		const idx = safeCurrentIndex();
-		const queue = player.queue() ?? [];
-		const nextItem = queue[idx + 1];
-		if (nextItem?.title) {
-			return translate('tooltip.nextWithTitle', { title: nextItem.title });
-		}
-		return translate('tooltip.next', {});
-	});
+  attach(refs.forwardBtn, () =>
+    translate('tooltip.seekForward', {}));
 
-	attach(refs.chapBackBtn, () => {
-		const chapters = player.chapters();
-		const time = player.time?.() ?? 0;
-		const prev = [...chapters].reverse().find(ch => ch.start < time - 1);
-		if (prev?.title) {
-			return translate('tooltip.previousChapterWithTitle', { title: prev.title });
-		}
-		return translate('tooltip.chapterPrev', {});
-	});
+  attach(refs.volBtn, () =>
+    translate('tooltip.mute', {}));
 
-	attach(refs.chapFwdBtn, () => {
-		const chapters = player.chapters();
-		const time = player.time?.() ?? 0;
-		const next = chapters.find(ch => ch.start > time + 1);
-		if (next?.title) {
-			return translate('tooltip.nextChapterWithTitle', { title: next.title });
-		}
-		return translate('tooltip.chapterNext', {});
-	});
+  attach(refs.aspectRatioBtn, () =>
+    translate('tooltip.aspectRatio', {}));
+
+  attach(refs.theaterBtn, () =>
+    translate('tooltip.theater', {}));
+
+  attach(refs.pipBtn, () =>
+    translate('tooltip.pip', {}));
+
+  attach(refs.speedBtn, () =>
+    translate('tooltip.speed', {}));
+
+  attach(refs.subsBtn, () =>
+    translate('tooltip.subtitles', {}));
+
+  attach(refs.audioBtn, () =>
+    translate('tooltip.audio', {}));
+
+  attach(refs.qualityBtn, () =>
+    translate('tooltip.quality', {}));
+
+  attach(refs.playlistBtn, () =>
+    translate('tooltip.playlist', {}));
+
+  attach(refs.settingsBtn, () =>
+    translate('tooltip.settings', {}));
+
+  attach(refs.fsBtn, () =>
+    translate('tooltip.fullscreen', {}));
+
+  attach(refs.prevBtn, () => {
+    const idx = safeCurrentIndex();
+    const queue = player.queue() ?? [];
+    const prevItem = idx > 0
+      ? queue[idx - 1]
+      : undefined;
+
+    if (prevItem?.title) {
+      return translate('tooltip.previousWithTitle', { title: prevItem.title });
+    }
+
+    return translate('tooltip.previous', {});
+  });
+
+  attach(refs.nextBtn, () => {
+    const idx = safeCurrentIndex();
+    const queue = player.queue() ?? [];
+    const nextItem = queue[idx + 1];
+
+    if (nextItem?.title) {
+      return translate('tooltip.nextWithTitle', { title: nextItem.title });
+    }
+
+    return translate('tooltip.next', {});
+  });
+
+  attach(refs.chapBackBtn, () => {
+    const chapters = player.chapters();
+    const time = player.time?.() ?? 0;
+    const prev = [...chapters].reverse().find((ch) => ch.start < time - 1);
+
+    if (prev?.title) {
+      return translate('tooltip.previousChapterWithTitle', { title: prev.title });
+    }
+
+    return translate('tooltip.chapterPrev', {});
+  });
+
+  attach(refs.chapFwdBtn, () => {
+    const chapters = player.chapters();
+    const time = player.time?.() ?? 0;
+    const next = chapters.find((ch) => ch.start > time + 1);
+
+    if (next?.title) {
+      return translate('tooltip.nextChapterWithTitle', { title: next.title });
+    }
+
+    return translate('tooltip.chapterNext', {});
+  });
 }

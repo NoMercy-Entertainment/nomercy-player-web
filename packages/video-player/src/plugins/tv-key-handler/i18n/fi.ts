@@ -9,13 +9,13 @@
 import type { TvKeyHandlerTranslationKey } from './en';
 
 export default {
-	'plugin.tv-key-handler.info.chapter': 'Luku',
-	'plugin.tv-key-handler.info.noTitle': 'Ei otsikkoa',
-	'plugin.tv-key-handler.info.timeRemaining': 'jäljellä',
-	'plugin.tv-key-handler.seek.red': '+30s',
-	'plugin.tv-key-handler.seek.green': '+60s',
-	'plugin.tv-key-handler.seek.yellow': '+90s',
-	'plugin.tv-key-handler.seek.blue': '+120s',
-	'plugin.tv-key-handler.aspectRatio.cycled': 'Kuvasuhde',
-	'plugin.tv-key-handler.bookmark.added': 'Kirjanmerkki lisätty',
+  'plugin.tv-key-handler.info.chapter': 'Luku',
+  'plugin.tv-key-handler.info.noTitle': 'Ei otsikkoa',
+  'plugin.tv-key-handler.info.timeRemaining': 'jäljellä',
+  'plugin.tv-key-handler.seek.red': '+30s',
+  'plugin.tv-key-handler.seek.green': '+60s',
+  'plugin.tv-key-handler.seek.yellow': '+90s',
+  'plugin.tv-key-handler.seek.blue': '+120s',
+  'plugin.tv-key-handler.aspectRatio.cycled': 'Kuvasuhde',
+  'plugin.tv-key-handler.bookmark.added': 'Kirjanmerkki lisätty',
 } satisfies Record<TvKeyHandlerTranslationKey, string>;

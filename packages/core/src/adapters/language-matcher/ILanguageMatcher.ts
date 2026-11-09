@@ -14,5 +14,5 @@
  * `'zh-Hant-TW'` → `['zh-Hant-TW', 'zh-Hant', 'zh']`
  */
 export interface ILanguageMatcher {
-	(tag: string): string[];
+  (tag: string): string[];
 }

@@ -17,107 +17,130 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { NMMusicPlayer } from '../index';
 
-const TRACK_A = { id: 'a', name: 'A', title: 'A', url: '/a.mp3' };
-const TRACK_B = { id: 'b', name: 'B', title: 'B', url: '/b.mp3' };
+const TRACK_A = {
+  id: 'a',
+  name: 'A',
+  title: 'A',
+  url: '/a.mp3',
+};
+const TRACK_B = {
+  id: 'b',
+  name: 'B',
+  title: 'B',
+  url: '/b.mp3',
+};
 
 function makePlayer(id: string): NMMusicPlayer {
-	const div = document.createElement('div');
-	div.id = id;
-	document.body.appendChild(div);
+  const div = document.createElement('div');
 
-	return new NMMusicPlayer(id);
+  div.id = id;
+  document.body.appendChild(div);
+
+  return new NMMusicPlayer(id);
 }
 
 describe('the outgoing track ending during a crossfade', () => {
-	beforeEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry?: () => void })._resetRegistry?.();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry?: () => void })._resetRegistry?.();
+    document.body.innerHTML = '';
+  });
 
-	it('does not end the player, so nothing advances past the incoming track', async () => {
-		const player = makePlayer('cf-ended-1');
-		player.setup({ playlist: [TRACK_A, TRACK_B] });
-		await player.ready();
+  it('does not end the player, so nothing advances past the incoming track', async () => {
+    const player = makePlayer('cf-ended-1');
 
-		const backend = player.backend() as unknown as {
-			supportsCrossfade: () => boolean;
-			loadSecondary: (url: string) => Promise<void>;
-			primeSecondary: () => Promise<void>;
-			crossfade: (ms: number) => Promise<void>;
-			emit: (event: string, payload: unknown) => void;
-		};
-		let finishFade!: () => void;
-		vi.spyOn(backend, 'supportsCrossfade').mockReturnValue(true);
-		vi.spyOn(backend, 'loadSecondary').mockResolvedValue(undefined);
-		vi.spyOn(backend, 'primeSecondary').mockResolvedValue(undefined);
-		vi.spyOn(backend, 'crossfade').mockImplementation(() => new Promise<void>((resolve) => {
-			finishFade = resolve;
-		}));
+    player.setup({ playlist: [TRACK_A, TRACK_B] });
+    await player.ready();
 
-		const ended = vi.fn();
-		player.on('ended', ended);
+    const backend = player.backend() as unknown as {
+      supportsCrossfade: () => boolean;
+      loadSecondary: (url: string) => Promise<void>;
+      primeSecondary: () => Promise<void>;
+      crossfade: (ms: number) => Promise<void>;
+      emit: (event: string, payload: unknown) => void;
+    };
+    let finishFade!: () => void;
 
-		const fade = player.crossfadeTo(TRACK_B as never);
-		await vi.waitFor(() => expect(finishFade).toBeTypeOf('function'));
+    vi.spyOn(backend, 'supportsCrossfade').mockReturnValue(true);
+    vi.spyOn(backend, 'loadSecondary').mockResolvedValue(undefined);
+    vi.spyOn(backend, 'primeSecondary').mockResolvedValue(undefined);
 
-		backend.emit('ended', new Event('ended'));
-		finishFade();
-		await fade;
+    vi.spyOn(backend, 'crossfade').mockImplementation(() => new Promise<void>((resolve) => {
+      finishFade = resolve;
+    }));
 
-		expect(ended, 'the replaced track ending is not the player ending').not.toHaveBeenCalled();
-	});
+    const ended = vi.fn();
 
-	it('moves the cursor to the incoming track without loading it again', async () => {
-		const player = makePlayer('cf-ended-2');
-		player.setup({ playlist: [TRACK_A, TRACK_B] });
-		await player.ready();
+    player.on('ended', ended);
 
-		const backend = player.backend() as unknown as {
-			supportsCrossfade: () => boolean;
-			loadSecondary: (url: string) => Promise<void>;
-			primeSecondary: () => Promise<void>;
-			crossfade: (ms: number) => Promise<void>;
-		};
-		vi.spyOn(backend, 'supportsCrossfade').mockReturnValue(true);
-		vi.spyOn(backend, 'loadSecondary').mockResolvedValue(undefined);
-		vi.spyOn(backend, 'primeSecondary').mockResolvedValue(undefined);
-		vi.spyOn(backend, 'crossfade').mockResolvedValue(undefined);
-		const load = vi.spyOn(player, 'load');
-		const items: string[] = [];
-		player.on('item', data => items.push(String(data.item?.id)));
+    const fade = player.crossfadeTo(TRACK_B as never);
 
-		await player.crossfadeTo(TRACK_B as never);
-		await new Promise(resolve => setTimeout(resolve, 0));
+    await vi.waitFor(() => expect(finishFade).toBeTypeOf('function'));
 
-		expect(load, 'the swapped element already plays the incoming track').not.toHaveBeenCalled();
-		expect(player.item()?.id).toBe('b');
-		expect(items).toEqual(['b']);
-	});
+    backend.emit('ended', new Event('ended'));
+    finishFade();
+    await fade;
 
-	it('keeps publishing time after the swap, so the position reaches its listeners', async () => {
-		const player = makePlayer('cf-ended-3');
-		player.setup({ playlist: [TRACK_A, TRACK_B] });
-		await player.ready();
-		// Track A mounted, as a finished load() leaves it.
-		(player as unknown as { _mountedItemId?: string })._mountedItemId = 'a';
+    expect(ended, 'the replaced track ending is not the player ending').not.toHaveBeenCalled();
+  });
 
-		const backend = player.backend() as unknown as {
-			supportsCrossfade: () => boolean;
-			loadSecondary: (url: string) => Promise<void>;
-			primeSecondary: () => Promise<void>;
-			crossfade: (ms: number) => Promise<void>;
-			emit: (event: string, payload: unknown) => void;
-		};
-		vi.spyOn(backend, 'supportsCrossfade').mockReturnValue(true);
-		vi.spyOn(backend, 'loadSecondary').mockResolvedValue(undefined);
-		vi.spyOn(backend, 'primeSecondary').mockResolvedValue(undefined);
-		vi.spyOn(backend, 'crossfade').mockResolvedValue(undefined);
+  it('moves the cursor to the incoming track without loading it again', async () => {
+    const player = makePlayer('cf-ended-2');
 
-		await player.crossfadeTo(TRACK_B as never);
-		const time = vi.fn();
-		player.on('time', time);
-		backend.emit('timeupdate', new Event('timeupdate'));
+    player.setup({ playlist: [TRACK_A, TRACK_B] });
+    await player.ready();
 
-		expect(time, 'the incoming track is the mounted one now').toHaveBeenCalled();
-	});
+    const backend = player.backend() as unknown as {
+      supportsCrossfade: () => boolean;
+      loadSecondary: (url: string) => Promise<void>;
+      primeSecondary: () => Promise<void>;
+      crossfade: (ms: number) => Promise<void>;
+    };
+
+    vi.spyOn(backend, 'supportsCrossfade').mockReturnValue(true);
+    vi.spyOn(backend, 'loadSecondary').mockResolvedValue(undefined);
+    vi.spyOn(backend, 'primeSecondary').mockResolvedValue(undefined);
+    vi.spyOn(backend, 'crossfade').mockResolvedValue(undefined);
+    const load = vi.spyOn(player, 'load');
+    const items: string[] = [];
+
+    player.on('item', (data) =>
+      items.push(String(data.item?.id)));
+
+    await player.crossfadeTo(TRACK_B as never);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(load, 'the swapped element already plays the incoming track').not.toHaveBeenCalled();
+    expect(player.item()?.id).toBe('b');
+    expect(items).toEqual(['b']);
+  });
+
+  it('keeps publishing time after the swap, so the position reaches its listeners', async () => {
+    const player = makePlayer('cf-ended-3');
+
+    player.setup({ playlist: [TRACK_A, TRACK_B] });
+    await player.ready();
+    // Track A mounted, as a finished load() leaves it.
+    (player as unknown as { _mountedItemId?: string })._mountedItemId = 'a';
+
+    const backend = player.backend() as unknown as {
+      supportsCrossfade: () => boolean;
+      loadSecondary: (url: string) => Promise<void>;
+      primeSecondary: () => Promise<void>;
+      crossfade: (ms: number) => Promise<void>;
+      emit: (event: string, payload: unknown) => void;
+    };
+
+    vi.spyOn(backend, 'supportsCrossfade').mockReturnValue(true);
+    vi.spyOn(backend, 'loadSecondary').mockResolvedValue(undefined);
+    vi.spyOn(backend, 'primeSecondary').mockResolvedValue(undefined);
+    vi.spyOn(backend, 'crossfade').mockResolvedValue(undefined);
+
+    await player.crossfadeTo(TRACK_B as never);
+    const time = vi.fn();
+
+    player.on('time', time);
+    backend.emit('timeupdate', new Event('timeupdate'));
+
+    expect(time, 'the incoming track is the mounted one now').toHaveBeenCalled();
+  });
 });

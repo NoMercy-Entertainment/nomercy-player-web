@@ -6,11 +6,11 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
+import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import {
   AST_NODE_TYPES,
   ESLintUtils,
-  type TSESLint,
-  type TSESTree,
+
 } from '@typescript-eslint/utils';
 
 // Owner 2026-10-13: "if statements may only directly return void, when a value is set then i

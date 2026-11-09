@@ -7,11 +7,11 @@
 // -----------------------------------------------------------------------------
 
 const translations = {
-	'plugin.twitch.error.clip-unavailable': 'Twitch nima predvajljive datoteke za posnetek {slug}',
-	'plugin.twitch.channel.offline': '{channel} ni na spletu',
-	'plugin.twitch.channel.ended': 'Prenos kanala {channel} se je končal',
-	'plugin.twitch.setting.use-twitch-player': 'Uporabi Twitchov predvajalnik',
-	'plugin.twitch.subtitle.enabled': 'Vklopljeno',
+  'plugin.twitch.error.clip-unavailable': 'Twitch nima predvajljive datoteke za posnetek {slug}',
+  'plugin.twitch.channel.offline': '{channel} ni na spletu',
+  'plugin.twitch.channel.ended': 'Prenos kanala {channel} se je končal',
+  'plugin.twitch.setting.use-twitch-player': 'Uporabi Twitchov predvajalnik',
+  'plugin.twitch.subtitle.enabled': 'Vklopljeno',
 };
 
 export default translations;

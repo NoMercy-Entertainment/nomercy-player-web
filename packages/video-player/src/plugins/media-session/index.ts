@@ -27,19 +27,20 @@ import { MediaSessionPlugin as BaseMediaSession } from '@nomercy-entertainment/n
  * `getMetadata()` — do NOT cast to a richer intersection in this built-in.
  */
 export class MediaSessionPlugin<T extends VideoPlaylistItem = VideoPlaylistItem> extends BaseMediaSession<T, NMVideoPlayer<T>> {
-	static override readonly id: string = 'media-session';
-	static override readonly translations: Translations = translationsFromGlob('./i18n/*.ts');
+  static override readonly id: string = 'media-session';
+  static override readonly translations: Translations = translationsFromGlob('./i18n/*.ts');
 
-	protected override getMetadata(item: T): MediaSessionMetadata {
-		const seasonText = item.season !== undefined && item.season !== null && String(item.season) !== ''
-			? this.t('season', { season: String(item.season) })
-			: '';
-		return {
-			title: item.title ?? '',
-			artist: item.show ?? '',
-			album: seasonText,
-		};
-	}
+  protected override getMetadata(item: T): MediaSessionMetadata {
+    const seasonText = item.season !== undefined && item.season !== null && String(item.season) !== ''
+      ? this.t('season', { season: String(item.season) })
+      : '';
+
+    return {
+      title: item.title ?? '',
+      artist: item.show ?? '',
+      album: seasonText,
+    };
+  }
 }
 
 export const mediaSessionPlugin = MediaSessionPlugin;

@@ -25,98 +25,113 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare bandwidth: () => number;
-	declare bandwidthEstimator: { (): (() => number) | undefined; (fn: () => number): void };
-	declare canPlay: (profile: { contentType: string; width?: number; height?: number; bitrate?: number; framerate?: number }) => Promise<{ supported: boolean; smooth: boolean; powerEfficient: boolean }>;
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare bandwidth: () => number;
+  declare bandwidthEstimator: { (): (() => number) | undefined; (fn: () => number): void };
+  declare canPlay: (profile: {
+    contentType: string;
+    width?: number;
+    height?: number;
+    bitrate?: number;
+    framerate?: number;
+  }) => Promise<{
+    supported: boolean;
+    smooth: boolean;
+    powerEfficient: boolean;
+  }>;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 function wireBackend(player: MockPlayer, backend: { bandwidthEstimate?: () => number }): void {
-	(player as unknown as { backend: () => unknown }).backend = (): unknown => backend;
+  (player as unknown as { backend: () => unknown }).backend = (): unknown => backend;
 }
 
 describe('abrMethods (slice 03)', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('bandwidth() returns 0 before any estimator is wired', () => {
-		const player = makePlayer('abr-1');
+  it('bandwidth() returns 0 before any estimator is wired', () => {
+    const player = makePlayer('abr-1');
 
-		const result = player.bandwidth();
+    const result = player.bandwidth();
 
-		expect(result).toBe(0);
-	});
+    expect(result).toBe(0);
+  });
 
-	it('bandwidthEstimator(fn) stores the function; bandwidthEstimator() returns that exact reference', () => {
-		const player = makePlayer('abr-2');
-		const estimator = (): number => 1234;
+  it('bandwidthEstimator(fn) stores the function; bandwidthEstimator() returns that exact reference', () => {
+    const player = makePlayer('abr-2');
+    const estimator = (): number => 1234;
 
-		player.bandwidthEstimator(estimator);
-		const stored = player.bandwidthEstimator();
+    player.bandwidthEstimator(estimator);
+    const stored = player.bandwidthEstimator();
 
-		expect(stored).toBe(estimator);
-	});
+    expect(stored).toBe(estimator);
+  });
 
-	it('canPlay({ contentType }) returns an object with a boolean `supported` field', async () => {
-		const player = makePlayer('abr-3');
+  it('canPlay({ contentType }) returns an object with a boolean `supported` field', async () => {
+    const player = makePlayer('abr-3');
 
-		const result = await player.canPlay({ contentType: 'video/mp4' });
+    const result = await player.canPlay({ contentType: 'video/mp4' });
 
-		expect(result).toBeDefined();
-		expect(typeof result.supported).toBe('boolean');
-	});
+    expect(result).toBeDefined();
+    expect(typeof result.supported).toBe('boolean');
+  });
 
-	it('bandwidthEstimator(fn) makes bandwidth() return fn()\'s value', () => {
-		const player = makePlayer('abr-4');
+  it('bandwidthEstimator(fn) makes bandwidth() return fn()\'s value', () => {
+    const player = makePlayer('abr-4');
 
-		player.bandwidthEstimator(() => 12_345);
+    player.bandwidthEstimator(() => 12_345);
 
-		expect(player.bandwidth()).toBe(12_345);
-	});
+    expect(player.bandwidth()).toBe(12_345);
+  });
 
-	it('bandwidth() returns the backend\'s live bandwidthEstimate() when no estimator is wired', () => {
-		const player = makePlayer('abr-5');
-		wireBackend(player, { bandwidthEstimate: () => 2_500_000 });
+  it('bandwidth() returns the backend\'s live bandwidthEstimate() when no estimator is wired', () => {
+    const player = makePlayer('abr-5');
 
-		expect(player.bandwidth()).toBe(2_500_000);
-	});
+    wireBackend(player, { bandwidthEstimate: () => 2_500_000 });
 
-	it('a consumer-set bandwidthEstimator(fn) wins over a wired backend estimate', () => {
-		const player = makePlayer('abr-6');
-		wireBackend(player, { bandwidthEstimate: () => 2_500_000 });
+    expect(player.bandwidth()).toBe(2_500_000);
+  });
 
-		player.bandwidthEstimator(() => 999);
+  it('a consumer-set bandwidthEstimator(fn) wins over a wired backend estimate', () => {
+    const player = makePlayer('abr-6');
 
-		expect(player.bandwidth()).toBe(999);
-	});
+    wireBackend(player, { bandwidthEstimate: () => 2_500_000 });
 
-	it('bandwidth() returns 0 when the wired backend has no bandwidthEstimate capability', () => {
-		const player = makePlayer('abr-7');
-		wireBackend(player, {});
+    player.bandwidthEstimator(() => 999);
 
-		expect(player.bandwidth()).toBe(0);
-	});
+    expect(player.bandwidth()).toBe(999);
+  });
+
+  it('bandwidth() returns 0 when the wired backend has no bandwidthEstimate capability', () => {
+    const player = makePlayer('abr-7');
+
+    wireBackend(player, {});
+
+    expect(player.bandwidth()).toBe(0);
+  });
 });

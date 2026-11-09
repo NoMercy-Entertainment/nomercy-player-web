@@ -14,5 +14,5 @@ import { PlayerError } from './player';
  * Check `error.context.httpStatus` when an HTTP status is available.
  */
 export class NetworkError extends PlayerError {
-	override readonly name: string = 'NetworkError';
+  override readonly name: string = 'NetworkError';
 }

@@ -26,423 +26,458 @@ import { RepeatState } from '../../types';
 // ── Minimal resolving backend ─────────────────────────────────────────────────
 
 function makeResolvingBackend(): Record<string, any> {
-	const element = document.createElement('audio');
-	return {
-		kind: 'audio-element',
-		load: vi.fn(() => Promise.resolve()),
-		unload: vi.fn(),
-		dispose: vi.fn(),
-		play: vi.fn(() => Promise.resolve()),
-		pause: vi.fn(),
-		stop: vi.fn(),
-		currentTime: vi.fn(() => 0),
-		duration: vi.fn(() => 0),
-		buffered: vi.fn(() => 0),
-		bufferedRanges: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
-		seekable: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
-		playbackRate: vi.fn(() => 1),
-		volume: vi.fn(() => 0.8),
-		mute: vi.fn(),
-		unmute: vi.fn(),
-		state: vi.fn(() => 'idle' as const),
-		outputNode: vi.fn(() => ({} as AudioNode)),
-		analyserSource: vi.fn(() => ({} as AudioNode)),
-		mediaElement: vi.fn(() => element),
-		captureStream: vi.fn(() => ({} as MediaStream)),
-		setSinkId: vi.fn(() => Promise.resolve()),
-		getSinkId: vi.fn(() => ''),
-		mediaKeys: vi.fn(() => undefined),
-		setMediaKeys: vi.fn(() => Promise.resolve()),
-		outputProtectionState: vi.fn(() => 'unsupported' as const),
-		pauseLoader: vi.fn(),
-		resumeLoader: vi.fn(),
-		loaderState: vi.fn(() => 'running' as const),
-		on: vi.fn(),
-		off: vi.fn(),
-		supportsCrossfade: vi.fn(() => true),
-		loadSecondary: vi.fn(() => Promise.resolve()),
-		disposeSecondary: vi.fn(),
-		primeSecondary: vi.fn(() => Promise.resolve()),
-		crossfade: vi.fn(() => Promise.resolve()),
-		secondaryGain: vi.fn(() => 0),
-	};
+  const element = document.createElement('audio');
+
+  return {
+    kind: 'audio-element',
+    load: vi.fn(() => Promise.resolve()),
+    unload: vi.fn(),
+    dispose: vi.fn(),
+    play: vi.fn(() => Promise.resolve()),
+    pause: vi.fn(),
+    stop: vi.fn(),
+    currentTime: vi.fn(() => 0),
+    duration: vi.fn(() => 0),
+    buffered: vi.fn(() => 0),
+    bufferedRanges: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
+    seekable: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
+    playbackRate: vi.fn(() => 1),
+    volume: vi.fn(() => 0.8),
+    mute: vi.fn(),
+    unmute: vi.fn(),
+    state: vi.fn(() => 'idle' as const),
+    outputNode: vi.fn(() => ({} as AudioNode)),
+    analyserSource: vi.fn(() => ({} as AudioNode)),
+    mediaElement: vi.fn(() => element),
+    captureStream: vi.fn(() => ({} as MediaStream)),
+    setSinkId: vi.fn(() => Promise.resolve()),
+    getSinkId: vi.fn(() => ''),
+    mediaKeys: vi.fn(() => undefined),
+    setMediaKeys: vi.fn(() => Promise.resolve()),
+    outputProtectionState: vi.fn(() => 'unsupported' as const),
+    pauseLoader: vi.fn(),
+    resumeLoader: vi.fn(),
+    loaderState: vi.fn(() => 'running' as const),
+    on: vi.fn(),
+    off: vi.fn(),
+    supportsCrossfade: vi.fn(() => true),
+    loadSecondary: vi.fn(() => Promise.resolve()),
+    disposeSecondary: vi.fn(),
+    primeSecondary: vi.fn(() => Promise.resolve()),
+    crossfade: vi.fn(() => Promise.resolve()),
+    secondaryGain: vi.fn(() => 0),
+  };
 }
 
 function track(id: string, extra?: Partial<MusicPlaylistItem>): MusicPlaylistItem {
-	return {
-		id,
-		name: `track ${id}`,
-		url: `blob:${id}`,
-		...extra,
-	};
+  return {
+    id,
+    name: `track ${id}`,
+    url: `blob:${id}`,
+    ...extra,
+  };
 }
 
 function tick(): Promise<void> {
-	return new Promise<void>(resolve => setTimeout(resolve, 0));
+  return new Promise<void>((resolve) => setTimeout(resolve, 0));
 }
 
 let idCounter = 0;
 
 async function makePlayerWithPlugin(): Promise<{ player: NMMusicPlayer; plugin: AutoAdvancePlugin }> {
-	idCounter += 1;
-	const id = `auto-advance-${idCounter}`;
-	const div = document.createElement('div');
-	div.id = id;
-	document.body.appendChild(div);
+  idCounter += 1;
+  const id = `auto-advance-${idCounter}`;
+  const div = document.createElement('div');
 
-	const player = new NMMusicPlayer(id);
-	player.setup({ backendFactory: () => makeResolvingBackend() } as any);
-	player.addPlugin(autoAdvancePlugin);
-	await player.ready();
-	player.backend();
+  div.id = id;
+  document.body.appendChild(div);
 
-	const plugin = player.getPlugin(AutoAdvancePlugin);
-	if (!plugin)
-		throw new Error('AutoAdvancePlugin not registered');
-	return {
-		player,
-		plugin,
-	};
+  const player = new NMMusicPlayer(id);
+
+  player.setup({ backendFactory: () => makeResolvingBackend() } as any);
+  player.addPlugin(autoAdvancePlugin);
+  await player.ready();
+  player.backend();
+
+  const plugin = player.getPlugin(AutoAdvancePlugin);
+
+  if (!plugin)
+    throw new Error('AutoAdvancePlugin not registered');
+
+  return {
+    player,
+    plugin,
+  };
 }
 
 describe('AutoAdvancePlugin residue', () => {
-	beforeEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  beforeEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	afterEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.restoreAllMocks();
-	});
+  afterEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.restoreAllMocks();
+  });
 
-	// ── Queue exhaustion ──────────────────────────────────────────────────────
+  // ── Queue exhaustion ──────────────────────────────────────────────────────
 
-	describe('queue exhaustion', () => {
-		it('ended on the last item emits queue:exhausted and keeps the cursor in place', async () => {
-			const { player } = await makePlayerWithPlugin();
+  describe('queue exhaustion', () => {
+    it('ended on the last item emits queue:exhausted and keeps the cursor in place', async () => {
+      const { player } = await makePlayerWithPlugin();
 
-			player.queue([track('a'), track('b')]);
-			player.item('b');
-			await tick();
+      player.queue([track('a'), track('b')]);
+      player.item('b');
+      await tick();
 
-			let exhaustedCount = 0;
-			player.on('queue:exhausted' as any, () => { exhaustedCount++; });
+      let exhaustedCount = 0;
 
-			player.emit('ended' as any, undefined as any);
-			await tick();
+      player.on('queue:exhausted' as any, () => { exhaustedCount++; });
 
-			expect(exhaustedCount).toBe(1);
-			expect(player.index()).toBe(1);
-			expect(player.item()?.id).toBe('b');
-		});
-	});
+      player.emit('ended' as any, undefined as any);
+      await tick();
 
-	// ── Repeat-mode interplay ─────────────────────────────────────────────────
+      expect(exhaustedCount).toBe(1);
+      expect(player.index()).toBe(1);
+      expect(player.item()?.id).toBe('b');
+    });
+  });
 
-	describe('repeat-mode interplay', () => {
-		it('repeat ONE reloads the current item on ended — cursor stays, no exhaustion', async () => {
-			const { player } = await makePlayerWithPlugin();
+  // ── Repeat-mode interplay ─────────────────────────────────────────────────
 
-			player.queue([track('a'), track('b')]);
-			player.item('b');
-			await player.repeatState(RepeatState.ONE);
+  describe('repeat-mode interplay', () => {
+    it('repeat ONE reloads the current item on ended — cursor stays, no exhaustion', async () => {
+      const { player } = await makePlayerWithPlugin();
 
-			let exhaustedCount = 0;
-			let nextCount = 0;
-			player.on('queue:exhausted' as any, () => { exhaustedCount++; });
-			player.on('next' as any, () => { nextCount++; });
+      player.queue([track('a'), track('b')]);
+      player.item('b');
+      await player.repeatState(RepeatState.ONE);
 
-			player.emit('ended' as any, undefined as any);
-			await tick();
+      let exhaustedCount = 0;
+      let nextCount = 0;
 
-			expect(nextCount).toBe(1);
-			expect(exhaustedCount).toBe(0);
-			expect(player.index()).toBe(1);
-			expect(player.item()?.id).toBe('b');
-		});
+      player.on('queue:exhausted' as any, () => { exhaustedCount++; });
+      player.on('next' as any, () => { nextCount++; });
 
-		it('repeat ALL wraps from the last item back to the first on ended', async () => {
-			const { player } = await makePlayerWithPlugin();
+      player.emit('ended' as any, undefined as any);
+      await tick();
 
-			player.queue([track('a'), track('b')]);
-			player.item('b');
-			await player.repeatState(RepeatState.ALL);
+      expect(nextCount).toBe(1);
+      expect(exhaustedCount).toBe(0);
+      expect(player.index()).toBe(1);
+      expect(player.item()?.id).toBe('b');
+    });
 
-			let exhaustedCount = 0;
-			player.on('queue:exhausted' as any, () => { exhaustedCount++; });
+    it('repeat ALL wraps from the last item back to the first on ended', async () => {
+      const { player } = await makePlayerWithPlugin();
 
-			player.emit('ended' as any, undefined as any);
-			await tick();
+      player.queue([track('a'), track('b')]);
+      player.item('b');
+      await player.repeatState(RepeatState.ALL);
 
-			expect(exhaustedCount).toBe(0);
-			expect(player.index()).toBe(0);
-			expect(player.item()?.id).toBe('a');
-		});
-	});
+      let exhaustedCount = 0;
 
-	// ── Mid-track disable ─────────────────────────────────────────────────────
+      player.on('queue:exhausted' as any, () => { exhaustedCount++; });
 
-	describe('disable mid-track', () => {
-		it('options({ enabled: false }) stops the itemEndingSoon path — no crossfade fires', async () => {
-			const { player, plugin } = await makePlayerWithPlugin();
+      player.emit('ended' as any, undefined as any);
+      await tick();
 
-			player.queue([track('a'), track('b')]);
-			plugin.options({
-				crossfade: true,
-				crossfadeDuration: 2,
-			});
+      expect(exhaustedCount).toBe(0);
+      expect(player.index()).toBe(0);
+      expect(player.item()?.id).toBe('a');
+    });
+  });
 
-			const crossfadeSpy = vi.spyOn(player, 'crossfadeTo').mockResolvedValue(undefined);
+  // ── Mid-track disable ─────────────────────────────────────────────────────
 
-			plugin.options({ enabled: false });
-			player.emit('itemEndingSoon' as any, undefined as any);
-			await tick();
+  describe('disable mid-track', () => {
+    it('options({ enabled: false }) stops the itemEndingSoon path — no crossfade fires', async () => {
+      const { player, plugin } = await makePlayerWithPlugin();
 
-			expect(crossfadeSpy).not.toHaveBeenCalled();
+      player.queue([track('a'), track('b')]);
 
-			plugin.options({ enabled: true });
-			player.emit('itemEndingSoon' as any, undefined as any);
-			await tick();
+      plugin.options({
+        crossfade: true,
+        crossfadeDuration: 2,
+      });
 
-			expect(crossfadeSpy).toHaveBeenCalledTimes(1);
-		});
-	});
+      const crossfadeSpy = vi.spyOn(player, 'crossfadeTo').mockResolvedValue(undefined);
 
-	// ── preloadNext ───────────────────────────────────────────────────────────
+      plugin.options({ enabled: false });
+      player.emit('itemEndingSoon' as any, undefined as any);
+      await tick();
 
-	describe('preloadNext()', () => {
-		it('loads the peeked next item into the next slot', async () => {
-			const { player, plugin } = await makePlayerWithPlugin();
+      expect(crossfadeSpy).not.toHaveBeenCalled();
 
-			player.queue([track('a'), track('b')]);
+      plugin.options({ enabled: true });
+      player.emit('itemEndingSoon' as any, undefined as any);
+      await tick();
 
-			const loadSpy = vi.spyOn(player, 'load').mockResolvedValue(undefined);
-			await plugin.preloadNext();
+      expect(crossfadeSpy).toHaveBeenCalledTimes(1);
+    });
+  });
 
-			expect(loadSpy).toHaveBeenCalledTimes(1);
-			const [loadedItem, loadOpts] = loadSpy.mock.calls[0]!;
-			expect((loadedItem as MusicPlaylistItem).id).toBe('b');
-			expect(loadOpts).toEqual({ slot: 'next' });
-		});
+  // ── preloadNext ───────────────────────────────────────────────────────────
 
-		it('no-ops when there is no next item', async () => {
-			const { player, plugin } = await makePlayerWithPlugin();
+  describe('preloadNext()', () => {
+    it('loads the peeked next item into the next slot', async () => {
+      const { player, plugin } = await makePlayerWithPlugin();
 
-			player.queue([track('a'), track('b')]);
-			player.item('b');
-			await tick();
+      player.queue([track('a'), track('b')]);
 
-			const loadSpy = vi.spyOn(player, 'load').mockResolvedValue(undefined);
-			await plugin.preloadNext();
+      const loadSpy = vi.spyOn(player, 'load').mockResolvedValue(undefined);
 
-			expect(loadSpy).not.toHaveBeenCalled();
-		});
+      await plugin.preloadNext();
 
-		it('contains a load failure — warns instead of throwing', async () => {
-			const { player, plugin } = await makePlayerWithPlugin();
+      expect(loadSpy).toHaveBeenCalledTimes(1);
+      const [loadedItem, loadOpts] = loadSpy.mock.calls[0]!;
 
-			player.queue([track('a'), track('b')]);
-			const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-			vi.spyOn(player, 'load').mockRejectedValue(new Error('network down'));
+      expect((loadedItem as MusicPlaylistItem).id).toBe('b');
+      expect(loadOpts).toEqual({ slot: 'next' });
+    });
 
-			await expect(plugin.preloadNext()).resolves.toBeUndefined();
+    it('no-ops when there is no next item', async () => {
+      const { player, plugin } = await makePlayerWithPlugin();
 
-			const flattened = warnSpy.mock.calls.map(args => args.join(' '));
-			expect(flattened.some(line => line.includes('preloadNext failed'))).toBe(true);
-		});
+      player.queue([track('a'), track('b')]);
+      player.item('b');
+      await tick();
 
-		it('runs automatically on itemEndingSoon when preloadNextOnEnding is set', async () => {
-			const { player, plugin } = await makePlayerWithPlugin();
+      const loadSpy = vi.spyOn(player, 'load').mockResolvedValue(undefined);
 
-			player.queue([track('a'), track('b')]);
-			plugin.options({ preloadNextOnEnding: true });
+      await plugin.preloadNext();
 
-			const loadSpy = vi.spyOn(player, 'load').mockResolvedValue(undefined);
-			player.emit('itemEndingSoon' as any, undefined as any);
-			await tick();
+      expect(loadSpy).not.toHaveBeenCalled();
+    });
 
-			expect(loadSpy).toHaveBeenCalledTimes(1);
-			expect((loadSpy.mock.calls[0]![0] as MusicPlaylistItem).id).toBe('b');
-		});
-	});
+    it('contains a load failure — warns instead of throwing', async () => {
+      const { player, plugin } = await makePlayerWithPlugin();
 
-	// ── Handler registration APIs ─────────────────────────────────────────────
+      player.queue([track('a'), track('b')]);
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-	describe('handler registration', () => {
-		it('addEndedHandler() handlers run after the built-in advance; a throwing handler is contained', async () => {
-			const { player, plugin } = await makePlayerWithPlugin();
+      vi.spyOn(player, 'load').mockRejectedValue(new Error('network down'));
 
-			player.queue([track('a'), track('b')]);
+      await expect(plugin.preloadNext()).resolves.toBeUndefined();
 
-			const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-			const seen: string[] = [];
-			plugin.addEndedHandler(() => {
-				seen.push(`after-advance index=${player.index()}`);
-				throw new Error('handler exploded');
-			});
-			plugin.addEndedHandler(() => {
-				seen.push('second handler still runs');
-			});
+      const flattened = warnSpy.mock.calls.map((args) => args.join(' '));
 
-			player.emit('ended' as any, undefined as any);
-			await tick();
+      expect(flattened.some((line) => line.includes('preloadNext failed'))).toBe(true);
+    });
 
-			expect(seen).toEqual([
-				'after-advance index=1',
-				'second handler still runs',
-			]);
-			const flattened = warnSpy.mock.calls.map(args => args.join(' '));
-			expect(flattened.some(line => line.includes('ended handler threw'))).toBe(true);
-		});
+    it('runs automatically on itemEndingSoon when preloadNextOnEnding is set', async () => {
+      const { player, plugin } = await makePlayerWithPlugin();
 
-		it('addPreloadHandler() and addCrossfadeHandler() receive the peeked item and duration on itemEndingSoon', async () => {
-			const { player, plugin } = await makePlayerWithPlugin();
+      player.queue([track('a'), track('b')]);
+      plugin.options({ preloadNextOnEnding: true });
 
-			player.queue([track('a'), track('b')]);
-			plugin.options({ crossfadeDuration: 4 });
+      const loadSpy = vi.spyOn(player, 'load').mockResolvedValue(undefined);
 
-			const preloadSeen: Array<string | undefined> = [];
-			const crossfadeSeen: Array<{ id: string | undefined; duration: number }> = [];
-			plugin.addPreloadHandler((next) => { preloadSeen.push(next?.id as string | undefined); });
-			plugin.addCrossfadeHandler((next, duration) => {
-				crossfadeSeen.push({
-					id: next?.id as string | undefined,
-					duration,
-				});
-			});
+      player.emit('itemEndingSoon' as any, undefined as any);
+      await tick();
 
-			player.emit('itemEndingSoon' as any, undefined as any);
-			await tick();
+      expect(loadSpy).toHaveBeenCalledTimes(1);
+      expect((loadSpy.mock.calls[0]![0] as MusicPlaylistItem).id).toBe('b');
+    });
+  });
 
-			expect(preloadSeen).toEqual(['b']);
-			expect(crossfadeSeen).toEqual([{ id: 'b', duration: 4 }]);
-		});
+  // ── Handler registration APIs ─────────────────────────────────────────────
 
-		it('a throwing preload handler is contained and crossfade handlers still run', async () => {
-			const { player, plugin } = await makePlayerWithPlugin();
+  describe('handler registration', () => {
+    it('addEndedHandler() handlers run after the built-in advance; a throwing handler is contained', async () => {
+      const { player, plugin } = await makePlayerWithPlugin();
 
-			player.queue([track('a'), track('b')]);
+      player.queue([track('a'), track('b')]);
 
-			const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-			plugin.addPreloadHandler(() => {
-				throw new Error('preload handler exploded');
-			});
-			let crossfadeHandlerRan = false;
-			plugin.addCrossfadeHandler(() => { crossfadeHandlerRan = true; });
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const seen: string[] = [];
 
-			player.emit('itemEndingSoon' as any, undefined as any);
-			await tick();
+      plugin.addEndedHandler(() => {
+        seen.push(`after-advance index=${player.index()}`);
+        throw new Error('handler exploded');
+      });
 
-			expect(crossfadeHandlerRan).toBe(true);
-			const flattened = warnSpy.mock.calls.map(args => args.join(' '));
-			expect(flattened.some(line => line.includes('preload handler threw'))).toBe(true);
-		});
+      plugin.addEndedHandler(() => {
+        seen.push('second handler still runs');
+      });
 
-		it('a throwing crossfade handler is contained too', async () => {
-			const { player, plugin } = await makePlayerWithPlugin();
+      player.emit('ended' as any, undefined as any);
+      await tick();
 
-			player.queue([track('a'), track('b')]);
+      expect(seen).toEqual([
+        'after-advance index=1',
+        'second handler still runs',
+      ]);
 
-			const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-			plugin.addCrossfadeHandler(() => {
-				throw new Error('crossfade handler exploded');
-			});
+      const flattened = warnSpy.mock.calls.map((args) => args.join(' '));
 
-			player.emit('itemEndingSoon' as any, undefined as any);
-			await tick();
+      expect(flattened.some((line) => line.includes('ended handler threw'))).toBe(true);
+    });
 
-			const flattened = warnSpy.mock.calls.map(args => args.join(' '));
-			expect(flattened.some(line => line.includes('crossfade handler threw'))).toBe(true);
-		});
-	});
+    it('addPreloadHandler() and addCrossfadeHandler() receive the peeked item and duration on itemEndingSoon', async () => {
+      const { player, plugin } = await makePlayerWithPlugin();
 
-	// ── crossfadeTo failure containment ──────────────────────────────────────
+      player.queue([track('a'), track('b')]);
+      plugin.options({ crossfadeDuration: 4 });
 
-	describe('crossfade failure containment', () => {
-		it('a rejecting crossfadeTo is warned about, not thrown, and handlers still run', async () => {
-			const { player, plugin } = await makePlayerWithPlugin();
+      const preloadSeen: Array<string | undefined> = [];
+      const crossfadeSeen: Array<{ id: string | undefined; duration: number }> = [];
 
-			player.queue([track('a'), track('b')]);
-			plugin.options({
-				crossfade: true,
-				crossfadeDuration: 3,
-			});
+      plugin.addPreloadHandler((next) => { preloadSeen.push(next?.id as string | undefined); });
 
-			const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-			vi.spyOn(player, 'crossfadeTo').mockRejectedValue(new Error('fade blew up'));
+      plugin.addCrossfadeHandler((next, duration) => {
+        crossfadeSeen.push({
+          id: next?.id as string | undefined,
+          duration,
+        });
+      });
 
-			let crossfadeHandlerRan = false;
-			plugin.addCrossfadeHandler(() => { crossfadeHandlerRan = true; });
+      player.emit('itemEndingSoon' as any, undefined as any);
+      await tick();
 
-			player.emit('itemEndingSoon' as any, undefined as any);
-			await tick();
+      expect(preloadSeen).toEqual(['b']);
+      expect(crossfadeSeen).toEqual([{ id: 'b', duration: 4 }]);
+    });
 
-			expect(crossfadeHandlerRan).toBe(true);
-			const flattened = warnSpy.mock.calls.map(args => args.join(' '));
-			expect(flattened.some(line => line.includes('crossfadeTo failed'))).toBe(true);
-		});
-	});
+    it('a throwing preload handler is contained and crossfade handlers still run', async () => {
+      const { player, plugin } = await makePlayerWithPlugin();
+
+      player.queue([track('a'), track('b')]);
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      plugin.addPreloadHandler(() => {
+        throw new Error('preload handler exploded');
+      });
+
+      let crossfadeHandlerRan = false;
+
+      plugin.addCrossfadeHandler(() => { crossfadeHandlerRan = true; });
+
+      player.emit('itemEndingSoon' as any, undefined as any);
+      await tick();
+
+      expect(crossfadeHandlerRan).toBe(true);
+      const flattened = warnSpy.mock.calls.map((args) => args.join(' '));
+
+      expect(flattened.some((line) => line.includes('preload handler threw'))).toBe(true);
+    });
+
+    it('a throwing crossfade handler is contained too', async () => {
+      const { player, plugin } = await makePlayerWithPlugin();
+
+      player.queue([track('a'), track('b')]);
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      plugin.addCrossfadeHandler(() => {
+        throw new Error('crossfade handler exploded');
+      });
+
+      player.emit('itemEndingSoon' as any, undefined as any);
+      await tick();
+
+      const flattened = warnSpy.mock.calls.map((args) => args.join(' '));
+
+      expect(flattened.some((line) => line.includes('crossfade handler threw'))).toBe(true);
+    });
+  });
+
+  // ── crossfadeTo failure containment ──────────────────────────────────────
+
+  describe('crossfade failure containment', () => {
+    it('a rejecting crossfadeTo is warned about, not thrown, and handlers still run', async () => {
+      const { player, plugin } = await makePlayerWithPlugin();
+
+      player.queue([track('a'), track('b')]);
+
+      plugin.options({
+        crossfade: true,
+        crossfadeDuration: 3,
+      });
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      vi.spyOn(player, 'crossfadeTo').mockRejectedValue(new Error('fade blew up'));
+
+      let crossfadeHandlerRan = false;
+
+      plugin.addCrossfadeHandler(() => { crossfadeHandlerRan = true; });
+
+      player.emit('itemEndingSoon' as any, undefined as any);
+      await tick();
+
+      expect(crossfadeHandlerRan).toBe(true);
+      const flattened = warnSpy.mock.calls.map((args) => args.join(' '));
+
+      expect(flattened.some((line) => line.includes('crossfadeTo failed'))).toBe(true);
+    });
+  });
 });
 
 // ── SmartShuffleGenerator residue ─────────────────────────────────────────────
 
 describe('SmartShuffleGenerator residue', () => {
-	function tagged(id: string, extra?: Record<string, unknown>): MusicPlaylistItem {
-		return {
-			id,
-			name: `track ${id}`,
-			...extra,
-		};
-	}
+  function tagged(id: string, extra?: Record<string, unknown>): MusicPlaylistItem {
+    return {
+      id,
+      name: `track ${id}`,
+      ...extra,
+    };
+  }
 
-	it('next([]) returns undefined on an empty queue', () => {
-		const generator = new SmartShuffleGenerator<MusicPlaylistItem>();
-		expect(generator.next([], 0)).toBeUndefined();
-	});
+  it('next([]) returns undefined on an empty queue', () => {
+    const generator = new SmartShuffleGenerator<MusicPlaylistItem>();
 
-	it('next() on a singleton queue returns index 0', () => {
-		const generator = new SmartShuffleGenerator<MusicPlaylistItem>();
-		expect(generator.next([tagged('only')], 0)).toBe(0);
-	});
+    expect(generator.next([], 0)).toBeUndefined();
+  });
 
-	it('avoids genre and decade collisions — the untagged-clash-free candidate always wins', () => {
-		const generator = new SmartShuffleGenerator<MusicPlaylistItem>();
-		const items = [
-			tagged('current', { genre: 'rock', decade: 1990 }),
-			tagged('clash', { genre: ['rock'], decade: 1990 }),
-			tagged('clean', { genre: 'jazz', decade: 2020 }),
-		];
+  it('next() on a singleton queue returns index 0', () => {
+    const generator = new SmartShuffleGenerator<MusicPlaylistItem>();
 
-		for (let i = 0; i < 25; i++) {
-			expect(generator.next(items, 0)).toBe(2);
-		}
-	});
+    expect(generator.next([tagged('only')], 0)).toBe(0);
+  });
 
-	it('previous([]) returns undefined on an empty queue', () => {
-		const generator = new SmartShuffleGenerator<MusicPlaylistItem>();
-		expect(generator.previous([], 0)).toBeUndefined();
-	});
+  it('avoids genre and decade collisions — the untagged-clash-free candidate always wins', () => {
+    const generator = new SmartShuffleGenerator<MusicPlaylistItem>();
+    const items = [
+      tagged('current', { genre: 'rock', decade: 1990 }),
+      tagged('clash', { genre: ['rock'], decade: 1990 }),
+      tagged('clean', { genre: 'jazz', decade: 2020 }),
+    ];
 
-	it('previous() pops the internally-tracked play history first', () => {
-		const generator = new SmartShuffleGenerator<MusicPlaylistItem>();
-		const items = [tagged('a'), tagged('b'), tagged('c')];
+    for (let i = 0; i < 25; i++) {
+      expect(generator.next(items, 0)).toBe(2);
+    }
+  });
 
-		generator.next(items, 0);
-		generator.next(items, 1);
+  it('previous([]) returns undefined on an empty queue', () => {
+    const generator = new SmartShuffleGenerator<MusicPlaylistItem>();
 
-		expect(generator.previous(items, 2)).toBe(1);
-		expect(generator.previous(items, 1)).toBe(0);
-	});
+    expect(generator.previous([], 0)).toBeUndefined();
+  });
 
-	it('previous() falls back to a random in-range index when no history exists', () => {
-		const generator = new SmartShuffleGenerator<MusicPlaylistItem>();
-		const items = [tagged('a'), tagged('b'), tagged('c')];
+  it('previous() pops the internally-tracked play history first', () => {
+    const generator = new SmartShuffleGenerator<MusicPlaylistItem>();
+    const items = [tagged('a'), tagged('b'), tagged('c')];
 
-		for (let i = 0; i < 25; i++) {
-			const picked = generator.previous(items, 0);
-			expect(picked).toBeGreaterThanOrEqual(0);
-			expect(picked).toBeLessThan(items.length);
-		}
-	});
+    generator.next(items, 0);
+    generator.next(items, 1);
+
+    expect(generator.previous(items, 2)).toBe(1);
+    expect(generator.previous(items, 1)).toBe(0);
+  });
+
+  it('previous() falls back to a random in-range index when no history exists', () => {
+    const generator = new SmartShuffleGenerator<MusicPlaylistItem>();
+    const items = [tagged('a'), tagged('b'), tagged('c')];
+
+    for (let i = 0; i < 25; i++) {
+      const picked = generator.previous(items, 0);
+
+      expect(picked).toBeGreaterThanOrEqual(0);
+      expect(picked).toBeLessThan(items.length);
+    }
+  });
 });

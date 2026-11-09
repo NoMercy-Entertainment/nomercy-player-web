@@ -18,96 +18,99 @@ import type { IStorage } from './IStorage';
  * returning values directly (which `await` resolves immediately).
  */
 export class LocalStorageBackend implements IStorage {
-	private fallback = new Map<string, string>();
-	private useFallback = false;
+  private fallback = new Map<string, string>();
+  private useFallback = false;
 
-	constructor() {
-		try {
-			if (typeof localStorage === 'undefined') {
-				this.useFallback = true;
-			}
-			else {
-				const probeKey = '__nmplayer_probe__';
-				localStorage.setItem(probeKey, '1');
-				localStorage.removeItem(probeKey);
-			}
-		}
-		catch {
-			this.useFallback = true;
-		}
-	}
+  constructor() {
+    try {
+      if (typeof localStorage === 'undefined') {
+        this.useFallback = true;
+      } else {
+        const probeKey = '__nmplayer_probe__';
 
-	/**
-	 * Retrieve a raw string value, or `null` when the key is absent. Falls
-	 * back to the in-memory map when `localStorage` has no entry for `key` —
-	 * covers a `set()` that hit a quota error mid-session and wrote to the
-	 * fallback without `localStorage` ever holding the value.
-	 */
-	get(key: string): string | null {
-		if (this.useFallback)
-			return this.fallback.get(key) ?? null;
-		try {
-			const value = localStorage.getItem(key);
-			return value ?? this.fallback.get(key) ?? null;
-		}
-		catch {
-			return this.fallback.get(key) ?? null;
-		}
-	}
+        localStorage.setItem(probeKey, '1');
+        localStorage.removeItem(probeKey);
+      }
+    } catch {
+      this.useFallback = true;
+    }
+  }
 
-	/** Store a raw string value under `key`. Writes to the in-memory fallback on localStorage failure. */
-	set(key: string, value: string): void {
-		if (this.useFallback) {
-			this.fallback.set(key, value);
-			return;
-		}
-		try {
-			localStorage.setItem(key, value);
-			this.fallback.delete(key);
-		}
-		catch {
-			this.fallback.set(key, value);
-		}
-	}
+  /**
+   * Retrieve a raw string value, or `null` when the key is absent. Falls
+   * back to the in-memory map when `localStorage` has no entry for `key` —
+   * covers a `set()` that hit a quota error mid-session and wrote to the
+   * fallback without `localStorage` ever holding the value.
+   */
+  get(key: string): string | null {
+    if (this.useFallback)
+      return this.fallback.get(key) ?? null;
 
-	/** Delete the entry for `key`. No-op when the key is absent. */
-	remove(key: string): void {
-		if (this.useFallback) {
-			this.fallback.delete(key);
-			return;
-		}
-		this.fallback.delete(key);
-		try {
-			localStorage.removeItem(key);
-		}
-		catch {
-			// The fallback entry is already gone.
-		}
-	}
+    try {
+      const value = localStorage.getItem(key);
 
-	/**
-	 * Retrieve and JSON-parse the value stored under `key`. Returns `null` when
-	 * the key is absent or the stored value is not valid JSON.
-	 */
-	getJSON<T>(key: string): T | null {
-		const raw = this.get(key);
-		if (raw === null)
-			return null;
-		try {
-			return JSON.parse(raw) as T;
-		}
-		catch {
-			return null;
-		}
-	}
+      return value ?? this.fallback.get(key) ?? null;
+    } catch {
+      return this.fallback.get(key) ?? null;
+    }
+  }
 
-	/** JSON-serialize `value` and store it under `key`. Silent on circular references. */
-	setJSON<T>(key: string, value: T): void {
-		try {
-			this.set(key, JSON.stringify(value));
-		}
-		catch {
-			// JSON.stringify throws on circular references — swallow, matching the other backends.
-		}
-	}
+  /** Store a raw string value under `key`. Writes to the in-memory fallback on localStorage failure. */
+  set(key: string, value: string): void {
+    if (this.useFallback) {
+      this.fallback.set(key, value);
+
+      return;
+    }
+
+    try {
+      localStorage.setItem(key, value);
+      this.fallback.delete(key);
+    } catch {
+      this.fallback.set(key, value);
+    }
+  }
+
+  /** Delete the entry for `key`. No-op when the key is absent. */
+  remove(key: string): void {
+    if (this.useFallback) {
+      this.fallback.delete(key);
+
+      return;
+    }
+
+    this.fallback.delete(key);
+
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // The fallback entry is already gone.
+    }
+  }
+
+  /**
+   * Retrieve and JSON-parse the value stored under `key`. Returns `null` when
+   * the key is absent or the stored value is not valid JSON.
+   */
+  getJSON<T>(key: string): T | null {
+    const raw = this.get(key);
+
+    if (raw === null)
+      return null;
+
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      return null;
+    }
+  }
+
+  /** JSON-serialize `value` and store it under `key`. Silent on circular references. */
+  setJSON<T>(key: string, value: T): void {
+    try {
+      this.set(key, JSON.stringify(value));
+    } catch {
+      // JSON.stringify throws on circular references — swallow, matching the other backends.
+    }
+  }
 }

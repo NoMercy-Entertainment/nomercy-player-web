@@ -28,15 +28,15 @@
  * @returns {boolean} True when the heritage names `Plugin`.
  */
 function extendsPlugin(superClass) {
-	if (!superClass)
-		return false;
-	if (superClass.type === 'Identifier')
-		return superClass.name === 'Plugin';
-	if (superClass.type === 'MemberExpression')
-		return superClass.property?.type === 'Identifier' && superClass.property.name === 'Plugin';
-	if (superClass.type === 'TSInstantiationExpression')
-		return extendsPlugin(superClass.expression);
-	return false;
+  if (!superClass)
+    return false;
+  if (superClass.type === 'Identifier')
+    return superClass.name === 'Plugin';
+  if (superClass.type === 'MemberExpression')
+    return superClass.property?.type === 'Identifier' && superClass.property.name === 'Plugin';
+  if (superClass.type === 'TSInstantiationExpression')
+    return extendsPlugin(superClass.expression);
+  return false;
 }
 
 /**
@@ -47,12 +47,12 @@ function extendsPlugin(superClass) {
  * @returns {boolean} True when the member key is `id`.
  */
 function keyIsId(member) {
-	const key = member.key;
-	if (key.type === 'Identifier')
-		return key.name === 'id';
-	if (key.type === 'Literal')
-		return key.value === 'id';
-	return false;
+  const key = member.key;
+  if (key.type === 'Identifier')
+    return key.name === 'id';
+  if (key.type === 'Literal')
+    return key.value === 'id';
+  return false;
 }
 
 /**
@@ -64,48 +64,48 @@ function keyIsId(member) {
  * @returns {boolean} True when the class declares its own `static id`.
  */
 function declaresStaticId(classNode) {
-	return classNode.body.body.some((member) => {
-		if (member.static !== true)
-			return false;
-		if (member.type === 'PropertyDefinition')
-			return keyIsId(member);
-		if (member.type === 'MethodDefinition' && member.kind === 'get')
-			return keyIsId(member);
-		return false;
-	});
+  return classNode.body.body.some((member) => {
+    if (member.static !== true)
+      return false;
+    if (member.type === 'PropertyDefinition')
+      return keyIsId(member);
+    if (member.type === 'MethodDefinition' && member.kind === 'get')
+      return keyIsId(member);
+    return false;
+  });
 }
 
 /** @type {import('eslint').Rule.RuleModule} */
 export default {
-	meta: {
-		type: 'problem',
-		docs: {
-			description: 'Require every concrete class extending Plugin to declare its own static readonly id.',
-		},
-		schema: [],
-		messages: {
-			missingId: 'A plugin (class extending Plugin) must declare its own `static override readonly id` — inheriting the base default \'plugin\' collides and breaks storage/mount namespacing.',
-		},
-	},
+  meta: {
+    type: 'problem',
+    docs: {
+      description: 'Require every concrete class extending Plugin to declare its own static readonly id.',
+    },
+    schema: [],
+    messages: {
+      missingId: 'A plugin (class extending Plugin) must declare its own `static override readonly id` — inheriting the base default \'plugin\' collides and breaks storage/mount namespacing.',
+    },
+  },
 
-	create(context) {
-		function check(node) {
-			if (!extendsPlugin(node.superClass))
-				return;
-			// `abstract class` intermediate bases legitimately defer the id.
-			if (node.abstract === true)
-				return;
-			if (declaresStaticId(node))
-				return;
-			context.report({
-				node: node.id ?? node,
-				messageId: 'missingId',
-			});
-		}
+  create(context) {
+    function check(node) {
+      if (!extendsPlugin(node.superClass))
+        return;
+      // `abstract class` intermediate bases legitimately defer the id.
+      if (node.abstract === true)
+        return;
+      if (declaresStaticId(node))
+        return;
+      context.report({
+        node: node.id ?? node,
+        messageId: 'missingId',
+      });
+    }
 
-		return {
-			ClassDeclaration: check,
-			ClassExpression: check,
-		};
-	},
+    return {
+      ClassDeclaration: check,
+      ClassExpression: check,
+    };
+  },
 };

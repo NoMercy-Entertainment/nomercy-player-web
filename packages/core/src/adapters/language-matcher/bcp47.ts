@@ -15,13 +15,16 @@ import type { ILanguageMatcher } from './ILanguageMatcher';
  * casing are preserved — bundle keys are looked up byte-for-byte.
  */
 export const bcp47FallbackChain: ILanguageMatcher = (tag) => {
-	if (!tag)
-		return [];
-	const out: string[] = [tag];
-	let cur = tag;
-	while (cur.includes('-')) {
-		cur = cur.slice(0, cur.lastIndexOf('-'));
-		out.push(cur);
-	}
-	return out;
+  if (!tag)
+    return [];
+
+  const out: string[] = [tag];
+  let cur = tag;
+
+  while (cur.includes('-')) {
+    cur = cur.slice(0, cur.lastIndexOf('-'));
+    out.push(cur);
+  }
+
+  return out;
 };

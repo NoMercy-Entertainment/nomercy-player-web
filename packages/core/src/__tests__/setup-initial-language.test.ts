@@ -17,71 +17,80 @@
 import type { BasePlaylistItem } from '../types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare t: (key: string) => string;
-	declare language: { (): string; (lang: string): Promise<void> };
-	declare queue: { (): ReadonlyArray<BasePlaylistItem>; (items: BasePlaylistItem[]): void };
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare t: (key: string) => string;
+  declare language: { (): string; (lang: string): Promise<void> };
+  declare queue: { (): ReadonlyArray<BasePlaylistItem>; (items: BasePlaylistItem[]): void };
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 describe('setup() initial language load', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('invokes loadTranslations for the configured language during setup', async () => {
-		const loader = vi.fn(async (lang: string) =>
-			lang === 'nl' ? { skip_intro: 'Intro overslaan' } : undefined);
+  it('invokes loadTranslations for the configured language during setup', async () => {
+    const loader = vi.fn(async (lang: string) =>
+      lang === 'nl'
+        ? { skip_intro: 'Intro overslaan' }
+        : undefined);
 
-		const player = makePlayer('lang-test-1').setup({
-			language: 'nl',
-			loadTranslations: loader,
-		});
-		await player.ready();
+    const player = makePlayer('lang-test-1').setup({
+      language: 'nl',
+      loadTranslations: loader,
+    });
 
-		expect(loader).toHaveBeenCalledWith('nl');
-		expect(player.t('skip_intro')).toBe('Intro overslaan');
-		expect(player.language()).toBe('nl');
-	});
+    await player.ready();
 
-	it('falls back to the browser language when none is configured', async () => {
-		const loader = vi.fn(async () => undefined);
+    expect(loader).toHaveBeenCalledWith('nl');
+    expect(player.t('skip_intro')).toBe('Intro overslaan');
+    expect(player.language()).toBe('nl');
+  });
 
-		const player = makePlayer('lang-test-2').setup({
-			loadTranslations: loader,
-		});
-		await player.ready();
+  it('falls back to the browser language when none is configured', async () => {
+    const loader = vi.fn(async () => undefined);
 
-		const expected = typeof navigator !== 'undefined' ? navigator.language : 'en';
-		expect(loader).toHaveBeenCalledWith(expected);
-	});
+    const player = makePlayer('lang-test-2').setup({
+      loadTranslations: loader,
+    });
 
-	it('a throwing loader does not block ready()', async () => {
-		const player = makePlayer('lang-test-3').setup({
-			language: 'de',
-			loadTranslations: async () => {
-				throw new Error('network down');
-			},
-		});
+    await player.ready();
 
-		await expect(player.ready()).resolves.toBeUndefined();
-		expect(player.t('skip_intro')).toBe('skip_intro');
-	});
+    const expected = typeof navigator !== 'undefined'
+      ? navigator.language
+      : 'en';
+
+    expect(loader).toHaveBeenCalledWith(expected);
+  });
+
+  it('a throwing loader does not block ready()', async () => {
+    const player = makePlayer('lang-test-3').setup({
+      language: 'de',
+      loadTranslations: async () => {
+        throw new Error('network down');
+      },
+    });
+
+    await expect(player.ready()).resolves.toBeUndefined();
+    expect(player.t('skip_intro')).toBe('skip_intro');
+  });
 });

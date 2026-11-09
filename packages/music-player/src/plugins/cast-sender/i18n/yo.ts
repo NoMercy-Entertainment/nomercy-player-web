@@ -9,9 +9,9 @@
 import type { CastSenderTranslationKey } from './en';
 
 export default {
-	'plugin.cast-sender.casting.track': 'Ń gbóhùn "{title}" láti ọwọ́ {artist}',
-	'plugin.cast-sender.casting.album': 'Ń gbóhùn àwo "{album}"',
-	'plugin.cast-sender.casting.queue': 'Ń gbóhùn àwọn orin {count}',
-	'plugin.cast-sender.action.cast-album': 'Gbóhùn àwo',
-	'plugin.cast-sender.action.cast-queue': 'Gbóhùn ìlà',
+  'plugin.cast-sender.casting.track': 'Ń gbóhùn "{title}" láti ọwọ́ {artist}',
+  'plugin.cast-sender.casting.album': 'Ń gbóhùn àwo "{album}"',
+  'plugin.cast-sender.casting.queue': 'Ń gbóhùn àwọn orin {count}',
+  'plugin.cast-sender.action.cast-album': 'Gbóhùn àwo',
+  'plugin.cast-sender.action.cast-queue': 'Gbóhùn ìlà',
 } satisfies Record<CastSenderTranslationKey, string>;

@@ -25,17 +25,23 @@
  *          when `headerValue` is absent.
  */
 export function appendAuthTokenParam(url: string, headerValue: string | undefined): string {
-	if (!headerValue) {
-		return url;
-	}
+  if (!headerValue) {
+    return url;
+  }
 
-	const rawToken = headerValue.replace(/^Bearer\s+/i, '');
+  const rawToken = headerValue.replace(/^Bearer\s+/i, '');
 
-	const hashIndex = url.indexOf('#');
-	const base = hashIndex === -1 ? url : url.slice(0, hashIndex);
-	const fragment = hashIndex === -1 ? '' : url.slice(hashIndex);
+  const hashIndex = url.indexOf('#');
+  const base = hashIndex === -1
+    ? url
+    : url.slice(0, hashIndex);
+  const fragment = hashIndex === -1
+    ? ''
+    : url.slice(hashIndex);
 
-	const separator = base.includes('?') ? '&' : '?';
+  const separator = base.includes('?')
+    ? '&'
+    : '?';
 
-	return `${base}${separator}access_token=${encodeURIComponent(rawToken)}${fragment}`;
+  return `${base}${separator}access_token=${encodeURIComponent(rawToken)}${fragment}`;
 }

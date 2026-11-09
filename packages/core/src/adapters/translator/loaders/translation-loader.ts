@@ -36,28 +36,28 @@ import { authFetch } from '../../../core/auth-fetch';
  * in the chain. Missing i18n must never break playback.
  */
 export interface NetworkTranslationLoaderOptions {
-	/**
-	 * URL pattern containing `{lang}`, replaced with the BCP-47 tag at fetch
-	 * time. e.g. `https://cdn.example.com/i18n/{lang}.json`.
-	 */
-	url: string;
+  /**
+   * URL pattern containing `{lang}`, replaced with the BCP-47 tag at fetch
+   * time. e.g. `https://cdn.example.com/i18n/{lang}.json`.
+   */
+  url: string;
 
-	/** Optional auth config — same pipeline `Plugin.fetch` uses. */
-	auth?: AuthConfig;
+  /** Optional auth config — same pipeline `Plugin.fetch` uses. */
+  auth?: AuthConfig;
 
-	/**
-	 * Custom parser applied to the raw response text before the kit merges
-	 * the result. Defaults to `JSON.parse`. Override to validate, strip
-	 * envelope wrappers, or coerce non-flat shapes your CDN returns.
-	 */
-	parser?: (raw: string) => Record<string, string>;
+  /**
+   * Custom parser applied to the raw response text before the kit merges
+   * the result. Defaults to `JSON.parse`. Override to validate, strip
+   * envelope wrappers, or coerce non-flat shapes your CDN returns.
+   */
+  parser?: (raw: string) => Record<string, string>;
 
-	/**
-	 * Per-call abort signal. Caller-controlled — useful to cancel in-flight
-	 * loads when a navigation happens. Distinct from `authFetch`'s internal
-	 * retry abort which is owned per-request.
-	 */
-	signal?: AbortSignal;
+  /**
+   * Per-call abort signal. Caller-controlled — useful to cancel in-flight
+   * loads when a navigation happens. Distinct from `authFetch`'s internal
+   * retry abort which is owned per-request.
+   */
+  signal?: AbortSignal;
 }
 
 export type NetworkTranslationLoader = (lang: string) => Promise<Record<string, string> | undefined>;
@@ -69,32 +69,37 @@ export type NetworkTranslationLoader = (lang: string) => Promise<Record<string, 
  * the BCP-47 chain continues to the parent tag without interruption.
  */
 export function createNetworkTranslationLoader(opts: NetworkTranslationLoaderOptions): NetworkTranslationLoader {
-	const parser = opts.parser ?? ((raw: string): Record<string, string> => {
-		const parsed: unknown = JSON.parse(raw);
-		return (parsed !== null && typeof parsed === 'object') ? parsed as Record<string, string> : {};
-	});
+  const parser = opts.parser ?? ((raw: string): Record<string, string> => {
+    const parsed: unknown = JSON.parse(raw);
 
-	return async (lang: string) => {
-		const url = opts.url.replace(/\{lang\}/g, encodeURIComponent(lang));
-		// authFetch requires a non-optional signal — provide a fresh one when
-		// the caller didn't supply one. Caller-provided signal still wins.
-		const signal = opts.signal ?? new AbortController().signal;
-		try {
-			const result = await authFetch<Record<string, string>>({
-				url,
-				auth: opts.auth,
-				parser,
-				signal,
-				scope: 'silent',
-				emit: () => { },
-				pluginId: 'translator',
-			});
-			if (!result || typeof result !== 'object' || Array.isArray(result))
-				return undefined;
-			return result;
-		}
-		catch {
-			return undefined;
-		}
-	};
+    return (parsed !== null && typeof parsed === 'object')
+      ? parsed as Record<string, string>
+      : {};
+  });
+
+  return async (lang: string) => {
+    const url = opts.url.replace(/\{lang\}/g, encodeURIComponent(lang));
+    // authFetch requires a non-optional signal — provide a fresh one when
+    // the caller didn't supply one. Caller-provided signal still wins.
+    const signal = opts.signal ?? new AbortController().signal;
+
+    try {
+      const result = await authFetch<Record<string, string>>({
+        url,
+        auth: opts.auth,
+        parser,
+        signal,
+        scope: 'silent',
+        emit: () => { },
+        pluginId: 'translator',
+      });
+
+      if (!result || typeof result !== 'object' || Array.isArray(result))
+        return undefined;
+
+      return result;
+    } catch {
+      return undefined;
+    }
+  };
 }

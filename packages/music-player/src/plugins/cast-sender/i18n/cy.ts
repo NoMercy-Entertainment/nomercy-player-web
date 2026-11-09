@@ -9,9 +9,9 @@
 import type { CastSenderTranslationKey } from './en';
 
 export default {
-	'plugin.cast-sender.casting.track': 'Yn castio "{title}" gan {artist}',
-	'plugin.cast-sender.casting.album': 'Yn castio\'r albwm "{album}"',
-	'plugin.cast-sender.casting.queue': 'Yn castio {count} trac',
-	'plugin.cast-sender.action.cast-album': 'Castio albwm',
-	'plugin.cast-sender.action.cast-queue': 'Castio\'r ciw',
+  'plugin.cast-sender.casting.track': 'Yn castio "{title}" gan {artist}',
+  'plugin.cast-sender.casting.album': 'Yn castio\'r albwm "{album}"',
+  'plugin.cast-sender.casting.queue': 'Yn castio {count} trac',
+  'plugin.cast-sender.action.cast-album': 'Castio albwm',
+  'plugin.cast-sender.action.cast-queue': 'Castio\'r ciw',
 } satisfies Record<CastSenderTranslationKey, string>;

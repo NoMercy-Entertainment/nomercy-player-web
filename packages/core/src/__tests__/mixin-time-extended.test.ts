@@ -27,243 +27,272 @@
 import type { BaseEventMap } from '../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare options: Record<string, unknown>;
-	declare setup: (config: Record<string, unknown>) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare time: { (): number; (seconds: number, opts?: Record<string, unknown>): Promise<void> };
-	declare duration: () => number;
-	declare buffered: () => number;
-	declare timeData: () => { position: number; duration: number; buffered: number; remaining: number; percentage: number };
-	declare seekByPercentage: (pct: number) => void;
-	declare playbackRate: { (): number; (rate: number): Promise<void> };
-	declare playbackRates: () => number[];
+  declare options: Record<string, unknown>;
+  declare setup: (config: Record<string, unknown>) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare time: { (): number; (seconds: number, opts?: Record<string, unknown>): Promise<void> };
+  declare duration: () => number;
+  declare buffered: () => number;
+  declare timeData: () => {
+    position: number;
+    duration: number;
+    buffered: number;
+    remaining: number;
+    percentage: number;
+  };
+
+  declare seekByPercentage: (pct: number) => void;
+  declare playbackRate: { (): number; (rate: number): Promise<void> };
+  declare playbackRates: () => number[];
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 function makeSetupPlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId).setup({});
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId).setup({});
 }
 
 function setDuration(player: MockPlayer, seconds: number): void {
-	(player as unknown as { _internalDuration: number })._internalDuration = seconds;
+  (player as unknown as { _internalDuration: number })._internalDuration = seconds;
 }
 
 function setPosition(player: MockPlayer, seconds: number): void {
-	(player as unknown as { _internalCurrentTime: number })._internalCurrentTime = seconds;
+  (player as unknown as { _internalCurrentTime: number })._internalCurrentTime = seconds;
 }
 
 describe('timeMethods — extended (TM-E)', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('TM-E1: duration() returns 0 before metadata loads', () => {
-		const player = makePlayer('tm-1');
+  it('TM-E1: duration() returns 0 before metadata loads', () => {
+    const player = makePlayer('tm-1');
 
-		expect(player.duration()).toBe(0);
-	});
+    expect(player.duration()).toBe(0);
+  });
 
-	it('TM-E2: buffered() returns 0 when no backend is wired', () => {
-		const player = makePlayer('tm-2');
+  it('TM-E2: buffered() returns 0 when no backend is wired', () => {
+    const player = makePlayer('tm-2');
 
-		expect(player.buffered()).toBe(0);
-	});
+    expect(player.buffered()).toBe(0);
+  });
 
-	it('bufferedRanges() returns empty TimeRanges when no backend is wired', () => {
-		const player = makePlayer('tm-br');
-		const ranges = (player as unknown as { bufferedRanges: () => TimeRanges }).bufferedRanges();
+  it('bufferedRanges() returns empty TimeRanges when no backend is wired', () => {
+    const player = makePlayer('tm-br');
+    const ranges = (player as unknown as { bufferedRanges: () => TimeRanges }).bufferedRanges();
 
-		expect(ranges.length).toBe(0);
-		expect(ranges.start(0)).toBe(0);
-		expect(ranges.end(0)).toBe(0);
-	});
+    expect(ranges.length).toBe(0);
+    expect(ranges.start(0)).toBe(0);
+    expect(ranges.end(0)).toBe(0);
+  });
 
-	it('seekable() returns empty TimeRanges when no backend is wired', () => {
-		const player = makePlayer('tm-sk');
-		const ranges = (player as unknown as { seekable: () => TimeRanges }).seekable();
+  it('seekable() returns empty TimeRanges when no backend is wired', () => {
+    const player = makePlayer('tm-sk');
+    const ranges = (player as unknown as { seekable: () => TimeRanges }).seekable();
 
-		expect(ranges.length).toBe(0);
-	});
+    expect(ranges.length).toBe(0);
+  });
 
-	it('TM-E3: timeData() snapshot is self-consistent', () => {
-		const player = makePlayer('tm-3');
-		setDuration(player, 200);
-		setPosition(player, 50);
+  it('TM-E3: timeData() snapshot is self-consistent', () => {
+    const player = makePlayer('tm-3');
 
-		const data = player.timeData();
+    setDuration(player, 200);
+    setPosition(player, 50);
 
-		expect(data.position).toBe(50);
-		expect(data.duration).toBe(200);
-		expect(data.remaining).toBe(150);
-		expect(data.percentage).toBeCloseTo(25);
-	});
+    const data = player.timeData();
 
-	it('TM-E3b: timeData() percentage is 0 when duration is 0', () => {
-		const player = makePlayer('tm-3b');
+    expect(data.position).toBe(50);
+    expect(data.duration).toBe(200);
+    expect(data.remaining).toBe(150);
+    expect(data.percentage).toBeCloseTo(25);
+  });
 
-		const data = player.timeData();
+  it('TM-E3b: timeData() percentage is 0 when duration is 0', () => {
+    const player = makePlayer('tm-3b');
 
-		expect(data.percentage).toBe(0);
-		expect(data.remaining).toBe(0);
-	});
+    const data = player.timeData();
 
-	describe('seekByPercentage()', () => {
-		it('TM-E4: seekByPercentage(50) on a 100s clip schedules seek to 50s', () => {
-			const player = makeSetupPlayer('tm-4');
-			setDuration(player, 100);
+    expect(data.percentage).toBe(0);
+    expect(data.remaining).toBe(0);
+  });
 
-			const seekCalls: number[] = [];
-			const origTime = player.time.bind(player);
-			(player as unknown as { time: unknown }).time = (seconds?: number): number | Promise<void> => {
-				if (seconds !== undefined) {
-					seekCalls.push(seconds);
-					return Promise.resolve();
-				}
-				return origTime();
-			};
+  describe('seekByPercentage()', () => {
+    it('TM-E4: seekByPercentage(50) on a 100s clip schedules seek to 50s', () => {
+      const player = makeSetupPlayer('tm-4');
 
-			player.seekByPercentage(50);
+      setDuration(player, 100);
 
-			expect(seekCalls).toHaveLength(1);
-			expect(seekCalls[0]).toBeCloseTo(50);
-		});
+      const seekCalls: number[] = [];
+      const origTime = player.time.bind(player);
 
-		it('TM-E5: seekByPercentage is a no-op when duration is 0', () => {
-			const player = makeSetupPlayer('tm-5');
+      (player as unknown as { time: unknown }).time = (seconds?: number): number | Promise<void> => {
+        if (seconds !== undefined) {
+          seekCalls.push(seconds);
 
-			const seekCalls: number[] = [];
-			const origTime = player.time.bind(player);
-			(player as unknown as { time: unknown }).time = (seconds?: number): number | Promise<void> => {
-				if (seconds !== undefined) {
-					seekCalls.push(seconds);
-					return Promise.resolve();
-				}
-				return origTime();
-			};
+          return Promise.resolve();
+        }
 
-			player.seekByPercentage(50);
+        return origTime();
+      };
 
-			expect(seekCalls).toHaveLength(0);
-		});
+      player.seekByPercentage(50);
 
-		it('TM-E6: seekByPercentage is a no-op when duration is Infinity', () => {
-			const player = makeSetupPlayer('tm-6');
-			setDuration(player, Infinity);
+      expect(seekCalls).toHaveLength(1);
+      expect(seekCalls[0]).toBeCloseTo(50);
+    });
 
-			const seekCalls: number[] = [];
-			const origTime = player.time.bind(player);
-			(player as unknown as { time: unknown }).time = (seconds?: number): number | Promise<void> => {
-				if (seconds !== undefined) {
-					seekCalls.push(seconds);
-					return Promise.resolve();
-				}
-				return origTime();
-			};
+    it('TM-E5: seekByPercentage is a no-op when duration is 0', () => {
+      const player = makeSetupPlayer('tm-5');
 
-			player.seekByPercentage(50);
+      const seekCalls: number[] = [];
+      const origTime = player.time.bind(player);
 
-			expect(seekCalls).toHaveLength(0);
-		});
-	});
+      (player as unknown as { time: unknown }).time = (seconds?: number): number | Promise<void> => {
+        if (seconds !== undefined) {
+          seekCalls.push(seconds);
 
-	describe('playbackRate()', () => {
-		it('TM-E7: playbackRate() getter returns 1 initially', () => {
-			const player = makePlayer('tm-7');
+          return Promise.resolve();
+        }
 
-			expect(player.playbackRate()).toBe(1);
-		});
+        return origTime();
+      };
 
-		it('TM-E8: playbackRate clamps below 0.25 to 0.25', async () => {
-			const player = makePlayer('tm-8');
+      player.seekByPercentage(50);
 
-			await player.playbackRate(0.1);
+      expect(seekCalls).toHaveLength(0);
+    });
 
-			expect(player.playbackRate()).toBe(0.25);
-		});
+    it('TM-E6: seekByPercentage is a no-op when duration is Infinity', () => {
+      const player = makeSetupPlayer('tm-6');
 
-		it('TM-E9: playbackRate clamps above 2 to 2', async () => {
-			const player = makePlayer('tm-9');
+      setDuration(player, Infinity);
 
-			await player.playbackRate(5);
+      const seekCalls: number[] = [];
+      const origTime = player.time.bind(player);
 
-			expect(player.playbackRate()).toBe(2);
-		});
+      (player as unknown as { time: unknown }).time = (seconds?: number): number | Promise<void> => {
+        if (seconds !== undefined) {
+          seekCalls.push(seconds);
 
-		it('TM-E10: playbackRate emits backend:ratechange and forwards to backend', async () => {
-			const player = makePlayer('tm-10');
-			const backendCalls: number[] = [];
-			(player as unknown as { backend: () => unknown }).backend = (): unknown => ({
-				playbackRate: (rate: number): void => { backendCalls.push(rate); },
-			});
+          return Promise.resolve();
+        }
 
-			const emitted: Array<{ rate: number }> = [];
-			player.on('backend:ratechange' as keyof BaseEventMap, (data: unknown) => {
-				emitted.push(data as { rate: number });
-			});
+        return origTime();
+      };
 
-			await player.playbackRate(1.5);
+      player.seekByPercentage(50);
 
-			expect(emitted).toHaveLength(1);
-			expect(emitted[0]!.rate).toBe(1.5);
-			expect(backendCalls).toEqual([1.5]);
-		});
-	});
+      expect(seekCalls).toHaveLength(0);
+    });
+  });
 
-	describe('time() getter', () => {
-		it('TM-E12: time() getter returns current position without side effects', () => {
-			const player = makePlayer('tm-12');
-			setPosition(player, 42);
+  describe('playbackRate()', () => {
+    it('TM-E7: playbackRate() getter returns 1 initially', () => {
+      const player = makePlayer('tm-7');
 
-			const emitted: unknown[] = [];
-			player.on('seek' as keyof BaseEventMap, (data: unknown) => { emitted.push(data); });
+      expect(player.playbackRate()).toBe(1);
+    });
 
-			const result = player.time();
+    it('TM-E8: playbackRate clamps below 0.25 to 0.25', async () => {
+      const player = makePlayer('tm-8');
 
-			expect(result).toBe(42);
-			expect(emitted).toHaveLength(0);
-		});
-	});
+      await player.playbackRate(0.1);
 
-	it('TM-E11: time(negative) clamps to 0 and seeks to 0', async () => {
-		const player = makeSetupPlayer('tm-11');
-		await player.ready();
+      expect(player.playbackRate()).toBe(0.25);
+    });
 
-		const seekArgs: number[] = [];
-		(player as unknown as { backend: () => unknown }).backend = (): unknown => ({
-			currentTime: (seconds: number): void => { seekArgs.push(seconds); },
-		});
+    it('TM-E9: playbackRate clamps above 2 to 2', async () => {
+      const player = makePlayer('tm-9');
 
-		await player.time(-5);
+      await player.playbackRate(5);
 
-		expect(seekArgs[0]).toBe(0);
-	});
+      expect(player.playbackRate()).toBe(2);
+    });
 
-	it('playbackRates() returns the fixed list [0.5, 0.75, 1, 1.25, 1.5, 2]', () => {
-		const player = makePlayer('tm-rates');
+    it('TM-E10: playbackRate emits backend:ratechange and forwards to backend', async () => {
+      const player = makePlayer('tm-10');
+      const backendCalls: number[] = [];
 
-		expect(player.playbackRates()).toEqual([0.5, 0.75, 1, 1.25, 1.5, 2]);
-	});
+      (player as unknown as { backend: () => unknown }).backend = (): unknown => ({
+        playbackRate: (rate: number): void => { backendCalls.push(rate); },
+      });
+
+      const emitted: Array<{ rate: number }> = [];
+
+      player.on('backend:ratechange' as keyof BaseEventMap, (data: unknown) => {
+        emitted.push(data as { rate: number });
+      });
+
+      await player.playbackRate(1.5);
+
+      expect(emitted).toHaveLength(1);
+      expect(emitted[0]!.rate).toBe(1.5);
+      expect(backendCalls).toEqual([1.5]);
+    });
+  });
+
+  describe('time() getter', () => {
+    it('TM-E12: time() getter returns current position without side effects', () => {
+      const player = makePlayer('tm-12');
+
+      setPosition(player, 42);
+
+      const emitted: unknown[] = [];
+
+      player.on('seek' as keyof BaseEventMap, (data: unknown) => { emitted.push(data); });
+
+      const result = player.time();
+
+      expect(result).toBe(42);
+      expect(emitted).toHaveLength(0);
+    });
+  });
+
+  it('TM-E11: time(negative) clamps to 0 and seeks to 0', async () => {
+    const player = makeSetupPlayer('tm-11');
+
+    await player.ready();
+
+    const seekArgs: number[] = [];
+
+    (player as unknown as { backend: () => unknown }).backend = (): unknown => ({
+      currentTime: (seconds: number): void => { seekArgs.push(seconds); },
+    });
+
+    await player.time(-5);
+
+    expect(seekArgs[0]).toBe(0);
+  });
+
+  it('playbackRates() returns the fixed list [0.5, 0.75, 1, 1.25, 1.5, 2]', () => {
+    const player = makePlayer('tm-rates');
+
+    expect(player.playbackRates()).toEqual([0.5, 0.75, 1, 1.25, 1.5, 2]);
+  });
 });

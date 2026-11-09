@@ -40,12 +40,13 @@ import { transportMethods } from './mixins/transport';
 import { volumeMethods } from './mixins/volume';
 
 export {
-	browserPolicyError,
-	mediaFormatError,
-	pluginError,
-	resourceError,
-	stateError,
+  browserPolicyError,
+  mediaFormatError,
+  pluginError,
+  resourceError,
+  stateError,
 } from '../errors';
+
 export { claimPlayerInstance, resolvePlayerConstructor } from './constructor';
 export type { PlayerCtorResolution, PlayerMountTarget } from './constructor';
 export { KIT_VERSION } from './kit-version';
@@ -81,15 +82,17 @@ export { transportMethods } from './mixins/transport';
 
 export { volumeMethods } from './mixins/volume';
 export type { ComposedPlayerMethods } from './player-surface';
+
 export {
-	initPlayerCoreState,
-	setPlayerAudioContext,
+  initPlayerCoreState,
+  setPlayerAudioContext,
 } from './state';
+
 export type {
-	Internals,
-	MixinSurface,
-	PlayerCoreState,
-	SidecarSubtitleContext,
+  Internals,
+  MixinSurface,
+  PlayerCoreState,
+  SidecarSubtitleContext,
 } from './state';
 
 /**
@@ -102,29 +105,29 @@ export type {
  * each entry is a valid mixin object.
  */
 export const playerCoreMethods = [
-	lifecycleMethods,
-	baseUrlAudioContextMethods,
-	experimentalDescriptor,
-	i18nMethods,
-	cueParserMethods,
-	transportMethods,
-	timeMethods,
-	volumeMethods,
-	stateMethods,
-	playerStateMethods,
-	queueMethods,
-	playQueueMethods,
-	pluginRegistrationMethods,
-	authMethods,
-	streamRegistrationMethods,
-	mediaTracksMethods,
-	deviceMethods,
-	audioOutputMethods,
-	castMethods,
-	abrMethods,
-	metricsMethods,
-	loadingMethods,
-	containerClassEmitMethods,
-	activityMethods,
-	preloadStrategyMethods,
+  lifecycleMethods,
+  baseUrlAudioContextMethods,
+  experimentalDescriptor,
+  i18nMethods,
+  cueParserMethods,
+  transportMethods,
+  timeMethods,
+  volumeMethods,
+  stateMethods,
+  playerStateMethods,
+  queueMethods,
+  playQueueMethods,
+  pluginRegistrationMethods,
+  authMethods,
+  streamRegistrationMethods,
+  mediaTracksMethods,
+  deviceMethods,
+  audioOutputMethods,
+  castMethods,
+  abrMethods,
+  metricsMethods,
+  loadingMethods,
+  containerClassEmitMethods,
+  activityMethods,
+  preloadStrategyMethods,
 ] as const;

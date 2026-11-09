@@ -27,126 +27,134 @@ import { KeyHandlerPlugin } from '../../plugins/key-handler';
 import { RepeatState, ShuffleState } from '../../types';
 
 function track(id: string): MusicPlaylistItem {
-	return {
-		id,
-		name: `track ${id}`,
-	};
+  return {
+    id,
+    name: `track ${id}`,
+  };
 }
 
 function tick(): Promise<void> {
-	return new Promise<void>(resolve => setTimeout(resolve, 0));
+  return new Promise<void>((resolve) => setTimeout(resolve, 0));
 }
 
 function pressKey(key: string): void {
-	document.dispatchEvent(new KeyboardEvent('keydown', { key }));
+  document.dispatchEvent(new KeyboardEvent('keydown', { key }));
 }
 
 let idCounter = 0;
 const activePlayers: NMMusicPlayer[] = [];
 
 async function makePlayerWithKeys(): Promise<NMMusicPlayer> {
-	idCounter += 1;
-	const id = `key-bindings-${idCounter}`;
-	const div = document.createElement('div');
-	div.id = id;
-	document.body.appendChild(div);
+  idCounter += 1;
+  const id = `key-bindings-${idCounter}`;
+  const div = document.createElement('div');
 
-	const player = new NMMusicPlayer(id).setup({});
-	player.addPlugin(KeyHandlerPlugin, { cooldownMs: 0 } as any);
-	await player.ready();
-	activePlayers.push(player);
-	return player;
+  div.id = id;
+  document.body.appendChild(div);
+
+  const player = new NMMusicPlayer(id).setup({});
+
+  player.addPlugin(KeyHandlerPlugin, { cooldownMs: 0 } as any);
+  await player.ready();
+  activePlayers.push(player);
+
+  return player;
 }
 
 describe('music KeyHandlerPlugin bindings', () => {
-	beforeEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  beforeEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	afterEach(() => {
-		// Detach every player's document-scoped keydown listener — otherwise
-		// later keypresses fan out to earlier tests' players. removePluginById
-		// runs the plugin lifecycle teardown that releases the listener.
-		for (const player of activePlayers.splice(0)) {
-			player.removePluginById('key-handler');
-		}
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.restoreAllMocks();
-	});
+  afterEach(() => {
+    // Detach every player's document-scoped keydown listener — otherwise
+    // later keypresses fan out to earlier tests' players. removePluginById
+    // runs the plugin lifecycle teardown that releases the listener.
+    for (const player of activePlayers.splice(0)) {
+      player.removePluginById('key-handler');
+    }
 
-	it('"n" advances via player.next()', async () => {
-		const player = await makePlayerWithKeys();
-		const nextSpy = vi.spyOn(player, 'next').mockResolvedValue(undefined);
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.restoreAllMocks();
+  });
 
-		pressKey('n');
+  it('"n" advances via player.next()', async () => {
+    const player = await makePlayerWithKeys();
+    const nextSpy = vi.spyOn(player, 'next').mockResolvedValue(undefined);
 
-		expect(nextSpy).toHaveBeenCalledTimes(1);
-	});
+    pressKey('n');
 
-	it('"p" goes back via player.previous()', async () => {
-		const player = await makePlayerWithKeys();
-		const previousSpy = vi.spyOn(player, 'previous').mockResolvedValue(undefined);
+    expect(nextSpy).toHaveBeenCalledTimes(1);
+  });
 
-		pressKey('p');
+  it('"p" goes back via player.previous()', async () => {
+    const player = await makePlayerWithKeys();
+    const previousSpy = vi.spyOn(player, 'previous').mockResolvedValue(undefined);
 
-		expect(previousSpy).toHaveBeenCalledTimes(1);
-	});
+    pressKey('p');
 
-	it('"r" cycles the repeat state off → all → one → off', async () => {
-		const player = await makePlayerWithKeys();
-		expect(player.repeatState()).toBe(RepeatState.OFF);
+    expect(previousSpy).toHaveBeenCalledTimes(1);
+  });
 
-		pressKey('r');
-		await tick();
-		expect(player.repeatState()).toBe(RepeatState.ALL);
+  it('"r" cycles the repeat state off → all → one → off', async () => {
+    const player = await makePlayerWithKeys();
 
-		pressKey('r');
-		await tick();
-		expect(player.repeatState()).toBe(RepeatState.ONE);
+    expect(player.repeatState()).toBe(RepeatState.OFF);
 
-		pressKey('r');
-		await tick();
-		expect(player.repeatState()).toBe(RepeatState.OFF);
-	});
+    pressKey('r');
+    await tick();
+    expect(player.repeatState()).toBe(RepeatState.ALL);
 
-	it('"s" toggles shuffle on and back off', async () => {
-		const player = await makePlayerWithKeys();
-		player.queue([track('a'), track('b'), track('c')]);
-		expect(player.shuffleState()).toBe(ShuffleState.OFF);
+    pressKey('r');
+    await tick();
+    expect(player.repeatState()).toBe(RepeatState.ONE);
 
-		pressKey('s');
-		await tick();
-		expect(player.shuffleState()).toBe(ShuffleState.ON);
+    pressKey('r');
+    await tick();
+    expect(player.repeatState()).toBe(RepeatState.OFF);
+  });
 
-		pressKey('s');
-		await tick();
-		expect(player.shuffleState()).toBe(ShuffleState.OFF);
-	});
+  it('"s" toggles shuffle on and back off', async () => {
+    const player = await makePlayerWithKeys();
 
-	it('keys typed into an input element never reach the bindings', async () => {
-		const player = await makePlayerWithKeys();
-		const nextSpy = vi.spyOn(player, 'next').mockResolvedValue(undefined);
+    player.queue([track('a'), track('b'), track('c')]);
+    expect(player.shuffleState()).toBe(ShuffleState.OFF);
 
-		const input = document.createElement('input');
-		document.body.appendChild(input);
-		input.dispatchEvent(new KeyboardEvent('keydown', {
-			key: 'n',
-			bubbles: true,
-		}));
+    pressKey('s');
+    await tick();
+    expect(player.shuffleState()).toBe(ShuffleState.ON);
 
-		expect(nextSpy).not.toHaveBeenCalled();
-	});
+    pressKey('s');
+    await tick();
+    expect(player.shuffleState()).toBe(ShuffleState.OFF);
+  });
 
-	it('MediaTrackNext / MediaTrackPrevious hardware keys stay wired through the kit defaults', async () => {
-		const player = await makePlayerWithKeys();
-		const nextSpy = vi.spyOn(player, 'next').mockResolvedValue(undefined);
-		const previousSpy = vi.spyOn(player, 'previous').mockResolvedValue(undefined);
+  it('keys typed into an input element never reach the bindings', async () => {
+    const player = await makePlayerWithKeys();
+    const nextSpy = vi.spyOn(player, 'next').mockResolvedValue(undefined);
 
-		pressKey('MediaTrackNext');
-		pressKey('MediaTrackPrevious');
+    const input = document.createElement('input');
 
-		expect(nextSpy).toHaveBeenCalledTimes(1);
-		expect(previousSpy).toHaveBeenCalledTimes(1);
-	});
+    document.body.appendChild(input);
+
+    input.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'n',
+      bubbles: true,
+    }));
+
+    expect(nextSpy).not.toHaveBeenCalled();
+  });
+
+  it('MediaTrackNext / MediaTrackPrevious hardware keys stay wired through the kit defaults', async () => {
+    const player = await makePlayerWithKeys();
+    const nextSpy = vi.spyOn(player, 'next').mockResolvedValue(undefined);
+    const previousSpy = vi.spyOn(player, 'previous').mockResolvedValue(undefined);
+
+    pressKey('MediaTrackNext');
+    pressKey('MediaTrackPrevious');
+
+    expect(nextSpy).toHaveBeenCalledTimes(1);
+    expect(previousSpy).toHaveBeenCalledTimes(1);
+  });
 });

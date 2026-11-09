@@ -35,72 +35,79 @@ import { NMVideoPlayer } from '../../index';
 import { TvKeyHandlerPlugin, tvKeyHandlerPlugin } from '../../plugins/tv-key-handler';
 
 describe('TvKeyHandlerPlugin', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.restoreAllMocks();
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+  });
 
-	const setup = (): NMVideoPlayer<any> => new NMVideoPlayer('test').setup({});
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.restoreAllMocks();
+  });
 
-	// ── Test 5: registration ──────────────────────────────────────────────────
+  const setup = (): NMVideoPlayer<any> => new NMVideoPlayer('test').setup({});
 
-	it('registers without throwing; getPlugin returns the instance', async () => {
-		const player = setup();
-		expect(() => player.addPlugin(tvKeyHandlerPlugin)).not.toThrow();
-		await player.ready();
-		expect(player.getPlugin(TvKeyHandlerPlugin)).toBeInstanceOf(TvKeyHandlerPlugin);
-	});
+  // ── Test 5: registration ──────────────────────────────────────────────────
 
-	// ── Test 6: ArrowLeft → rewind(), ArrowRight → forward() ─────────────────
-	// Confirms the desktop-gate bypass: the TV override does NOT guard on isTv().
+  it('registers without throwing; getPlugin returns the instance', async () => {
+    const player = setup();
 
-	it('ArrowLeft calls rewind() and ArrowRight calls forward() (desktop-gate bypassed)', async () => {
-		const player = setup();
-		player.addPlugin(tvKeyHandlerPlugin, { arrowSeekSeconds: 5, cooldownMs: 0 } as any);
-		await player.ready();
+    expect(() => player.addPlugin(tvKeyHandlerPlugin)).not.toThrow();
+    await player.ready();
+    expect(player.getPlugin(TvKeyHandlerPlugin)).toBeInstanceOf(TvKeyHandlerPlugin);
+  });
 
-		const rewindSpy = vi.fn().mockResolvedValue(undefined);
-		const forwardSpy = vi.fn().mockResolvedValue(undefined);
-		(player as any).rewind = rewindSpy;
-		(player as any).forward = forwardSpy;
+  // ── Test 6: ArrowLeft → rewind(), ArrowRight → forward() ─────────────────
+  // Confirms the desktop-gate bypass: the TV override does NOT guard on isTv().
 
-		// jsdom isTv() returns false — the base class would block arrows here.
-		// The TV plugin overrides addNavigationKeys() without the isTv() guard,
-		// so both calls must fire unconditionally.
-		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
-		expect(rewindSpy).toHaveBeenCalledTimes(1);
+  it('ArrowLeft calls rewind() and ArrowRight calls forward() (desktop-gate bypassed)', async () => {
+    const player = setup();
 
-		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
-		expect(forwardSpy).toHaveBeenCalledTimes(1);
-	});
+    player.addPlugin(tvKeyHandlerPlugin, { arrowSeekSeconds: 5, cooldownMs: 0 } as any);
+    await player.ready();
 
-	// ── Test 7: MediaRecord key emits plugin:tv-key-handler:bookmark ─────────
+    const rewindSpy = vi.fn().mockResolvedValue(undefined);
+    const forwardSpy = vi.fn().mockResolvedValue(undefined);
 
-	it('MediaRecord key emits plugin:tv-key-handler:bookmark with {time}', async () => {
-		const player = setup();
-		player.addPlugin(tvKeyHandlerPlugin, { cooldownMs: 0 } as any);
-		await player.ready();
+    (player as any).rewind = rewindSpy;
+    (player as any).forward = forwardSpy;
 
-		const timeSpy = vi.fn().mockReturnValue(42);
-		(player as any).time = timeSpy;
+    // jsdom isTv() returns false — the base class would block arrows here.
+    // The TV plugin overrides addNavigationKeys() without the isTv() guard,
+    // so both calls must fire unconditionally.
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    expect(rewindSpy).toHaveBeenCalledTimes(1);
 
-		const received: unknown[] = [];
-		player.on('plugin:tv-key-handler:bookmark' as never, ((data: unknown) => {
-			received.push(data);
-		}) as never);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(forwardSpy).toHaveBeenCalledTimes(1);
+  });
 
-		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'MediaRecord', bubbles: true }));
+  // ── Test 7: MediaRecord key emits plugin:tv-key-handler:bookmark ─────────
 
-		// The emit is synchronous inside the binding callback.
-		expect(received).toHaveLength(1);
-		expect((received[0] as { time: number }).time).toBe(42);
-	});
+  it('MediaRecord key emits plugin:tv-key-handler:bookmark with {time}', async () => {
+    const player = setup();
+
+    player.addPlugin(tvKeyHandlerPlugin, { cooldownMs: 0 } as any);
+    await player.ready();
+
+    const timeSpy = vi.fn().mockReturnValue(42);
+
+    (player as any).time = timeSpy;
+
+    const received: unknown[] = [];
+
+    player.on('plugin:tv-key-handler:bookmark' as never, ((data: unknown) => {
+      received.push(data);
+    }) as never);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'MediaRecord', bubbles: true }));
+
+    // The emit is synchronous inside the binding callback.
+    expect(received).toHaveLength(1);
+    expect((received[0] as { time: number }).time).toBe(42);
+  });
 });

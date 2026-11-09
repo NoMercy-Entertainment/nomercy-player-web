@@ -12,19 +12,19 @@
  * the full list is available via `player.chapters()`.
  */
 export interface Chapter {
-	/** Zero-based chapter index in the chapter list. */
-	index: number;
-	/** Chapter start time (seconds). */
-	start: number;
-	/** Chapter end time (seconds). */
-	end: number;
-	/** Display name of the chapter. */
-	title: string;
-	/**
-	 * `true` when the malformed-chapter safety net generated this entry to
-	 * fill a gap the source list left uncovered. Absent (never `false`) on
-	 * every chapter that came from the ingest source, so a plain truthy check
-	 * is enough for a consumer to style fillers differently.
-	 */
-	synthetic?: boolean;
+  /** Zero-based chapter index in the chapter list. */
+  index: number;
+  /** Chapter start time (seconds). */
+  start: number;
+  /** Chapter end time (seconds). */
+  end: number;
+  /** Display name of the chapter. */
+  title: string;
+  /**
+   * `true` when the malformed-chapter safety net generated this entry to
+   * fill a gap the source list left uncovered. Absent (never `false`) on
+   * every chapter that came from the ingest source, so a plain truthy check
+   * is enough for a consumer to style fillers differently.
+   */
+  synthetic?: boolean;
 }

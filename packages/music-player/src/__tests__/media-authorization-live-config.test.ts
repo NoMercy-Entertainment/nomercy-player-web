@@ -19,84 +19,90 @@ import { AudioElementBackend } from '../adapters/audio-backend/html5-audio';
 import { NMMusicPlayer } from '../index';
 
 describe('mediaAuthorization reads the live auth config', () => {
-	beforeEach(() => {
-		document.body.innerHTML = '<div id="media-auth-test"></div>';
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="media-auth-test"></div>';
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	afterEach(() => {
-		document.body.innerHTML = '';
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		vi.restoreAllMocks();
-	});
+  afterEach(() => {
+    document.body.innerHTML = '';
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    vi.restoreAllMocks();
+  });
 
-	it('uses the rule supplied at setup', () => {
-		const spy = vi.spyOn(AudioElementBackend.prototype, 'setAuthHeaderProvider');
-		const musicPlayer = new NMMusicPlayer('media-auth-test').setup({
-			auth: {
-				mediaAuthorization: () => 'Bearer from-setup',
-			},
-		});
+  it('uses the rule supplied at setup', () => {
+    const spy = vi.spyOn(AudioElementBackend.prototype, 'setAuthHeaderProvider');
+    const musicPlayer = new NMMusicPlayer('media-auth-test').setup({
+      auth: {
+        mediaAuthorization: () => 'Bearer from-setup',
+      },
+    });
 
-		musicPlayer.backend();
+    musicPlayer.backend();
 
-		const provider = spy.mock.calls[0]![0] as (url: string) => string | undefined;
-		expect(provider('https://example.invalid/a.mp3')).toBe('Bearer from-setup');
-	});
+    const provider = spy.mock.calls[0]![0] as (url: string) => string | undefined;
 
-	it('sees a rule installed with player.auth() after setup', () => {
-		const spy = vi.spyOn(AudioElementBackend.prototype, 'setAuthHeaderProvider');
-		const musicPlayer = new NMMusicPlayer('media-auth-test').setup({});
+    expect(provider('https://example.invalid/a.mp3')).toBe('Bearer from-setup');
+  });
 
-		musicPlayer.backend();
+  it('sees a rule installed with player.auth() after setup', () => {
+    const spy = vi.spyOn(AudioElementBackend.prototype, 'setAuthHeaderProvider');
+    const musicPlayer = new NMMusicPlayer('media-auth-test').setup({});
 
-		musicPlayer.auth({
-			mediaAuthorization: () => 'Bearer from-runtime',
-		});
+    musicPlayer.backend();
 
-		const provider = spy.mock.calls[0]![0] as (url: string) => string | undefined;
-		expect(provider('https://example.invalid/a.mp3')).toBe('Bearer from-runtime');
-	});
+    musicPlayer.auth({
+      mediaAuthorization: () => 'Bearer from-runtime',
+    });
 
-	it('sees a rule replaced with player.auth() after setup', () => {
-		const spy = vi.spyOn(AudioElementBackend.prototype, 'setAuthHeaderProvider');
-		const musicPlayer = new NMMusicPlayer('media-auth-test').setup({
-			auth: {
-				mediaAuthorization: () => 'Bearer from-setup',
-			},
-		});
+    const provider = spy.mock.calls[0]![0] as (url: string) => string | undefined;
 
-		musicPlayer.backend();
+    expect(provider('https://example.invalid/a.mp3')).toBe('Bearer from-runtime');
+  });
 
-		musicPlayer.auth({
-			mediaAuthorization: () => 'Bearer rotated',
-		});
+  it('sees a rule replaced with player.auth() after setup', () => {
+    const spy = vi.spyOn(AudioElementBackend.prototype, 'setAuthHeaderProvider');
+    const musicPlayer = new NMMusicPlayer('media-auth-test').setup({
+      auth: {
+        mediaAuthorization: () => 'Bearer from-setup',
+      },
+    });
 
-		const provider = spy.mock.calls[0]![0] as (url: string) => string | undefined;
-		expect(provider('https://example.invalid/a.mp3')).toBe('Bearer rotated');
-	});
+    musicPlayer.backend();
 
-	it('carries the token to a listed origin and to no other', () => {
-		const spy = vi.spyOn(AudioElementBackend.prototype, 'setAuthHeaderProvider');
-		const musicPlayer = new NMMusicPlayer('media-auth-test').setup({
-			auth: { bearerToken: 'tok-1', mediaOrigins: 'https://media.example.test' },
-		});
+    musicPlayer.auth({
+      mediaAuthorization: () => 'Bearer rotated',
+    });
 
-		musicPlayer.backend();
+    const provider = spy.mock.calls[0]![0] as (url: string) => string | undefined;
 
-		const provider = spy.mock.calls[0]![0] as (url: string) => string | undefined;
-		expect(provider('https://media.example.test/a.mp3')).toBe('Bearer tok-1');
-		expect(provider('https://stranger.example.test/a.mp3')).toBeUndefined();
-	});
+    expect(provider('https://example.invalid/a.mp3')).toBe('Bearer rotated');
+  });
 
-	it('leaves no callable on player.auth() that answers with the token', () => {
-		const musicPlayer = new NMMusicPlayer('media-auth-test').setup({
-			auth: { bearerToken: 'tok-1', mediaOrigins: 'https://media.example.test' },
-		});
+  it('carries the token to a listed origin and to no other', () => {
+    const spy = vi.spyOn(AudioElementBackend.prototype, 'setAuthHeaderProvider');
+    const musicPlayer = new NMMusicPlayer('media-auth-test').setup({
+      auth: { bearerToken: 'tok-1', mediaOrigins: 'https://media.example.test' },
+    });
 
-		const answers = Object.values(musicPlayer.auth() ?? {}).flatMap(value =>
-			typeof value === 'function' ? [Reflect.apply(value, undefined, ['https://media.example.test/a.mp3'])] : []);
+    musicPlayer.backend();
 
-		expect(JSON.stringify(answers)).not.toContain('tok-1');
-	});
+    const provider = spy.mock.calls[0]![0] as (url: string) => string | undefined;
+
+    expect(provider('https://media.example.test/a.mp3')).toBe('Bearer tok-1');
+    expect(provider('https://stranger.example.test/a.mp3')).toBeUndefined();
+  });
+
+  it('leaves no callable on player.auth() that answers with the token', () => {
+    const musicPlayer = new NMMusicPlayer('media-auth-test').setup({
+      auth: { bearerToken: 'tok-1', mediaOrigins: 'https://media.example.test' },
+    });
+
+    const answers = Object.values(musicPlayer.auth() ?? {}).flatMap((value) =>
+      typeof value === 'function'
+        ? [Reflect.apply(value, undefined, ['https://media.example.test/a.mp3'])]
+        : []);
+
+    expect(JSON.stringify(answers)).not.toContain('tok-1');
+  });
 });

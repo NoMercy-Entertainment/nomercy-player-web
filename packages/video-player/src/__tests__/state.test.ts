@@ -22,93 +22,101 @@ import { PlayState, RepeatState, ShuffleState, VolumeState } from '../types';
  * instead of awaiting a return value.
  */
 async function flush(): Promise<void> {
-	await new Promise(resolve => setTimeout(resolve, 0));
+  await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 describe('NMVideoPlayer — state enums', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+  });
 
-	const setup = (cfg = {}): NMVideoPlayer => new NMVideoPlayer('test').setup(cfg);
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	describe('playState()', () => {
-		it('returns IDLE before any transport action', () => {
-			expect(setup().playState()).toBe(PlayState.IDLE);
-		});
+  const setup = (cfg = {}): NMVideoPlayer => new NMVideoPlayer('test').setup(cfg);
 
-		it('transitions to PLAYING after play()', async () => {
-			const videoPlayer = setup();
-			await videoPlayer.play();
-			expect(videoPlayer.playState()).toBe(PlayState.PLAYING);
-		});
+  describe('playState()', () => {
+    it('returns IDLE before any transport action', () => {
+      expect(setup().playState()).toBe(PlayState.IDLE);
+    });
 
-		it('transitions to PAUSED after pause()', async () => {
-			const videoPlayer = setup();
-			await videoPlayer.play();
-			await videoPlayer.pause();
-			expect(videoPlayer.playState()).toBe(PlayState.PAUSED);
-		});
+    it('transitions to PLAYING after play()', async () => {
+      const videoPlayer = setup();
 
-		it('transitions to STOPPED after stop()', async () => {
-			const videoPlayer = setup();
-			await videoPlayer.play();
-			await videoPlayer.stop();
-			expect(videoPlayer.playState()).toBe(PlayState.STOPPED);
-		});
-	});
+      await videoPlayer.play();
+      expect(videoPlayer.playState()).toBe(PlayState.PLAYING);
+    });
 
-	describe('volumeState() / mute / unmute', () => {
-		it('returns UNMUTED initially', () => {
-			expect(setup().volumeState()).toBe(VolumeState.UNMUTED);
-		});
+    it('transitions to PAUSED after pause()', async () => {
+      const videoPlayer = setup();
 
-		it('transitions to MUTED after mute()', async () => {
-			const videoPlayer = setup();
-			await videoPlayer.mute();
-			expect(videoPlayer.volumeState()).toBe(VolumeState.MUTED);
-		});
+      await videoPlayer.play();
+      await videoPlayer.pause();
+      expect(videoPlayer.playState()).toBe(PlayState.PAUSED);
+    });
 
-		it('toggleMute flips state', async () => {
-			const videoPlayer = setup();
-			videoPlayer.toggleMute();
-			await flush();
-			expect(videoPlayer.volumeState()).toBe(VolumeState.MUTED);
-			videoPlayer.toggleMute();
-			await flush();
-			expect(videoPlayer.volumeState()).toBe(VolumeState.UNMUTED);
-		});
-	});
+    it('transitions to STOPPED after stop()', async () => {
+      const videoPlayer = setup();
 
-	describe('repeatState() — overloaded read/write', () => {
-		it('returns OFF initially', () => {
-			expect(setup().repeatState()).toBe(RepeatState.OFF);
-		});
+      await videoPlayer.play();
+      await videoPlayer.stop();
+      expect(videoPlayer.playState()).toBe(PlayState.STOPPED);
+    });
+  });
 
-		it('round-trips through the writer', async () => {
-			const videoPlayer = setup();
-			await videoPlayer.repeatState(RepeatState.ALL);
-			expect(videoPlayer.repeatState()).toBe(RepeatState.ALL);
-		});
-	});
+  describe('volumeState() / mute / unmute', () => {
+    it('returns UNMUTED initially', () => {
+      expect(setup().volumeState()).toBe(VolumeState.UNMUTED);
+    });
 
-	describe('shuffleState() — overloaded read/write', () => {
-		it('returns OFF initially', () => {
-			expect(setup().shuffleState()).toBe(ShuffleState.OFF);
-		});
+    it('transitions to MUTED after mute()', async () => {
+      const videoPlayer = setup();
 
-		it('accepts a boolean shorthand', async () => {
-			const videoPlayer = setup();
-			await videoPlayer.shuffleState(true);
-			expect(videoPlayer.shuffleState()).toBe(ShuffleState.ON);
-		});
-	});
+      await videoPlayer.mute();
+      expect(videoPlayer.volumeState()).toBe(VolumeState.MUTED);
+    });
+
+    it('toggleMute flips state', async () => {
+      const videoPlayer = setup();
+
+      videoPlayer.toggleMute();
+      await flush();
+      expect(videoPlayer.volumeState()).toBe(VolumeState.MUTED);
+      videoPlayer.toggleMute();
+      await flush();
+      expect(videoPlayer.volumeState()).toBe(VolumeState.UNMUTED);
+    });
+  });
+
+  describe('repeatState() — overloaded read/write', () => {
+    it('returns OFF initially', () => {
+      expect(setup().repeatState()).toBe(RepeatState.OFF);
+    });
+
+    it('round-trips through the writer', async () => {
+      const videoPlayer = setup();
+
+      await videoPlayer.repeatState(RepeatState.ALL);
+      expect(videoPlayer.repeatState()).toBe(RepeatState.ALL);
+    });
+  });
+
+  describe('shuffleState() — overloaded read/write', () => {
+    it('returns OFF initially', () => {
+      expect(setup().shuffleState()).toBe(ShuffleState.OFF);
+    });
+
+    it('accepts a boolean shorthand', async () => {
+      const videoPlayer = setup();
+
+      await videoPlayer.shuffleState(true);
+      expect(videoPlayer.shuffleState()).toBe(ShuffleState.ON);
+    });
+  });
 });

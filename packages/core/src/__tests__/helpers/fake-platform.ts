@@ -7,18 +7,18 @@
 // -----------------------------------------------------------------------------
 
 import type {
-	DecodeCapability,
-	DecodeProfile,
-	ICapabilitiesProbe,
-	INetworkMonitor,
-	IPlatform,
-	IVisibilityMonitor,
-	IWakeLock,
-	NetworkType,
+  DecodeCapability,
+  DecodeProfile,
+  ICapabilitiesProbe,
+  INetworkMonitor,
+  IPlatform,
+  IVisibilityMonitor,
+  IWakeLock,
+  NetworkType,
 } from '../../adapters/platform/IPlatform';
 
 export interface FakePlatform extends IPlatform {
-	visibilitySubscribeCalls: number;
+  visibilitySubscribeCalls: number;
 }
 
 /**
@@ -27,45 +27,50 @@ export interface FakePlatform extends IPlatform {
  * used the injected platform, not the `browserPlatform` default.
  */
 export function makeFakePlatform(): FakePlatform {
-	let visibilitySubscribeCalls = 0;
+  let visibilitySubscribeCalls = 0;
 
-	const visibility: IVisibilityMonitor = {
-		isVisible(): boolean { return true; },
-		subscribe(_fn: (visible: boolean) => void): () => void {
-			visibilitySubscribeCalls += 1;
-			return (): void => {};
-		},
-	};
+  const visibility: IVisibilityMonitor = {
+    isVisible(): boolean { return true; },
+    subscribe(_fn: (visible: boolean) => void): () => void {
+      visibilitySubscribeCalls += 1;
 
-	const network: INetworkMonitor = {
-		isOnline(): boolean { return true; },
-		type(): NetworkType { return 'wifi'; },
-		downlinkMbps(): number | undefined { return undefined; },
-		rttMs(): number | undefined { return undefined; },
-		subscribe(_fn: (state: { online: boolean; type: NetworkType }) => void): () => void {
-			return (): void => {};
-		},
-	};
+      return (): void => {};
+    },
+  };
 
-	const wakeLock: IWakeLock = {
-		acquire(): Promise<void> { return Promise.resolve(); },
-		release(): Promise<void> { return Promise.resolve(); },
-		isHeld(): boolean { return false; },
-	};
+  const network: INetworkMonitor = {
+    isOnline(): boolean { return true; },
+    type(): NetworkType { return 'wifi'; },
+    downlinkMbps(): number | undefined { return undefined; },
+    rttMs(): number | undefined { return undefined; },
+    subscribe(_fn: (state: { online: boolean; type: NetworkType }) => void): () => void {
+      return (): void => {};
+    },
+  };
 
-	const capabilities: ICapabilitiesProbe = {
-		canDecode(_profile: DecodeProfile): Promise<DecodeCapability> {
-			return Promise.resolve({ supported: true, smooth: true, powerEfficient: true });
-		},
-	};
+  const wakeLock: IWakeLock = {
+    acquire(): Promise<void> { return Promise.resolve(); },
+    release(): Promise<void> { return Promise.resolve(); },
+    isHeld(): boolean { return false; },
+  };
 
-	const platform = {
-		get visibilitySubscribeCalls(): number { return visibilitySubscribeCalls; },
-		visibility,
-		network,
-		wakeLock,
-		capabilities,
-	} as FakePlatform;
+  const capabilities: ICapabilitiesProbe = {
+    canDecode(_profile: DecodeProfile): Promise<DecodeCapability> {
+      return Promise.resolve({
+        supported: true,
+        smooth: true,
+        powerEfficient: true,
+      });
+    },
+  };
 
-	return platform;
+  const platform = {
+    get visibilitySubscribeCalls(): number { return visibilitySubscribeCalls; },
+    visibility,
+    network,
+    wakeLock,
+    capabilities,
+  } as FakePlatform;
+
+  return platform;
 }

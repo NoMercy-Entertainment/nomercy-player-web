@@ -27,115 +27,128 @@ import { NMMusicPlayer } from '../index';
  * of awaiting a return value.
  */
 async function flush(): Promise<void> {
-	await new Promise(resolve => setTimeout(resolve, 0));
+  await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 describe('NMMusicPlayer — volume', () => {
-	beforeEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+  });
 
-	const setup = (cfg = {}): NMMusicPlayer => new NMMusicPlayer('test').setup(cfg);
+  afterEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	describe('volume()', () => {
-		it('returns the default 100 when no defaultVolume is configured', () => {
-			expect(setup().volume()).toBe(100);
-		});
+  const setup = (cfg = {}): NMMusicPlayer => new NMMusicPlayer('test').setup(cfg);
 
-		it('honors config.defaultVolume', () => {
-			expect(setup({ defaultVolume: 40 }).volume()).toBe(40);
-		});
+  describe('volume()', () => {
+    it('returns the default 100 when no defaultVolume is configured', () => {
+      expect(setup().volume()).toBe(100);
+    });
 
-		it('round-trips through the writer', async () => {
-			const musicPlayer = setup();
-			await musicPlayer.volume(50);
-			expect(musicPlayer.volume()).toBe(50);
-		});
+    it('honors config.defaultVolume', () => {
+      expect(setup({ defaultVolume: 40 }).volume()).toBe(40);
+    });
 
-		it('clamps below 0 to 0', async () => {
-			const musicPlayer = setup();
-			await musicPlayer.volume(-50);
-			expect(musicPlayer.volume()).toBe(0);
-		});
+    it('round-trips through the writer', async () => {
+      const musicPlayer = setup();
 
-		it('clamps above 100 to 100', async () => {
-			const musicPlayer = setup();
-			await musicPlayer.volume(200);
-			expect(musicPlayer.volume()).toBe(100);
-		});
+      await musicPlayer.volume(50);
+      expect(musicPlayer.volume()).toBe(50);
+    });
 
-		it('emits "volume" with the new level', async () => {
-			const musicPlayer = setup();
-			let level: number | undefined;
-			musicPlayer.on('volume' as any, (data: any) => { level = data.level; });
-			await musicPlayer.volume(70);
-			expect(level).toBe(70);
-		});
-	});
+    it('clamps below 0 to 0', async () => {
+      const musicPlayer = setup();
 
-	describe('mute / unmute', () => {
-		it('mute() emits "mute" with muted=true', async () => {
-			const musicPlayer = setup();
-			let muted: boolean | undefined;
-			musicPlayer.on('mute' as any, (data: any) => { muted = data.muted; });
-			await musicPlayer.mute();
-			expect(muted).toBe(true);
-		});
+      await musicPlayer.volume(-50);
+      expect(musicPlayer.volume()).toBe(0);
+    });
 
-		it('unmute() emits "mute" with muted=false', async () => {
-			const musicPlayer = setup();
-			await musicPlayer.mute();
-			let muted: boolean | undefined;
-			musicPlayer.on('mute' as any, (data: any) => { muted = data.muted; });
-			await musicPlayer.unmute();
-			expect(muted).toBe(false);
-		});
+    it('clamps above 100 to 100', async () => {
+      const musicPlayer = setup();
 
-		it('mute preserves the previous level so unmute restores it', async () => {
-			const musicPlayer = setup();
-			await musicPlayer.volume(60);
-			await musicPlayer.mute();
-			expect(musicPlayer.volume()).toBe(0); // muted reads as 0
-			await musicPlayer.unmute();
-			expect(musicPlayer.volume()).toBe(60);
-		});
-	});
+      await musicPlayer.volume(200);
+      expect(musicPlayer.volume()).toBe(100);
+    });
 
-	describe('volumeUp / volumeDown', () => {
-		it('volumeUp(10) increments by 10', async () => {
-			const musicPlayer = setup({ defaultVolume: 50 });
-			musicPlayer.volumeUp(10);
-			await flush();
-			expect(musicPlayer.volume()).toBeCloseTo(60);
-		});
+    it('emits "volume" with the new level', async () => {
+      const musicPlayer = setup();
+      let level: number | undefined;
 
-		it('volumeDown(20) decrements by 20', async () => {
-			const musicPlayer = setup({ defaultVolume: 50 });
-			musicPlayer.volumeDown(20);
-			await flush();
-			expect(musicPlayer.volume()).toBeCloseTo(30);
-		});
+      musicPlayer.on('volume' as any, (data: any) => { level = data.level; });
+      await musicPlayer.volume(70);
+      expect(level).toBe(70);
+    });
+  });
 
-		it('volumeUp clamps at 100', async () => {
-			const musicPlayer = setup({ defaultVolume: 95 });
-			musicPlayer.volumeUp(20);
-			await flush();
-			expect(musicPlayer.volume()).toBe(100);
-		});
+  describe('mute / unmute', () => {
+    it('mute() emits "mute" with muted=true', async () => {
+      const musicPlayer = setup();
+      let muted: boolean | undefined;
 
-		it('volumeDown clamps at 0', async () => {
-			const musicPlayer = setup({ defaultVolume: 5 });
-			musicPlayer.volumeDown(20);
-			await flush();
-			expect(musicPlayer.volume()).toBe(0);
-		});
-	});
+      musicPlayer.on('mute' as any, (data: any) => { muted = data.muted; });
+      await musicPlayer.mute();
+      expect(muted).toBe(true);
+    });
+
+    it('unmute() emits "mute" with muted=false', async () => {
+      const musicPlayer = setup();
+
+      await musicPlayer.mute();
+      let muted: boolean | undefined;
+
+      musicPlayer.on('mute' as any, (data: any) => { muted = data.muted; });
+      await musicPlayer.unmute();
+      expect(muted).toBe(false);
+    });
+
+    it('mute preserves the previous level so unmute restores it', async () => {
+      const musicPlayer = setup();
+
+      await musicPlayer.volume(60);
+      await musicPlayer.mute();
+      expect(musicPlayer.volume()).toBe(0); // muted reads as 0
+      await musicPlayer.unmute();
+      expect(musicPlayer.volume()).toBe(60);
+    });
+  });
+
+  describe('volumeUp / volumeDown', () => {
+    it('volumeUp(10) increments by 10', async () => {
+      const musicPlayer = setup({ defaultVolume: 50 });
+
+      musicPlayer.volumeUp(10);
+      await flush();
+      expect(musicPlayer.volume()).toBeCloseTo(60);
+    });
+
+    it('volumeDown(20) decrements by 20', async () => {
+      const musicPlayer = setup({ defaultVolume: 50 });
+
+      musicPlayer.volumeDown(20);
+      await flush();
+      expect(musicPlayer.volume()).toBeCloseTo(30);
+    });
+
+    it('volumeUp clamps at 100', async () => {
+      const musicPlayer = setup({ defaultVolume: 95 });
+
+      musicPlayer.volumeUp(20);
+      await flush();
+      expect(musicPlayer.volume()).toBe(100);
+    });
+
+    it('volumeDown clamps at 0', async () => {
+      const musicPlayer = setup({ defaultVolume: 5 });
+
+      musicPlayer.volumeDown(20);
+      await flush();
+      expect(musicPlayer.volume()).toBe(0);
+    });
+  });
 });

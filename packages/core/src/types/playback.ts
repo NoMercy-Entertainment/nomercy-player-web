@@ -21,16 +21,16 @@ export type AriaLiveLevel = 'polite' | 'assertive';
  * range [0, 100].
  */
 export interface TimeState {
-	/** Current playback position (seconds) — alias of `position`, the classic field `time` listeners destructure. */
-	time: number;
-	/** Current playback position (seconds). */
-	position: number;
-	/** Total duration of the active item (seconds). `0` when unknown. */
-	duration: number;
-	/** The absolute timeline position buffered data reaches (seconds), on the same scale as `currentTime` and `duration`. */
-	buffered: number;
-	/** Seconds remaining until the end of the item. */
-	remaining: number;
-	/** Playback progress as a percentage of total duration (0–100). */
-	percentage: number;
+  /** Current playback position (seconds) — alias of `position`, the classic field `time` listeners destructure. */
+  time: number;
+  /** Current playback position (seconds). */
+  position: number;
+  /** Total duration of the active item (seconds). `0` when unknown. */
+  duration: number;
+  /** The absolute timeline position buffered data reaches (seconds), on the same scale as `currentTime` and `duration`. */
+  buffered: number;
+  /** Seconds remaining until the end of the item. */
+  remaining: number;
+  /** Playback progress as a percentage of total duration (0–100). */
+  percentage: number;
 }

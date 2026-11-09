@@ -22,10 +22,10 @@
 import type { AudioTrack, BasePlaylistItem, Chapter, PluginCtorWithId, QualityLevel, SidecarSubtitleInput, SubtitleStyle, SubtitleTrack } from '../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	AudioTrackState,
-	composeMixins,
-	playerCoreMethods,
-	QualityState,
+  AudioTrackState,
+  composeMixins,
+  playerCoreMethods,
+  QualityState,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
@@ -34,95 +34,95 @@ import { MockPlayerBase } from './helpers/mock-player-base';
 // ─────────────────────────────────────────────────────────────────────────────
 
 class MockPlayer extends MockPlayerBase {
-	declare options: Record<string, unknown>;
-	declare setup: (config: Record<string, unknown>) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare phase: () => string;
-	declare dispatching: () => ReadonlyArray<string>;
-	declare baseUrl: { (): string | undefined; (url: string): void };
-	declare audioContext: () => AudioContext | undefined;
-	declare experimental: unknown;
-	declare t: {
-		(key: string, vars?: Record<string, string>): string;
-		(PluginClass: PluginCtorWithId, key: string, vars?: Record<string, string>): string;
-	};
+  declare options: Record<string, unknown>;
+  declare setup: (config: Record<string, unknown>) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare phase: () => string;
+  declare dispatching: () => ReadonlyArray<string>;
+  declare baseUrl: { (): string | undefined; (url: string): void };
+  declare audioContext: () => AudioContext | undefined;
+  declare experimental: unknown;
+  declare t: {
+    (key: string, vars?: Record<string, string>): string;
+    (PluginClass: PluginCtorWithId, key: string, vars?: Record<string, string>): string;
+  };
 
-	declare language: { (): string; (lang: string): Promise<void> };
-	declare addTranslations: (bundle: unknown) => void;
-	declare translation: (lang: string, key: string, value: string) => void;
-	declare removeTranslations: (prefix: string, lang?: string) => void;
-	declare registerCueParser: (parser: unknown, prepend?: boolean) => void;
-	declare unregisterCueParser: (id: string) => void;
-	declare play: (opts?: unknown) => Promise<void>;
-	declare pause: (opts?: unknown) => Promise<void>;
-	declare stop: (opts?: unknown) => Promise<void>;
-	declare togglePlayback: (opts?: unknown) => Promise<void>;
-	declare next: (opts?: unknown) => Promise<void>;
-	declare previous: (opts?: unknown) => Promise<void>;
-	declare rewind: (seconds?: number, opts?: unknown) => Promise<void>;
-	declare forward: (seconds?: number, opts?: unknown) => Promise<void>;
-	declare restart: (opts?: unknown) => Promise<void>;
-	declare time: { (): number; (seconds: number, opts?: unknown): Promise<void> };
-	declare duration: () => number;
-	declare buffered: () => number;
-	declare timeData: () => unknown;
-	declare playbackRate: { (): number; (rate: number): void };
-	declare playbackRates: () => number[];
-	declare volume: { (): number; (level: number): void };
-	declare mute: () => void;
-	declare unmute: () => void;
-	declare toggleMute: () => void;
-	declare volumeUp: (step?: number) => void;
-	declare volumeDown: (step?: number) => void;
-	declare playState: () => string;
-	declare volumeState: () => string;
-	declare repeatState: { (): string; (state: unknown): void };
-	declare shuffleState: { (): string; (state: unknown): void };
-	declare queue: { (): ReadonlyArray<unknown>; (items: unknown[], opts?: unknown): void };
-	declare queueAppend: (item: unknown, opts?: unknown) => void;
-	declare queuePrepend: (item: unknown, opts?: unknown) => void;
-	declare queueInsert: (item: unknown, index: number, opts?: unknown) => void;
-	declare queueRemove: (id: unknown, opts?: unknown) => void;
-	declare queueRemoveAt: (index: number, opts?: unknown) => void;
-	declare queueMove: (from: number, to: number, opts?: unknown) => void;
-	declare queueClear: (opts?: unknown) => void;
-	declare queueShuffle: (opts?: unknown) => void;
-	declare queueSort: (compare: unknown, opts?: unknown) => void;
-	declare peekNext: () => unknown;
-	declare peekPrevious: () => unknown;
-	declare queueLength: () => number;
-	declare queueIndexOf: (id: unknown) => number;
-	declare item: { (): unknown; (target: unknown, opts?: unknown): void };
-	declare index: () => number;
-	declare backlog: { (): ReadonlyArray<unknown>; (items: unknown[]): void };
-	declare backlogAppend: (item: unknown) => void;
-	declare backlogRemove: (id: unknown) => void;
-	declare backlogClear: () => void;
-	declare addPlugin: (PluginClass: unknown, opts?: unknown) => this;
-	declare getPlugin: (PluginClass: unknown) => unknown;
-	declare getPluginById: (id: string) => unknown;
-	declare removePlugin: (PluginClass: unknown) => void;
-	declare removePluginById: (id: string) => void;
-	declare plugins: () => ReadonlyArray<unknown>;
-	declare enabledPlugins: () => ReadonlyArray<unknown>;
+  declare language: { (): string; (lang: string): Promise<void> };
+  declare addTranslations: (bundle: unknown) => void;
+  declare translation: (lang: string, key: string, value: string) => void;
+  declare removeTranslations: (prefix: string, lang?: string) => void;
+  declare registerCueParser: (parser: unknown, prepend?: boolean) => void;
+  declare unregisterCueParser: (id: string) => void;
+  declare play: (opts?: unknown) => Promise<void>;
+  declare pause: (opts?: unknown) => Promise<void>;
+  declare stop: (opts?: unknown) => Promise<void>;
+  declare togglePlayback: (opts?: unknown) => Promise<void>;
+  declare next: (opts?: unknown) => Promise<void>;
+  declare previous: (opts?: unknown) => Promise<void>;
+  declare rewind: (seconds?: number, opts?: unknown) => Promise<void>;
+  declare forward: (seconds?: number, opts?: unknown) => Promise<void>;
+  declare restart: (opts?: unknown) => Promise<void>;
+  declare time: { (): number; (seconds: number, opts?: unknown): Promise<void> };
+  declare duration: () => number;
+  declare buffered: () => number;
+  declare timeData: () => unknown;
+  declare playbackRate: { (): number; (rate: number): void };
+  declare playbackRates: () => number[];
+  declare volume: { (): number; (level: number): void };
+  declare mute: () => void;
+  declare unmute: () => void;
+  declare toggleMute: () => void;
+  declare volumeUp: (step?: number) => void;
+  declare volumeDown: (step?: number) => void;
+  declare playState: () => string;
+  declare volumeState: () => string;
+  declare repeatState: { (): string; (state: unknown): void };
+  declare shuffleState: { (): string; (state: unknown): void };
+  declare queue: { (): ReadonlyArray<unknown>; (items: unknown[], opts?: unknown): void };
+  declare queueAppend: (item: unknown, opts?: unknown) => void;
+  declare queuePrepend: (item: unknown, opts?: unknown) => void;
+  declare queueInsert: (item: unknown, index: number, opts?: unknown) => void;
+  declare queueRemove: (id: unknown, opts?: unknown) => void;
+  declare queueRemoveAt: (index: number, opts?: unknown) => void;
+  declare queueMove: (from: number, to: number, opts?: unknown) => void;
+  declare queueClear: (opts?: unknown) => void;
+  declare queueShuffle: (opts?: unknown) => void;
+  declare queueSort: (compare: unknown, opts?: unknown) => void;
+  declare peekNext: () => unknown;
+  declare peekPrevious: () => unknown;
+  declare queueLength: () => number;
+  declare queueIndexOf: (id: unknown) => number;
+  declare item: { (): unknown; (target: unknown, opts?: unknown): void };
+  declare index: () => number;
+  declare backlog: { (): ReadonlyArray<unknown>; (items: unknown[]): void };
+  declare backlogAppend: (item: unknown) => void;
+  declare backlogRemove: (id: unknown) => void;
+  declare backlogClear: () => void;
+  declare addPlugin: (PluginClass: unknown, opts?: unknown) => this;
+  declare getPlugin: (PluginClass: unknown) => unknown;
+  declare getPluginById: (id: string) => unknown;
+  declare removePlugin: (PluginClass: unknown) => void;
+  declare removePluginById: (id: string) => void;
+  declare plugins: () => ReadonlyArray<unknown>;
+  declare enabledPlugins: () => ReadonlyArray<unknown>;
 
-	// track-related methods added by mixin
-	declare subtitles: () => ReadonlyArray<SubtitleTrack>;
-	declare subtitle: { (): unknown; (idx: number | null): Promise<void> };
-	declare subtitleStyle: { (): SubtitleStyle; (patch: Partial<SubtitleStyle>): void };
-	declare addSubtitleTrack: (track: SidecarSubtitleInput, opts?: unknown) => SubtitleTrack;
-	declare removeSubtitleTrack: (id: string, opts?: unknown) => void;
-	declare audioTracks: () => ReadonlyArray<AudioTrack>;
-	declare audioTrack: { (): unknown; (idx: number): Promise<void> };
-	declare qualityLevels: (opts?: { includeUnsupported?: true }) => ReadonlyArray<QualityLevel>;
-	declare quality: { (): unknown; (idx: number | 'auto'): void };
-	declare chapters: () => ReadonlyArray<Chapter>;
-	declare seekToChapter: (idx: number, opts?: unknown) => void;
-	declare nextChapter: (opts?: unknown) => void;
-	declare previousChapter: (opts?: unknown) => void;
-	declare chapter: { (): Chapter | null; (idx: number): void };
-	declare resolveItemTrackUrls: <T extends BasePlaylistItem>(item: T) => Promise<T>;
+  // track-related methods added by mixin
+  declare subtitles: () => ReadonlyArray<SubtitleTrack>;
+  declare subtitle: { (): unknown; (idx: number | null): Promise<void> };
+  declare subtitleStyle: { (): SubtitleStyle; (patch: Partial<SubtitleStyle>): void };
+  declare addSubtitleTrack: (track: SidecarSubtitleInput, opts?: unknown) => SubtitleTrack;
+  declare removeSubtitleTrack: (id: string, opts?: unknown) => void;
+  declare audioTracks: () => ReadonlyArray<AudioTrack>;
+  declare audioTrack: { (): unknown; (idx: number): Promise<void> };
+  declare qualityLevels: (opts?: { includeUnsupported?: true }) => ReadonlyArray<QualityLevel>;
+  declare quality: { (): unknown; (idx: number | 'auto'): void };
+  declare chapters: () => ReadonlyArray<Chapter>;
+  declare seekToChapter: (idx: number, opts?: unknown) => void;
+  declare nextChapter: (opts?: unknown) => void;
+  declare previousChapter: (opts?: unknown) => void;
+  declare chapter: { (): Chapter | null; (idx: number): void };
+  declare resolveItemTrackUrls: <T extends BasePlaylistItem>(item: T) => Promise<T>;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
@@ -132,41 +132,44 @@ composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 // ─────────────────────────────────────────────────────────────────────────────
 
 function setupPlayer(): MockPlayer {
-	const div = document.createElement('div');
-	div.id = 'mt-mock';
-	document.body.appendChild(div);
-	return new MockPlayer('mt-mock').setup({});
+  const div = document.createElement('div');
+
+  div.id = 'mt-mock';
+  document.body.appendChild(div);
+
+  return new MockPlayer('mt-mock').setup({});
 }
 
 function makeBackendWithTracks(opts: {
-	subtitleTracks?: SubtitleTrack[];
-	audioTracks?: AudioTrack[];
-	qualityLevels?: QualityLevel[];
+  subtitleTracks?: SubtitleTrack[];
+  audioTracks?: AudioTrack[];
+  qualityLevels?: QualityLevel[];
 }): {
-	subtitleTracks?: () => SubtitleTrack[];
-	setSubtitleTrack?: (idx: number | null) => void;
-	audioTracks?: () => AudioTrack[];
-	setAudioTrack?: (idx: number) => void;
-	qualityLevels?: (opts?: { includeUnsupported?: true }) => QualityLevel[];
-	setQuality?: (idx: number | 'auto') => void;
-	setSubtitleTrackCalls: Array<number | null>;
-	setAudioTrackCalls: number[];
-	setQualityCalls: Array<number | 'auto'>;
+  subtitleTracks?: () => SubtitleTrack[];
+  setSubtitleTrack?: (idx: number | null) => void;
+  audioTracks?: () => AudioTrack[];
+  setAudioTrack?: (idx: number) => void;
+  qualityLevels?: (opts?: { includeUnsupported?: true }) => QualityLevel[];
+  setQuality?: (idx: number | 'auto') => void;
+  setSubtitleTrackCalls: Array<number | null>;
+  setAudioTrackCalls: number[];
+  setQualityCalls: Array<number | 'auto'>;
 } {
-	const calls = {
-		setSubtitleTrackCalls: [] as Array<number | null>,
-		setAudioTrackCalls: [] as number[],
-		setQualityCalls: [] as Array<number | 'auto'>,
-	};
-	return {
-		...calls,
-		subtitleTracks: () => opts.subtitleTracks ?? [],
-		setSubtitleTrack: idx => calls.setSubtitleTrackCalls.push(idx),
-		audioTracks: () => opts.audioTracks ?? [],
-		setAudioTrack: idx => calls.setAudioTrackCalls.push(idx),
-		qualityLevels: () => opts.qualityLevels ?? [],
-		setQuality: idx => calls.setQualityCalls.push(idx),
-	};
+  const calls = {
+    setSubtitleTrackCalls: [] as Array<number | null>,
+    setAudioTrackCalls: [] as number[],
+    setQualityCalls: [] as Array<number | 'auto'>,
+  };
+
+  return {
+    ...calls,
+    subtitleTracks: () => opts.subtitleTracks ?? [],
+    setSubtitleTrack: (idx) => calls.setSubtitleTrackCalls.push(idx),
+    audioTracks: () => opts.audioTracks ?? [],
+    setAudioTrack: (idx) => calls.setAudioTrackCalls.push(idx),
+    qualityLevels: () => opts.qualityLevels ?? [],
+    setQuality: (idx) => calls.setQualityCalls.push(idx),
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -174,317 +177,459 @@ function makeBackendWithTracks(opts: {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('subtitle() — setter paths', () => {
-	it('attaches a native VTT track without a cue renderer and removes it when one subscribes', async () => {
-		const player = setupPlayer();
-		const video = document.createElement('video');
-		(player as unknown as { videoElement: HTMLVideoElement }).videoElement = video;
-		const item = { id: 'native-vtt', title: 'Test', url: '/test.mp4', subtitles: [{ id: 'en', language: 'en', label: 'English', url: '/en.vtt' }] };
-		player.queue([item] as never);
-		player.item(item as never);
+  it('attaches a native VTT track without a cue renderer and removes it when one subscribes', async () => {
+    const player = setupPlayer();
+    const video = document.createElement('video');
 
-		await player.subtitle(0);
-		expect(video.querySelector('track')?.getAttribute('src')).toBe('/en.vtt');
-		expect(player.subtitles()).toHaveLength(1);
+    (player as unknown as { videoElement: HTMLVideoElement }).videoElement = video;
+    const item = {
+      id: 'native-vtt',
+      title: 'Test',
+      url: '/test.mp4',
+      subtitles: [{
+        id: 'en',
+        language: 'en',
+        label: 'English',
+        url: '/en.vtt',
+      }],
+    };
 
-		player.on('subtitleCue', () => {});
-		await Promise.resolve();
-		expect(video.querySelector('track')).toBeNull();
-	});
+    player.queue([item] as never);
+    player.item(item as never);
 
-	it('converts an SRT sidecar for native playback and clears it on Off', async () => {
-		const player = setupPlayer();
-		const video = document.createElement('video');
-		(player as unknown as { videoElement: HTMLVideoElement }).videoElement = video;
-		const item = { id: 'native-srt', title: 'Test', url: '/test.mp4', subtitles: [{ id: 'en', language: 'en', label: 'English', url: '/en.srt' }] };
-		player.queue([item] as never);
-		player.item(item as never);
-		const createUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:native-srt');
-		const revokeUrl = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-		vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve('1\n00:00:01,000 --> 00:00:02,000\nHello\n') }));
-		try {
-			await player.subtitle(0);
-			await vi.waitFor(() => expect(video.querySelector('track')?.getAttribute('src')).toBe('blob:native-srt'));
-			expect(await (createUrl.mock.calls[0]![0] as Blob).text()).toContain('WEBVTT\n\n');
-			await player.subtitle(null);
-			expect(video.querySelector('track')).toBeNull();
-			expect(revokeUrl).toHaveBeenCalledWith('blob:native-srt');
-		}
-		finally {
-			vi.unstubAllGlobals();
-			createUrl.mockRestore();
-			revokeUrl.mockRestore();
-		}
-	});
+    await player.subtitle(0);
+    expect(video.querySelector('track')?.getAttribute('src')).toBe('/en.vtt');
+    expect(player.subtitles()).toHaveLength(1);
 
-	it('passes media authorization through the native VTT URL', async () => {
-		const player = setupPlayer();
-		const video = document.createElement('video');
-		(player as unknown as { videoElement: HTMLVideoElement }).videoElement = video;
-		(player as unknown as { auth: (config: { mediaAuthorization: (url: string) => string }) => void })
-			.auth({ mediaAuthorization: () => 'Bearer token-value' });
-		const item = { id: 'native-auth', title: 'Test', url: '/test.mp4', subtitles: [{ id: 'en', language: 'en', label: 'English', url: '/en.vtt' }] };
-		player.queue([item] as never);
-		player.item(item as never);
-		player.on('subtitleCue', () => {});
-		await player.subtitle(0);
-		expect(video.querySelector('track')).toBeNull();
-		player.off('subtitleCue');
-		await Promise.resolve();
-		await vi.waitFor(() => expect(video.querySelector('track')?.getAttribute('src')).toBe('/en.vtt?access_token=token-value'));
-	});
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+    player.on('subtitleCue', () => {});
+    await Promise.resolve();
+    expect(video.querySelector('track')).toBeNull();
+  });
 
-	it('subtitle(null) sets _currentSubtitleIdx to null, calls backend setSubtitleTrack(null), emits subtitle + subtitleCue', async () => {
-		const player = setupPlayer();
-		const backend = makeBackendWithTracks({
-			subtitleTracks: [
-				{ id: 's0', language: 'en', kind: 'subtitles', label: 'English', url: '' },
-			],
-		});
-		(player as unknown as { backend: () => unknown }).backend = () => backend;
+  it('converts an SRT sidecar for native playback and clears it on Off', async () => {
+    const player = setupPlayer();
+    const video = document.createElement('video');
 
-		const subtitleEvents: Array<{ track: number | null }> = [];
-		const cueEvents: Array<{ cues: unknown[] }> = [];
-		player.on('subtitle' as never, (data: { track: number | null }) => subtitleEvents.push(data));
-		player.on('subtitleCue' as never, (data: { cues: unknown[] }) => cueEvents.push(data));
+    (player as unknown as { videoElement: HTMLVideoElement }).videoElement = video;
+    const item = {
+      id: 'native-srt',
+      title: 'Test',
+      url: '/test.mp4',
+      subtitles: [{
+        id: 'en',
+        language: 'en',
+        label: 'English',
+        url: '/en.srt',
+      }],
+    };
 
-		await player.subtitle(null);
+    player.queue([item] as never);
+    player.item(item as never);
+    const createUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:native-srt');
+    const revokeUrl = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
 
-		expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).toBeNull();
-		expect(backend.setSubtitleTrackCalls).toContain(null);
-		expect(subtitleEvents).toHaveLength(1);
-		expect(subtitleEvents[0]!.track).toBeNull();
-		expect(cueEvents).toHaveLength(1);
-		expect(cueEvents[0]!.cues).toHaveLength(0);
-	});
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve('1\n00:00:01,000 --> 00:00:02,000\nHello\n') }));
 
-	it('subtitle(-1) is treated as "off" — sets null, emits subtitle { track: null }', async () => {
-		const player = setupPlayer();
-		const subtitleEvents: Array<{ track: number | null }> = [];
-		player.on('subtitle' as never, (data: { track: number | null }) => subtitleEvents.push(data));
+    try {
+      await player.subtitle(0);
+      await vi.waitFor(() => expect(video.querySelector('track')?.getAttribute('src')).toBe('blob:native-srt'));
+      expect(await (createUrl.mock.calls[0]![0] as Blob).text()).toContain('WEBVTT\n\n');
+      await player.subtitle(null);
+      expect(video.querySelector('track')).toBeNull();
+      expect(revokeUrl).toHaveBeenCalledWith('blob:native-srt');
+    } finally {
+      vi.unstubAllGlobals();
+      createUrl.mockRestore();
+      revokeUrl.mockRestore();
+    }
+  });
 
-		await player.subtitle(-1);
+  it('passes media authorization through the native VTT URL', async () => {
+    const player = setupPlayer();
+    const video = document.createElement('video');
 
-		expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).toBeNull();
-		expect(subtitleEvents[0]!.track).toBeNull();
-	});
+    (player as unknown as { videoElement: HTMLVideoElement }).videoElement = video;
 
-	it('subtitle(0) selects backend-managed track when within backend count', async () => {
-		const player = setupPlayer();
-		const backend = makeBackendWithTracks({
-			subtitleTracks: [
-				{ id: 's0', language: 'en', kind: 'subtitles', label: 'English', url: '' },
-			],
-		});
-		(player as unknown as { backend: () => unknown }).backend = () => backend;
+    (player as unknown as { auth: (config: { mediaAuthorization: (url: string) => string }) => void })
+      .auth({ mediaAuthorization: () => 'Bearer token-value' });
 
-		const subtitleEvents: Array<{ track: number | null }> = [];
-		player.on('subtitle' as never, (data: { track: number | null }) => subtitleEvents.push(data));
+    const item = {
+      id: 'native-auth',
+      title: 'Test',
+      url: '/test.mp4',
+      subtitles: [{
+        id: 'en',
+        language: 'en',
+        label: 'English',
+        url: '/en.vtt',
+      }],
+    };
 
-		await player.subtitle(0);
+    player.queue([item] as never);
+    player.item(item as never);
+    player.on('subtitleCue', () => {});
+    await player.subtitle(0);
+    expect(video.querySelector('track')).toBeNull();
+    player.off('subtitleCue');
+    await Promise.resolve();
+    await vi.waitFor(() => expect(video.querySelector('track')?.getAttribute('src')).toBe('/en.vtt?access_token=token-value'));
+  });
 
-		expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).toBe(0);
-		expect(backend.setSubtitleTrackCalls).toContain(0);
-		expect(subtitleEvents[0]!.track).toBe(0);
-	});
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	it('subtitle() (no arg) returns null when no selection made', () => {
-		const player = setupPlayer();
-		expect(player.subtitle()).toBeNull();
-	});
+  it('subtitle(null) sets _currentSubtitleIdx to null, calls backend setSubtitleTrack(null), emits subtitle + subtitleCue', async () => {
+    const player = setupPlayer();
+    const backend = makeBackendWithTracks({
+      subtitleTracks: [
+        {
+          id: 's0',
+          language: 'en',
+          kind: 'subtitles',
+          label: 'English',
+          url: '',
+        },
+      ],
+    });
 
-	it('subtitle() returns { index, track } when a track is selected', async () => {
-		const player = setupPlayer();
-		const backend = makeBackendWithTracks({
-			subtitleTracks: [
-				{ id: 's0', language: 'en', kind: 'subtitles', label: 'English', url: '' },
-			],
-		});
-		(player as unknown as { backend: () => unknown }).backend = () => backend;
+    (player as unknown as { backend: () => unknown }).backend = () => backend;
 
-		await player.subtitle(0);
-		const result = player.subtitle() as { index: number; track: SubtitleTrack } | null;
-		expect(result).not.toBeNull();
-		expect(result!.index).toBe(0);
-		expect(result!.track.label).toBe('English');
-	});
+    const subtitleEvents: Array<{ track: number | null }> = [];
+    const cueEvents: Array<{ cues: unknown[] }> = [];
 
-	it('subtitle() returns null when stored index points to no track', () => {
-		const player = setupPlayer();
-		// set internally to a stale index with no backend
-		(player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx = 5;
-		expect(player.subtitle()).toBeNull();
-	});
+    player.on('subtitle' as never, (data: { track: number | null }) =>
+      subtitleEvents.push(data));
 
-	it('subtitle(sidecarIdx) with no URL emits subtitleCue with empty cues', async () => {
-		const player = setupPlayer();
-		// no backend tracks, so index 0 goes into sidecar path, but no item active
-		const cueEvents: Array<{ cues: unknown[] }> = [];
-		player.on('subtitleCue' as never, (data: { cues: unknown[] }) => cueEvents.push(data));
+    player.on('subtitleCue' as never, (data: { cues: unknown[] }) =>
+      cueEvents.push(data));
 
-		await player.subtitle(0);
+    await player.subtitle(null);
 
-		expect(cueEvents).toHaveLength(1);
-		expect(cueEvents[0]!.cues).toHaveLength(0);
-	});
+    expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).toBeNull();
+    expect(backend.setSubtitleTrackCalls).toContain(null);
+    expect(subtitleEvents).toHaveLength(1);
+    expect(subtitleEvents[0]!.track).toBeNull();
+    expect(cueEvents).toHaveLength(1);
+    expect(cueEvents[0]!.cues).toHaveLength(0);
+  });
 
-	// ── regression: subtitle(idx) must resolve against subtitles()'s deduped
-	// boundary, not the backend's RAW track count — see media-tracks-dedup.test.ts
-	// "regression: sidecar ger + manifest de" for the list-shape half of this bug.
+  it('subtitle(-1) is treated as "off" — sets null, emits subtitle { track: null }', async () => {
+    const player = setupPlayer();
+    const subtitleEvents: Array<{ track: number | null }> = [];
 
-	it('regression: sidecar displaces BOTH backend tracks — picking list index 0 (English sidecar) must NOT select the German backend track', async () => {
-		const player = setupPlayer();
+    player.on('subtitle' as never, (data: { track: number | null }) =>
+      subtitleEvents.push(data));
 
-		// Backend reports RAW tracks [German, English] — subtitles() drops BOTH
-		// because the sidecar entries below cover the same two languages, so the
-		// deduped backend block is EMPTY and the full list is sidecar-only.
-		const backend = makeBackendWithTracks({
-			subtitleTracks: [
-				{ id: 'b-de', language: 'de', kind: 'subtitles', label: 'German (manifest)', url: '' },
-				{ id: 'b-en', language: 'en', kind: 'subtitles', label: 'English (manifest)', url: '' },
-			],
-		});
-		(player as unknown as { backend: () => unknown }).backend = () => backend;
+    await player.subtitle(-1);
 
-		const item: BasePlaylistItem & { subtitles: SubtitleTrack[] } = {
-			id: 'item-1',
-			title: 'Test',
-			url: '/test.mp4',
-			subtitles: [
-				{ id: 'eng', language: 'eng', kind: 'subtitles', label: 'English (Full)', url: '/eng.vtt' },
-				{ id: 'ger', language: 'ger', kind: 'subtitles', label: 'German (Full)', url: '/ger.vtt' },
-			],
-		};
-		player.queue([item] as never);
-		player.item(item as never);
+    expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).toBeNull();
+    expect(subtitleEvents[0]!.track).toBeNull();
+  });
 
-		// Sanity — this is the exact list the desktop-ui menu renders and indexes.
-		const list = player.subtitles();
-		expect(list.map(track => track.label)).toEqual(['English (Full)', 'German (Full)']);
+  it('subtitle(0) selects backend-managed track when within backend count', async () => {
+    const player = setupPlayer();
+    const backend = makeBackendWithTracks({
+      subtitleTracks: [
+        {
+          id: 's0',
+          language: 'en',
+          kind: 'subtitles',
+          label: 'English',
+          url: '',
+        },
+      ],
+    });
 
-		const fetchSpy = vi.fn().mockResolvedValue({
-			ok: true,
-			status: 200,
-			headers: new Headers({ 'content-type': 'text/vtt' }),
-			text: () => Promise.resolve('WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nHello\n'),
-		});
-		vi.stubGlobal('fetch', fetchSpy);
+    (player as unknown as { backend: () => unknown }).backend = () => backend;
 
-		try {
-			// User picks list index 0 — "English (Full)" in the rendered menu.
-			await player.subtitle(0);
+    const subtitleEvents: Array<{ track: number | null }> = [];
 
-			// The backend must be SILENCED, never asked to select its raw index 0
-			// (the German manifest track) — that was the bug.
-			expect(backend.setSubtitleTrackCalls).toEqual([null]);
+    player.on('subtitle' as never, (data: { track: number | null }) =>
+      subtitleEvents.push(data));
 
-			// The checkmark-backing selection stores the LIST index the user
-			// picked, and resolves back to the English sidecar track.
-			const selection = player.subtitle() as { index: number; track: SubtitleTrack } | null;
-			expect(selection).not.toBeNull();
-			expect(selection!.index).toBe(0);
-			expect(selection!.track.label).toBe('English (Full)');
+    await player.subtitle(0);
 
-			// And the fetch that actually starts must target the ENGLISH sidecar
-			// file, never the German one — proves the resolved track, not just
-			// the index bookkeeping.
-			await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalled());
-			const requestedUrl = String((fetchSpy.mock.calls[0]![0] as Request).url);
-			expect(requestedUrl).toContain('/eng.vtt');
-			expect(requestedUrl).not.toContain('/ger.vtt');
-		}
-		finally {
-			vi.unstubAllGlobals();
-		}
-	});
+    expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).toBe(0);
+    expect(backend.setSubtitleTrackCalls).toContain(0);
+    expect(subtitleEvents[0]!.track).toBe(0);
+  });
 
-	it('drops a slow sidecar fetch that was superseded by subtitle(null)', async () => {
-		const player = setupPlayer();
-		const item: BasePlaylistItem & { subtitles: SubtitleTrack[] } = {
-			id: 'item-1',
-			title: 'Test',
-			url: '/test.mp4',
-			subtitles: [
-				{ id: 'eng', language: 'eng', kind: 'subtitles', label: 'English (Full)', url: '/eng.vtt' },
-			],
-		};
-		player.queue([item] as never);
-		player.item(item as never);
+  it('subtitle() (no arg) returns null when no selection made', () => {
+    const player = setupPlayer();
 
-		let release!: (value: unknown) => void;
-		const fetchSpy = vi.fn().mockReturnValue(new Promise((resolve) => {
-			release = resolve;
-		}));
-		vi.stubGlobal('fetch', fetchSpy);
+    expect(player.subtitle()).toBeNull();
+  });
 
-		try {
-			await player.subtitle(0);
-			await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalled());
-			await player.subtitle(null);
+  it('subtitle() returns { index, track } when a track is selected', async () => {
+    const player = setupPlayer();
+    const backend = makeBackendWithTracks({
+      subtitleTracks: [
+        {
+          id: 's0',
+          language: 'en',
+          kind: 'subtitles',
+          label: 'English',
+          url: '',
+        },
+      ],
+    });
 
-			const cueEvents: number[] = [];
-			(player as unknown as { on: (event: string, fn: (data: { cues: unknown[] }) => void) => void })
-				.on('subtitleCue', data => cueEvents.push(data.cues.length));
-			release({
-				ok: true,
-				status: 200,
-				headers: new Headers({ 'content-type': 'text/vtt' }),
-				text: () => Promise.resolve('WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nHello\n'),
-			});
-			await new Promise(resolve => setTimeout(resolve, 20));
-			player.emit('time' as never, { time: 0.5 } as never);
+    (player as unknown as { backend: () => unknown }).backend = () => backend;
 
-			expect((player as unknown as { _sidecarSubtitle: unknown })._sidecarSubtitle).toBeUndefined();
-			expect(cueEvents.filter(count => count > 0)).toEqual([]);
-		}
-		finally {
-			vi.unstubAllGlobals();
-		}
-	});
+    await player.subtitle(0);
+    const result = player.subtitle() as { index: number; track: SubtitleTrack } | null;
 
-	it('regression: backend-origin selection maps back to the backend\'s OWN raw index by identity, not by list position', async () => {
-		const player = setupPlayer();
+    expect(result).not.toBeNull();
+    expect(result!.index).toBe(0);
+    expect(result!.track.label).toBe('English');
+  });
 
-		// Raw backend order: [German, English, French]. The sidecar below
-		// displaces only English, so the deduped backend block is
-		// [German, French] — French sits at deduped position 1 but RAW
-		// position 2. Picking it must call setSubtitleTrack(2), not (1).
-		const backend = makeBackendWithTracks({
-			subtitleTracks: [
-				{ id: 'b-de', language: 'de', kind: 'subtitles', label: 'German (manifest)', url: '' },
-				{ id: 'b-en', language: 'en', kind: 'subtitles', label: 'English (manifest)', url: '' },
-				{ id: 'b-fr', language: 'fr', kind: 'subtitles', label: 'French (manifest)', url: '' },
-			],
-		});
-		(player as unknown as { backend: () => unknown }).backend = () => backend;
+  it('subtitle() returns null when stored index points to no track', () => {
+    const player = setupPlayer();
 
-		const item: BasePlaylistItem & { subtitles: SubtitleTrack[] } = {
-			id: 'item-1',
-			title: 'Test',
-			url: '/test.mp4',
-			subtitles: [
-				{ id: 'eng', language: 'eng', kind: 'subtitles', label: 'English (Full)', url: '/eng.vtt' },
-			],
-		};
-		player.queue([item] as never);
-		player.item(item as never);
+    // set internally to a stale index with no backend
+    (player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx = 5;
+    expect(player.subtitle()).toBeNull();
+  });
 
-		// Sanity — deduped list is [German, French, English (Full)].
-		const list = player.subtitles();
-		expect(list.map(track => track.label)).toEqual(['German (manifest)', 'French (manifest)', 'English (Full)']);
+  it('subtitle(sidecarIdx) with no URL emits subtitleCue with empty cues', async () => {
+    const player = setupPlayer();
+    // no backend tracks, so index 0 goes into sidecar path, but no item active
+    const cueEvents: Array<{ cues: unknown[] }> = [];
 
-		// User picks list index 1 — "French (manifest)".
-		await player.subtitle(1);
+    player.on('subtitleCue' as never, (data: { cues: unknown[] }) =>
+      cueEvents.push(data));
 
-		expect(backend.setSubtitleTrackCalls).toEqual([2]);
-		expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).toBe(1);
+    await player.subtitle(0);
 
-		const selection = player.subtitle() as { index: number; track: SubtitleTrack } | null;
-		expect(selection).not.toBeNull();
-		expect(selection!.index).toBe(1);
-		expect(selection!.track.label).toBe('French (manifest)');
-	});
+    expect(cueEvents).toHaveLength(1);
+    expect(cueEvents[0]!.cues).toHaveLength(0);
+  });
+
+  // ── regression: subtitle(idx) must resolve against subtitles()'s deduped
+  // boundary, not the backend's RAW track count — see media-tracks-dedup.test.ts
+  // "regression: sidecar ger + manifest de" for the list-shape half of this bug.
+
+  it('regression: sidecar displaces BOTH backend tracks — picking list index 0 (English sidecar) must NOT select the German backend track', async () => {
+    const player = setupPlayer();
+
+    // Backend reports RAW tracks [German, English] — subtitles() drops BOTH
+    // because the sidecar entries below cover the same two languages, so the
+    // deduped backend block is EMPTY and the full list is sidecar-only.
+    const backend = makeBackendWithTracks({
+      subtitleTracks: [
+        {
+          id: 'b-de',
+          language: 'de',
+          kind: 'subtitles',
+          label: 'German (manifest)',
+          url: '',
+        },
+        {
+          id: 'b-en',
+          language: 'en',
+          kind: 'subtitles',
+          label: 'English (manifest)',
+          url: '',
+        },
+      ],
+    });
+
+    (player as unknown as { backend: () => unknown }).backend = () => backend;
+
+    const item: BasePlaylistItem & { subtitles: SubtitleTrack[] } = {
+      id: 'item-1',
+      title: 'Test',
+      url: '/test.mp4',
+      subtitles: [
+        {
+          id: 'eng',
+          language: 'eng',
+          kind: 'subtitles',
+          label: 'English (Full)',
+          url: '/eng.vtt',
+        },
+        {
+          id: 'ger',
+          language: 'ger',
+          kind: 'subtitles',
+          label: 'German (Full)',
+          url: '/ger.vtt',
+        },
+      ],
+    };
+
+    player.queue([item] as never);
+    player.item(item as never);
+
+    // Sanity — this is the exact list the desktop-ui menu renders and indexes.
+    const list = player.subtitles();
+
+    expect(list.map((track) => track.label)).toEqual(['English (Full)', 'German (Full)']);
+
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'text/vtt' }),
+      text: () => Promise.resolve('WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nHello\n'),
+    });
+
+    vi.stubGlobal('fetch', fetchSpy);
+
+    try {
+      // User picks list index 0 — "English (Full)" in the rendered menu.
+      await player.subtitle(0);
+
+      // The backend must be SILENCED, never asked to select its raw index 0
+      // (the German manifest track) — that was the bug.
+      expect(backend.setSubtitleTrackCalls).toEqual([null]);
+
+      // The checkmark-backing selection stores the LIST index the user
+      // picked, and resolves back to the English sidecar track.
+      const selection = player.subtitle() as { index: number; track: SubtitleTrack } | null;
+
+      expect(selection).not.toBeNull();
+      expect(selection!.index).toBe(0);
+      expect(selection!.track.label).toBe('English (Full)');
+
+      // And the fetch that actually starts must target the ENGLISH sidecar
+      // file, never the German one — proves the resolved track, not just
+      // the index bookkeeping.
+      await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+      const requestedUrl = String((fetchSpy.mock.calls[0]![0] as Request).url);
+
+      expect(requestedUrl).toContain('/eng.vtt');
+      expect(requestedUrl).not.toContain('/ger.vtt');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('drops a slow sidecar fetch that was superseded by subtitle(null)', async () => {
+    const player = setupPlayer();
+    const item: BasePlaylistItem & { subtitles: SubtitleTrack[] } = {
+      id: 'item-1',
+      title: 'Test',
+      url: '/test.mp4',
+      subtitles: [
+        {
+          id: 'eng',
+          language: 'eng',
+          kind: 'subtitles',
+          label: 'English (Full)',
+          url: '/eng.vtt',
+        },
+      ],
+    };
+
+    player.queue([item] as never);
+    player.item(item as never);
+
+    let release!: (value: unknown) => void;
+    const fetchSpy = vi.fn().mockReturnValue(new Promise((resolve) => {
+      release = resolve;
+    }));
+
+    vi.stubGlobal('fetch', fetchSpy);
+
+    try {
+      await player.subtitle(0);
+      await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+      await player.subtitle(null);
+
+      const cueEvents: number[] = [];
+
+      (player as unknown as { on: (event: string, fn: (data: { cues: unknown[] }) => void) => void })
+        .on('subtitleCue', (data) =>
+          cueEvents.push(data.cues.length));
+
+      release({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'text/vtt' }),
+        text: () => Promise.resolve('WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nHello\n'),
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      player.emit('time' as never, { time: 0.5 } as never);
+
+      expect((player as unknown as { _sidecarSubtitle: unknown })._sidecarSubtitle).toBeUndefined();
+      expect(cueEvents.filter((count) => count > 0)).toEqual([]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('regression: backend-origin selection maps back to the backend\'s OWN raw index by identity, not by list position', async () => {
+    const player = setupPlayer();
+
+    // Raw backend order: [German, English, French]. The sidecar below
+    // displaces only English, so the deduped backend block is
+    // [German, French] — French sits at deduped position 1 but RAW
+    // position 2. Picking it must call setSubtitleTrack(2), not (1).
+    const backend = makeBackendWithTracks({
+      subtitleTracks: [
+        {
+          id: 'b-de',
+          language: 'de',
+          kind: 'subtitles',
+          label: 'German (manifest)',
+          url: '',
+        },
+        {
+          id: 'b-en',
+          language: 'en',
+          kind: 'subtitles',
+          label: 'English (manifest)',
+          url: '',
+        },
+        {
+          id: 'b-fr',
+          language: 'fr',
+          kind: 'subtitles',
+          label: 'French (manifest)',
+          url: '',
+        },
+      ],
+    });
+
+    (player as unknown as { backend: () => unknown }).backend = () => backend;
+
+    const item: BasePlaylistItem & { subtitles: SubtitleTrack[] } = {
+      id: 'item-1',
+      title: 'Test',
+      url: '/test.mp4',
+      subtitles: [
+        {
+          id: 'eng',
+          language: 'eng',
+          kind: 'subtitles',
+          label: 'English (Full)',
+          url: '/eng.vtt',
+        },
+      ],
+    };
+
+    player.queue([item] as never);
+    player.item(item as never);
+
+    // Sanity — deduped list is [German, French, English (Full)].
+    const list = player.subtitles();
+
+    expect(list.map((track) => track.label)).toEqual(['German (manifest)', 'French (manifest)', 'English (Full)']);
+
+    // User picks list index 1 — "French (manifest)".
+    await player.subtitle(1);
+
+    expect(backend.setSubtitleTrackCalls).toEqual([2]);
+    expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).toBe(1);
+
+    const selection = player.subtitle() as { index: number; track: SubtitleTrack } | null;
+
+    expect(selection).not.toBeNull();
+    expect(selection!.index).toBe(1);
+    expect(selection!.track.label).toBe('French (manifest)');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -492,64 +637,73 @@ describe('subtitle() — setter paths', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('subtitleStyle()', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	it('returns a copy of the default style when called without arguments first time', () => {
-		const player = setupPlayer();
-		const style = player.subtitleStyle();
-		expect(style).toBeDefined();
-		expect(style.fontSize).toBe(100);
-		expect(style.fontFamily).toBe('ReithSans, sans-serif');
-		expect(style.textColor).toBe('white');
-	});
+  it('returns a copy of the default style when called without arguments first time', () => {
+    const player = setupPlayer();
+    const style = player.subtitleStyle();
 
-	it('returns a copy — mutations to the returned object do not affect stored state', () => {
-		const player = setupPlayer();
-		const style = player.subtitleStyle();
-		style.fontSize = 999;
-		expect(player.subtitleStyle().fontSize).toBe(100);
-	});
+    expect(style).toBeDefined();
+    expect(style.fontSize).toBe(100);
+    expect(style.fontFamily).toBe('ReithSans, sans-serif');
+    expect(style.textColor).toBe('white');
+  });
 
-	it('merges a patch onto the active style and emits subtitleStyle with merged result', () => {
-		const player = setupPlayer();
-		const styleEvents: SubtitleStyle[] = [];
-		player.on('subtitleStyle' as never, (subtitleStyle: SubtitleStyle) => styleEvents.push(subtitleStyle));
+  it('returns a copy — mutations to the returned object do not affect stored state', () => {
+    const player = setupPlayer();
+    const style = player.subtitleStyle();
 
-		player.subtitleStyle({ fontSize: 120 });
+    style.fontSize = 999;
+    expect(player.subtitleStyle().fontSize).toBe(100);
+  });
 
-		expect(styleEvents).toHaveLength(1);
-		expect(styleEvents[0]!.fontSize).toBe(120);
-		expect(styleEvents[0]!.fontFamily).toBe('ReithSans, sans-serif');
-	});
+  it('merges a patch onto the active style and emits subtitleStyle with merged result', () => {
+    const player = setupPlayer();
+    const styleEvents: SubtitleStyle[] = [];
 
-	it('successive patches accumulate', () => {
-		const player = setupPlayer();
-		player.subtitleStyle({ fontSize: 120 });
-		player.subtitleStyle({ textColor: 'yellow' });
-		const style = player.subtitleStyle();
-		expect(style.fontSize).toBe(120);
-		expect(style.textColor).toBe('yellow');
-	});
+    player.on('subtitleStyle' as never, (subtitleStyle: SubtitleStyle) =>
+      styleEvents.push(subtitleStyle));
 
-	it('patch with all default-style fields fully replaces style entries', () => {
-		const player = setupPlayer();
-		player.subtitleStyle({
-			fontSize: 80,
-			fontFamily: 'Arial',
-			textColor: 'red',
-			textOpacity: 80,
-			backgroundColor: 'blue',
-			backgroundOpacity: 50,
-			edgeStyle: 'none',
-			areaColor: 'green',
-			windowOpacity: 30,
-		});
-		const style = player.subtitleStyle();
-		expect(style.fontSize).toBe(80);
-		expect(style.fontFamily).toBe('Arial');
-		expect(style.textColor).toBe('red');
-	});
+    player.subtitleStyle({ fontSize: 120 });
+
+    expect(styleEvents).toHaveLength(1);
+    expect(styleEvents[0]!.fontSize).toBe(120);
+    expect(styleEvents[0]!.fontFamily).toBe('ReithSans, sans-serif');
+  });
+
+  it('successive patches accumulate', () => {
+    const player = setupPlayer();
+
+    player.subtitleStyle({ fontSize: 120 });
+    player.subtitleStyle({ textColor: 'yellow' });
+    const style = player.subtitleStyle();
+
+    expect(style.fontSize).toBe(120);
+    expect(style.textColor).toBe('yellow');
+  });
+
+  it('patch with all default-style fields fully replaces style entries', () => {
+    const player = setupPlayer();
+
+    player.subtitleStyle({
+      fontSize: 80,
+      fontFamily: 'Arial',
+      textColor: 'red',
+      textOpacity: 80,
+      backgroundColor: 'blue',
+      backgroundOpacity: 50,
+      edgeStyle: 'none',
+      areaColor: 'green',
+      windowOpacity: 30,
+    });
+
+    const style = player.subtitleStyle();
+
+    expect(style.fontSize).toBe(80);
+    expect(style.fontFamily).toBe('Arial');
+    expect(style.textColor).toBe('red');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -557,178 +711,229 @@ describe('subtitleStyle()', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('addSubtitleTrack() / removeSubtitleTrack()', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	function setupWithItem(): MockPlayer {
-		const player = setupPlayer();
-		const fakeItem: BasePlaylistItem = { id: 'item-1', title: 'Test', url: '/test.mp4' };
-		player.queue([fakeItem]);
-		player.item(fakeItem);
-		return player;
-	}
+  function setupWithItem(): MockPlayer {
+    const player = setupPlayer();
+    const fakeItem: BasePlaylistItem = {
+      id: 'item-1',
+      title: 'Test',
+      url: '/test.mp4',
+    };
 
-	async function flush(): Promise<void> {
-		await new Promise(resolve => setTimeout(resolve, 0));
-	}
+    player.queue([fakeItem]);
+    player.item(fakeItem);
 
-	it('throws core:media-tracks/no-active-item when no item is loaded', () => {
-		const player = setupPlayer();
-		expect(() => player.addSubtitleTrack({ url: '/en.vtt', language: 'en' }))
-			.toThrow(/core:media-tracks\/no-active-item/);
-	});
+    return player;
+  }
 
-	it('takes the runtime track id from setup({ idGenerator })', () => {
-		const div = document.createElement('div');
-		div.id = 'mt-mock';
-		document.body.appendChild(div);
-		const player = new MockPlayer('mt-mock').setup({ idGenerator: { next: () => 'fixed-1' } });
-		const fakeItem: BasePlaylistItem = { id: 'item-1', title: 'Test', url: '/test.mp4' };
-		player.queue([fakeItem]);
-		player.item(fakeItem);
+  async function flush(): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
 
-		expect(player.addSubtitleTrack({ url: '/en.vtt', language: 'en' }).id).toBe('subtitle-runtime-fixed-1');
-	});
+  it('throws core:media-tracks/no-active-item when no item is loaded', () => {
+    const player = setupPlayer();
 
-	it('appends a sidecar track that the next subtitles() call includes', () => {
-		const player = setupWithItem();
+    expect(() => player.addSubtitleTrack({ url: '/en.vtt', language: 'en' }))
+      .toThrow(/core:media-tracks\/no-active-item/);
+  });
 
-		const track = player.addSubtitleTrack({ url: '/en.vtt', language: 'en', label: 'English' });
+  it('takes the runtime track id from setup({ idGenerator })', () => {
+    const div = document.createElement('div');
 
-		expect(track.id).toMatch(/^subtitle-runtime-/);
-		expect(track.url).toBe('/en.vtt');
-		expect(track.language).toBe('en');
-		expect(track.label).toBe('English');
-		expect(track.default).toBe(false);
+    div.id = 'mt-mock';
+    document.body.appendChild(div);
+    const player = new MockPlayer('mt-mock').setup({ idGenerator: { next: () => 'fixed-1' } });
+    const fakeItem: BasePlaylistItem = {
+      id: 'item-1',
+      title: 'Test',
+      url: '/test.mp4',
+    };
 
-		const list = player.subtitles();
-		expect(list).toHaveLength(1);
-		expect(list[0]!.id).toBe(track.id);
-	});
+    player.queue([fakeItem]);
+    player.item(fakeItem);
 
-	it('defaults label to language when omitted', () => {
-		const player = setupWithItem();
-		const track = player.addSubtitleTrack({ url: '/nl.vtt', language: 'nl' });
-		expect(track.label).toBe('nl');
-	});
+    expect(player.addSubtitleTrack({ url: '/en.vtt', language: 'en' }).id).toBe('subtitle-runtime-fixed-1');
+  });
 
-	it('emits subtitles with the full merged list on add', () => {
-		const player = setupWithItem();
-		const events: Array<{ tracks: ReadonlyArray<SubtitleTrack> }> = [];
-		player.on('subtitles' as never, (data: { tracks: ReadonlyArray<SubtitleTrack> }) => events.push(data));
+  it('appends a sidecar track that the next subtitles() call includes', () => {
+    const player = setupWithItem();
 
-		player.addSubtitleTrack({ url: '/en.vtt', language: 'en' });
+    const track = player.addSubtitleTrack({
+      url: '/en.vtt',
+      language: 'en',
+      label: 'English',
+    });
 
-		expect(events).toHaveLength(1);
-		expect(events[0]!.tracks).toHaveLength(1);
-	});
+    expect(track.id).toMatch(/^subtitle-runtime-/);
+    expect(track.url).toBe('/en.vtt');
+    expect(track.language).toBe('en');
+    expect(track.label).toBe('English');
+    expect(track.default).toBe(false);
 
-	it('is idempotent — same url + language returns the existing track, no duplicate', () => {
-		const player = setupWithItem();
+    const list = player.subtitles();
 
-		const first = player.addSubtitleTrack({ url: '/en.vtt', language: 'en', label: 'A' });
-		const second = player.addSubtitleTrack({ url: '/en.vtt', language: 'en', label: 'B (ignored)' });
+    expect(list).toHaveLength(1);
+    expect(list[0]!.id).toBe(track.id);
+  });
 
-		expect(second.id).toBe(first.id);
-		expect(second.label).toBe('A');
-		expect(player.subtitles()).toHaveLength(1);
-	});
+  it('defaults label to language when omitted', () => {
+    const player = setupWithItem();
+    const track = player.addSubtitleTrack({ url: '/nl.vtt', language: 'nl' });
 
-	it('idempotency normalises language variants (ISO 639-2/B vs 639-1)', () => {
-		const player = setupWithItem();
+    expect(track.label).toBe('nl');
+  });
 
-		const first = player.addSubtitleTrack({ url: '/de.vtt', language: 'ger' });
-		const second = player.addSubtitleTrack({ url: '/de.vtt', language: 'de' });
+  it('emits subtitles with the full merged list on add', () => {
+    const player = setupWithItem();
+    const events: Array<{ tracks: ReadonlyArray<SubtitleTrack> }> = [];
 
-		expect(second.id).toBe(first.id);
-		expect(player.subtitles()).toHaveLength(1);
-	});
+    player.on('subtitles' as never, (data: { tracks: ReadonlyArray<SubtitleTrack> }) =>
+      events.push(data));
 
-	it('a different url for the same language is a distinct track', () => {
-		const player = setupWithItem();
+    player.addSubtitleTrack({ url: '/en.vtt', language: 'en' });
 
-		player.addSubtitleTrack({ url: '/en-full.vtt', language: 'en' });
-		player.addSubtitleTrack({ url: '/en-sdh.vtt', language: 'en' });
+    expect(events).toHaveLength(1);
+    expect(events[0]!.tracks).toHaveLength(1);
+  });
 
-		expect(player.subtitles()).toHaveLength(2);
-	});
+  it('is idempotent — same url + language returns the existing track, no duplicate', () => {
+    const player = setupWithItem();
 
-	it('default: true selects the new track through the subtitle(idx) path', async () => {
-		const player = setupWithItem();
-		const subtitleEvents: Array<{ track: number | null }> = [];
-		player.on('subtitle' as never, (data: { track: number | null }) => subtitleEvents.push(data));
+    const first = player.addSubtitleTrack({
+      url: '/en.vtt',
+      language: 'en',
+      label: 'A',
+    });
+    const second = player.addSubtitleTrack({
+      url: '/en.vtt',
+      language: 'en',
+      label: 'B (ignored)',
+    });
 
-		const track = player.addSubtitleTrack({ url: '/en.vtt', language: 'en', default: true });
-		await flush();
+    expect(second.id).toBe(first.id);
+    expect(second.label).toBe('A');
+    expect(player.subtitles()).toHaveLength(1);
+  });
 
-		const idx = player.subtitles().findIndex(candidate => candidate.id === track.id);
-		expect(subtitleEvents).toHaveLength(1);
-		expect(subtitleEvents[0]!.track).toBe(idx);
-		expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).toBe(idx);
-	});
+  it('idempotency normalises language variants (ISO 639-2/B vs 639-1)', () => {
+    const player = setupWithItem();
 
-	it('removeSubtitleTrack removes the track and emits subtitles with the refreshed list', () => {
-		const player = setupWithItem();
-		const track = player.addSubtitleTrack({ url: '/en.vtt', language: 'en' });
+    const first = player.addSubtitleTrack({ url: '/de.vtt', language: 'ger' });
+    const second = player.addSubtitleTrack({ url: '/de.vtt', language: 'de' });
 
-		const events: Array<{ tracks: ReadonlyArray<SubtitleTrack> }> = [];
-		player.on('subtitles' as never, (data: { tracks: ReadonlyArray<SubtitleTrack> }) => events.push(data));
+    expect(second.id).toBe(first.id);
+    expect(player.subtitles()).toHaveLength(1);
+  });
 
-		player.removeSubtitleTrack(track.id);
+  it('a different url for the same language is a distinct track', () => {
+    const player = setupWithItem();
 
-		expect(player.subtitles()).toHaveLength(0);
-		expect(events).toHaveLength(1);
-		expect(events[0]!.tracks).toHaveLength(0);
-	});
+    player.addSubtitleTrack({ url: '/en-full.vtt', language: 'en' });
+    player.addSubtitleTrack({ url: '/en-sdh.vtt', language: 'en' });
 
-	it('removing a track before the active one keeps the selection on the same track', async () => {
-		const player = setupWithItem();
-		vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
-		try {
-			const first = player.addSubtitleTrack({ url: '/en.vtt', language: 'en' });
-			const second = player.addSubtitleTrack({ url: '/de.vtt', language: 'de' });
-			await player.subtitle(1);
+    expect(player.subtitles()).toHaveLength(2);
+  });
 
-			player.removeSubtitleTrack(first.id);
+  it('default: true selects the new track through the subtitle(idx) path', async () => {
+    const player = setupWithItem();
+    const subtitleEvents: Array<{ track: number | null }> = [];
 
-			const selection = player.subtitle() as { index: number; track: SubtitleTrack } | null;
-			expect(selection?.track.id).toBe(second.id);
-			expect(selection?.index).toBe(0);
-		}
-		finally {
-			vi.unstubAllGlobals();
-		}
-	});
+    player.on('subtitle' as never, (data: { track: number | null }) =>
+      subtitleEvents.push(data));
 
-	it('removeSubtitleTrack is a no-op when the id is not found — no event fired', () => {
-		const player = setupWithItem();
-		player.addSubtitleTrack({ url: '/en.vtt', language: 'en' });
+    const track = player.addSubtitleTrack({
+      url: '/en.vtt',
+      language: 'en',
+      default: true,
+    });
 
-		const events: unknown[] = [];
-		player.on('subtitles' as never, (data: unknown) => events.push(data));
+    await flush();
 
-		player.removeSubtitleTrack('does-not-exist');
+    const idx = player.subtitles().findIndex((candidate) => candidate.id === track.id);
 
-		expect(player.subtitles()).toHaveLength(1);
-		expect(events).toHaveLength(0);
-	});
+    expect(subtitleEvents).toHaveLength(1);
+    expect(subtitleEvents[0]!.track).toBe(idx);
+    expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).toBe(idx);
+  });
 
-	it('removing the active selection turns subtitles off', async () => {
-		const player = setupWithItem();
-		const track = player.addSubtitleTrack({ url: '/en.vtt', language: 'en', default: true });
-		await flush();
-		expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).not.toBeNull();
+  it('removeSubtitleTrack removes the track and emits subtitles with the refreshed list', () => {
+    const player = setupWithItem();
+    const track = player.addSubtitleTrack({ url: '/en.vtt', language: 'en' });
 
-		player.removeSubtitleTrack(track.id);
-		await flush();
+    const events: Array<{ tracks: ReadonlyArray<SubtitleTrack> }> = [];
 
-		expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).toBeNull();
-	});
+    player.on('subtitles' as never, (data: { tracks: ReadonlyArray<SubtitleTrack> }) =>
+      events.push(data));
 
-	it('removeSubtitleTrack no-ops silently when no item is active', () => {
-		const player = setupPlayer();
-		expect(() => player.removeSubtitleTrack('anything')).not.toThrow();
-	});
+    player.removeSubtitleTrack(track.id);
+
+    expect(player.subtitles()).toHaveLength(0);
+    expect(events).toHaveLength(1);
+    expect(events[0]!.tracks).toHaveLength(0);
+  });
+
+  it('removing a track before the active one keeps the selection on the same track', async () => {
+    const player = setupWithItem();
+
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+
+    try {
+      const first = player.addSubtitleTrack({ url: '/en.vtt', language: 'en' });
+      const second = player.addSubtitleTrack({ url: '/de.vtt', language: 'de' });
+
+      await player.subtitle(1);
+
+      player.removeSubtitleTrack(first.id);
+
+      const selection = player.subtitle() as { index: number; track: SubtitleTrack } | null;
+
+      expect(selection?.track.id).toBe(second.id);
+      expect(selection?.index).toBe(0);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('removeSubtitleTrack is a no-op when the id is not found — no event fired', () => {
+    const player = setupWithItem();
+
+    player.addSubtitleTrack({ url: '/en.vtt', language: 'en' });
+
+    const events: unknown[] = [];
+
+    player.on('subtitles' as never, (data: unknown) =>
+      events.push(data));
+
+    player.removeSubtitleTrack('does-not-exist');
+
+    expect(player.subtitles()).toHaveLength(1);
+    expect(events).toHaveLength(0);
+  });
+
+  it('removing the active selection turns subtitles off', async () => {
+    const player = setupWithItem();
+    const track = player.addSubtitleTrack({
+      url: '/en.vtt',
+      language: 'en',
+      default: true,
+    });
+
+    await flush();
+    expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).not.toBeNull();
+
+    player.removeSubtitleTrack(track.id);
+    await flush();
+
+    expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).toBeNull();
+  });
+
+  it('removeSubtitleTrack no-ops silently when no item is active', () => {
+    const player = setupPlayer();
+
+    expect(() => player.removeSubtitleTrack('anything')).not.toThrow();
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -736,86 +941,124 @@ describe('addSubtitleTrack() / removeSubtitleTrack()', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('audioTracks() / audioTrack()', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	it('audioTracks() returns empty array when no backend', () => {
-		const player = setupPlayer();
-		expect(player.audioTracks()).toHaveLength(0);
-	});
+  it('audioTracks() returns empty array when no backend', () => {
+    const player = setupPlayer();
 
-	it('audioTracks() returns backend tracks when available', () => {
-		const player = setupPlayer();
-		const tracks: AudioTrack[] = [
-			{ id: 'a0', language: 'en', label: 'English', channels: 2 },
-			{ id: 'a1', language: 'fr', label: 'French', channels: 2 },
-		];
-		const backend = makeBackendWithTracks({ audioTracks: tracks });
-		(player as unknown as { backend: () => unknown }).backend = () => backend;
+    expect(player.audioTracks()).toHaveLength(0);
+  });
 
-		expect(player.audioTracks()).toHaveLength(2);
-		expect(player.audioTracks()[0]!.language).toBe('en');
-	});
+  it('audioTracks() returns backend tracks when available', () => {
+    const player = setupPlayer();
+    const tracks: AudioTrack[] = [
+      {
+        id: 'a0',
+        language: 'en',
+        label: 'English',
+        channels: 2,
+      },
+      {
+        id: 'a1',
+        language: 'fr',
+        label: 'French',
+        channels: 2,
+      },
+    ];
+    const backend = makeBackendWithTracks({ audioTracks: tracks });
 
-	it('audioTracks() returns empty array when backend throws', () => {
-		const player = setupPlayer();
-		(player as unknown as { backend: () => unknown }).backend = () => ({
-			audioTracks: () => { throw new Error('backend error'); },
-		});
-		expect(player.audioTracks()).toHaveLength(0);
-	});
+    (player as unknown as { backend: () => unknown }).backend = () => backend;
 
-	it('audioTrack() returns null when no selection', () => {
-		const player = setupPlayer();
-		expect(player.audioTrack()).toBeNull();
-	});
+    expect(player.audioTracks()).toHaveLength(2);
+    expect(player.audioTracks()[0]!.language).toBe('en');
+  });
 
-	it('audioTrack(idx) sets index, calls backend setAudioTrack, emits audioTrack + audioTrackState', async () => {
-		const player = setupPlayer();
-		const backend = makeBackendWithTracks({
-			audioTracks: [
-				{ id: 'a0', language: 'en', label: 'English', channels: 2 },
-				{ id: 'a1', language: 'fr', label: 'French', channels: 2 },
-			],
-		});
-		(player as unknown as { backend: () => unknown }).backend = () => backend;
+  it('audioTracks() returns empty array when backend throws', () => {
+    const player = setupPlayer();
 
-		const audioTrackEvents: Array<{ id: number }> = [];
-		const audioTrackStateEvents: Array<{ state: string }> = [];
-		player.on('audioTrack' as never, (data: { id: number }) => audioTrackEvents.push(data));
-		player.on('audioTrackState' as never, (data: { state: string }) => audioTrackStateEvents.push(data));
+    (player as unknown as { backend: () => unknown }).backend = () => ({
+      audioTracks: () => { throw new Error('backend error'); },
+    });
 
-		await player.audioTrack(1);
+    expect(player.audioTracks()).toHaveLength(0);
+  });
 
-		expect((player as unknown as { _currentAudioTrackIdx: number | null })._currentAudioTrackIdx).toBe(1);
-		expect(backend.setAudioTrackCalls).toContain(1);
-		expect(audioTrackEvents).toHaveLength(1);
-		expect(audioTrackEvents[0]!.id).toBe(1);
-		expect(audioTrackStateEvents).toHaveLength(1);
-		expect(audioTrackStateEvents[0]!.state).toBe(AudioTrackState.MANUAL);
-	});
+  it('audioTrack() returns null when no selection', () => {
+    const player = setupPlayer();
 
-	it('audioTrack() returns { index, track } after a selection is made', async () => {
-		const player = setupPlayer();
-		const backend = makeBackendWithTracks({
-			audioTracks: [
-				{ id: 'a0', language: 'en', label: 'English', channels: 2 },
-			],
-		});
-		(player as unknown as { backend: () => unknown }).backend = () => backend;
+    expect(player.audioTrack()).toBeNull();
+  });
 
-		await player.audioTrack(0);
-		const result = player.audioTrack() as { index: number; track: AudioTrack } | null;
-		expect(result).not.toBeNull();
-		expect(result!.index).toBe(0);
-		expect(result!.track.language).toBe('en');
-	});
+  it('audioTrack(idx) sets index, calls backend setAudioTrack, emits audioTrack + audioTrackState', async () => {
+    const player = setupPlayer();
+    const backend = makeBackendWithTracks({
+      audioTracks: [
+        {
+          id: 'a0',
+          language: 'en',
+          label: 'English',
+          channels: 2,
+        },
+        {
+          id: 'a1',
+          language: 'fr',
+          label: 'French',
+          channels: 2,
+        },
+      ],
+    });
 
-	it('audioTrack() returns null when stored index has no matching track', () => {
-		const player = setupPlayer();
-		(player as unknown as { _currentAudioTrackIdx: number | null })._currentAudioTrackIdx = 99;
-		expect(player.audioTrack()).toBeNull();
-	});
+    (player as unknown as { backend: () => unknown }).backend = () => backend;
+
+    const audioTrackEvents: Array<{ id: number }> = [];
+    const audioTrackStateEvents: Array<{ state: string }> = [];
+
+    player.on('audioTrack' as never, (data: { id: number }) =>
+      audioTrackEvents.push(data));
+
+    player.on('audioTrackState' as never, (data: { state: string }) =>
+      audioTrackStateEvents.push(data));
+
+    await player.audioTrack(1);
+
+    expect((player as unknown as { _currentAudioTrackIdx: number | null })._currentAudioTrackIdx).toBe(1);
+    expect(backend.setAudioTrackCalls).toContain(1);
+    expect(audioTrackEvents).toHaveLength(1);
+    expect(audioTrackEvents[0]!.id).toBe(1);
+    expect(audioTrackStateEvents).toHaveLength(1);
+    expect(audioTrackStateEvents[0]!.state).toBe(AudioTrackState.MANUAL);
+  });
+
+  it('audioTrack() returns { index, track } after a selection is made', async () => {
+    const player = setupPlayer();
+    const backend = makeBackendWithTracks({
+      audioTracks: [
+        {
+          id: 'a0',
+          language: 'en',
+          label: 'English',
+          channels: 2,
+        },
+      ],
+    });
+
+    (player as unknown as { backend: () => unknown }).backend = () => backend;
+
+    await player.audioTrack(0);
+    const result = player.audioTrack() as { index: number; track: AudioTrack } | null;
+
+    expect(result).not.toBeNull();
+    expect(result!.index).toBe(0);
+    expect(result!.track.language).toBe('en');
+  });
+
+  it('audioTrack() returns null when stored index has no matching track', () => {
+    const player = setupPlayer();
+
+    (player as unknown as { _currentAudioTrackIdx: number | null })._currentAudioTrackIdx = 99;
+    expect(player.audioTrack()).toBeNull();
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -823,90 +1066,132 @@ describe('audioTracks() / audioTrack()', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('qualityLevels() / quality()', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	it('qualityLevels() returns empty array when no backend', () => {
-		const player = setupPlayer();
-		expect(player.qualityLevels()).toHaveLength(0);
-	});
+  it('qualityLevels() returns empty array when no backend', () => {
+    const player = setupPlayer();
 
-	it('qualityLevels() returns backend quality levels', () => {
-		const player = setupPlayer();
-		const levels: QualityLevel[] = [
-			{ index: 0, label: '1080p', bitrate: 5000000, height: 1080, width: 1920, supported: true },
-			{ index: 1, label: '720p', bitrate: 2500000, height: 720, width: 1280, supported: true },
-		];
-		const backend = makeBackendWithTracks({ qualityLevels: levels });
-		(player as unknown as { backend: () => unknown }).backend = () => backend;
+    expect(player.qualityLevels()).toHaveLength(0);
+  });
 
-		expect(player.qualityLevels()).toHaveLength(2);
-		expect(player.qualityLevels()[0]!.label).toBe('1080p');
-	});
+  it('qualityLevels() returns backend quality levels', () => {
+    const player = setupPlayer();
+    const levels: QualityLevel[] = [
+      {
+        index: 0,
+        label: '1080p',
+        bitrate: 5000000,
+        height: 1080,
+        width: 1920,
+        supported: true,
+      },
+      {
+        index: 1,
+        label: '720p',
+        bitrate: 2500000,
+        height: 720,
+        width: 1280,
+        supported: true,
+      },
+    ];
+    const backend = makeBackendWithTracks({ qualityLevels: levels });
 
-	it('qualityLevels() returns empty array when backend throws', () => {
-		const player = setupPlayer();
-		(player as unknown as { backend: () => unknown }).backend = () => ({
-			qualityLevels: () => { throw new Error('backend error'); },
-		});
-		expect(player.qualityLevels()).toHaveLength(0);
-	});
+    (player as unknown as { backend: () => unknown }).backend = () => backend;
 
-	it('quality() returns "auto" when default', () => {
-		const player = setupPlayer();
-		expect(player.quality()).toBe('auto');
-	});
+    expect(player.qualityLevels()).toHaveLength(2);
+    expect(player.qualityLevels()[0]!.label).toBe('1080p');
+  });
 
-	it('quality("auto") sets AUTO state, emits qualityState', () => {
-		const player = setupPlayer();
-		const stateEvents: Array<{ state: string }> = [];
-		player.on('qualityState' as never, (data: { state: string }) => stateEvents.push(data));
+  it('qualityLevels() returns empty array when backend throws', () => {
+    const player = setupPlayer();
 
-		player.quality('auto');
+    (player as unknown as { backend: () => unknown }).backend = () => ({
+      qualityLevels: () => { throw new Error('backend error'); },
+    });
 
-		expect((player as unknown as { _qualityState: string })._qualityState).toBe(QualityState.AUTO);
-		expect(stateEvents[0]!.state).toBe(QualityState.AUTO);
-	});
+    expect(player.qualityLevels()).toHaveLength(0);
+  });
 
-	it('quality(idx) sets MANUAL state, calls backend setQuality, emits qualityState', () => {
-		const player = setupPlayer();
-		const levels: QualityLevel[] = [
-			{ index: 0, label: '1080p', bitrate: 5000000, height: 1080, width: 1920, supported: true },
-		];
-		const backend = makeBackendWithTracks({ qualityLevels: levels });
-		(player as unknown as { backend: () => unknown }).backend = () => backend;
+  it('quality() returns "auto" when default', () => {
+    const player = setupPlayer();
 
-		const stateEvents: Array<{ state: string }> = [];
-		player.on('qualityState' as never, (data: { state: string }) => stateEvents.push(data));
+    expect(player.quality()).toBe('auto');
+  });
 
-		player.quality(0);
+  it('quality("auto") sets AUTO state, emits qualityState', () => {
+    const player = setupPlayer();
+    const stateEvents: Array<{ state: string }> = [];
 
-		expect((player as unknown as { _currentQualityIdx: number | 'auto' })._currentQualityIdx).toBe(0);
-		expect(backend.setQualityCalls).toContain(0);
-		expect(stateEvents[0]!.state).toBe(QualityState.MANUAL);
-	});
+    player.on('qualityState' as never, (data: { state: string }) =>
+      stateEvents.push(data));
 
-	it('quality() returns { index, track } after selecting a level', () => {
-		const player = setupPlayer();
-		const levels: QualityLevel[] = [
-			{ index: 0, label: '1080p', bitrate: 5000000, height: 1080, width: 1920, supported: true },
-		];
-		const backend = makeBackendWithTracks({ qualityLevels: levels });
-		(player as unknown as { backend: () => unknown }).backend = () => backend;
+    player.quality('auto');
 
-		player.quality(0);
-		const result = player.quality() as { index: number; track: QualityLevel } | 'auto';
-		expect(result).not.toBe('auto');
-		const typed = result as { index: number; track: QualityLevel };
-		expect(typed.index).toBe(0);
-		expect(typed.track.label).toBe('1080p');
-	});
+    expect((player as unknown as { _qualityState: string })._qualityState).toBe(QualityState.AUTO);
+    expect(stateEvents[0]!.state).toBe(QualityState.AUTO);
+  });
 
-	it('quality() returns "auto" when stored index has no matching level', () => {
-		const player = setupPlayer();
-		(player as unknown as { _currentQualityIdx: number | 'auto' })._currentQualityIdx = 99;
-		expect(player.quality()).toBe('auto');
-	});
+  it('quality(idx) sets MANUAL state, calls backend setQuality, emits qualityState', () => {
+    const player = setupPlayer();
+    const levels: QualityLevel[] = [
+      {
+        index: 0,
+        label: '1080p',
+        bitrate: 5000000,
+        height: 1080,
+        width: 1920,
+        supported: true,
+      },
+    ];
+    const backend = makeBackendWithTracks({ qualityLevels: levels });
+
+    (player as unknown as { backend: () => unknown }).backend = () => backend;
+
+    const stateEvents: Array<{ state: string }> = [];
+
+    player.on('qualityState' as never, (data: { state: string }) =>
+      stateEvents.push(data));
+
+    player.quality(0);
+
+    expect((player as unknown as { _currentQualityIdx: number | 'auto' })._currentQualityIdx).toBe(0);
+    expect(backend.setQualityCalls).toContain(0);
+    expect(stateEvents[0]!.state).toBe(QualityState.MANUAL);
+  });
+
+  it('quality() returns { index, track } after selecting a level', () => {
+    const player = setupPlayer();
+    const levels: QualityLevel[] = [
+      {
+        index: 0,
+        label: '1080p',
+        bitrate: 5000000,
+        height: 1080,
+        width: 1920,
+        supported: true,
+      },
+    ];
+    const backend = makeBackendWithTracks({ qualityLevels: levels });
+
+    (player as unknown as { backend: () => unknown }).backend = () => backend;
+
+    player.quality(0);
+    const result = player.quality() as { index: number; track: QualityLevel } | 'auto';
+
+    expect(result).not.toBe('auto');
+    const typed = result as { index: number; track: QualityLevel };
+
+    expect(typed.index).toBe(0);
+    expect(typed.track.label).toBe('1080p');
+  });
+
+  it('quality() returns "auto" when stored index has no matching level', () => {
+    const player = setupPlayer();
+
+    (player as unknown as { _currentQualityIdx: number | 'auto' })._currentQualityIdx = 99;
+    expect(player.quality()).toBe('auto');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -914,220 +1199,357 @@ describe('qualityLevels() / quality()', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('chapters() / chapter navigation', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	function setupWithChapters(chapters: Chapter[], currentTime = 0): MockPlayer {
-		const player = setupPlayer();
+  function setupWithChapters(chapters: Chapter[], currentTime = 0): MockPlayer {
+    const player = setupPlayer();
 
-		// `chapters()` in the mixin reads through hasTracksField — items must have
-		// a non-empty `tracks` array for the guard to pass and chapters to be visible.
-		// We add a placeholder tracks entry so hasTracksField returns true.
-		const fakeItem: BasePlaylistItem & { tracks: unknown[]; chapters?: Chapter[] } = {
-			id: 'item-1',
-			title: 'Test',
-			url: '/test.mp4',
-			tracks: [{ kind: 'subtitles', file: '/placeholder.vtt', language: 'en' }],
-			chapters,
-		};
-		player.queue([fakeItem]);
-		player.item(fakeItem);
+    // `chapters()` in the mixin reads through hasTracksField — items must have
+    // a non-empty `tracks` array for the guard to pass and chapters to be visible.
+    // We add a placeholder tracks entry so hasTracksField returns true.
+    const fakeItem: BasePlaylistItem & { tracks: unknown[]; chapters?: Chapter[] } = {
+      id: 'item-1',
+      title: 'Test',
+      url: '/test.mp4',
+      tracks: [{
+        kind: 'subtitles',
+        file: '/placeholder.vtt',
+        language: 'en',
+      }],
+      chapters,
+    };
 
-		// Set the internal current time
-		(player as unknown as { _internalCurrentTime: number })._internalCurrentTime = currentTime;
+    player.queue([fakeItem]);
+    player.item(fakeItem);
 
-		// Stub time() to capture seek calls — real time() would require _assertReady
-		(player as unknown as { time: (seconds: number, opts?: unknown) => void }).time = vi.fn();
+    // Set the internal current time
+    (player as unknown as { _internalCurrentTime: number })._internalCurrentTime = currentTime;
 
-		return player;
-	}
+    // Stub time() to capture seek calls — real time() would require _assertReady
+    (player as unknown as { time: (seconds: number, opts?: unknown) => void }).time = vi.fn();
 
-	it('chapters() returns empty array when no item', () => {
-		const player = setupPlayer();
-		expect(player.chapters()).toHaveLength(0);
-	});
+    return player;
+  }
 
-	it('chapters() returns chapter list from active item', () => {
-		const chapters: Chapter[] = [
-			{ index: 0, start: 0, end: 60, title: 'Intro' },
-			{ index: 1, start: 60, end: 120, title: 'Act 1' },
-		];
-		const player = setupWithChapters(chapters);
-		expect(player.chapters()).toHaveLength(2);
-		expect(player.chapters()[0]!.title).toBe('Intro');
-	});
+  it('chapters() returns empty array when no item', () => {
+    const player = setupPlayer();
 
-	it('seekToChapter(0) calls time(0) and emits chapter event with index+title', () => {
-		const chapters: Chapter[] = [
-			{ index: 0, start: 10, end: 60, title: 'Opening' },
-		];
-		const player = setupWithChapters(chapters);
+    expect(player.chapters()).toHaveLength(0);
+  });
 
-		const chapterEvents: Array<{ index: number; title: string }> = [];
-		player.on('chapter' as never, (data: { index: number; title: string }) => chapterEvents.push(data));
+  it('chapters() returns chapter list from active item', () => {
+    const chapters: Chapter[] = [
+      {
+        index: 0,
+        start: 0,
+        end: 60,
+        title: 'Intro',
+      },
+      {
+        index: 1,
+        start: 60,
+        end: 120,
+        title: 'Act 1',
+      },
+    ];
+    const player = setupWithChapters(chapters);
 
-		player.seekToChapter(0);
+    expect(player.chapters()).toHaveLength(2);
+    expect(player.chapters()[0]!.title).toBe('Intro');
+  });
 
-		expect((player.time as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(10, undefined);
-		expect(chapterEvents).toHaveLength(1);
-		expect(chapterEvents[0]!.index).toBe(0);
-		expect(chapterEvents[0]!.title).toBe('Opening');
-	});
+  it('seekToChapter(0) calls time(0) and emits chapter event with index+title', () => {
+    const chapters: Chapter[] = [
+      {
+        index: 0,
+        start: 10,
+        end: 60,
+        title: 'Opening',
+      },
+    ];
+    const player = setupWithChapters(chapters);
 
-	it('seekToChapter(out-of-range) is a no-op — no events emitted', () => {
-		const chapters: Chapter[] = [
-			{ index: 0, start: 0, end: 60, title: 'Intro' },
-		];
-		const player = setupWithChapters(chapters);
-		const chapterEvents: unknown[] = [];
-		player.on('chapter' as never, (data: unknown) => chapterEvents.push(data));
+    const chapterEvents: Array<{ index: number; title: string }> = [];
 
-		player.seekToChapter(99);
+    player.on('chapter' as never, (data: { index: number; title: string }) =>
+      chapterEvents.push(data));
 
-		expect(chapterEvents).toHaveLength(0);
-	});
+    player.seekToChapter(0);
 
-	it('nextChapter() no-ops when chapter list is empty', () => {
-		const player = setupWithChapters([]);
-		const chapterEvents: unknown[] = [];
-		player.on('chapter' as never, (data: unknown) => chapterEvents.push(data));
+    expect((player.time as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(10, undefined);
+    expect(chapterEvents).toHaveLength(1);
+    expect(chapterEvents[0]!.index).toBe(0);
+    expect(chapterEvents[0]!.title).toBe('Opening');
+  });
 
-		player.nextChapter();
-		expect(chapterEvents).toHaveLength(0);
-	});
+  it('seekToChapter(out-of-range) is a no-op — no events emitted', () => {
+    const chapters: Chapter[] = [
+      {
+        index: 0,
+        start: 0,
+        end: 60,
+        title: 'Intro',
+      },
+    ];
+    const player = setupWithChapters(chapters);
+    const chapterEvents: unknown[] = [];
 
-	it('nextChapter() seeks to next chapter whose start > currentTime', () => {
-		const chapters: Chapter[] = [
-			{ index: 0, start: 0, end: 60, title: 'Intro' },
-			{ index: 1, start: 60, end: 120, title: 'Act 1' },
-			{ index: 2, start: 120, end: 180, title: 'Act 2' },
-		];
-		const player = setupWithChapters(chapters, 30);
-		const chapterEvents: Array<{ index: number; title: string }> = [];
-		player.on('chapter' as never, (data: { index: number; title: string }) => chapterEvents.push(data));
+    player.on('chapter' as never, (data: unknown) =>
+      chapterEvents.push(data));
 
-		player.nextChapter();
+    player.seekToChapter(99);
 
-		expect(chapterEvents[0]!.index).toBe(1);
-		expect(chapterEvents[0]!.title).toBe('Act 1');
-	});
+    expect(chapterEvents).toHaveLength(0);
+  });
 
-	it('nextChapter() no-ops when already past last chapter', () => {
-		const chapters: Chapter[] = [
-			{ index: 0, start: 0, end: 60, title: 'Intro' },
-			{ index: 1, start: 60, end: 120, title: 'Act 1' },
-		];
-		const player = setupWithChapters(chapters, 200);
-		const chapterEvents: unknown[] = [];
-		player.on('chapter' as never, (data: unknown) => chapterEvents.push(data));
+  it('nextChapter() no-ops when chapter list is empty', () => {
+    const player = setupWithChapters([]);
+    const chapterEvents: unknown[] = [];
 
-		player.nextChapter();
-		expect(chapterEvents).toHaveLength(0);
-	});
+    player.on('chapter' as never, (data: unknown) =>
+      chapterEvents.push(data));
 
-	it('previousChapter() no-ops when chapter list is empty', () => {
-		const player = setupWithChapters([]);
-		const chapterEvents: unknown[] = [];
-		player.on('chapter' as never, (data: unknown) => chapterEvents.push(data));
+    player.nextChapter();
+    expect(chapterEvents).toHaveLength(0);
+  });
 
-		player.previousChapter();
-		expect(chapterEvents).toHaveLength(0);
-	});
+  it('nextChapter() seeks to next chapter whose start > currentTime', () => {
+    const chapters: Chapter[] = [
+      {
+        index: 0,
+        start: 0,
+        end: 60,
+        title: 'Intro',
+      },
+      {
+        index: 1,
+        start: 60,
+        end: 120,
+        title: 'Act 1',
+      },
+      {
+        index: 2,
+        start: 120,
+        end: 180,
+        title: 'Act 2',
+      },
+    ];
+    const player = setupWithChapters(chapters, 30);
+    const chapterEvents: Array<{ index: number; title: string }> = [];
 
-	it('previousChapter() restarts current chapter when > 10 seconds in', () => {
-		const chapters: Chapter[] = [
-			{ index: 0, start: 0, end: 60, title: 'Intro' },
-			{ index: 1, start: 60, end: 120, title: 'Act 1' },
-		];
-		const player = setupWithChapters(chapters, 85);
-		const chapterEvents: Array<{ index: number; title: string }> = [];
-		player.on('chapter' as never, (data: { index: number; title: string }) => chapterEvents.push(data));
+    player.on('chapter' as never, (data: { index: number; title: string }) =>
+      chapterEvents.push(data));
 
-		player.previousChapter();
+    player.nextChapter();
 
-		expect(chapterEvents[0]!.index).toBe(1);
-		expect(chapterEvents[0]!.title).toBe('Act 1');
-	});
+    expect(chapterEvents[0]!.index).toBe(1);
+    expect(chapterEvents[0]!.title).toBe('Act 1');
+  });
 
-	it('previousChapter() goes to previous chapter when within 10 seconds of current chapter start', () => {
-		const chapters: Chapter[] = [
-			{ index: 0, start: 0, end: 60, title: 'Intro' },
-			{ index: 1, start: 60, end: 120, title: 'Act 1' },
-		];
-		const player = setupWithChapters(chapters, 65);
-		const chapterEvents: Array<{ index: number; title: string }> = [];
-		player.on('chapter' as never, (data: { index: number; title: string }) => chapterEvents.push(data));
+  it('nextChapter() no-ops when already past last chapter', () => {
+    const chapters: Chapter[] = [
+      {
+        index: 0,
+        start: 0,
+        end: 60,
+        title: 'Intro',
+      },
+      {
+        index: 1,
+        start: 60,
+        end: 120,
+        title: 'Act 1',
+      },
+    ];
+    const player = setupWithChapters(chapters, 200);
+    const chapterEvents: unknown[] = [];
 
-		player.previousChapter();
+    player.on('chapter' as never, (data: unknown) =>
+      chapterEvents.push(data));
 
-		expect(chapterEvents[0]!.index).toBe(0);
-		expect(chapterEvents[0]!.title).toBe('Intro');
-	});
+    player.nextChapter();
+    expect(chapterEvents).toHaveLength(0);
+  });
 
-	it('previousChapter() no-ops when before the first chapter start', () => {
-		const chapters: Chapter[] = [
-			{ index: 0, start: 30, end: 90, title: 'Intro' },
-		];
-		const player = setupWithChapters(chapters, 10);
-		const chapterEvents: unknown[] = [];
-		player.on('chapter' as never, (data: unknown) => chapterEvents.push(data));
+  it('previousChapter() no-ops when chapter list is empty', () => {
+    const player = setupWithChapters([]);
+    const chapterEvents: unknown[] = [];
 
-		player.previousChapter();
-		expect(chapterEvents).toHaveLength(0);
-	});
+    player.on('chapter' as never, (data: unknown) =>
+      chapterEvents.push(data));
 
-	it('previousChapter() on first chapter at <=10s in restarts chapter 0', () => {
-		const chapters: Chapter[] = [
-			{ index: 0, start: 0, end: 60, title: 'Intro' },
-			{ index: 1, start: 60, end: 120, title: 'Act 1' },
-		];
-		const player = setupWithChapters(chapters, 5);
-		const chapterEvents: Array<{ index: number; title: string }> = [];
-		player.on('chapter' as never, (data: { index: number; title: string }) => chapterEvents.push(data));
+    player.previousChapter();
+    expect(chapterEvents).toHaveLength(0);
+  });
 
-		player.previousChapter();
+  it('previousChapter() restarts current chapter when > 10 seconds in', () => {
+    const chapters: Chapter[] = [
+      {
+        index: 0,
+        start: 0,
+        end: 60,
+        title: 'Intro',
+      },
+      {
+        index: 1,
+        start: 60,
+        end: 120,
+        title: 'Act 1',
+      },
+    ];
+    const player = setupWithChapters(chapters, 85);
+    const chapterEvents: Array<{ index: number; title: string }> = [];
 
-		expect(chapterEvents[0]!.index).toBe(0);
-	});
+    player.on('chapter' as never, (data: { index: number; title: string }) =>
+      chapterEvents.push(data));
 
-	it('chapter() (no arg) returns null when chapter list is empty', () => {
-		const player = setupWithChapters([]);
-		expect(player.chapter()).toBeNull();
-	});
+    player.previousChapter();
 
-	it('chapter() returns the chapter whose range contains currentTime', () => {
-		const chapters: Chapter[] = [
-			{ index: 0, start: 0, end: 60, title: 'Intro' },
-			{ index: 1, start: 60, end: 120, title: 'Act 1' },
-		];
-		const player = setupWithChapters(chapters, 75);
-		const result = player.chapter();
-		expect(result).not.toBeNull();
-		expect(result!.title).toBe('Act 1');
-	});
+    expect(chapterEvents[0]!.index).toBe(1);
+    expect(chapterEvents[0]!.title).toBe('Act 1');
+  });
 
-	it('chapter() returns null when currentTime is before any chapter start', () => {
-		const chapters: Chapter[] = [
-			{ index: 0, start: 30, end: 90, title: 'Intro' },
-		];
-		const player = setupWithChapters(chapters, 10);
-		expect(player.chapter()).toBeNull();
-	});
+  it('previousChapter() goes to previous chapter when within 10 seconds of current chapter start', () => {
+    const chapters: Chapter[] = [
+      {
+        index: 0,
+        start: 0,
+        end: 60,
+        title: 'Intro',
+      },
+      {
+        index: 1,
+        start: 60,
+        end: 120,
+        title: 'Act 1',
+      },
+    ];
+    const player = setupWithChapters(chapters, 65);
+    const chapterEvents: Array<{ index: number; title: string }> = [];
 
-	it('chapter(idx) delegates to seekToChapter', () => {
-		const chapters: Chapter[] = [
-			{ index: 0, start: 0, end: 60, title: 'Intro' },
-			{ index: 1, start: 60, end: 120, title: 'Act 1' },
-		];
-		const player = setupWithChapters(chapters);
-		const chapterEvents: Array<{ index: number; title: string }> = [];
-		player.on('chapter' as never, (data: { index: number; title: string }) => chapterEvents.push(data));
+    player.on('chapter' as never, (data: { index: number; title: string }) =>
+      chapterEvents.push(data));
 
-		player.chapter(1);
+    player.previousChapter();
 
-		expect(chapterEvents).toHaveLength(1);
-		expect(chapterEvents[0]!.index).toBe(1);
-	});
+    expect(chapterEvents[0]!.index).toBe(0);
+    expect(chapterEvents[0]!.title).toBe('Intro');
+  });
+
+  it('previousChapter() no-ops when before the first chapter start', () => {
+    const chapters: Chapter[] = [
+      {
+        index: 0,
+        start: 30,
+        end: 90,
+        title: 'Intro',
+      },
+    ];
+    const player = setupWithChapters(chapters, 10);
+    const chapterEvents: unknown[] = [];
+
+    player.on('chapter' as never, (data: unknown) =>
+      chapterEvents.push(data));
+
+    player.previousChapter();
+    expect(chapterEvents).toHaveLength(0);
+  });
+
+  it('previousChapter() on first chapter at <=10s in restarts chapter 0', () => {
+    const chapters: Chapter[] = [
+      {
+        index: 0,
+        start: 0,
+        end: 60,
+        title: 'Intro',
+      },
+      {
+        index: 1,
+        start: 60,
+        end: 120,
+        title: 'Act 1',
+      },
+    ];
+    const player = setupWithChapters(chapters, 5);
+    const chapterEvents: Array<{ index: number; title: string }> = [];
+
+    player.on('chapter' as never, (data: { index: number; title: string }) =>
+      chapterEvents.push(data));
+
+    player.previousChapter();
+
+    expect(chapterEvents[0]!.index).toBe(0);
+  });
+
+  it('chapter() (no arg) returns null when chapter list is empty', () => {
+    const player = setupWithChapters([]);
+
+    expect(player.chapter()).toBeNull();
+  });
+
+  it('chapter() returns the chapter whose range contains currentTime', () => {
+    const chapters: Chapter[] = [
+      {
+        index: 0,
+        start: 0,
+        end: 60,
+        title: 'Intro',
+      },
+      {
+        index: 1,
+        start: 60,
+        end: 120,
+        title: 'Act 1',
+      },
+    ];
+    const player = setupWithChapters(chapters, 75);
+    const result = player.chapter();
+
+    expect(result).not.toBeNull();
+    expect(result!.title).toBe('Act 1');
+  });
+
+  it('chapter() returns null when currentTime is before any chapter start', () => {
+    const chapters: Chapter[] = [
+      {
+        index: 0,
+        start: 30,
+        end: 90,
+        title: 'Intro',
+      },
+    ];
+    const player = setupWithChapters(chapters, 10);
+
+    expect(player.chapter()).toBeNull();
+  });
+
+  it('chapter(idx) delegates to seekToChapter', () => {
+    const chapters: Chapter[] = [
+      {
+        index: 0,
+        start: 0,
+        end: 60,
+        title: 'Intro',
+      },
+      {
+        index: 1,
+        start: 60,
+        end: 120,
+        title: 'Act 1',
+      },
+    ];
+    const player = setupWithChapters(chapters);
+    const chapterEvents: Array<{ index: number; title: string }> = [];
+
+    player.on('chapter' as never, (data: { index: number; title: string }) =>
+      chapterEvents.push(data));
+
+    player.chapter(1);
+
+    expect(chapterEvents).toHaveLength(1);
+    expect(chapterEvents[0]!.index).toBe(1);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1135,53 +1557,61 @@ describe('chapters() / chapter navigation', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('_disposeSidecarSubtitle()', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	it('no-ops when no sidecar context is active', () => {
-		const player = setupPlayer();
-		const internals = player as unknown as {
-			_sidecarSubtitle: undefined;
-			_disposeSidecarSubtitle: () => void;
-		};
-		expect(internals._sidecarSubtitle).toBeUndefined();
-		expect(() => internals._disposeSidecarSubtitle()).not.toThrow();
-		expect(internals._sidecarSubtitle).toBeUndefined();
-	});
+  it('no-ops when no sidecar context is active', () => {
+    const player = setupPlayer();
+    const internals = player as unknown as {
+      _sidecarSubtitle: undefined;
+      _disposeSidecarSubtitle: () => void;
+    };
 
-	it('calls tracker.dispose() and clears _sidecarSubtitle slot', () => {
-		const player = setupPlayer();
-		const disposeSpy = vi.fn();
-		const fakeTracker = { dispose: disposeSpy, on: vi.fn(), attach: vi.fn() };
-		(player as unknown as { _sidecarSubtitle: unknown })._sidecarSubtitle = {
-			tracker: fakeTracker,
-			active: new Set(),
-			language: 'en',
-		};
+    expect(internals._sidecarSubtitle).toBeUndefined();
+    expect(() => internals._disposeSidecarSubtitle()).not.toThrow();
+    expect(internals._sidecarSubtitle).toBeUndefined();
+  });
 
-		(player as unknown as { _disposeSidecarSubtitle: () => void })._disposeSidecarSubtitle();
+  it('calls tracker.dispose() and clears _sidecarSubtitle slot', () => {
+    const player = setupPlayer();
+    const disposeSpy = vi.fn();
+    const fakeTracker = {
+      dispose: disposeSpy,
+      on: vi.fn(),
+      attach: vi.fn(),
+    };
 
-		expect(disposeSpy).toHaveBeenCalledOnce();
-		expect((player as unknown as { _sidecarSubtitle: unknown })._sidecarSubtitle).toBeUndefined();
-	});
+    (player as unknown as { _sidecarSubtitle: unknown })._sidecarSubtitle = {
+      tracker: fakeTracker,
+      active: new Set(),
+      language: 'en',
+    };
 
-	it('swallows exceptions from tracker.dispose() without propagating', () => {
-		const player = setupPlayer();
-		const fakeTracker = {
-			dispose: () => { throw new Error('tracker dispose error'); },
-			on: vi.fn(),
-			attach: vi.fn(),
-		};
-		(player as unknown as { _sidecarSubtitle: unknown })._sidecarSubtitle = {
-			tracker: fakeTracker,
-			active: new Set(),
-			language: 'en',
-		};
+    (player as unknown as { _disposeSidecarSubtitle: () => void })._disposeSidecarSubtitle();
 
-		expect(() =>
-			(player as unknown as { _disposeSidecarSubtitle: () => void })._disposeSidecarSubtitle()).not.toThrow();
-		expect((player as unknown as { _sidecarSubtitle: unknown })._sidecarSubtitle).toBeUndefined();
-	});
+    expect(disposeSpy).toHaveBeenCalledOnce();
+    expect((player as unknown as { _sidecarSubtitle: unknown })._sidecarSubtitle).toBeUndefined();
+  });
+
+  it('swallows exceptions from tracker.dispose() without propagating', () => {
+    const player = setupPlayer();
+    const fakeTracker = {
+      dispose: () => { throw new Error('tracker dispose error'); },
+      on: vi.fn(),
+      attach: vi.fn(),
+    };
+
+    (player as unknown as { _sidecarSubtitle: unknown })._sidecarSubtitle = {
+      tracker: fakeTracker,
+      active: new Set(),
+      language: 'en',
+    };
+
+    expect(() =>
+      (player as unknown as { _disposeSidecarSubtitle: () => void })._disposeSidecarSubtitle()).not.toThrow();
+
+    expect((player as unknown as { _sidecarSubtitle: unknown })._sidecarSubtitle).toBeUndefined();
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1189,125 +1619,167 @@ describe('_disposeSidecarSubtitle()', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('resolveItemTrackUrls()', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => MockPlayer._resetRegistry());
 
-	it('returns the item unchanged when it has no tracks field', async () => {
-		const player = setupPlayer();
-		const item: BasePlaylistItem = { id: '1', title: 'Test' };
-		const result = await player.resolveItemTrackUrls(item);
-		expect(result).toBe(item);
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('returns item unchanged when tracks is an empty array', async () => {
-		const player = setupPlayer();
-		const item = { id: '1', title: 'Test', tracks: [] };
-		const result = await player.resolveItemTrackUrls(item);
-		expect(result).toEqual(item);
-	});
+  it('returns the item unchanged when it has no tracks field', async () => {
+    const player = setupPlayer();
+    const item: BasePlaylistItem = { id: '1', title: 'Test' };
+    const result = await player.resolveItemTrackUrls(item);
 
-	it('preserves track without a file property', async () => {
-		const player = setupPlayer();
-		const track = { kind: 'subtitles', language: 'en', label: 'English' };
-		const item = { id: '1', title: 'Test', tracks: [track] };
-		const result = await player.resolveItemTrackUrls(item);
-		expect(result.tracks[0]).toEqual(track);
-	});
+    expect(result).toBe(item);
+  });
 
-	it('resolves track file URL relative to baseUrl', async () => {
-		const player = setupPlayer();
-		player.baseUrl('https://cdn.example.com/');
-		const item = { id: '1', title: 'Test', tracks: [{ kind: 'subtitles', file: 'en.vtt', language: 'en' }] };
-		const result = await player.resolveItemTrackUrls(item);
-		expect(result.tracks[0]!.file).toBe('https://cdn.example.com/en.vtt');
-	});
+  it('returns item unchanged when tracks is an empty array', async () => {
+    const player = setupPlayer();
+    const item = {
+      id: '1',
+      title: 'Test',
+      tracks: [],
+    };
+    const result = await player.resolveItemTrackUrls(item);
 
-	it('calls transformUrl when _authConfig.transformUrl is set', async () => {
-		const player = setupPlayer();
-		const transformUrl = vi.fn().mockImplementation((url: string) => Promise.resolve(`${url}?token=abc`));
-		(player as unknown as { _authConfig: unknown })._authConfig = { transformUrl };
+    expect(result).toEqual(item);
+  });
 
-		const item = { id: '1', title: 'Test', tracks: [{ kind: 'subtitles', file: 'https://cdn.example.com/en.vtt', language: 'en' }] };
-		const result = await player.resolveItemTrackUrls(item);
+  it('preserves track without a file property', async () => {
+    const player = setupPlayer();
+    const track = {
+      kind: 'subtitles',
+      language: 'en',
+      label: 'English',
+    };
+    const item = {
+      id: '1',
+      title: 'Test',
+      tracks: [track],
+    };
+    const result = await player.resolveItemTrackUrls(item);
 
-		expect(transformUrl).toHaveBeenCalledWith('https://cdn.example.com/en.vtt');
-		expect(result.tracks[0]!.file).toBe('https://cdn.example.com/en.vtt?token=abc');
-	});
+    expect(result.tracks[0]).toEqual(track);
+  });
 
-	it('does not fetch chapters when item already has chapters', async () => {
-		const player = setupPlayer();
-		const chapters = [{ title: 'Intro', start: 0, end: 60 }];
-		const item = {
-			id: '1',
-			title: 'Test',
-			chapters,
-			tracks: [{ kind: 'chapters', file: 'https://cdn.example.com/chapters.vtt' }],
-		};
-		const fetchSpy = vi.fn();
-		vi.stubGlobal('fetch', fetchSpy);
+  it('resolves track file URL relative to baseUrl', async () => {
+    const player = setupPlayer();
 
-		try {
-			const result = await player.resolveItemTrackUrls(item);
-			expect(fetchSpy).not.toHaveBeenCalled();
-			expect((result as { chapters: unknown }).chapters).toEqual(chapters);
-		}
-		finally {
-			vi.unstubAllGlobals();
-		}
-	});
+    player.baseUrl('https://cdn.example.com/');
+    const item = {
+      id: '1',
+      title: 'Test',
+      tracks: [{
+        kind: 'subtitles',
+        file: 'en.vtt',
+        language: 'en',
+      }],
+    };
+    const result = await player.resolveItemTrackUrls(item);
 
-	it('attempts to fetch chapters when item has a chapters track and no existing chapters', async () => {
-		const player = setupPlayer();
-		// Stub fetch to fail so fetchChaptersVtt returns []
-		vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network offline')));
+    expect(result.tracks[0]!.file).toBe('https://cdn.example.com/en.vtt');
+  });
 
-		const item = {
-			id: '1',
-			title: 'Test',
-			tracks: [{ kind: 'chapters', file: 'https://cdn.example.com/chapters.vtt' }],
-		};
+  it('calls transformUrl when _authConfig.transformUrl is set', async () => {
+    const player = setupPlayer();
+    const transformUrl = vi.fn().mockImplementation((url: string) => Promise.resolve(`${url}?token=abc`));
 
-		try {
-			const result = await player.resolveItemTrackUrls(item);
-			// fetchChaptersVtt swallows the error and returns [], so no chapters added
-			expect((result as { chapters?: unknown }).chapters).toBeUndefined();
-		}
-		finally {
-			vi.unstubAllGlobals();
-		}
-	});
+    (player as unknown as { _authConfig: unknown })._authConfig = { transformUrl };
 
-	it('returns withTracks including chapters when fetch succeeds and VTT has cues', async () => {
-		const player = setupPlayer();
-		// Stub fetch to return a minimal VTT
-		const vttBody = 'WEBVTT\n\n00:00:00.000 --> 00:01:00.000\nIntro\n\n00:01:00.000 --> 00:10:00.000\nMain\n';
-		vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-			ok: true,
-			status: 200,
-			headers: new Headers({ 'content-type': 'text/vtt' }),
-			text: () => Promise.resolve(vttBody),
-		}));
+    const item = {
+      id: '1',
+      title: 'Test',
+      tracks: [{
+        kind: 'subtitles',
+        file: 'https://cdn.example.com/en.vtt',
+        language: 'en',
+      }],
+    };
+    const result = await player.resolveItemTrackUrls(item);
 
-		const item = {
-			id: '1',
-			title: 'Test',
-			tracks: [{ kind: 'chapters', file: 'https://cdn.example.com/chapters.vtt' }],
-		};
+    expect(transformUrl).toHaveBeenCalledWith('https://cdn.example.com/en.vtt');
+    expect(result.tracks[0]!.file).toBe('https://cdn.example.com/en.vtt?token=abc');
+  });
 
-		try {
-			const result = await player.resolveItemTrackUrls(item);
-			const chapters = (result as { chapters?: Array<{ title: string }> }).chapters;
-			if (chapters && chapters.length > 0) {
-				expect(chapters[0]).toHaveProperty('title');
-			}
-		}
-		finally {
-			vi.unstubAllGlobals();
-		}
-	});
+  it('does not fetch chapters when item already has chapters', async () => {
+    const player = setupPlayer();
+    const chapters = [{
+      title: 'Intro',
+      start: 0,
+      end: 60,
+    }];
+    const item = {
+      id: '1',
+      title: 'Test',
+      chapters,
+      tracks: [{ kind: 'chapters', file: 'https://cdn.example.com/chapters.vtt' }],
+    };
+    const fetchSpy = vi.fn();
+
+    vi.stubGlobal('fetch', fetchSpy);
+
+    try {
+      const result = await player.resolveItemTrackUrls(item);
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect((result as { chapters: unknown }).chapters).toEqual(chapters);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('attempts to fetch chapters when item has a chapters track and no existing chapters', async () => {
+    const player = setupPlayer();
+
+    // Stub fetch to fail so fetchChaptersVtt returns []
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network offline')));
+
+    const item = {
+      id: '1',
+      title: 'Test',
+      tracks: [{ kind: 'chapters', file: 'https://cdn.example.com/chapters.vtt' }],
+    };
+
+    try {
+      const result = await player.resolveItemTrackUrls(item);
+
+      // fetchChaptersVtt swallows the error and returns [], so no chapters added
+      expect((result as { chapters?: unknown }).chapters).toBeUndefined();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('returns withTracks including chapters when fetch succeeds and VTT has cues', async () => {
+    const player = setupPlayer();
+    // Stub fetch to return a minimal VTT
+    const vttBody = 'WEBVTT\n\n00:00:00.000 --> 00:01:00.000\nIntro\n\n00:01:00.000 --> 00:10:00.000\nMain\n';
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'text/vtt' }),
+      text: () => Promise.resolve(vttBody),
+    }));
+
+    const item = {
+      id: '1',
+      title: 'Test',
+      tracks: [{ kind: 'chapters', file: 'https://cdn.example.com/chapters.vtt' }],
+    };
+
+    try {
+      const result = await player.resolveItemTrackUrls(item);
+      const chapters = (result as { chapters?: Array<{ title: string }> }).chapters;
+
+      if (chapters && chapters.length > 0) {
+        expect(chapters[0]).toHaveProperty('title');
+      }
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1315,256 +1787,368 @@ describe('resolveItemTrackUrls()', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('_resolveAndEmitChapters()', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => MockPlayer._resetRegistry());
 
-	it('no-ops when the item id is not found in the queue', async () => {
-		const player = setupPlayer();
-		const chapterEvents: unknown[] = [];
-		player.on('chapters' as never, (data: unknown) => chapterEvents.push(data));
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		await (player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> })
-			._resolveAndEmitChapters('non-existent-id');
+  it('no-ops when the item id is not found in the queue', async () => {
+    const player = setupPlayer();
+    const chapterEvents: unknown[] = [];
 
-		expect(chapterEvents).toHaveLength(0);
-	});
+    player.on('chapters' as never, (data: unknown) =>
+      chapterEvents.push(data));
 
-	it('emits chapters event when the item has inline chapters', async () => {
-		const player = setupPlayer();
-		const chapters = [{ title: 'Part 1', start: 0, end: 120 }];
+    await (player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> })
+      ._resolveAndEmitChapters('non-existent-id');
 
-		player.queue([{ id: 'item1', title: 'Movie', chapters }] as never);
+    expect(chapterEvents).toHaveLength(0);
+  });
 
-		const chapterEvents: unknown[] = [];
-		player.on('chapters' as never, (data: unknown) => chapterEvents.push(data));
+  it('emits chapters event when the item has inline chapters', async () => {
+    const player = setupPlayer();
+    const chapters = [{
+      title: 'Part 1',
+      start: 0,
+      end: 120,
+    }];
 
-		await (player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> })
-			._resolveAndEmitChapters('item1');
+    player.queue([{
+      id: 'item1',
+      title: 'Movie',
+      chapters,
+    }] as never);
 
-		expect(chapterEvents).toHaveLength(1);
-		expect((chapterEvents[0] as { chapters: unknown[] }).chapters).toEqual(chapters);
-	});
+    const chapterEvents: unknown[] = [];
 
-	it('respects monotonic epoch — stale call does not emit', async () => {
-		const player = setupPlayer();
-		player.queue([{ id: 'item1', title: 'Movie', chapters: [{ title: 'Intro', start: 0, end: 30 }] }] as never);
+    player.on('chapters' as never, (data: unknown) =>
+      chapterEvents.push(data));
 
-		const chapterEvents: unknown[] = [];
-		player.on('chapters' as never, (data: unknown) => chapterEvents.push(data));
+    await (player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> })
+      ._resolveAndEmitChapters('item1');
 
-		const internals = player as unknown as { _chapterEpoch?: number; _resolveAndEmitChapters: (id: string) => Promise<void> };
+    expect(chapterEvents).toHaveLength(1);
+    expect((chapterEvents[0] as { chapters: unknown[] }).chapters).toEqual(chapters);
+  });
 
-		const p1 = internals._resolveAndEmitChapters('item1');
-		const p2 = internals._resolveAndEmitChapters('item1');
+  it('respects monotonic epoch — stale call does not emit', async () => {
+    const player = setupPlayer();
 
-		await Promise.all([p1, p2]);
+    player.queue([{
+      id: 'item1',
+      title: 'Movie',
+      chapters: [{
+        title: 'Intro',
+        start: 0,
+        end: 30,
+      }],
+    }] as never);
 
-		expect(chapterEvents.length).toBeGreaterThanOrEqual(1);
-	});
+    const chapterEvents: unknown[] = [];
 
-	it('no-ops when resolveItemTrackUrls returns no chapters (empty tracks item)', async () => {
-		const player = setupPlayer();
-		player.queue([{ id: 'item-notracks', title: 'Movie', tracks: [] }] as never);
+    player.on('chapters' as never, (data: unknown) =>
+      chapterEvents.push(data));
 
-		const chapterEvents: unknown[] = [];
-		player.on('chapters' as never, (data: unknown) => chapterEvents.push(data));
+    const internals = player as unknown as { _chapterEpoch?: number; _resolveAndEmitChapters: (id: string) => Promise<void> };
 
-		const internals = player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> };
-		await internals._resolveAndEmitChapters('item-notracks');
+    const p1 = internals._resolveAndEmitChapters('item1');
+    const p2 = internals._resolveAndEmitChapters('item1');
 
-		// No chapters found from resolveItemTrackUrls — should emit nothing
-		expect(chapterEvents).toHaveLength(0);
-	});
+    await Promise.all([p1, p2]);
 
-	it('emits chapters and replaces queue item when sidecar VTT fetch succeeds', async () => {
-		const vttBody = 'WEBVTT\n\n00:00:00.000 --> 00:01:00.000\nIntro\n\n00:01:00.000 --> 00:10:00.000\nMain\n';
-		vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-			ok: true,
-			status: 200,
-			headers: new Headers({ 'content-type': 'text/vtt' }),
-			text: () => Promise.resolve(vttBody),
-		}));
+    expect(chapterEvents.length).toBeGreaterThanOrEqual(1);
+  });
 
-		const player = setupPlayer();
-		player.queue([{
-			id: 'item-with-chapters-track',
-			title: 'Movie',
-			tracks: [{ kind: 'chapters', file: 'https://cdn.example.com/chapters.vtt' }],
-		}] as never);
+  it('no-ops when resolveItemTrackUrls returns no chapters (empty tracks item)', async () => {
+    const player = setupPlayer();
 
-		const chapterEvents: Array<{ chapters: unknown[] }> = [];
-		player.on('chapters' as never, (data: { chapters: unknown[] }) => chapterEvents.push(data));
+    player.queue([{
+      id: 'item-notracks',
+      title: 'Movie',
+      tracks: [],
+    }] as never);
 
-		const internals = player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> };
+    const chapterEvents: unknown[] = [];
 
-		try {
-			await internals._resolveAndEmitChapters('item-with-chapters-track');
-			if (chapterEvents.length > 0) {
-				expect(chapterEvents[0]!.chapters.length).toBeGreaterThan(0);
-			}
-		}
-		finally {
-			vi.unstubAllGlobals();
-		}
-	});
+    player.on('chapters' as never, (data: unknown) =>
+      chapterEvents.push(data));
 
-	// ── Malformed-chapter safety net — seam-level integration ────────────────
+    const internals = player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> };
 
-	it('backfills a single partial chapter to the full duration once the player duration is known (the boss\'s case)', async () => {
-		const player = setupPlayer();
-		player.emit('duration', { duration: 30 });
-		player.queue([{ id: 'item-boss-case', title: 'Movie', chapters: [{ index: 0, start: 0, end: 10, title: 'Intro' }] }] as never);
+    await internals._resolveAndEmitChapters('item-notracks');
 
-		const chapterEvents: Array<{ chapters: Chapter[] }> = [];
-		player.on('chapters' as never, (data: { chapters: Chapter[] }) => chapterEvents.push(data));
+    // No chapters found from resolveItemTrackUrls — should emit nothing
+    expect(chapterEvents).toHaveLength(0);
+  });
 
-		await (player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> })
-			._resolveAndEmitChapters('item-boss-case');
+  it('emits chapters and replaces queue item when sidecar VTT fetch succeeds', async () => {
+    const vttBody = 'WEBVTT\n\n00:00:00.000 --> 00:01:00.000\nIntro\n\n00:01:00.000 --> 00:10:00.000\nMain\n';
 
-		expect(chapterEvents).toHaveLength(1);
-		expect(chapterEvents[0]!.chapters).toHaveLength(2);
-		expect(chapterEvents[0]!.chapters[1]).toMatchObject({ start: 10, end: 30, synthetic: true });
-		expect(player.chapters()).toHaveLength(2);
-	});
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'text/vtt' }),
+      text: () => Promise.resolve(vttBody),
+    }));
 
-	it('an empty inline chapters list stays empty — the net catches malformed lists, not absent ones', async () => {
-		const player = setupPlayer();
-		player.emit('duration', { duration: 30 });
-		player.queue([{ id: 'item-empty-inline', title: 'Movie', chapters: [] }] as never);
+    const player = setupPlayer();
 
-		const chapterEvents: unknown[] = [];
-		player.on('chapters' as never, (data: unknown) => chapterEvents.push(data));
+    player.queue([{
+      id: 'item-with-chapters-track',
+      title: 'Movie',
+      tracks: [{ kind: 'chapters', file: 'https://cdn.example.com/chapters.vtt' }],
+    }] as never);
 
-		await (player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> })
-			._resolveAndEmitChapters('item-empty-inline');
+    const chapterEvents: Array<{ chapters: unknown[] }> = [];
 
-		expect(chapterEvents).toHaveLength(0);
-	});
+    player.on('chapters' as never, (data: { chapters: unknown[] }) =>
+      chapterEvents.push(data));
 
-	it('a fully-covering chapter list passes through untouched — same array reference stored and emitted', async () => {
-		const player = setupPlayer();
-		player.emit('duration', { duration: 20 });
-		const chapters = [{ index: 0, start: 0, end: 20, title: 'Whole thing' }];
-		player.queue([{ id: 'item-full-coverage', title: 'Movie', chapters }] as never);
+    const internals = player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> };
 
-		const chapterEvents: Array<{ chapters: unknown[] }> = [];
-		player.on('chapters' as never, (data: { chapters: unknown[] }) => chapterEvents.push(data));
+    try {
+      await internals._resolveAndEmitChapters('item-with-chapters-track');
 
-		await (player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> })
-			._resolveAndEmitChapters('item-full-coverage');
+      if (chapterEvents.length > 0) {
+        expect(chapterEvents[0]!.chapters.length).toBeGreaterThan(0);
+      }
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 
-		expect(chapterEvents).toHaveLength(1);
-		expect(chapterEvents[0]!.chapters).toBe(chapters);
-		expect(player.chapters()).toBe(chapters);
-	});
+  // ── Malformed-chapter safety net — seam-level integration ────────────────
 
-	it('resolves the synthetic filler title through the player i18n system, not a hardcoded string', async () => {
-		const player = setupPlayer();
-		player.translation('en', 'core.chapters.untitled', 'Custom Filler Label');
-		player.emit('duration', { duration: 30 });
-		player.queue([{ id: 'item-i18n-override', title: 'Movie', chapters: [{ index: 0, start: 0, end: 10, title: 'Intro' }] }] as never);
+  it('backfills a single partial chapter to the full duration once the player duration is known (the boss\'s case)', async () => {
+    const player = setupPlayer();
 
-		await (player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> })
-			._resolveAndEmitChapters('item-i18n-override');
+    player.emit('duration', { duration: 30 });
 
-		expect(player.chapters()[1]?.title).toBe('Custom Filler Label');
-	});
+    player.queue([{
+      id: 'item-boss-case',
+      title: 'Movie',
+      chapters: [{
+        index: 0,
+        start: 0,
+        end: 10,
+        title: 'Intro',
+      }],
+    }] as never);
 
-	it('defaults the synthetic filler title to the core.chapters.untitled translation', async () => {
-		const player = setupPlayer();
-		player.emit('duration', { duration: 30 });
-		player.queue([{ id: 'item-i18n-default', title: 'Movie', chapters: [{ index: 0, start: 0, end: 10, title: 'Intro' }] }] as never);
+    const chapterEvents: Array<{ chapters: Chapter[] }> = [];
 
-		await (player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> })
-			._resolveAndEmitChapters('item-i18n-default');
+    player.on('chapters' as never, (data: { chapters: Chapter[] }) =>
+      chapterEvents.push(data));
 
-		expect(player.chapters()[1]?.title).toBe(player.t('core.chapters.untitled'));
-	});
+    await (player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> })
+      ._resolveAndEmitChapters('item-boss-case');
 
-	it('gap-fills chapters resolved from a sidecar VTT fetch when duration is already known', async () => {
-		const vttBody = 'WEBVTT\n\n00:00:10.000 --> 00:00:20.000\nMiddle\n';
-		vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-			ok: true,
-			status: 200,
-			headers: new Headers({ 'content-type': 'text/vtt' }),
-			text: () => Promise.resolve(vttBody),
-		}));
+    expect(chapterEvents).toHaveLength(1);
+    expect(chapterEvents[0]!.chapters).toHaveLength(2);
 
-		const player = setupPlayer();
-		player.emit('duration', { duration: 30 });
-		player.queue([{
-			id: 'item-sidecar-gap',
-			title: 'Movie',
-			tracks: [{ kind: 'chapters', file: 'https://cdn.example.com/chapters.vtt' }],
-		}] as never);
+    expect(chapterEvents[0]!.chapters[1]).toMatchObject({
+      start: 10,
+      end: 30,
+      synthetic: true,
+    });
 
-		const internals = player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> };
+    expect(player.chapters()).toHaveLength(2);
+  });
 
-		try {
-			await internals._resolveAndEmitChapters('item-sidecar-gap');
+  it('an empty inline chapters list stays empty — the net catches malformed lists, not absent ones', async () => {
+    const player = setupPlayer();
 
-			const chapters = player.chapters();
-			expect(chapters).toHaveLength(3);
-			expect(chapters[0]).toMatchObject({ start: 0, end: 10 });
-			expect(chapters[0]!.synthetic).toBe(true);
-			expect(chapters[1]).toMatchObject({ start: 10, end: 20, title: 'Middle' });
-			expect(chapters[1]!.synthetic).toBeFalsy();
-			expect(chapters[2]).toMatchObject({ start: 20, end: 30 });
-			expect(chapters[2]!.synthetic).toBe(true);
-		}
-		finally {
-			vi.unstubAllGlobals();
-		}
-	});
+    player.emit('duration', { duration: 30 });
 
-	it('does not clobber a concurrent addSubtitleTrack() write — merges onto the current item instead of the pre-fetch snapshot', async () => {
-		let resolveFetch: (value: unknown) => void = () => {};
-		const pending = new Promise((resolve) => { resolveFetch = resolve; });
-		vi.stubGlobal('fetch', vi.fn().mockReturnValue(pending));
+    player.queue([{
+      id: 'item-empty-inline',
+      title: 'Movie',
+      chapters: [],
+    }] as never);
 
-		const player = setupPlayer();
-		const item = {
-			id: 'item-race',
-			title: 'Movie',
-			tracks: [{ kind: 'chapters', file: 'https://cdn.example.com/chapters.vtt' }],
-		};
-		player.queue([item] as never);
-		player.item(item as never);
+    const chapterEvents: unknown[] = [];
 
-		const internals = player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> };
+    player.on('chapters' as never, (data: unknown) =>
+      chapterEvents.push(data));
 
-		try {
-			// Kick off chapter resolution — its fetch() is parked on `pending`.
-			const chaptersPromise = internals._resolveAndEmitChapters('item-race');
+    await (player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> })
+      ._resolveAndEmitChapters('item-empty-inline');
 
-			// While that fetch is still in flight, inject a sidecar subtitle.
-			// Before the fix, the chapter resolver's write-back used the
-			// pre-fetch item snapshot and would silently drop this.
-			const track = player.addSubtitleTrack({ url: '/en.vtt', language: 'en' });
-			expect(player.subtitles()).toHaveLength(1);
+    expect(chapterEvents).toHaveLength(0);
+  });
 
-			// Now let the chapter fetch resolve and settle the write-back.
-			const vttBody = 'WEBVTT\n\n00:00:00.000 --> 00:01:00.000\nIntro\n';
-			resolveFetch({
-				ok: true,
-				status: 200,
-				headers: new Headers({ 'content-type': 'text/vtt' }),
-				text: () => Promise.resolve(vttBody),
-			});
-			await chaptersPromise;
+  it('a fully-covering chapter list passes through untouched — same array reference stored and emitted', async () => {
+    const player = setupPlayer();
 
-			// The subtitle added mid-flight must survive the chapter write-back.
-			const list = player.subtitles();
-			expect(list).toHaveLength(1);
-			expect(list[0]!.id).toBe(track.id);
-		}
-		finally {
-			vi.unstubAllGlobals();
-		}
-	});
+    player.emit('duration', { duration: 20 });
+    const chapters = [{
+      index: 0,
+      start: 0,
+      end: 20,
+      title: 'Whole thing',
+    }];
+
+    player.queue([{
+      id: 'item-full-coverage',
+      title: 'Movie',
+      chapters,
+    }] as never);
+
+    const chapterEvents: Array<{ chapters: unknown[] }> = [];
+
+    player.on('chapters' as never, (data: { chapters: unknown[] }) =>
+      chapterEvents.push(data));
+
+    await (player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> })
+      ._resolveAndEmitChapters('item-full-coverage');
+
+    expect(chapterEvents).toHaveLength(1);
+    expect(chapterEvents[0]!.chapters).toBe(chapters);
+    expect(player.chapters()).toBe(chapters);
+  });
+
+  it('resolves the synthetic filler title through the player i18n system, not a hardcoded string', async () => {
+    const player = setupPlayer();
+
+    player.translation('en', 'core.chapters.untitled', 'Custom Filler Label');
+    player.emit('duration', { duration: 30 });
+
+    player.queue([{
+      id: 'item-i18n-override',
+      title: 'Movie',
+      chapters: [{
+        index: 0,
+        start: 0,
+        end: 10,
+        title: 'Intro',
+      }],
+    }] as never);
+
+    await (player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> })
+      ._resolveAndEmitChapters('item-i18n-override');
+
+    expect(player.chapters()[1]?.title).toBe('Custom Filler Label');
+  });
+
+  it('defaults the synthetic filler title to the core.chapters.untitled translation', async () => {
+    const player = setupPlayer();
+
+    player.emit('duration', { duration: 30 });
+
+    player.queue([{
+      id: 'item-i18n-default',
+      title: 'Movie',
+      chapters: [{
+        index: 0,
+        start: 0,
+        end: 10,
+        title: 'Intro',
+      }],
+    }] as never);
+
+    await (player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> })
+      ._resolveAndEmitChapters('item-i18n-default');
+
+    expect(player.chapters()[1]?.title).toBe(player.t('core.chapters.untitled'));
+  });
+
+  it('gap-fills chapters resolved from a sidecar VTT fetch when duration is already known', async () => {
+    const vttBody = 'WEBVTT\n\n00:00:10.000 --> 00:00:20.000\nMiddle\n';
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'text/vtt' }),
+      text: () => Promise.resolve(vttBody),
+    }));
+
+    const player = setupPlayer();
+
+    player.emit('duration', { duration: 30 });
+
+    player.queue([{
+      id: 'item-sidecar-gap',
+      title: 'Movie',
+      tracks: [{ kind: 'chapters', file: 'https://cdn.example.com/chapters.vtt' }],
+    }] as never);
+
+    const internals = player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> };
+
+    try {
+      await internals._resolveAndEmitChapters('item-sidecar-gap');
+
+      const chapters = player.chapters();
+
+      expect(chapters).toHaveLength(3);
+      expect(chapters[0]).toMatchObject({ start: 0, end: 10 });
+      expect(chapters[0]!.synthetic).toBe(true);
+
+      expect(chapters[1]).toMatchObject({
+        start: 10,
+        end: 20,
+        title: 'Middle',
+      });
+
+      expect(chapters[1]!.synthetic).toBeFalsy();
+      expect(chapters[2]).toMatchObject({ start: 20, end: 30 });
+      expect(chapters[2]!.synthetic).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('does not clobber a concurrent addSubtitleTrack() write — merges onto the current item instead of the pre-fetch snapshot', async () => {
+    let resolveFetch: (value: unknown) => void = () => {};
+    const pending = new Promise((resolve) => { resolveFetch = resolve; });
+
+    vi.stubGlobal('fetch', vi.fn().mockReturnValue(pending));
+
+    const player = setupPlayer();
+    const item = {
+      id: 'item-race',
+      title: 'Movie',
+      tracks: [{ kind: 'chapters', file: 'https://cdn.example.com/chapters.vtt' }],
+    };
+
+    player.queue([item] as never);
+    player.item(item as never);
+
+    const internals = player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> };
+
+    try {
+      // Kick off chapter resolution — its fetch() is parked on `pending`.
+      const chaptersPromise = internals._resolveAndEmitChapters('item-race');
+
+      // While that fetch is still in flight, inject a sidecar subtitle.
+      // Before the fix, the chapter resolver's write-back used the
+      // pre-fetch item snapshot and would silently drop this.
+      const track = player.addSubtitleTrack({ url: '/en.vtt', language: 'en' });
+
+      expect(player.subtitles()).toHaveLength(1);
+
+      // Now let the chapter fetch resolve and settle the write-back.
+      const vttBody = 'WEBVTT\n\n00:00:00.000 --> 00:01:00.000\nIntro\n';
+
+      resolveFetch({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'text/vtt' }),
+        text: () => Promise.resolve(vttBody),
+      });
+
+      await chaptersPromise;
+
+      // The subtitle added mid-flight must survive the chapter write-back.
+      const list = player.subtitles();
+
+      expect(list).toHaveLength(1);
+      expect(list[0]!.id).toBe(track.id);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1573,84 +2157,137 @@ describe('_resolveAndEmitChapters()', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('chapter gap-fill — duration-change re-application', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => MockPlayer._resetRegistry());
 
-	it('re-normalizes the active item once duration arrives AFTER chapters already resolved raw', async () => {
-		const player = setupPlayer();
-		player.queue([{ id: 'item-late-duration', title: 'Movie', chapters: [{ index: 0, start: 0, end: 10, title: 'Intro' }] }] as never);
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		const internals = player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> };
-		await internals._resolveAndEmitChapters('item-late-duration');
+  it('re-normalizes the active item once duration arrives AFTER chapters already resolved raw', async () => {
+    const player = setupPlayer();
 
-		// Duration unknown at resolve time — the raw single chapter passes through.
-		expect(player.chapters()).toHaveLength(1);
+    player.queue([{
+      id: 'item-late-duration',
+      title: 'Movie',
+      chapters: [{
+        index: 0,
+        start: 0,
+        end: 10,
+        title: 'Intro',
+      }],
+    }] as never);
 
-		const chapterEvents: Array<{ chapters: Chapter[] }> = [];
-		player.on('chapters' as never, (data: { chapters: Chapter[] }) => chapterEvents.push(data));
+    const internals = player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> };
 
-		player.emit('duration', { duration: 30 });
+    await internals._resolveAndEmitChapters('item-late-duration');
 
-		expect(chapterEvents).toHaveLength(1);
-		expect(player.chapters()).toHaveLength(2);
-		expect(player.chapters()[1]).toMatchObject({ start: 10, end: 30, synthetic: true });
-	});
+    // Duration unknown at resolve time — the raw single chapter passes through.
+    expect(player.chapters()).toHaveLength(1);
 
-	it('does NOT re-emit when a duration tick changes nothing (already fully covering)', async () => {
-		const player = setupPlayer();
-		player.queue([{ id: 'item-already-full', title: 'Movie', chapters: [{ index: 0, start: 0, end: 30, title: 'Whole' }] }] as never);
+    const chapterEvents: Array<{ chapters: Chapter[] }> = [];
 
-		const internals = player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> };
-		player.emit('duration', { duration: 30 });
-		await internals._resolveAndEmitChapters('item-already-full');
+    player.on('chapters' as never, (data: { chapters: Chapter[] }) =>
+      chapterEvents.push(data));
 
-		const chapterEvents: unknown[] = [];
-		player.on('chapters' as never, (data: unknown) => chapterEvents.push(data));
+    player.emit('duration', { duration: 30 });
 
-		// A second duration tick landing on the same value (e.g. a corrected
-		// but identical estimate) must not spam a duplicate 'chapters' event.
-		player.emit('duration', { duration: 30 });
+    expect(chapterEvents).toHaveLength(1);
+    expect(player.chapters()).toHaveLength(2);
 
-		expect(chapterEvents).toHaveLength(0);
-	});
+    expect(player.chapters()[1]).toMatchObject({
+      start: 10,
+      end: 30,
+      synthetic: true,
+    });
+  });
 
-	it('re-normalizing twice with a growing duration extends the trailing filler instead of stacking a second one', async () => {
-		const player = setupPlayer();
-		player.queue([{ id: 'item-growing-duration', title: 'Movie', chapters: [{ index: 0, start: 0, end: 10, title: 'Intro' }] }] as never);
+  it('does NOT re-emit when a duration tick changes nothing (already fully covering)', async () => {
+    const player = setupPlayer();
 
-		const internals = player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> };
-		await internals._resolveAndEmitChapters('item-growing-duration');
+    player.queue([{
+      id: 'item-already-full',
+      title: 'Movie',
+      chapters: [{
+        index: 0,
+        start: 0,
+        end: 30,
+        title: 'Whole',
+      }],
+    }] as never);
 
-		player.emit('duration', { duration: 30 });
-		expect(player.chapters()).toHaveLength(2);
+    const internals = player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> };
 
-		player.emit('duration', { duration: 90 });
-		expect(player.chapters()).toHaveLength(2);
-		expect(player.chapters()[1]).toMatchObject({ start: 10, end: 90, synthetic: true });
-	});
+    player.emit('duration', { duration: 30 });
+    await internals._resolveAndEmitChapters('item-already-full');
 
-	it('no-ops when there is no active item', () => {
-		const player = setupPlayer();
+    const chapterEvents: unknown[] = [];
 
-		const chapterEvents: unknown[] = [];
-		player.on('chapters' as never, (data: unknown) => chapterEvents.push(data));
+    player.on('chapters' as never, (data: unknown) =>
+      chapterEvents.push(data));
 
-		expect(() => player.emit('duration', { duration: 30 })).not.toThrow();
-		expect(chapterEvents).toHaveLength(0);
-	});
+    // A second duration tick landing on the same value (e.g. a corrected
+    // but identical estimate) must not spam a duplicate 'chapters' event.
+    player.emit('duration', { duration: 30 });
 
-	it('no-ops when the active item has no chapters field', () => {
-		const player = setupPlayer();
-		player.queue([{ id: 'item-no-chapters', title: 'Movie' }] as never);
+    expect(chapterEvents).toHaveLength(0);
+  });
 
-		const chapterEvents: unknown[] = [];
-		player.on('chapters' as never, (data: unknown) => chapterEvents.push(data));
+  it('re-normalizing twice with a growing duration extends the trailing filler instead of stacking a second one', async () => {
+    const player = setupPlayer();
 
-		player.emit('duration', { duration: 30 });
+    player.queue([{
+      id: 'item-growing-duration',
+      title: 'Movie',
+      chapters: [{
+        index: 0,
+        start: 0,
+        end: 10,
+        title: 'Intro',
+      }],
+    }] as never);
 
-		expect(chapterEvents).toHaveLength(0);
-	});
+    const internals = player as unknown as { _resolveAndEmitChapters: (id: string) => Promise<void> };
+
+    await internals._resolveAndEmitChapters('item-growing-duration');
+
+    player.emit('duration', { duration: 30 });
+    expect(player.chapters()).toHaveLength(2);
+
+    player.emit('duration', { duration: 90 });
+    expect(player.chapters()).toHaveLength(2);
+
+    expect(player.chapters()[1]).toMatchObject({
+      start: 10,
+      end: 90,
+      synthetic: true,
+    });
+  });
+
+  it('no-ops when there is no active item', () => {
+    const player = setupPlayer();
+
+    const chapterEvents: unknown[] = [];
+
+    player.on('chapters' as never, (data: unknown) =>
+      chapterEvents.push(data));
+
+    expect(() => player.emit('duration', { duration: 30 })).not.toThrow();
+    expect(chapterEvents).toHaveLength(0);
+  });
+
+  it('no-ops when the active item has no chapters field', () => {
+    const player = setupPlayer();
+
+    player.queue([{ id: 'item-no-chapters', title: 'Movie' }] as never);
+
+    const chapterEvents: unknown[] = [];
+
+    player.on('chapters' as never, (data: unknown) =>
+      chapterEvents.push(data));
+
+    player.emit('duration', { duration: 30 });
+
+    expect(chapterEvents).toHaveLength(0);
+  });
 });

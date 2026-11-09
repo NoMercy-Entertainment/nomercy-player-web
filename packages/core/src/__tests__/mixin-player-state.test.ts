@@ -17,67 +17,69 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	BufferState,
-	composeMixins,
-	NetworkState,
-	playerCoreMethods,
-	QualityState,
+  BufferState,
+  composeMixins,
+  NetworkState,
+  playerCoreMethods,
+  QualityState,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare bufferState: () => BufferState;
-	declare networkState: () => NetworkState;
-	declare qualityMode: { (): QualityState; (target: number | 'auto'): void };
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare bufferState: () => BufferState;
+  declare networkState: () => NetworkState;
+  declare qualityMode: { (): QualityState; (target: number | 'auto'): void };
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 const BUFFER_STATE_VALUES = new Set(Object.values(BufferState));
 const NETWORK_STATE_VALUES = new Set(Object.values(NetworkState));
 
 describe('playerStateMethods (slice 03)', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('bufferState() returns a value from the BufferState enum', () => {
-		const player = makePlayer('ps-1');
+  it('bufferState() returns a value from the BufferState enum', () => {
+    const player = makePlayer('ps-1');
 
-		const state = player.bufferState();
+    const state = player.bufferState();
 
-		expect(BUFFER_STATE_VALUES.has(state)).toBe(true);
-	});
+    expect(BUFFER_STATE_VALUES.has(state)).toBe(true);
+  });
 
-	it('networkState() returns a value from the NetworkState enum', () => {
-		const player = makePlayer('ps-2');
+  it('networkState() returns a value from the NetworkState enum', () => {
+    const player = makePlayer('ps-2');
 
-		const state = player.networkState();
+    const state = player.networkState();
 
-		expect(NETWORK_STATE_VALUES.has(state)).toBe(true);
-	});
+    expect(NETWORK_STATE_VALUES.has(state)).toBe(true);
+  });
 
-	it('qualityMode("auto") causes qualityMode() to return QualityState.AUTO', () => {
-		const player = makePlayer('ps-3');
+  it('qualityMode("auto") causes qualityMode() to return QualityState.AUTO', () => {
+    const player = makePlayer('ps-3');
 
-		player.qualityMode('auto');
-		const result = player.qualityMode();
+    player.qualityMode('auto');
+    const result = player.qualityMode();
 
-		expect(result).toBe(QualityState.AUTO);
-	});
+    expect(result).toBe(QualityState.AUTO);
+  });
 });

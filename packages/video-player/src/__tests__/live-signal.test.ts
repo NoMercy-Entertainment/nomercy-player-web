@@ -13,64 +13,72 @@ import { Html5VideoBackend } from '../adapters/video-backend/html5';
 import { NMVideoPlayer } from '../index';
 
 class LiveBackend extends Html5VideoBackend {
-	liveNow = false;
+  liveNow = false;
 
-	override isLive(): boolean {
-		return this.liveNow;
-	}
+  override isLive(): boolean {
+    return this.liveNow;
+  }
 
-	goLive(live: boolean): void {
-		this.liveNow = live;
-		this.emit('live', { live });
-	}
+  goLive(live: boolean): void {
+    this.liveNow = live;
+    this.emit('live', { live });
+  }
 }
 
 describe('NMVideoPlayer live signal', () => {
-	beforeEach(() => {
-		document.body.innerHTML = '<div id="live-signal-test"></div>';
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="live-signal-test"></div>';
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	afterEach(() => {
-		document.body.innerHTML = '';
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  afterEach(() => {
+    document.body.innerHTML = '';
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	function setup(): { player: NMVideoPlayer; backend: LiveBackend } {
-		const backend = new LiveBackend(document.createElement('div'));
-		const player = new NMVideoPlayer('live-signal-test').setup({ backendFactory: () => backend });
-		return { player, backend };
-	}
+  function setup(): { player: NMVideoPlayer; backend: LiveBackend } {
+    const backend = new LiveBackend(document.createElement('div'));
+    const player = new NMVideoPlayer('live-signal-test').setup({ backendFactory: () => backend });
 
-	it('is false for a recorded source', async () => {
-		const { player } = setup();
-		await player.backend('html5');
+    return { player, backend };
+  }
 
-		expect(player.live()).toBe(false);
-	});
+  it('is false for a recorded source', async () => {
+    const { player } = setup();
 
-	it('reports live and emits the live event when the backend goes live', async () => {
-		const { player, backend } = setup();
-		await player.backend('html5');
-		const seen: boolean[] = [];
-		player.on('live', data => seen.push(data.live));
+    await player.backend('html5');
 
-		backend.goLive(true);
+    expect(player.live()).toBe(false);
+  });
 
-		expect(player.live()).toBe(true);
-		expect(seen).toEqual([true]);
-	});
+  it('reports live and emits the live event when the backend goes live', async () => {
+    const { player, backend } = setup();
 
-	it('follows the backend back to not live', async () => {
-		const { player, backend } = setup();
-		await player.backend('html5');
-		backend.goLive(true);
-		const seen: boolean[] = [];
-		player.on('live', data => seen.push(data.live));
+    await player.backend('html5');
+    const seen: boolean[] = [];
 
-		backend.goLive(false);
+    player.on('live', (data) =>
+      seen.push(data.live));
 
-		expect(player.live()).toBe(false);
-		expect(seen).toEqual([false]);
-	});
+    backend.goLive(true);
+
+    expect(player.live()).toBe(true);
+    expect(seen).toEqual([true]);
+  });
+
+  it('follows the backend back to not live', async () => {
+    const { player, backend } = setup();
+
+    await player.backend('html5');
+    backend.goLive(true);
+    const seen: boolean[] = [];
+
+    player.on('live', (data) =>
+      seen.push(data.live));
+
+    backend.goLive(false);
+
+    expect(player.live()).toBe(false);
+    expect(seen).toEqual([false]);
+  });
 });

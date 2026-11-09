@@ -17,43 +17,43 @@
 
 /** @type {import('eslint').Rule.RuleModule} */
 export default {
-	meta: {
-		type: 'suggestion',
-		docs: {
-			description: 'Disallow `as unknown as T` unless justified by an adjacent comment.',
-		},
-		schema: [],
-		messages: {
-			unknownCast: '`as unknown as {{type}}` — add a short inline comment justifying the double-cast, or type it at construction.',
-		},
-	},
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description: 'Disallow `as unknown as T` unless justified by an adjacent comment.',
+    },
+    schema: [],
+    messages: {
+      unknownCast: '`as unknown as {{type}}` — add a short inline comment justifying the double-cast, or type it at construction.',
+    },
+  },
 
-	create(context) {
-		const sourceCode = context.sourceCode ?? context.getSourceCode();
+  create(context) {
+    const sourceCode = context.sourceCode ?? context.getSourceCode();
 
-		const commentEndLines = new Set();
-		for (const comment of sourceCode.getAllComments()) {
-			for (let line = comment.loc.start.line; line <= comment.loc.end.line; line++)
-				commentEndLines.add(line);
-		}
+    const commentEndLines = new Set();
+    for (const comment of sourceCode.getAllComments()) {
+      for (let line = comment.loc.start.line; line <= comment.loc.end.line; line++)
+        commentEndLines.add(line);
+    }
 
-		return {
-			TSAsExpression(node) {
-				const inner = node.expression;
-				if (inner.type !== 'TSAsExpression' || inner.typeAnnotation.type !== 'TSUnknownKeyword')
-					return;
+    return {
+      TSAsExpression(node) {
+        const inner = node.expression;
+        if (inner.type !== 'TSAsExpression' || inner.typeAnnotation.type !== 'TSUnknownKeyword')
+          return;
 
-				const line = node.loc.start.line;
-				const justified = commentEndLines.has(line) || commentEndLines.has(line - 1);
-				if (justified)
-					return;
+        const line = node.loc.start.line;
+        const justified = commentEndLines.has(line) || commentEndLines.has(line - 1);
+        if (justified)
+          return;
 
-				context.report({
-					node,
-					messageId: 'unknownCast',
-					data: { type: sourceCode.getText(node.typeAnnotation) },
-				});
-			},
-		};
-	},
+        context.report({
+          node,
+          messageId: 'unknownCast',
+          data: { type: sourceCode.getText(node.typeAnnotation) },
+        });
+      },
+    };
+  },
 };

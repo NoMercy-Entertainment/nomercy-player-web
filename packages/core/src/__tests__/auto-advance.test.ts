@@ -20,124 +20,132 @@
 import type { BasePlaylistItem } from '../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare phase: () => string;
-	declare play: (opts?: any) => Promise<void>;
-	declare pause: (opts?: any) => Promise<void>;
-	declare next: (opts?: any) => Promise<void>;
-	declare previous: (opts?: any) => Promise<void>;
-	declare queue: { (): ReadonlyArray<any>; (items: any[], opts?: any): void };
-	declare item: { (): any; (target: any, opts?: any): void };
-	declare repeatState: { (): string; (state: any): void };
-	declare load: (item: any, opts?: any) => Promise<void>;
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare phase: () => string;
+  declare play: (opts?: any) => Promise<void>;
+  declare pause: (opts?: any) => Promise<void>;
+  declare next: (opts?: any) => Promise<void>;
+  declare previous: (opts?: any) => Promise<void>;
+  declare queue: { (): ReadonlyArray<any>; (items: any[], opts?: any): void };
+  declare item: { (): any; (target: any, opts?: any): void };
+  declare repeatState: { (): string; (state: any): void };
+  declare load: (item: any, opts?: any) => Promise<void>;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 const track = (id: string): BasePlaylistItem & { url: string } => ({ id, url: `http://example.test/${id}.mp3` });
 
 describe('kit core — no auto-advance on ended', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('ended → kit core does NOT call next() — plugin owns auto-advance', async () => {
-		const player = makePlayer('aa-kit-no-next').setup({});
-		await player.ready();
+  it('ended → kit core does NOT call next() — plugin owns auto-advance', async () => {
+    const player = makePlayer('aa-kit-no-next').setup({});
 
-		player.queue([track('a'), track('b')]);
+    await player.ready();
 
-		const nextSpy = vi.spyOn(player, 'next');
+    player.queue([track('a'), track('b')]);
 
-		player.emit('ended' as any, undefined);
+    const nextSpy = vi.spyOn(player, 'next');
 
-		await new Promise(resolve => setTimeout(resolve, 20));
+    player.emit('ended' as any, undefined);
 
-		expect(nextSpy).not.toHaveBeenCalled();
-	});
+    await new Promise((resolve) => setTimeout(resolve, 20));
 
-	it('ended → kit core does NOT call next() regardless of repeatState', async () => {
-		const player = makePlayer('aa-kit-repeat').setup({});
-		await player.ready();
-		player.repeatState('off');
-		player.queue([track('a'), track('b')]);
+    expect(nextSpy).not.toHaveBeenCalled();
+  });
 
-		const nextSpy = vi.spyOn(player, 'next');
+  it('ended → kit core does NOT call next() regardless of repeatState', async () => {
+    const player = makePlayer('aa-kit-repeat').setup({});
 
-		player.emit('ended' as any, undefined);
+    await player.ready();
+    player.repeatState('off');
+    player.queue([track('a'), track('b')]);
 
-		await new Promise(resolve => setTimeout(resolve, 20));
+    const nextSpy = vi.spyOn(player, 'next');
 
-		expect(nextSpy).not.toHaveBeenCalled();
-	});
+    player.emit('ended' as any, undefined);
 
-	it('next() calls play() exactly once when load() succeeds', async () => {
-		const player = makePlayer('aa-next-once').setup({});
-		await player.ready();
+    await new Promise((resolve) => setTimeout(resolve, 20));
 
-		player.queue([track('a'), track('b')]);
+    expect(nextSpy).not.toHaveBeenCalled();
+  });
 
-		const loadSpy = vi.spyOn(player, 'load').mockResolvedValue(undefined);
-		const playSpy = vi.spyOn(player, 'play');
+  it('next() calls play() exactly once when load() succeeds', async () => {
+    const player = makePlayer('aa-next-once').setup({});
 
-		await player.next({ source: 'test' });
+    await player.ready();
 
-		expect(loadSpy).toHaveBeenCalledTimes(1);
-		expect(playSpy).toHaveBeenCalledTimes(1);
-		expect(playSpy).toHaveBeenCalledWith({ source: 'test' });
-	});
+    player.queue([track('a'), track('b')]);
+
+    const loadSpy = vi.spyOn(player, 'load').mockResolvedValue(undefined);
+    const playSpy = vi.spyOn(player, 'play');
+
+    await player.next({ source: 'test' });
+
+    expect(loadSpy).toHaveBeenCalledTimes(1);
+    expect(playSpy).toHaveBeenCalledTimes(1);
+    expect(playSpy).toHaveBeenCalledWith({ source: 'test' });
+  });
 });
 
 describe('load cursor dedup', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('current(item) + subsequent load(item) emits current exactly once', async () => {
-		const player = makePlayer('cursor-dedup').setup({});
-		await player.ready();
+  it('current(item) + subsequent load(item) emits current exactly once', async () => {
+    const player = makePlayer('cursor-dedup').setup({});
 
-		const items = [track('a'), track('b'), track('c')];
-		player.queue(items);
+    await player.ready();
 
-		const loadSpy = vi.spyOn(player, 'load').mockResolvedValue(undefined);
+    const items = [track('a'), track('b'), track('c')];
 
-		const currentEvents: unknown[] = [];
-		player.on('item' as any, (data: unknown) => {
-			currentEvents.push(data);
-		});
+    player.queue(items);
 
-		player.item('b', { autoplay: false });
+    const loadSpy = vi.spyOn(player, 'load').mockResolvedValue(undefined);
 
-		await loadSpy.mock.results[0]?.value;
-		await new Promise(resolve => setTimeout(resolve, 10));
+    const currentEvents: unknown[] = [];
 
-		expect(currentEvents).toHaveLength(1);
-		expect((currentEvents[0] as any).index).toBe(1);
-	});
+    player.on('item' as any, (data: unknown) => {
+      currentEvents.push(data);
+    });
+
+    player.item('b', { autoplay: false });
+
+    await loadSpy.mock.results[0]?.value;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(currentEvents).toHaveLength(1);
+    expect((currentEvents[0] as any).index).toBe(1);
+  });
 });

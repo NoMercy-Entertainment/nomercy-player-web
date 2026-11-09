@@ -24,62 +24,71 @@ import { DesktopUiPlugin, desktopUiPlugin } from '../../plugins/desktop-ui';
 
 type ResizeCallback = (entries: Array<{ contentRect: { width: number } }>) => void;
 const MockResizeObserver = vi.fn(function (this: unknown, _cb: ResizeCallback) {
-	return { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() };
+  return {
+    observe: vi.fn(),
+    disconnect: vi.fn(),
+    unobserve: vi.fn(),
+  };
 });
 
 function overlay(): HTMLElement | null {
-	return document.querySelector<HTMLElement>('#test .overlay');
+  return document.querySelector<HTMLElement>('#test .overlay');
 }
 
 describe('DesktopUiPlugin — disable hides the overlay', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		(globalThis as unknown as Record<string, unknown>).ResizeObserver = MockResizeObserver;
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		delete (globalThis as unknown as Record<string, unknown>).ResizeObserver;
-		vi.useRealTimers();
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    (globalThis as unknown as Record<string, unknown>).ResizeObserver = MockResizeObserver;
+  });
 
-	it('hides the overlay root when disabled and restores it when re-enabled', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(desktopUiPlugin, { inactivityMs: 4000 });
-		await player.ready();
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    delete (globalThis as unknown as Record<string, unknown>).ResizeObserver;
+    vi.useRealTimers();
+  });
 
-		const root = overlay();
-		expect(root).not.toBeNull();
-		expect(root!.hidden).toBe(false);
+  it('hides the overlay root when disabled and restores it when re-enabled', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const plugin = player.getPlugin(DesktopUiPlugin)!;
+    player.addPlugin(desktopUiPlugin, { inactivityMs: 4000 });
+    await player.ready();
 
-		plugin.disable();
-		expect(root!.hidden).toBe(true);
-		expect(plugin.enabled()).toBe(false);
+    const root = overlay();
 
-		plugin.enable();
-		expect(root!.hidden).toBe(false);
-		expect(plugin.enabled()).toBe(true);
-	});
+    expect(root).not.toBeNull();
+    expect(root!.hidden).toBe(false);
 
-	it('emits a final activity:false when disabled so nothing re-shows it', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(desktopUiPlugin, { inactivityMs: 4000 });
-		await player.ready();
+    const plugin = player.getPlugin(DesktopUiPlugin)!;
 
-		const activityEvents: Array<{ active: boolean }> = [];
-		player.on('activity' as never, ((data: { active: boolean }) => {
-			activityEvents.push(data);
-		}) as never);
+    plugin.disable();
+    expect(root!.hidden).toBe(true);
+    expect(plugin.enabled()).toBe(false);
 
-		player.getPlugin(DesktopUiPlugin)!.disable();
+    plugin.enable();
+    expect(root!.hidden).toBe(false);
+    expect(plugin.enabled()).toBe(true);
+  });
 
-		expect(activityEvents.at(-1)).toEqual({ active: false });
-	});
+  it('emits a final activity:false when disabled so nothing re-shows it', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    player.addPlugin(desktopUiPlugin, { inactivityMs: 4000 });
+    await player.ready();
+
+    const activityEvents: Array<{ active: boolean }> = [];
+
+    player.on('activity' as never, ((data: { active: boolean }) => {
+      activityEvents.push(data);
+    }) as never);
+
+    player.getPlugin(DesktopUiPlugin)!.disable();
+
+    expect(activityEvents.at(-1)).toEqual({ active: false });
+  });
 });

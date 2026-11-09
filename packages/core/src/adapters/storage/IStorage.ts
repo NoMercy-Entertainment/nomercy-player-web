@@ -22,21 +22,21 @@
  * API-backed remote store for cross-device persistence.
  */
 export interface IStorage {
-	/** Retrieve a raw string value, or `null` when the key is absent. */
-	get(key: string): string | null | Promise<string | null>;
+  /** Retrieve a raw string value, or `null` when the key is absent. */
+  get(key: string): string | null | Promise<string | null>;
 
-	/** Store a raw string value under `key`. */
-	set(key: string, value: string): void | Promise<void>;
+  /** Store a raw string value under `key`. */
+  set(key: string, value: string): void | Promise<void>;
 
-	/** Delete the entry for `key`. No-op when the key is absent. */
-	remove(key: string): void | Promise<void>;
+  /** Delete the entry for `key`. No-op when the key is absent. */
+  remove(key: string): void | Promise<void>;
 
-	/**
-	 * Retrieve and JSON-parse the value stored under `key`. Returns `null` when
-	 * the key is absent or the stored value is not valid JSON.
-	 */
-	getJSON<T>(key: string): T | null | Promise<T | null>;
+  /**
+   * Retrieve and JSON-parse the value stored under `key`. Returns `null` when
+   * the key is absent or the stored value is not valid JSON.
+   */
+  getJSON<T>(key: string): T | null | Promise<T | null>;
 
-	/** JSON-serialize `value` and store it under `key`. */
-	setJSON<T>(key: string, value: T): void | Promise<void>;
+  /** JSON-serialize `value` and store it under `key`. */
+  setJSON<T>(key: string, value: T): void | Promise<void>;
 }

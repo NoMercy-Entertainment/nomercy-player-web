@@ -18,8 +18,8 @@
  */
 
 export {
-	clampVolume,
-	escapeHtml,
-	formatDuration,
-	formatSeconds,
+  clampVolume,
+  escapeHtml,
+  formatDuration,
+  formatSeconds,
 } from '@nomercy-entertainment/nomercy-player-core';

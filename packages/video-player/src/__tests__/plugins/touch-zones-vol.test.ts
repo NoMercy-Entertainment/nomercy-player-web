@@ -21,101 +21,112 @@ import { NMVideoPlayer } from '../../index';
 import { touchZonesPlugin } from '../../plugins/touch-zones';
 
 describe('TouchZonesPlugin — mobile volume zones', () => {
-	let originalMax: number;
+  let originalMax: number;
 
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-		// Force mobile detection.
-		originalMax = navigator.maxTouchPoints;
-		Object.defineProperty(navigator, 'maxTouchPoints', { value: 1, configurable: true });
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
 
-	afterEach(() => {
-		Object.defineProperty(navigator, 'maxTouchPoints', { value: originalMax, configurable: true });
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    // Force mobile detection.
+    originalMax = navigator.maxTouchPoints;
+    Object.defineProperty(navigator, 'maxTouchPoints', { value: 1, configurable: true });
+  });
 
-	function findZoneBox(container: Element, colStart: string, colEnd: string, rowStart?: string): HTMLElement | undefined {
-		return Array.from(container.querySelectorAll<HTMLElement>('.nm-touch-box')).find(
-			box => box.style.gridColumnStart === colStart
-				&& box.style.gridColumnEnd === colEnd
-				&& (rowStart === undefined || box.style.gridRowStart === rowStart),
-		);
-	}
+  afterEach(() => {
+    Object.defineProperty(navigator, 'maxTouchPoints', { value: originalMax, configurable: true });
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('double-tap on vol-up zone calls player.volumeUp()', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(touchZonesPlugin, { doubleTapThreshold: 300 });
-		await player.ready();
+  function findZoneBox(container: Element, colStart: string, colEnd: string, rowStart?: string): HTMLElement | undefined {
+    return Array.from(container.querySelectorAll<HTMLElement>('.nm-touch-box')).find(
+      (box) => box.style.gridColumnStart === colStart &&
+        box.style.gridColumnEnd === colEnd &&
+        (rowStart === undefined || box.style.gridRowStart === rowStart),
+    );
+  }
 
-		const volUpSpy = vi.fn();
-		(player as unknown as Record<string, unknown>).volumeUp = volUpSpy;
+  it('double-tap on vol-up zone calls player.volumeUp()', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const container = document.getElementById('test')!;
+    player.addPlugin(touchZonesPlugin, { doubleTapThreshold: 300 });
+    await player.ready();
 
-		// Vol-up zone: col 2–3, row 1–3 on mobile.
-		const volUpBox = findZoneBox(container, '2', '3', '1');
-		expect(volUpBox).toBeDefined();
+    const volUpSpy = vi.fn();
 
-		// Double-tap: two clicks within doubleTapThreshold.
-		volUpBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-		await new Promise(resolve => setTimeout(resolve, 50));
-		volUpBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-		await new Promise(resolve => setTimeout(resolve, 350));
+    (player as unknown as Record<string, unknown>).volumeUp = volUpSpy;
 
-		expect(volUpSpy).toHaveBeenCalledTimes(1);
-	});
+    const container = document.getElementById('test')!;
 
-	it('double-tap on vol-down zone calls player.volumeDown()', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(touchZonesPlugin, { doubleTapThreshold: 300 });
-		await player.ready();
+    // Vol-up zone: col 2–3, row 1–3 on mobile.
+    const volUpBox = findZoneBox(container, '2', '3', '1');
 
-		const volDownSpy = vi.fn();
-		(player as unknown as Record<string, unknown>).volumeDown = volDownSpy;
+    expect(volUpBox).toBeDefined();
 
-		const container = document.getElementById('test')!;
+    // Double-tap: two clicks within doubleTapThreshold.
+    volUpBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    volUpBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 350));
 
-		// Vol-down zone: col 2–3, row 5–7 on mobile.
-		const volDownBox = findZoneBox(container, '2', '3', '5');
-		expect(volDownBox).toBeDefined();
+    expect(volUpSpy).toHaveBeenCalledTimes(1);
+  });
 
-		volDownBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-		await new Promise(resolve => setTimeout(resolve, 50));
-		volDownBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-		await new Promise(resolve => setTimeout(resolve, 350));
+  it('double-tap on vol-down zone calls player.volumeDown()', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		expect(volDownSpy).toHaveBeenCalledTimes(1);
-	});
+    player.addPlugin(touchZonesPlugin, { doubleTapThreshold: 300 });
+    await player.ready();
 
-	it('mobile mode builds 5 zones (seek-back, playback, seek-fwd, vol-up, vol-down)', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(touchZonesPlugin);
-		await player.ready();
+    const volDownSpy = vi.fn();
 
-		const container = document.getElementById('test')!;
-		const zones = container.querySelectorAll('.nm-touch-box');
-		expect(zones.length).toBe(5);
-	});
+    (player as unknown as Record<string, unknown>).volumeDown = volDownSpy;
 
-	it('dispose removes the root element', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(touchZonesPlugin);
-		await player.ready();
+    const container = document.getElementById('test')!;
 
-		const { TouchZonesPlugin } = await import('../../plugins/touch-zones');
-		const plugin = player.getPlugin(TouchZonesPlugin)!;
+    // Vol-down zone: col 2–3, row 5–7 on mobile.
+    const volDownBox = findZoneBox(container, '2', '3', '5');
 
-		const container = document.getElementById('test')!;
-		expect(container.querySelector('.nm-touch-zones-root')).not.toBeNull();
+    expect(volDownBox).toBeDefined();
 
-		plugin.dispose();
+    volDownBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    volDownBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 350));
 
-		expect(container.querySelector('.nm-touch-zones-root')).toBeNull();
-	});
+    expect(volDownSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('mobile mode builds 5 zones (seek-back, playback, seek-fwd, vol-up, vol-down)', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    player.addPlugin(touchZonesPlugin);
+    await player.ready();
+
+    const container = document.getElementById('test')!;
+    const zones = container.querySelectorAll('.nm-touch-box');
+
+    expect(zones.length).toBe(5);
+  });
+
+  it('dispose removes the root element', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    player.addPlugin(touchZonesPlugin);
+    await player.ready();
+
+    const { TouchZonesPlugin } = await import('../../plugins/touch-zones');
+    const plugin = player.getPlugin(TouchZonesPlugin)!;
+
+    const container = document.getElementById('test')!;
+
+    expect(container.querySelector('.nm-touch-zones-root')).not.toBeNull();
+
+    plugin.dispose();
+
+    expect(container.querySelector('.nm-touch-zones-root')).toBeNull();
+  });
 });

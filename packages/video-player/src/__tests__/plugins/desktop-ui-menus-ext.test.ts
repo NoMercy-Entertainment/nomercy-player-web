@@ -41,391 +41,495 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { NMVideoPlayer } from '../../index';
 import {
-	buildMenuFrame,
-	renderAspectRatioPane,
-	renderAudioPane,
-	renderSubtitleSettingsPane,
+  buildMenuFrame,
+  renderAspectRatioPane,
+  renderAudioPane,
+  renderSubtitleSettingsPane,
 } from '../../plugins/desktop-ui/helpers/menus';
 
 type ResizeCallback = (entries: Array<{ contentRect: { width: number } }>) => void;
 const MockResizeObserver = vi.fn(function (this: unknown, _cb: ResizeCallback) {
-	return { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() };
+  return {
+    observe: vi.fn(),
+    disconnect: vi.fn(),
+    unobserve: vi.fn(),
+  };
 });
 
 function resetAndMount(id = 'test'): void {
-	(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	const div = document.createElement('div');
-	div.id = id;
-	div.className = 'nomercyplayer';
-	document.body.appendChild(div);
-	vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  const div = document.createElement('div');
+
+  div.id = id;
+  div.className = 'nomercyplayer';
+  document.body.appendChild(div);
+  vi.stubGlobal('ResizeObserver', MockResizeObserver);
 }
 
 function cleanup(): void {
-	(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	document.body.innerHTML = '';
-	vi.unstubAllGlobals();
+  (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  document.body.innerHTML = '';
+  vi.unstubAllGlobals();
 }
 
 function NOOP_LISTEN(_target: EventTarget, _event: string, _handler: (event: Event) => void): void {}
 
 function realListen(target: EventTarget, event: string, fn: (ev: Event) => void): void {
-	(target as HTMLElement).addEventListener(event, fn);
+  (target as HTMLElement).addEventListener(event, fn);
 }
 
 // ── renderAudioPane ──────────────────────────────────────────────────────────
 
 describe('renderAudioPane (direct call)', () => {
-	beforeEach(() => resetAndMount());
-	afterEach(() => cleanup());
+  beforeEach(() => resetAndMount());
+  afterEach(() => cleanup());
 
-	async function makePlayerWithAudio(): Promise<NMVideoPlayer> {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
-		return player;
-	}
+  async function makePlayerWithAudio(): Promise<NMVideoPlayer> {
+    const player = new NMVideoPlayer('test').setup({});
 
-	function paneWithScroll(): { pane: HTMLDivElement; scroll: HTMLDivElement } {
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'language-scroll-container';
-		pane.appendChild(scroll);
-		return { pane, scroll };
-	}
+    await player.ready();
 
-	it('renders one button per audio track', async () => {
-		const player = await makePlayerWithAudio();
-		const { pane, scroll } = paneWithScroll();
+    return player;
+  }
 
-		const tracks = [
-			{ id: 'en', language: 'en', label: 'English', default: true },
-			{ id: 'nl', language: 'nl', label: 'Dutch', default: false },
-			{ id: 'de', language: 'de', label: 'German', default: false },
-		];
-		Object.assign(player, { audioTracks: () => tracks });
+  function paneWithScroll(): { pane: HTMLDivElement; scroll: HTMLDivElement } {
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
 
-		renderAudioPane(pane, player as never, NOOP_LISTEN, () => {}, {
-			subtitleIdx: -1,
-			audioIdx: 0,
-			qualityIdx: 'auto',
-		});
+    scroll.className = 'language-scroll-container';
+    pane.appendChild(scroll);
 
-		const buttons = scroll.querySelectorAll('button');
-		expect(buttons.length).toBe(3);
-	});
+    return { pane, scroll };
+  }
 
-	it('marks the active track with is-active or aria-checked=true', async () => {
-		const player = await makePlayerWithAudio();
-		const { pane, scroll } = paneWithScroll();
+  it('renders one button per audio track', async () => {
+    const player = await makePlayerWithAudio();
+    const { pane, scroll } = paneWithScroll();
 
-		const tracks = [
-			{ id: 'en', language: 'en', label: 'English', default: true },
-			{ id: 'nl', language: 'nl', label: 'Dutch', default: false },
-		];
-		Object.assign(player, { audioTracks: () => tracks });
+    const tracks = [
+      {
+        id: 'en',
+        language: 'en',
+        label: 'English',
+        default: true,
+      },
+      {
+        id: 'nl',
+        language: 'nl',
+        label: 'Dutch',
+        default: false,
+      },
+      {
+        id: 'de',
+        language: 'de',
+        label: 'German',
+        default: false,
+      },
+    ];
 
-		renderAudioPane(pane, player as never, NOOP_LISTEN, () => {}, {
-			subtitleIdx: -1,
-			audioIdx: 1,
-			qualityIdx: 'auto',
-		});
+    Object.assign(player, { audioTracks: () => tracks });
 
-		const buttons = scroll.querySelectorAll<HTMLButtonElement>('button');
-		const dutchBtn = buttons[1];
-		const isActive = dutchBtn?.classList.contains('is-active') || dutchBtn?.getAttribute('aria-checked') === 'true';
-		expect(isActive).toBe(true);
-	});
+    renderAudioPane(pane, player as never, NOOP_LISTEN, () => {}, {
+      subtitleIdx: -1,
+      audioIdx: 0,
+      qualityIdx: 'auto',
+    });
 
-	it('first track is NOT active when audioIdx is 1', async () => {
-		const player = await makePlayerWithAudio();
-		const { pane, scroll } = paneWithScroll();
+    const buttons = scroll.querySelectorAll('button');
 
-		const tracks = [
-			{ id: 'en', language: 'en', label: 'English', default: true },
-			{ id: 'nl', language: 'nl', label: 'Dutch', default: false },
-		];
-		Object.assign(player, { audioTracks: () => tracks });
+    expect(buttons.length).toBe(3);
+  });
 
-		renderAudioPane(pane, player as never, NOOP_LISTEN, () => {}, {
-			subtitleIdx: -1,
-			audioIdx: 1,
-			qualityIdx: 'auto',
-		});
+  it('marks the active track with is-active or aria-checked=true', async () => {
+    const player = await makePlayerWithAudio();
+    const { pane, scroll } = paneWithScroll();
 
-		const buttons = scroll.querySelectorAll<HTMLButtonElement>('button');
-		const englishBtn = buttons[0];
-		const isActive = englishBtn?.classList.contains('is-active') || englishBtn?.getAttribute('aria-checked') === 'true';
-		expect(isActive).toBe(false);
-	});
+    const tracks = [
+      {
+        id: 'en',
+        language: 'en',
+        label: 'English',
+        default: true,
+      },
+      {
+        id: 'nl',
+        language: 'nl',
+        label: 'Dutch',
+        default: false,
+      },
+    ];
 
-	it('clicking a row calls player.audioTrack(i) and triggers onPick', async () => {
-		const player = await makePlayerWithAudio();
-		const { pane, scroll } = paneWithScroll();
+    Object.assign(player, { audioTracks: () => tracks });
 
-		let pickedIdx: number | undefined;
-		let onPickCalled = false;
+    renderAudioPane(pane, player as never, NOOP_LISTEN, () => {}, {
+      subtitleIdx: -1,
+      audioIdx: 1,
+      qualityIdx: 'auto',
+    });
 
-		Object.assign(player, {
-			audioTracks: () => [
-				{ id: 'en', language: 'en', label: 'English', default: true },
-				{ id: 'nl', language: 'nl', label: 'Dutch', default: false },
-			],
-			audioTrack: (i?: number) => {
-				if (i !== undefined)
-					pickedIdx = i;
-				return 0;
-			},
-		});
+    const buttons = scroll.querySelectorAll<HTMLButtonElement>('button');
+    const dutchBtn = buttons[1];
+    const isActive = dutchBtn?.classList.contains('is-active') || dutchBtn?.getAttribute('aria-checked') === 'true';
 
-		renderAudioPane(pane, player as never, realListen, () => { onPickCalled = true; }, {
-			subtitleIdx: -1,
-			audioIdx: 0,
-			qualityIdx: 'auto',
-		});
+    expect(isActive).toBe(true);
+  });
 
-		const buttons = scroll.querySelectorAll<HTMLButtonElement>('button');
-		buttons[1]!.click();
+  it('first track is NOT active when audioIdx is 1', async () => {
+    const player = await makePlayerWithAudio();
+    const { pane, scroll } = paneWithScroll();
 
-		expect(pickedIdx).toBe(1);
-		expect(onPickCalled).toBe(true);
-	});
+    const tracks = [
+      {
+        id: 'en',
+        language: 'en',
+        label: 'English',
+        default: true,
+      },
+      {
+        id: 'nl',
+        language: 'nl',
+        label: 'Dutch',
+        default: false,
+      },
+    ];
 
-	it('renders empty pane when no audio tracks', async () => {
-		const player = await makePlayerWithAudio();
-		const { pane, scroll } = paneWithScroll();
+    Object.assign(player, { audioTracks: () => tracks });
 
-		Object.assign(player, { audioTracks: () => [] });
+    renderAudioPane(pane, player as never, NOOP_LISTEN, () => {}, {
+      subtitleIdx: -1,
+      audioIdx: 1,
+      qualityIdx: 'auto',
+    });
 
-		renderAudioPane(pane, player as never, NOOP_LISTEN, () => {}, {
-			subtitleIdx: -1,
-			audioIdx: 0,
-			qualityIdx: 'auto',
-		});
+    const buttons = scroll.querySelectorAll<HTMLButtonElement>('button');
+    const englishBtn = buttons[0];
+    const isActive = englishBtn?.classList.contains('is-active') || englishBtn?.getAttribute('aria-checked') === 'true';
 
-		expect(scroll.querySelectorAll('button').length).toBe(0);
-	});
+    expect(isActive).toBe(false);
+  });
+
+  it('clicking a row calls player.audioTrack(i) and triggers onPick', async () => {
+    const player = await makePlayerWithAudio();
+    const { pane, scroll } = paneWithScroll();
+
+    let pickedIdx: number | undefined;
+    let onPickCalled = false;
+
+    Object.assign(player, {
+      audioTracks: () => [
+        {
+          id: 'en',
+          language: 'en',
+          label: 'English',
+          default: true,
+        },
+        {
+          id: 'nl',
+          language: 'nl',
+          label: 'Dutch',
+          default: false,
+        },
+      ],
+      audioTrack: (i?: number) => {
+        if (i !== undefined) {
+          pickedIdx = i;
+        }
+
+        return 0;
+      },
+    });
+
+    renderAudioPane(pane, player as never, realListen, () => { onPickCalled = true; }, {
+      subtitleIdx: -1,
+      audioIdx: 0,
+      qualityIdx: 'auto',
+    });
+
+    const buttons = scroll.querySelectorAll<HTMLButtonElement>('button');
+
+    buttons[1]!.click();
+
+    expect(pickedIdx).toBe(1);
+    expect(onPickCalled).toBe(true);
+  });
+
+  it('renders empty pane when no audio tracks', async () => {
+    const player = await makePlayerWithAudio();
+    const { pane, scroll } = paneWithScroll();
+
+    Object.assign(player, { audioTracks: () => [] });
+
+    renderAudioPane(pane, player as never, NOOP_LISTEN, () => {}, {
+      subtitleIdx: -1,
+      audioIdx: 0,
+      qualityIdx: 'auto',
+    });
+
+    expect(scroll.querySelectorAll('button').length).toBe(0);
+  });
 });
 
 // ── renderAspectRatioPane ────────────────────────────────────────────────────
 
 describe('renderAspectRatioPane (direct call)', () => {
-	beforeEach(() => resetAndMount());
-	afterEach(() => cleanup());
+  beforeEach(() => resetAndMount());
+  afterEach(() => cleanup());
 
-	async function makePlayerBase(): Promise<NMVideoPlayer> {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
-		return player;
-	}
+  async function makePlayerBase(): Promise<NMVideoPlayer> {
+    const player = new NMVideoPlayer('test').setup({});
 
-	function paneWithScroll(): { pane: HTMLDivElement; scroll: HTMLDivElement } {
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'aspectRatio-scroll-container';
-		pane.appendChild(scroll);
-		return { pane, scroll };
-	}
+    await player.ready();
 
-	it('renders exactly 4 aspect-ratio options', async () => {
-		const player = await makePlayerBase();
-		const { pane, scroll } = paneWithScroll();
+    return player;
+  }
 
-		Object.assign(player, { aspectRatio: () => 'uniform' });
+  function paneWithScroll(): { pane: HTMLDivElement; scroll: HTMLDivElement } {
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
 
-		renderAspectRatioPane(pane, player as never, NOOP_LISTEN, () => {});
+    scroll.className = 'aspectRatio-scroll-container';
+    pane.appendChild(scroll);
 
-		const buttons = scroll.querySelectorAll('button');
-		expect(buttons.length).toBe(4);
-	});
+    return { pane, scroll };
+  }
 
-	it('marks the current aspect ratio as active', async () => {
-		const player = await makePlayerBase();
-		const { pane, scroll } = paneWithScroll();
+  it('renders exactly 4 aspect-ratio options', async () => {
+    const player = await makePlayerBase();
+    const { pane, scroll } = paneWithScroll();
 
-		Object.assign(player, { aspectRatio: () => 'fill' });
+    Object.assign(player, { aspectRatio: () => 'uniform' });
 
-		renderAspectRatioPane(pane, player as never, NOOP_LISTEN, () => {});
+    renderAspectRatioPane(pane, player as never, NOOP_LISTEN, () => {});
 
-		const fillBtn = scroll.querySelector<HTMLButtonElement>('#aspect-ratio-fill');
-		expect(fillBtn).not.toBeNull();
-		const isActive = fillBtn!.classList.contains('is-active') || fillBtn!.getAttribute('aria-checked') === 'true';
-		expect(isActive).toBe(true);
-	});
+    const buttons = scroll.querySelectorAll('button');
 
-	it('uniform is NOT active when current aspect ratio is fill', async () => {
-		const player = await makePlayerBase();
-		const { pane, scroll } = paneWithScroll();
+    expect(buttons.length).toBe(4);
+  });
 
-		Object.assign(player, { aspectRatio: () => 'fill' });
+  it('marks the current aspect ratio as active', async () => {
+    const player = await makePlayerBase();
+    const { pane, scroll } = paneWithScroll();
 
-		renderAspectRatioPane(pane, player as never, NOOP_LISTEN, () => {});
+    Object.assign(player, { aspectRatio: () => 'fill' });
 
-		const uniformBtn = scroll.querySelector<HTMLButtonElement>('#aspect-ratio-uniform');
-		expect(uniformBtn).not.toBeNull();
-		const isActive = uniformBtn!.classList.contains('is-active') || uniformBtn!.getAttribute('aria-checked') === 'true';
-		expect(isActive).toBe(false);
-	});
+    renderAspectRatioPane(pane, player as never, NOOP_LISTEN, () => {});
 
-	it('clicking a row calls player.aspectRatio(value) and triggers onPick', async () => {
-		const player = await makePlayerBase();
-		const { pane, scroll } = paneWithScroll();
+    const fillBtn = scroll.querySelector<HTMLButtonElement>('#aspect-ratio-fill');
 
-		let pickedValue: string | undefined;
-		let onPickCalled = false;
+    expect(fillBtn).not.toBeNull();
+    const isActive = fillBtn!.classList.contains('is-active') || fillBtn!.getAttribute('aria-checked') === 'true';
 
-		Object.assign(player, {
-			aspectRatio: (val?: string) => {
-				if (val !== undefined)
-					pickedValue = val;
-				return 'uniform';
-			},
-		});
+    expect(isActive).toBe(true);
+  });
 
-		renderAspectRatioPane(pane, player as never, realListen, () => { onPickCalled = true; });
+  it('uniform is NOT active when current aspect ratio is fill', async () => {
+    const player = await makePlayerBase();
+    const { pane, scroll } = paneWithScroll();
 
-		const exactfitBtn = scroll.querySelector<HTMLButtonElement>('#aspect-ratio-exactfit');
-		expect(exactfitBtn).not.toBeNull();
-		exactfitBtn!.click();
+    Object.assign(player, { aspectRatio: () => 'fill' });
 
-		expect(pickedValue).toBe('exactfit');
-		expect(onPickCalled).toBe(true);
-	});
+    renderAspectRatioPane(pane, player as never, NOOP_LISTEN, () => {});
 
-	it('all four option ids are present (uniform, fill, exactfit, none)', async () => {
-		const player = await makePlayerBase();
-		const { pane, scroll } = paneWithScroll();
+    const uniformBtn = scroll.querySelector<HTMLButtonElement>('#aspect-ratio-uniform');
 
-		Object.assign(player, { aspectRatio: () => 'uniform' });
+    expect(uniformBtn).not.toBeNull();
+    const isActive = uniformBtn!.classList.contains('is-active') || uniformBtn!.getAttribute('aria-checked') === 'true';
 
-		renderAspectRatioPane(pane, player as never, NOOP_LISTEN, () => {});
+    expect(isActive).toBe(false);
+  });
 
-		expect(scroll.querySelector('#aspect-ratio-uniform')).not.toBeNull();
-		expect(scroll.querySelector('#aspect-ratio-fill')).not.toBeNull();
-		expect(scroll.querySelector('#aspect-ratio-exactfit')).not.toBeNull();
-		expect(scroll.querySelector('#aspect-ratio-none')).not.toBeNull();
-	});
+  it('clicking a row calls player.aspectRatio(value) and triggers onPick', async () => {
+    const player = await makePlayerBase();
+    const { pane, scroll } = paneWithScroll();
+
+    let pickedValue: string | undefined;
+    let onPickCalled = false;
+
+    Object.assign(player, {
+      aspectRatio: (val?: string) => {
+        if (val !== undefined) {
+          pickedValue = val;
+        }
+
+        return 'uniform';
+      },
+    });
+
+    renderAspectRatioPane(pane, player as never, realListen, () => { onPickCalled = true; });
+
+    const exactfitBtn = scroll.querySelector<HTMLButtonElement>('#aspect-ratio-exactfit');
+
+    expect(exactfitBtn).not.toBeNull();
+    exactfitBtn!.click();
+
+    expect(pickedValue).toBe('exactfit');
+    expect(onPickCalled).toBe(true);
+  });
+
+  it('all four option ids are present (uniform, fill, exactfit, none)', async () => {
+    const player = await makePlayerBase();
+    const { pane, scroll } = paneWithScroll();
+
+    Object.assign(player, { aspectRatio: () => 'uniform' });
+
+    renderAspectRatioPane(pane, player as never, NOOP_LISTEN, () => {});
+
+    expect(scroll.querySelector('#aspect-ratio-uniform')).not.toBeNull();
+    expect(scroll.querySelector('#aspect-ratio-fill')).not.toBeNull();
+    expect(scroll.querySelector('#aspect-ratio-exactfit')).not.toBeNull();
+    expect(scroll.querySelector('#aspect-ratio-none')).not.toBeNull();
+  });
 });
 
 // ── renderSubtitleSettingsPane — Reset row ───────────────────────────────────
 
 describe('renderSubtitleSettingsPane — Reset row', () => {
-	beforeEach(() => resetAndMount());
-	afterEach(() => cleanup());
+  beforeEach(() => resetAndMount());
+  afterEach(() => cleanup());
 
-	async function makePlayerBase(): Promise<NMVideoPlayer> {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
-		return player;
-	}
+  async function makePlayerBase(): Promise<NMVideoPlayer> {
+    const player = new NMVideoPlayer('test').setup({});
 
-	const defaultStyle = {
-		fontSize: 100,
-		fontFamily: 'sans-serif',
-		textColor: 'white',
-		textOpacity: 100,
-		backgroundColor: 'black',
-		backgroundOpacity: 75,
-		edgeStyle: 'none',
-		areaColor: 'transparent',
-		windowOpacity: 0,
-	};
+    await player.ready();
 
-	it('the last button in the pane is the Reset row', async () => {
-		const player = await makePlayerBase();
+    return player;
+  }
 
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'subtitleSettings-scroll-container';
-		pane.appendChild(scroll);
+  const defaultStyle = {
+    fontSize: 100,
+    fontFamily: 'sans-serif',
+    textColor: 'white',
+    textOpacity: 100,
+    backgroundColor: 'black',
+    backgroundOpacity: 75,
+    edgeStyle: 'none',
+    areaColor: 'transparent',
+    windowOpacity: 0,
+  };
 
-		Object.assign(player, { subtitleStyle: () => ({ ...defaultStyle }) });
+  it('the last button in the pane is the Reset row', async () => {
+    const player = await makePlayerBase();
 
-		renderSubtitleSettingsPane(pane, player as never, NOOP_LISTEN, () => {});
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
 
-		const buttons = scroll.querySelectorAll<HTMLButtonElement>('button');
-		expect(buttons.length).toBeGreaterThan(0);
+    scroll.className = 'subtitleSettings-scroll-container';
+    pane.appendChild(scroll);
 
-		const lastBtn = buttons[buttons.length - 1];
-		// The Reset row has no property value (empty string or 'reset' identifier)
-		const id = lastBtn?.id ?? '';
-		expect(id).toMatch(/reset/i);
-	});
+    Object.assign(player, { subtitleStyle: () => ({ ...defaultStyle }) });
 
-	it('clicking Reset calls player.subtitleStyle(patch) with the default values', async () => {
-		const player = await makePlayerBase();
+    renderSubtitleSettingsPane(pane, player as never, NOOP_LISTEN, () => {});
 
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'subtitleSettings-scroll-container';
-		pane.appendChild(scroll);
+    const buttons = scroll.querySelectorAll<HTMLButtonElement>('button');
 
-		let writtenPatch: unknown;
+    expect(buttons.length).toBeGreaterThan(0);
 
-		Object.assign(player, {
-			subtitleStyle: (patch?: unknown) => {
-				if (patch !== undefined)
-					writtenPatch = patch;
-				return { ...defaultStyle };
-			},
-		});
+    const lastBtn = buttons[buttons.length - 1];
+    // The Reset row has no property value (empty string or 'reset' identifier)
+    const id = lastBtn?.id ?? '';
 
-		renderSubtitleSettingsPane(pane, player as never, realListen, () => {});
+    expect(id).toMatch(/reset/i);
+  });
 
-		const buttons = scroll.querySelectorAll<HTMLButtonElement>('button');
-		const lastBtn = buttons[buttons.length - 1];
-		lastBtn!.click();
+  it('clicking Reset calls player.subtitleStyle(patch) with the default values', async () => {
+    const player = await makePlayerBase();
 
-		// writeSubtitleStyle calls player.subtitleStyle(patch) — patch must be set
-		expect(writtenPatch).toBeDefined();
-	});
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
+
+    scroll.className = 'subtitleSettings-scroll-container';
+    pane.appendChild(scroll);
+
+    let writtenPatch: unknown;
+
+    Object.assign(player, {
+      subtitleStyle: (patch?: unknown) => {
+        if (patch !== undefined) {
+          writtenPatch = patch;
+        }
+
+        return { ...defaultStyle };
+      },
+    });
+
+    renderSubtitleSettingsPane(pane, player as never, realListen, () => {});
+
+    const buttons = scroll.querySelectorAll<HTMLButtonElement>('button');
+    const lastBtn = buttons[buttons.length - 1];
+
+    lastBtn!.click();
+
+    // writeSubtitleStyle calls player.subtitleStyle(patch) — patch must be set
+    expect(writtenPatch).toBeDefined();
+  });
 });
 
 describe('renderSubtitleSettingsPane — back arrow', () => {
-	beforeEach(() => resetAndMount());
-	afterEach(() => cleanup());
+  beforeEach(() => resetAndMount());
+  afterEach(() => cleanup());
 
-	async function mountPane(): Promise<{ pane: HTMLDivElement; backToMain: ReturnType<typeof vi.fn>; rerender: () => void }> {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
-		Object.assign(player, { subtitleStyle: () => ({ fontSize: 100, fontFamily: 'sans-serif', textColor: 'white' }) });
+  async function mountPane(): Promise<{
+    pane: HTMLDivElement;
+    backToMain: ReturnType<typeof vi.fn>;
+    rerender: () => void;
+  }> {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const backToMain = vi.fn();
-		const menus = buildMenuFrame(
-			player as never,
-			document.body,
-			realListen,
-			{ closeMenu: () => {}, openSubMenu: () => {}, backToMain },
-		);
-		const pane = menus.panes.subtitleSettings;
-		const rerender = (): void => renderSubtitleSettingsPane(pane, player as never, realListen, () => {});
-		rerender();
-		return { pane, backToMain, rerender };
-	}
+    await player.ready();
 
-	const back = (pane: HTMLDivElement): HTMLButtonElement => pane.querySelector<HTMLButtonElement>('.menu-header-back')!;
-	const title = (pane: HTMLDivElement): string => pane.querySelector('.menu-header .menu-button-text')!.textContent ?? '';
+    Object.assign(player, { subtitleStyle: () => ({
+      fontSize: 100,
+      fontFamily: 'sans-serif',
+      textColor: 'white',
+    }) });
 
-	it('goes to the main menu after a property picker visit', async () => {
-		const { pane, backToMain } = await mountPane();
+    const backToMain = vi.fn();
+    const menus = buildMenuFrame(
+      player as never,
+      document.body,
+      realListen,
+      {
+        closeMenu: () => {},
+        openSubMenu: () => {},
+        backToMain,
+      },
+    );
+    const pane = menus.panes.subtitleSettings;
+    const rerender = (): void => renderSubtitleSettingsPane(pane, player as never, realListen, () => {});
 
-		pane.querySelector<HTMLButtonElement>('.subtitleSettings-scroll-container button')!.click();
-		back(pane).click(); // picker -> list
-		expect(backToMain).not.toHaveBeenCalled();
+    rerender();
 
-		back(pane).click(); // list -> main
-		expect(backToMain).toHaveBeenCalledTimes(1);
-	});
+    return {
+      pane,
+      backToMain,
+      rerender,
+    };
+  }
 
-	it('resets the header title when the pane opens again from a picker', async () => {
-		const { pane, rerender } = await mountPane();
-		const listTitle = title(pane);
+  const back = (pane: HTMLDivElement): HTMLButtonElement => pane.querySelector<HTMLButtonElement>('.menu-header-back')!;
+  const title = (pane: HTMLDivElement): string => pane.querySelector('.menu-header .menu-button-text')!.textContent ?? '';
 
-		pane.querySelector<HTMLButtonElement>('.subtitleSettings-scroll-container button')!.click();
-		expect(title(pane)).not.toBe(listTitle);
+  it('goes to the main menu after a property picker visit', async () => {
+    const { pane, backToMain } = await mountPane();
 
-		rerender();
-		expect(title(pane)).toBe(listTitle);
-	});
+    pane.querySelector<HTMLButtonElement>('.subtitleSettings-scroll-container button')!.click();
+    back(pane).click(); // picker -> list
+    expect(backToMain).not.toHaveBeenCalled();
+
+    back(pane).click(); // list -> main
+    expect(backToMain).toHaveBeenCalledTimes(1);
+  });
+
+  it('resets the header title when the pane opens again from a picker', async () => {
+    const { pane, rerender } = await mountPane();
+    const listTitle = title(pane);
+
+    pane.querySelector<HTMLButtonElement>('.subtitleSettings-scroll-container button')!.click();
+    expect(title(pane)).not.toBe(listTitle);
+
+    rerender();
+    expect(title(pane)).toBe(listTitle);
+  });
 });
 
 // ── formatDuration via renderSubtitleSettingsPane (exported via menus module) ─
@@ -443,43 +547,52 @@ describe('renderSubtitleSettingsPane — back arrow', () => {
 // we use the integration path via the plugin's playlist menu button click.
 
 describe('formatDuration — edge cases (via exported pane render)', () => {
-	beforeEach(() => resetAndMount());
-	afterEach(() => cleanup());
+  beforeEach(() => resetAndMount());
+  afterEach(() => cleanup());
 
-	it('module exports renderAudioPane and renderAspectRatioPane', () => {
-		expect(typeof renderAudioPane).toBe('function');
-		expect(typeof renderAspectRatioPane).toBe('function');
-	});
+  it('module exports renderAudioPane and renderAspectRatioPane', () => {
+    expect(typeof renderAudioPane).toBe('function');
+    expect(typeof renderAspectRatioPane).toBe('function');
+  });
 
-	it('renderAspectRatioPane early-returns when scroll container is absent', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+  it('renderAspectRatioPane early-returns when scroll container is absent', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const paneWithNoScroll = document.createElement('div');
-		Object.assign(player, { aspectRatio: () => 'uniform' });
+    await player.ready();
 
-		expect(() => {
-			renderAspectRatioPane(paneWithNoScroll, player as never, NOOP_LISTEN, () => {});
-		}).not.toThrow();
+    const paneWithNoScroll = document.createElement('div');
 
-		expect(paneWithNoScroll.querySelectorAll('button').length).toBe(0);
-	});
+    Object.assign(player, { aspectRatio: () => 'uniform' });
 
-	it('renderAudioPane early-returns when scroll container is absent', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+    expect(() => {
+      renderAspectRatioPane(paneWithNoScroll, player as never, NOOP_LISTEN, () => {});
+    }).not.toThrow();
 
-		const paneWithNoScroll = document.createElement('div');
-		Object.assign(player, { audioTracks: () => [{ id: 'en', language: 'en', label: 'English', default: true }] });
+    expect(paneWithNoScroll.querySelectorAll('button').length).toBe(0);
+  });
 
-		expect(() => {
-			renderAudioPane(paneWithNoScroll, player as never, NOOP_LISTEN, () => {}, {
-				subtitleIdx: -1,
-				audioIdx: 0,
-				qualityIdx: 'auto',
-			});
-		}).not.toThrow();
+  it('renderAudioPane early-returns when scroll container is absent', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		expect(paneWithNoScroll.querySelectorAll('button').length).toBe(0);
-	});
+    await player.ready();
+
+    const paneWithNoScroll = document.createElement('div');
+
+    Object.assign(player, { audioTracks: () => [{
+      id: 'en',
+      language: 'en',
+      label: 'English',
+      default: true,
+    }] });
+
+    expect(() => {
+      renderAudioPane(paneWithNoScroll, player as never, NOOP_LISTEN, () => {}, {
+        subtitleIdx: -1,
+        audioIdx: 0,
+        qualityIdx: 'auto',
+      });
+    }).not.toThrow();
+
+    expect(paneWithNoScroll.querySelectorAll('button').length).toBe(0);
+  });
 });

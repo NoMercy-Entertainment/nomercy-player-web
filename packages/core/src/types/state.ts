@@ -12,14 +12,14 @@
  * player to have completed its setup sequence.
  */
 export enum SetupState {
-	/** `setup()` has not been called yet. */
-	NOT_SETUP = 'not-setup',
-	/** `setup()` is in flight — config resolving, plugins registering. */
-	SETTING_UP = 'setup',
-	/** Setup completed — the player is ready to accept commands. */
-	READY = 'ready',
-	/** `dispose()` completed — the instance is permanently shut down. */
-	DISPOSED = 'disposed',
+  /** `setup()` has not been called yet. */
+  NOT_SETUP = 'not-setup',
+  /** `setup()` is in flight — config resolving, plugins registering. */
+  SETTING_UP = 'setup',
+  /** Setup completed — the player is ready to accept commands. */
+  READY = 'ready',
+  /** `dispose()` completed — the instance is permanently shut down. */
+  DISPOSED = 'disposed',
 }
 
 /**
@@ -29,14 +29,14 @@ export enum SetupState {
  * the network can't keep up.
  */
 export enum BufferState {
-	/** No active media or buffer is comfortably ahead. */
-	IDLE = 'idle',
-	/** Backend is fetching the initial segments. */
-	LOADING = 'loading',
-	/** A seek is in progress and the buffer is repositioning. */
-	SEEKING = 'seeking',
-	/** Playback stalled because the buffer ran dry. */
-	STALLED = 'stalled',
+  /** No active media or buffer is comfortably ahead. */
+  IDLE = 'idle',
+  /** Backend is fetching the initial segments. */
+  LOADING = 'loading',
+  /** A seek is in progress and the buffer is repositioning. */
+  SEEKING = 'seeking',
+  /** Playback stalled because the buffer ran dry. */
+  STALLED = 'stalled',
 }
 
 /**
@@ -45,12 +45,12 @@ export enum BufferState {
  * is configured.
  */
 export enum NetworkState {
-	/** Network is reachable and delivering acceptable bandwidth. */
-	ONLINE = 'online',
-	/** No network connectivity detected. */
-	OFFLINE = 'offline',
-	/** Network is reachable but downlink is below the slow-connection threshold (1.5 Mbps). */
-	SLOW = 'slow',
+  /** Network is reachable and delivering acceptable bandwidth. */
+  ONLINE = 'online',
+  /** No network connectivity detected. */
+  OFFLINE = 'offline',
+  /** Network is reachable but downlink is below the slow-connection threshold (1.5 Mbps). */
+  SLOW = 'slow',
 }
 
 /**
@@ -59,10 +59,10 @@ export enum NetworkState {
  * visibility monitor is configured.
  */
 export enum VisibilityState {
-	/** The player's document tab is in the foreground. */
-	VISIBLE = 'visible',
-	/** The player's document tab is hidden or minimised. */
-	HIDDEN = 'hidden',
+  /** The player's document tab is in the foreground. */
+  VISIBLE = 'visible',
+  /** The player's document tab is hidden or minimised. */
+  HIDDEN = 'hidden',
 }
 
 /**
@@ -71,10 +71,10 @@ export enum VisibilityState {
  * specific level; back to `AUTO` when they restore adaptive switching.
  */
 export enum QualityState {
-	/** Adaptive bitrate — the backend picks the best level automatically. */
-	AUTO = 'auto',
-	/** A specific quality level is locked by the consumer or a plugin. */
-	MANUAL = 'manual',
+  /** Adaptive bitrate — the backend picks the best level automatically. */
+  AUTO = 'auto',
+  /** A specific quality level is locked by the consumer or a plugin. */
+  MANUAL = 'manual',
 }
 
 /**
@@ -83,10 +83,10 @@ export enum QualityState {
  * selects a track.
  */
 export enum AudioTrackState {
-	/** The backend's default audio track is active (no explicit selection). */
-	DEFAULT = 'default',
-	/** A track was explicitly chosen — preference plugins persist this pick. */
-	MANUAL = 'manual',
+  /** The backend's default audio track is active (no explicit selection). */
+  DEFAULT = 'default',
+  /** A track was explicitly chosen — preference plugins persist this pick. */
+  MANUAL = 'manual',
 }
 
 /**
@@ -99,9 +99,9 @@ export enum AudioTrackState {
  * - `ONE`  — loop only the current item.
  */
 export enum RepeatState {
-	OFF = 'off',
-	ALL = 'all',
-	ONE = 'one',
+  OFF = 'off',
+  ALL = 'all',
+  ONE = 'one',
 }
 
 /**
@@ -112,36 +112,36 @@ export enum RepeatState {
  * - `ON`  — randomised queue order.
  */
 export enum ShuffleState {
-	OFF = 'off',
-	ON = 'on',
+  OFF = 'off',
+  ON = 'on',
 }
 
 /**
  * Top-level playback lifecycle state. Returned by `player.playState()`.
  */
 export enum PlayState {
-	/** Player constructed; `load()` not yet called. */
-	IDLE = 'idle',
-	/** Item is being fetched / initialised by the backend. */
-	LOADING = 'loading',
-	/** Backend is actively advancing the clock. */
-	PLAYING = 'playing',
-	/** Playback is suspended; position held. */
-	PAUSED = 'paused',
-	/** Playback stopped; position may be reset. */
-	STOPPED = 'stopped',
-	/** Unrecoverable failure; consumer should surface a message. */
-	ERROR = 'error',
+  /** Player constructed; `load()` not yet called. */
+  IDLE = 'idle',
+  /** Item is being fetched / initialised by the backend. */
+  LOADING = 'loading',
+  /** Backend is actively advancing the clock. */
+  PLAYING = 'playing',
+  /** Playback is suspended; position held. */
+  PAUSED = 'paused',
+  /** Playback stopped; position may be reset. */
+  STOPPED = 'stopped',
+  /** Unrecoverable failure; consumer should surface a message. */
+  ERROR = 'error',
 }
 
 /**
  * Volume gain stage. Returned by `player.volumeState()`.
  */
 export enum VolumeState {
-	/** Audio output is active (gain > 0). */
-	UNMUTED = 'unmuted',
-	/** Audio output is suppressed regardless of the volume level. */
-	MUTED = 'muted',
+  /** Audio output is active (gain > 0). */
+  UNMUTED = 'unmuted',
+  /** Audio output is suppressed regardless of the volume level. */
+  MUTED = 'muted',
 }
 
 /**
@@ -149,14 +149,14 @@ export enum VolumeState {
  * `player.castState()` and carried on the `castState` event.
  */
 export enum CastState {
-	/** Cast is not available in this browser (SDK absent or no devices found). */
-	UNAVAILABLE = 'unavailable',
-	/** At least one Cast device is reachable; the user has not started a session. */
-	AVAILABLE = 'available',
-	/** A Cast session is being established. */
-	CONNECTING = 'connecting',
-	/** A Cast session is active and playback is delegated to the receiver. */
-	CONNECTED = 'connected',
-	/** A session was active but has ended (user disconnected, receiver lost, etc.). */
-	DISCONNECTED = 'disconnected',
+  /** Cast is not available in this browser (SDK absent or no devices found). */
+  UNAVAILABLE = 'unavailable',
+  /** At least one Cast device is reachable; the user has not started a session. */
+  AVAILABLE = 'available',
+  /** A Cast session is being established. */
+  CONNECTING = 'connecting',
+  /** A Cast session is active and playback is delegated to the receiver. */
+  CONNECTED = 'connected',
+  /** A session was active but has ended (user disconnected, receiver lost, etc.). */
+  DISCONNECTED = 'disconnected',
 }

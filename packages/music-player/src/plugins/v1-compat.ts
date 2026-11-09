@@ -7,9 +7,9 @@
 // -----------------------------------------------------------------------------
 
 import type {
-	ActionOptions,
-	LoadOptions,
-	PluginCtorWithId,
+  ActionOptions,
+  LoadOptions,
+  PluginCtorWithId,
 } from '@nomercy-entertainment/nomercy-player-core';
 import type { NMMusicPlayer } from '../index';
 import type { MusicPlaylistItem } from '../types';
@@ -17,79 +17,79 @@ import { installV1TranslationShims, Plugin, v1DeprecationMessage } from '@nomerc
 import { VolumeState } from '../types';
 
 declare module '@nomercy-entertainment/nomercy-music-player' {
-	interface NMMusicPlayer<T extends MusicPlaylistItem = MusicPlaylistItem> {
-		/** @deprecated v1 shim — use `playState()`. */
-		readonly isPlaying: boolean;
+  interface NMMusicPlayer<T extends MusicPlaylistItem = MusicPlaylistItem> {
+    /** @deprecated v1 shim — use `playState()`. */
+    readonly isPlaying: boolean;
 
-		/** @deprecated v1 shim — use `time(seconds)`. */
-		seek(seconds: number, opts?: ActionOptions): number;
+    /** @deprecated v1 shim — use `time(seconds)`. */
+    seek(seconds: number, opts?: ActionOptions): number;
 
-		/** @deprecated v1 shim — use `playbackRate()`. */
-		speed(): number;
-		/** @deprecated v1 shim — use `playbackRate(rate)`. */
-		speed(rate: number): void;
-		/** @deprecated v1 shim — use `playbackRates()`. */
-		speeds(): number[];
-		/** @deprecated v1 shim — derive from `playbackRates().length > 1`. */
-		hasSpeeds(): boolean;
+    /** @deprecated v1 shim — use `playbackRate()`. */
+    speed(): number;
+    /** @deprecated v1 shim — use `playbackRate(rate)`. */
+    speed(rate: number): void;
+    /** @deprecated v1 shim — use `playbackRates()`. */
+    speeds(): number[];
+    /** @deprecated v1 shim — derive from `playbackRates().length > 1`. */
+    hasSpeeds(): boolean;
 
-		/** @deprecated v1 shim — use `volumeState() === VolumeState.MUTED`. */
-		muted(): boolean;
-		/** @deprecated v1 shim — use `mute()` / `unmute()`. */
-		muted(state: boolean): void;
-		/** @deprecated v1 shim — no v2 equivalent. Reads the backend's applied element volume. */
-		gain(): number;
+    /** @deprecated v1 shim — use `volumeState() === VolumeState.MUTED`. */
+    muted(): boolean;
+    /** @deprecated v1 shim — use `mute()` / `unmute()`. */
+    muted(state: boolean): void;
+    /** @deprecated v1 shim — no v2 equivalent. Reads the backend's applied element volume. */
+    gain(): number;
 
-		/** @deprecated v1 shim — use `playState()`. */
-		state(): string;
+    /** @deprecated v1 shim — use `playState()`. */
+    state(): string;
 
-		/** @deprecated v1 shim — use `time()`. */
-		currentTime(): number;
-		/** @deprecated v1 shim — use `time(seconds)`. */
-		currentTime(seconds: number, opts?: ActionOptions): void;
+    /** @deprecated v1 shim — use `time()`. */
+    currentTime(): number;
+    /** @deprecated v1 shim — use `time(seconds)`. */
+    currentTime(seconds: number, opts?: ActionOptions): void;
 
-		/** @deprecated v1 shim — use `item()`. */
-		currentTrack(): T | Record<string, never>;
-		/** @deprecated v1 shim — use `queue()`. */
-		trackList(): ReadonlyArray<T>;
-		/** @deprecated v1 shim — use `next()`. */
-		nextTrack(opts?: LoadOptions): Promise<void>;
-		/** @deprecated v1 shim — use `previous()`. */
-		previousTrack(opts?: LoadOptions): Promise<void>;
-		/** @deprecated v1 shim — use `item(target, { autoplay: true })`. */
-		playTrack(target: T | string | number, opts?: LoadOptions): void;
+    /** @deprecated v1 shim — use `item()`. */
+    currentTrack(): T | Record<string, never>;
+    /** @deprecated v1 shim — use `queue()`. */
+    trackList(): ReadonlyArray<T>;
+    /** @deprecated v1 shim — use `next()`. */
+    nextTrack(opts?: LoadOptions): Promise<void>;
+    /** @deprecated v1 shim — use `previous()`. */
+    previousTrack(opts?: LoadOptions): Promise<void>;
+    /** @deprecated v1 shim — use `item(target, { autoplay: true })`. */
+    playTrack(target: T | string | number, opts?: LoadOptions): void;
 
-		/** @deprecated v1 shim — use `queue()`. */
-		playlist(): ReadonlyArray<T>;
-		/** @deprecated v1 shim — use `queue(items, opts)`. */
-		playlist(items: T[], opts?: ActionOptions): void;
-		/** @deprecated v1 shim — use `item()`. */
-		playlistItem(): T | Record<string, never>;
-		/** @deprecated v1 shim — use `index()`. */
-		playlistIndex(): number;
-		/** @deprecated v1 shim — use `queue(items, opts)`. */
-		setPlaylist(items: T[], opts?: ActionOptions): void;
-		/** @deprecated v1 shim — derive from `index() === 0`. */
-		isFirstPlaylistItem(): boolean;
-		/** @deprecated v1 shim — derive from `index() === queueLength() - 1`. */
-		isLastPlaylistItem(): boolean;
-		/** @deprecated v1 shim — derive from `queueLength() > 1`. */
-		hasPlaylists(): boolean;
+    /** @deprecated v1 shim — use `queue()`. */
+    playlist(): ReadonlyArray<T>;
+    /** @deprecated v1 shim — use `queue(items, opts)`. */
+    playlist(items: T[], opts?: ActionOptions): void;
+    /** @deprecated v1 shim — use `item()`. */
+    playlistItem(): T | Record<string, never>;
+    /** @deprecated v1 shim — use `index()`. */
+    playlistIndex(): number;
+    /** @deprecated v1 shim — use `queue(items, opts)`. */
+    setPlaylist(items: T[], opts?: ActionOptions): void;
+    /** @deprecated v1 shim — derive from `index() === 0`. */
+    isFirstPlaylistItem(): boolean;
+    /** @deprecated v1 shim — derive from `index() === queueLength() - 1`. */
+    isLastPlaylistItem(): boolean;
+    /** @deprecated v1 shim — derive from `queueLength() > 1`. */
+    hasPlaylists(): boolean;
 
-		/** @deprecated v1 shim — use `t(key, vars)`. */
-		localize(key: string, vars?: Record<string, string>): string;
-		/** @deprecated v1 shim — use `translation(language(), key, value)`. */
-		addTranslation(key: string, value: string): void;
-		/** @deprecated v1 shim — no v2 equivalent. Writes `document.title` directly. */
-		setTitle(title: string): void;
+    /** @deprecated v1 shim — use `t(key, vars)`. */
+    localize(key: string, vars?: Record<string, string>): string;
+    /** @deprecated v1 shim — use `translation(language(), key, value)`. */
+    addTranslation(key: string, value: string): void;
+    /** @deprecated v1 shim — no v2 equivalent. Writes `document.title` directly. */
+    setTitle(title: string): void;
 
-		/** @deprecated v1 shim — use `addPlugin(PluginClass, opts)`. */
-		registerPlugin<P extends Plugin<any, any, any>>(PluginClass: PluginCtorWithId & (new () => P), opts?: P['opts']): NMMusicPlayer<T>;
-		/** @deprecated v1 shim — use `addPlugin(PluginClass, opts)`. */
-		usePlugin<P extends Plugin<any, any, any>>(PluginClass: PluginCtorWithId & (new () => P), opts?: P['opts']): NMMusicPlayer<T>;
-		/** @deprecated v1 shim — use `getPluginById(id)`. */
-		plugin<P extends object = object>(id: string): P | undefined;
-	}
+    /** @deprecated v1 shim — use `addPlugin(PluginClass, opts)`. */
+    registerPlugin<P extends Plugin<any, any, any>>(PluginClass: PluginCtorWithId & (new () => P), opts?: P['opts']): NMMusicPlayer<T>;
+    /** @deprecated v1 shim — use `addPlugin(PluginClass, opts)`. */
+    usePlugin<P extends Plugin<any, any, any>>(PluginClass: PluginCtorWithId & (new () => P), opts?: P['opts']): NMMusicPlayer<T>;
+    /** @deprecated v1 shim — use `getPluginById(id)`. */
+    plugin<P extends object = object>(id: string): P | undefined;
+  }
 }
 
 /**
@@ -108,215 +108,262 @@ declare module '@nomercy-entertainment/nomercy-music-player' {
  * v1 consumer has migrated.
  */
 export class V1MusicCompatPlugin extends Plugin<NMMusicPlayer> {
-	static override readonly id: string = 'v1-music-compat';
-	static override readonly version: string = '1.0.0';
-	static override readonly description: string = 'Attaches the legacy v1 method surface onto the v2 music player. Every shim delegates to the current API and logs a deprecation warning.';
+  static override readonly id: string = 'v1-music-compat';
+  static override readonly version: string = '1.0.0';
+  static override readonly description: string = 'Attaches the legacy v1 method surface onto the v2 music player. Every shim delegates to the current API and logs a deprecation warning.';
 
-	private _warn(method: string): void {
-		this.logger.warn(v1DeprecationMessage(method));
-	}
+  private _warn(method: string): void {
+    this.logger.warn(v1DeprecationMessage(method));
+  }
 
-	override use(): void {
-		this._installTransportShims();
-		this._installTrackShims();
-		this._installPlaylistShims();
-		this._installTranslationShims();
-		this._installLifecycleShims();
-		this._installEventBridges();
-	}
+  override use(): void {
+    this._installTransportShims();
+    this._installTrackShims();
+    this._installPlaylistShims();
+    this._installTranslationShims();
+    this._installLifecycleShims();
+    this._installEventBridges();
+  }
 
-	private _installTransportShims(): void {
-		const player = this.player;
-		const warn = this._warn.bind(this);
+  private _installTransportShims(): void {
+    const player = this.player;
+    const warn = this._warn.bind(this);
 
-		player.seek = (seconds: number, opts?: ActionOptions): number => {
-			warn('seek');
-			const duration = player.duration();
-			const clamped = Number.isFinite(duration) && duration > 0
-				? Math.max(0, Math.min(duration, seconds))
-				: seconds;
-			void player.time(clamped, opts);
-			return clamped;
-		};
+    player.seek = (seconds: number, opts?: ActionOptions): number => {
+      warn('seek');
+      const duration = player.duration();
+      const clamped = Number.isFinite(duration) && duration > 0
+        ? Math.max(0, Math.min(duration, seconds))
+        : seconds;
 
-		function speed(): number;
-		function speed(rate: number): void;
-		function speed(rate?: number): number | void {
-			warn('speed');
-			if (rate === undefined)
-				return player.playbackRate();
-			void player.playbackRate(rate);
-		}
-		player.speed = speed;
+      void player.time(clamped, opts);
 
-		player.speeds = (): number[] => {
-			warn('speeds');
-			return player.playbackRates();
-		};
+      return clamped;
+    };
 
-		player.hasSpeeds = (): boolean => {
-			warn('hasSpeeds');
-			return player.playbackRates().length > 1;
-		};
+    function speed(): number;
 
-		function muted(): boolean;
-		function muted(state: boolean): void;
-		function muted(state?: boolean): boolean | void {
-			warn('muted');
-			if (state === undefined)
-				return player.volumeState() === VolumeState.MUTED;
-			if (state)
-				void player.mute();
-			else void player.unmute();
-		}
-		player.muted = muted;
+    function speed(rate: number): void;
 
-		player.gain = (): number => {
-			warn('gain');
-			return player.backend().mediaElement().volume;
-		};
+    function speed(rate?: number): number | void {
+      warn('speed');
 
-		function currentTime(): number;
-		function currentTime(seconds: number, opts?: ActionOptions): void;
-		function currentTime(seconds?: number, opts?: ActionOptions): number | void {
-			warn('currentTime');
-			if (seconds === undefined)
-				return player.time();
-			void player.time(seconds, opts);
-		}
-		player.currentTime = currentTime;
+      if (rate === undefined)
+        return player.playbackRate();
 
-		player.state = (): string => {
-			warn('state');
-			return player.playState();
-		};
+      void player.playbackRate(rate);
+    }
 
-		Object.defineProperty(player, 'isPlaying', {
-			configurable: true,
-			enumerable: true,
-			get: (): boolean => player.playState() === 'playing',
-		});
-	}
+    player.speed = speed;
 
-	private _installTrackShims(): void {
-		const player = this.player;
-		const warn = this._warn.bind(this);
+    player.speeds = (): number[] => {
+      warn('speeds');
 
-		player.currentTrack = (): MusicPlaylistItem | Record<string, never> => {
-			warn('currentTrack');
-			return player.item() ?? {};
-		};
+      return player.playbackRates();
+    };
 
-		player.trackList = (): ReadonlyArray<MusicPlaylistItem> => {
-			warn('trackList');
-			return player.queue();
-		};
+    player.hasSpeeds = (): boolean => {
+      warn('hasSpeeds');
 
-		player.nextTrack = (opts?: LoadOptions): Promise<void> => {
-			warn('nextTrack');
-			return player.next(opts);
-		};
+      return player.playbackRates().length > 1;
+    };
 
-		player.previousTrack = (opts?: LoadOptions): Promise<void> => {
-			warn('previousTrack');
-			return player.previous(opts);
-		};
+    function muted(): boolean;
 
-		player.playTrack = (target: MusicPlaylistItem | string | number, opts?: LoadOptions): void => {
-			warn('playTrack');
-			player.item(target, {
-				...opts,
-				autoplay: true,
-			});
-		};
-	}
+    function muted(state: boolean): void;
 
-	private _installPlaylistShims(): void {
-		const player = this.player;
-		const warn = this._warn.bind(this);
-		const originalLoad = player.load.bind(player);
+    function muted(state?: boolean): boolean | void {
+      warn('muted');
 
-		function playlist(): ReadonlyArray<MusicPlaylistItem>;
-		function playlist(items: MusicPlaylistItem[], opts?: ActionOptions): void;
-		function playlist(items?: MusicPlaylistItem[], opts?: ActionOptions): ReadonlyArray<MusicPlaylistItem> | void {
-			warn('playlist');
-			if (items === undefined)
-				return player.queue();
-			player.queue(items, opts);
-		}
-		player.playlist = playlist;
+      if (state === undefined)
+        return player.volumeState() === VolumeState.MUTED;
 
-		player.playlistItem = (): MusicPlaylistItem | Record<string, never> => {
-			warn('playlistItem');
-			return player.item() ?? {};
-		};
+      if (state) {
+        void player.mute();
+      } else {
+        void player.unmute();
+      }
+    }
 
-		player.playlistIndex = (): number => {
-			warn('playlistIndex');
-			return player.index();
-		};
+    player.muted = muted;
 
-		function load(items: MusicPlaylistItem[]): void;
-		function load(item: MusicPlaylistItem, opts?: LoadOptions): Promise<void>;
-		function load(itemsOrItem: MusicPlaylistItem[] | MusicPlaylistItem, opts?: LoadOptions): void | Promise<void> {
-			warn('load');
-			if (Array.isArray(itemsOrItem)) {
-				player.queue(itemsOrItem);
-				return;
-			}
-			return originalLoad(itemsOrItem, opts);
-		}
-		player.load = load;
+    player.gain = (): number => {
+      warn('gain');
 
-		player.setPlaylist = (items: MusicPlaylistItem[], opts?: ActionOptions): void => {
-			warn('setPlaylist');
-			player.queue(items, opts);
-		};
+      return player.backend().mediaElement().volume;
+    };
 
-		player.isFirstPlaylistItem = (): boolean => {
-			warn('isFirstPlaylistItem');
-			return player.index() === 0;
-		};
+    function currentTime(): number;
 
-		player.isLastPlaylistItem = (): boolean => {
-			warn('isLastPlaylistItem');
-			return player.index() === player.queueLength() - 1;
-		};
+    function currentTime(seconds: number, opts?: ActionOptions): void;
 
-		player.hasPlaylists = (): boolean => {
-			warn('hasPlaylists');
-			return player.queueLength() > 1;
-		};
-	}
+    function currentTime(seconds?: number, opts?: ActionOptions): number | void {
+      warn('currentTime');
 
-	private _installTranslationShims(): void {
-		installV1TranslationShims(this.player, this._warn.bind(this));
-	}
+      if (seconds === undefined)
+        return player.time();
 
-	private _installLifecycleShims(): void {
-		const player = this.player;
-		const warn = this._warn.bind(this);
+      void player.time(seconds, opts);
+    }
 
-		player.registerPlugin = <P extends Plugin<any, any, any>>(PluginClass: PluginCtorWithId & (new () => P), opts?: P['opts']): NMMusicPlayer<MusicPlaylistItem> => {
-			warn('registerPlugin');
-			return player.addPlugin(PluginClass, opts);
-		};
+    player.currentTime = currentTime;
 
-		player.usePlugin = <P extends Plugin<any, any, any>>(PluginClass: PluginCtorWithId & (new () => P), opts?: P['opts']): NMMusicPlayer<MusicPlaylistItem> => {
-			warn('usePlugin');
-			return player.addPlugin(PluginClass, opts);
-		};
+    player.state = (): string => {
+      warn('state');
 
-		player.plugin = <P extends object = object>(id: string): P | undefined => {
-			warn('plugin');
-			return player.getPluginById<P>(id);
-		};
-	}
+      return player.playState();
+    };
 
-	private _installEventBridges(): void {
-		const player = this.player;
+    Object.defineProperty(player, 'isPlaying', {
+      configurable: true,
+      enumerable: true,
+      get: (): boolean => player.playState() === 'playing',
+    });
+  }
 
-		this.on('playbackRate', (data) => { player.emit('speed', data); });
-		this.on('queue', (items) => { player.emit('playlist', items); });
-	}
+  private _installTrackShims(): void {
+    const player = this.player;
+    const warn = this._warn.bind(this);
+
+    player.currentTrack = (): MusicPlaylistItem | Record<string, never> => {
+      warn('currentTrack');
+
+      return player.item() ?? {};
+    };
+
+    player.trackList = (): ReadonlyArray<MusicPlaylistItem> => {
+      warn('trackList');
+
+      return player.queue();
+    };
+
+    player.nextTrack = (opts?: LoadOptions): Promise<void> => {
+      warn('nextTrack');
+
+      return player.next(opts);
+    };
+
+    player.previousTrack = (opts?: LoadOptions): Promise<void> => {
+      warn('previousTrack');
+
+      return player.previous(opts);
+    };
+
+    player.playTrack = (target: MusicPlaylistItem | string | number, opts?: LoadOptions): void => {
+      warn('playTrack');
+
+      player.item(target, {
+        ...opts,
+        autoplay: true,
+      });
+    };
+  }
+
+  private _installPlaylistShims(): void {
+    const player = this.player;
+    const warn = this._warn.bind(this);
+    const originalLoad = player.load.bind(player);
+
+    function playlist(): ReadonlyArray<MusicPlaylistItem>;
+
+    function playlist(items: MusicPlaylistItem[], opts?: ActionOptions): void;
+
+    function playlist(items?: MusicPlaylistItem[], opts?: ActionOptions): ReadonlyArray<MusicPlaylistItem> | void {
+      warn('playlist');
+
+      if (items === undefined)
+        return player.queue();
+
+      player.queue(items, opts);
+    }
+
+    player.playlist = playlist;
+
+    player.playlistItem = (): MusicPlaylistItem | Record<string, never> => {
+      warn('playlistItem');
+
+      return player.item() ?? {};
+    };
+
+    player.playlistIndex = (): number => {
+      warn('playlistIndex');
+
+      return player.index();
+    };
+
+    function load(items: MusicPlaylistItem[]): void;
+
+    function load(item: MusicPlaylistItem, opts?: LoadOptions): Promise<void>;
+
+    function load(itemsOrItem: MusicPlaylistItem[] | MusicPlaylistItem, opts?: LoadOptions): void | Promise<void> {
+      warn('load');
+
+      if (Array.isArray(itemsOrItem)) {
+        player.queue(itemsOrItem);
+
+        return;
+      }
+
+      return originalLoad(itemsOrItem, opts);
+    }
+
+    player.load = load;
+
+    player.setPlaylist = (items: MusicPlaylistItem[], opts?: ActionOptions): void => {
+      warn('setPlaylist');
+      player.queue(items, opts);
+    };
+
+    player.isFirstPlaylistItem = (): boolean => {
+      warn('isFirstPlaylistItem');
+
+      return player.index() === 0;
+    };
+
+    player.isLastPlaylistItem = (): boolean => {
+      warn('isLastPlaylistItem');
+
+      return player.index() === player.queueLength() - 1;
+    };
+
+    player.hasPlaylists = (): boolean => {
+      warn('hasPlaylists');
+
+      return player.queueLength() > 1;
+    };
+  }
+
+  private _installTranslationShims(): void {
+    installV1TranslationShims(this.player, this._warn.bind(this));
+  }
+
+  private _installLifecycleShims(): void {
+    const player = this.player;
+    const warn = this._warn.bind(this);
+
+    player.registerPlugin = <P extends Plugin<any, any, any>>(PluginClass: PluginCtorWithId & (new () => P), opts?: P['opts']): NMMusicPlayer<MusicPlaylistItem> => {
+      warn('registerPlugin');
+
+      return player.addPlugin(PluginClass, opts);
+    };
+
+    player.usePlugin = <P extends Plugin<any, any, any>>(PluginClass: PluginCtorWithId & (new () => P), opts?: P['opts']): NMMusicPlayer<MusicPlaylistItem> => {
+      warn('usePlugin');
+
+      return player.addPlugin(PluginClass, opts);
+    };
+
+    player.plugin = <P extends object = object>(id: string): P | undefined => {
+      warn('plugin');
+
+      return player.getPluginById<P>(id);
+    };
+  }
+
+  private _installEventBridges(): void {
+    const player = this.player;
+
+    this.on('playbackRate', (data) => { player.emit('speed', data); });
+    this.on('queue', (items) => { player.emit('playlist', items); });
+  }
 }

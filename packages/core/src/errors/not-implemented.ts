@@ -22,15 +22,18 @@ import { PlayerError } from './player';
  * Code always follows `core:not-implemented/<feature>`.
  */
 export class NotImplementedError extends PlayerError {
-	override readonly name = 'NotImplementedError';
+  override readonly name = 'NotImplementedError';
 
-	constructor(message: string, feature?: string) {
-		const code = feature ? `core:not-implemented/${feature}` : 'core:not-implemented';
-		super({
-			code,
-			severity: 'error',
-			scope: { kind: 'core' },
-			message,
-		});
-	}
+  constructor(message: string, feature?: string) {
+    const code = feature
+      ? `core:not-implemented/${feature}`
+      : 'core:not-implemented';
+
+    super({
+      code,
+      severity: 'error',
+      scope: { kind: 'core' },
+      message,
+    });
+  }
 }

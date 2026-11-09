@@ -1,132 +1,132 @@
 {
-	"name": "@nomercy-entertainment/nomercy-music-player",
-	"type": "module",
-	"version": "2.6.1",
-	"description": "Headless, plugin-driven music player engine. HLS-ready, crossfade-capable, externally-orchestratable, leak-tested.",
-	"author": {
-		"name": "NoMercy Entertainment",
-		"email": "info@nomercy.tv",
-		"url": "https://nomercy.tv"
-	},
-	"contributors": [
-		"Stoney Eagle <45034970+StoneyEagle@users.noreply.github.com>"
-	],
-	"license": "Apache-2.0",
-	"homepage": "https://docs.nomercy.tv/nomercy-music-player/",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/NoMercy-Entertainment/nomercy-player-web.git",
-		"directory": "packages/music-player"
-	},
-	"bugs": {
-		"url": "https://github.com/NoMercy-Entertainment/nomercy-music-player/issues"
-	},
-	"keywords": [
-		"music",
-		"player",
-		"audio",
-		"hls",
-		"crossfade",
-		"plugin",
-		"NoMercy"
-	],
-	"sideEffects": false,
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		},
-		"./adapters": {
-			"types": "./dist/adapters/index.d.ts",
-			"import": "./dist/adapters/index.js"
-		},
-		"./adapters/audio-backend": {
-			"types": "./dist/adapters/audio-backend/index.d.ts",
-			"import": "./dist/adapters/audio-backend/index.js"
-		},
-		"./adapters/similarity-engine": {
-			"types": "./dist/adapters/similarity-engine/index.d.ts",
-			"import": "./dist/adapters/similarity-engine/index.js"
-		},
-		"./plugins": {
-			"types": "./dist/plugins/index.d.ts",
-			"import": "./dist/plugins/index.js"
-		},
-		"./plugins/auto-advance": {
-			"types": "./dist/plugins/auto-advance/index.d.ts",
-			"import": "./dist/plugins/auto-advance/index.js"
-		},
-		"./plugins/cast-sender": {
-			"types": "./dist/plugins/cast-sender/index.d.ts",
-			"import": "./dist/plugins/cast-sender/index.js"
-		},
-		"./plugins/key-handler": {
-			"types": "./dist/plugins/key-handler/index.d.ts",
-			"import": "./dist/plugins/key-handler/index.js"
-		},
-		"./plugins/lyrics": {
-			"types": "./dist/plugins/lyrics/index.d.ts",
-			"import": "./dist/plugins/lyrics/index.js"
-		},
-		"./plugins/media-session": {
-			"types": "./dist/plugins/media-session/index.d.ts",
-			"import": "./dist/plugins/media-session/index.js"
-		},
-		"./plugins/scrobble": {
-			"types": "./dist/plugins/scrobble/index.d.ts",
-			"import": "./dist/plugins/scrobble/index.js"
-		},
-		"./streams/native": {
-			"types": "./dist/streams/native.d.ts",
-			"import": "./dist/streams/native.js"
-		},
-		"./streams/hls": {
-			"types": "./dist/streams/hls.d.ts",
-			"import": "./dist/streams/hls.js"
-		},
-		"./types": {
-			"types": "./dist/types.d.ts",
-			"import": "./dist/types.js"
-		},
-		"./package.json": "./package.json"
-	},
-	"main": "./dist/index.js",
-	"module": "./dist/index.js",
-	"types": "./dist/index.d.ts",
-	"files": [
-		"CHANGELOG.md",
-		"CODE_OF_CONDUCT.md",
-		"CONTRIBUTING.md",
-		"MIGRATION.md",
-		"RELEASING.md",
-		"SECURITY.md",
-		"dist"
-	],
-	"engines": {
-		"node": ">=18.0.0"
-	},
-	"scripts": {
-		"build": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\" && run -T tsc -p tsconfig.build.json && run -T tsc-alias -p tsconfig.build.json && node ../core/scripts/resolve-translation-globs.mjs && node ../core/scripts/copy-dist-assets.mjs",
-		"build:iife": "run -T vite build --config vite.iife.config.ts",
-		"build:all": "yarn build && yarn build:iife",
-		"dev": "run -T tsc -p tsconfig.build.json --watch",
-		"typecheck": "run -T tsc --noEmit",
-		"test": "run -T vitest run",
-		"test:watch": "run -T vitest",
-		"test:e2e": "node scripts/generate-e2e-fixtures.mjs && run -T playwright test",
-		"test:e2e:report": "run -T playwright show-report reports/playwright",
-		"prepack": "node ../../scripts/pack-files.mjs copy",
-		"postpack": "node ../../scripts/pack-files.mjs clean",
-		"prepublishOnly": "yarn build:all"
-	},
-	"dependencies": {
-		"@nomercy-entertainment/nomercy-player-core": "workspace:*"
-	},
-	"devDependencies": {
-		"@nomercy-entertainment/test-support": "workspace:*",
-		"hls.js": "^1.6.16"
-	},
-	"publishConfig": {
-		"access": "public"
-	}
+  "name": "@nomercy-entertainment/nomercy-music-player",
+  "type": "module",
+  "version": "2.6.1",
+  "description": "Headless, plugin-driven music player engine. HLS-ready, crossfade-capable, externally-orchestratable, leak-tested.",
+  "author": {
+    "name": "NoMercy Entertainment",
+    "email": "info@nomercy.tv",
+    "url": "https://nomercy.tv"
+  },
+  "contributors": [
+    "Stoney Eagle <45034970+StoneyEagle@users.noreply.github.com>"
+  ],
+  "license": "Apache-2.0",
+  "homepage": "https://docs.nomercy.tv/nomercy-music-player/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NoMercy-Entertainment/nomercy-player-web.git",
+    "directory": "packages/music-player"
+  },
+  "bugs": {
+    "url": "https://github.com/NoMercy-Entertainment/nomercy-music-player/issues"
+  },
+  "keywords": [
+    "music",
+    "player",
+    "audio",
+    "hls",
+    "crossfade",
+    "plugin",
+    "NoMercy"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/adapters/index.d.ts",
+      "import": "./dist/adapters/index.js"
+    },
+    "./adapters/audio-backend": {
+      "types": "./dist/adapters/audio-backend/index.d.ts",
+      "import": "./dist/adapters/audio-backend/index.js"
+    },
+    "./adapters/similarity-engine": {
+      "types": "./dist/adapters/similarity-engine/index.d.ts",
+      "import": "./dist/adapters/similarity-engine/index.js"
+    },
+    "./plugins": {
+      "types": "./dist/plugins/index.d.ts",
+      "import": "./dist/plugins/index.js"
+    },
+    "./plugins/auto-advance": {
+      "types": "./dist/plugins/auto-advance/index.d.ts",
+      "import": "./dist/plugins/auto-advance/index.js"
+    },
+    "./plugins/cast-sender": {
+      "types": "./dist/plugins/cast-sender/index.d.ts",
+      "import": "./dist/plugins/cast-sender/index.js"
+    },
+    "./plugins/key-handler": {
+      "types": "./dist/plugins/key-handler/index.d.ts",
+      "import": "./dist/plugins/key-handler/index.js"
+    },
+    "./plugins/lyrics": {
+      "types": "./dist/plugins/lyrics/index.d.ts",
+      "import": "./dist/plugins/lyrics/index.js"
+    },
+    "./plugins/media-session": {
+      "types": "./dist/plugins/media-session/index.d.ts",
+      "import": "./dist/plugins/media-session/index.js"
+    },
+    "./plugins/scrobble": {
+      "types": "./dist/plugins/scrobble/index.d.ts",
+      "import": "./dist/plugins/scrobble/index.js"
+    },
+    "./streams/native": {
+      "types": "./dist/streams/native.d.ts",
+      "import": "./dist/streams/native.js"
+    },
+    "./streams/hls": {
+      "types": "./dist/streams/hls.d.ts",
+      "import": "./dist/streams/hls.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "MIGRATION.md",
+    "RELEASING.md",
+    "SECURITY.md",
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\" && run -T tsc -p tsconfig.build.json && run -T tsc-alias -p tsconfig.build.json && node ../core/scripts/resolve-translation-globs.mjs && node ../core/scripts/copy-dist-assets.mjs",
+    "build:iife": "run -T vite build --config vite.iife.config.ts",
+    "build:all": "yarn build && yarn build:iife",
+    "dev": "run -T tsc -p tsconfig.build.json --watch",
+    "typecheck": "run -T tsc --noEmit",
+    "test": "run -T vitest run",
+    "test:watch": "run -T vitest",
+    "test:e2e": "node scripts/generate-e2e-fixtures.mjs && run -T playwright test",
+    "test:e2e:report": "run -T playwright show-report reports/playwright",
+    "prepack": "node ../../scripts/pack-files.mjs copy",
+    "postpack": "node ../../scripts/pack-files.mjs clean",
+    "prepublishOnly": "yarn build:all"
+  },
+  "dependencies": {
+    "@nomercy-entertainment/nomercy-player-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@nomercy-entertainment/test-support": "workspace:*",
+    "hls.js": "^1.6.16"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

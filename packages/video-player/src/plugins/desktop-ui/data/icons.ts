@@ -28,17 +28,18 @@ export type IconEntry = Icon[string];
  *  for stroke-only glyphs (e.g. `chapterBack`/`chapterForward`).
  */
 export function svgFromIcon(icon: IconEntry, size = 22): string {
-	const isStroke = icon.classes?.includes('fill-none');
-	const fillAttrs = isStroke
-		? 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
-		: 'fill="currentColor"';
-	const hover = icon.hover ?? icon.normal;
-	return `<svg viewBox="0 0 24 24" ${fillAttrs} width="${size}" height="${size}" aria-hidden="true"><path class="icon-normal" d="${icon.normal}"/><path class="icon-hover" d="${hover}"/></svg>`;
+  const isStroke = icon.classes?.includes('fill-none');
+  const fillAttrs = isStroke
+    ? 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
+    : 'fill="currentColor"';
+  const hover = icon.hover ?? icon.normal;
+
+  return `<svg viewBox="0 0 24 24" ${fillAttrs} width="${size}" height="${size}" aria-hidden="true"><path class="icon-normal" d="${icon.normal}"/><path class="icon-hover" d="${hover}"/></svg>`;
 }
 
 /** Convenience: render the icon at `name` from the official table. */
 export function svgFromIconName(name: IconName, size = 22): string {
-	return svgFromIcon(fluentIcons[name], size);
+  return svgFromIcon(fluentIcons[name], size);
 }
 
 export { fluentIcons };

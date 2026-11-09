@@ -31,30 +31,30 @@
  * @param ts - The raw timestamp string, e.g. `"01:23:45.678"` or `"12:34.500"`.
  */
 export function parseTimestamp(ts: string): number {
-	const parts = ts.split(':');
+  const parts = ts.split(':');
 
-	if (parts.length === 3) {
-		const hours = Number.parseInt(parts[0]!, 10);
-		const minutes = Number.parseInt(parts[1]!, 10);
-		const seconds = Number.parseFloat(parts[2]!);
+  if (parts.length === 3) {
+    const hours = Number.parseInt(parts[0]!, 10);
+    const minutes = Number.parseInt(parts[1]!, 10);
+    const seconds = Number.parseFloat(parts[2]!);
 
-		if (Number.isNaN(hours) || Number.isNaN(minutes) || Number.isNaN(seconds))
-			return Number.NaN;
+    if (Number.isNaN(hours) || Number.isNaN(minutes) || Number.isNaN(seconds))
+      return Number.NaN;
 
-		return hours * 3600 + minutes * 60 + seconds;
-	}
+    return hours * 3600 + minutes * 60 + seconds;
+  }
 
-	if (parts.length === 2) {
-		const minutes = Number.parseInt(parts[0]!, 10);
-		const seconds = Number.parseFloat(parts[1]!);
+  if (parts.length === 2) {
+    const minutes = Number.parseInt(parts[0]!, 10);
+    const seconds = Number.parseFloat(parts[1]!);
 
-		if (Number.isNaN(minutes) || Number.isNaN(seconds))
-			return Number.NaN;
+    if (Number.isNaN(minutes) || Number.isNaN(seconds))
+      return Number.NaN;
 
-		return minutes * 60 + seconds;
-	}
+    return minutes * 60 + seconds;
+  }
 
-	return Number.NaN;
+  return Number.NaN;
 }
 
 /**
@@ -68,13 +68,13 @@ export function parseTimestamp(ts: string): number {
  * @param value - The raw duration string, e.g. `"1:24:14"` or `"24:14"`.
  */
 export function parseDurationSeconds(value: string): number | undefined {
-	if (!value)
-		return undefined;
+  if (!value)
+    return undefined;
 
-	const parts = value.split(':').map(Number);
+  const parts = value.split(':').map(Number);
 
-	if (parts.length === 0 || parts.some(Number.isNaN))
-		return undefined;
+  if (parts.length === 0 || parts.some(Number.isNaN))
+    return undefined;
 
-	return parts.reduce((total, part) => total * 60 + part, 0);
+  return parts.reduce((total, part) => total * 60 + part, 0);
 }

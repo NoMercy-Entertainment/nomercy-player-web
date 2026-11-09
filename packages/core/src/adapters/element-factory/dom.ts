@@ -8,30 +8,30 @@
 
 /** Chainable element-creation helper. Both players + plugin authors use these. */
 export interface CreateElement<T extends Element> {
-	get: () => T;
-	addClasses: (names: string[]) => AddClasses<T>;
-	appendTo: (parent: Element) => AppendTo<T>;
-	prependTo: (parent: Element) => AppendTo<T>;
-	insertBefore: (sibling: Element) => AppendTo<T>;
-	insertAfter: (sibling: Element) => AppendTo<T>;
-	setAttribute: (name: string, value: string) => AddClasses<T>;
-	setProperty: (name: string, value: string) => AddClasses<T>;
+  get: () => T;
+  addClasses: (names: string[]) => AddClasses<T>;
+  appendTo: (parent: Element) => AppendTo<T>;
+  prependTo: (parent: Element) => AppendTo<T>;
+  insertBefore: (sibling: Element) => AppendTo<T>;
+  insertAfter: (sibling: Element) => AppendTo<T>;
+  setAttribute: (name: string, value: string) => AddClasses<T>;
+  setProperty: (name: string, value: string) => AddClasses<T>;
 }
 
 export interface AddClasses<T extends Element> {
-	get: () => T;
-	appendTo: (parent: Element) => AppendTo<T>;
-	prependTo: (parent: Element) => AppendTo<T>;
-	insertBefore: (sibling: Element) => AppendTo<T>;
-	insertAfter: (sibling: Element) => AppendTo<T>;
-	addClasses: (names: string[]) => AddClasses<T>;
-	setAttribute: (name: string, value: string) => AddClasses<T>;
-	setProperty: (name: string, value: string) => AddClasses<T>;
+  get: () => T;
+  appendTo: (parent: Element) => AppendTo<T>;
+  prependTo: (parent: Element) => AppendTo<T>;
+  insertBefore: (sibling: Element) => AppendTo<T>;
+  insertAfter: (sibling: Element) => AppendTo<T>;
+  addClasses: (names: string[]) => AddClasses<T>;
+  setAttribute: (name: string, value: string) => AddClasses<T>;
+  setProperty: (name: string, value: string) => AddClasses<T>;
 }
 
 export interface AppendTo<T extends Element> {
-	get: () => T;
-	addClasses: (names: string[]) => AddClasses<T>;
+  get: () => T;
+  addClasses: (names: string[]) => AddClasses<T>;
 }
 
 /**
@@ -41,62 +41,74 @@ export interface AppendTo<T extends Element> {
  * `mount()` and check for on re-mount. Returns a fluent builder.
  */
 export function createElement<K extends keyof HTMLElementTagNameMap>(
-	type: K,
-	id: string,
-	unique?: boolean,
+  type: K,
+  id: string,
+  unique?: boolean,
 ): CreateElement<HTMLElementTagNameMap[K]> {
-	let el: HTMLElementTagNameMap[K];
-	if (unique) {
-		const existing = document.querySelector<HTMLElementTagNameMap[K]>(`#${CSS.escape(id)}`);
-		el = existing ?? document.createElement(type);
-	}
-	else {
-		el = document.createElement(type);
-	}
-	if (!el.id)
-		el.id = id;
+  let el: HTMLElementTagNameMap[K];
 
-	return {
-		get: () => el,
-		addClasses: (names: string[]) => addClasses(el, names),
-		appendTo: (parent: Element) => {
-			parent.appendChild(el);
-			return makeAppendTo(el);
-		},
-		prependTo: (parent: Element) => {
-			parent.insertBefore(el, parent.firstChild);
-			return makeAppendTo(el);
-		},
-		insertBefore: (sibling: Element) => placeNextTo(el, sibling, 'before'),
-		insertAfter: (sibling: Element) => placeNextTo(el, sibling, 'after'),
-		setAttribute: (name: string, value: string) => {
-			el.setAttribute(name, value);
-			return makeAddClasses(el);
-		},
-		setProperty: (name: string, value: string) => {
-			if (el instanceof HTMLElement)
-				el.style.setProperty(name, value);
-			return makeAddClasses(el);
-		},
-	};
+  if (unique) {
+    const existing = document.querySelector<HTMLElementTagNameMap[K]>(`#${CSS.escape(id)}`);
+
+    el = existing ?? document.createElement(type);
+  } else {
+    el = document.createElement(type);
+  }
+
+  if (!el.id) {
+    el.id = id;
+  }
+
+  return {
+    get: () => el,
+    addClasses: (names: string[]) => addClasses(el, names),
+    appendTo: (parent: Element) => {
+      parent.appendChild(el);
+
+      return makeAppendTo(el);
+    },
+    prependTo: (parent: Element) => {
+      parent.insertBefore(el, parent.firstChild);
+
+      return makeAppendTo(el);
+    },
+    insertBefore: (sibling: Element) => placeNextTo(el, sibling, 'before'),
+    insertAfter: (sibling: Element) => placeNextTo(el, sibling, 'after'),
+    setAttribute: (name: string, value: string) => {
+      el.setAttribute(name, value);
+
+      return makeAddClasses(el);
+    },
+    setProperty: (name: string, value: string) => {
+      if (el instanceof HTMLElement) {
+        el.style.setProperty(name, value);
+      }
+
+      return makeAddClasses(el);
+    },
+  };
 }
 
 /** Add CSS class names to `el`, skipping empty strings. Returns a fluent builder. */
 export function addClasses<T extends Element>(el: T, names: string[]): AddClasses<T> {
-	for (const name of names) {
-		if (name)
-			el.classList.add(name);
-	}
-	return makeAddClasses(el);
+  for (const name of names) {
+    if (name) {
+      el.classList.add(name);
+    }
+  }
+
+  return makeAddClasses(el);
 }
 
 /** Remove CSS class names from `el`, skipping empty strings. Returns `el` directly. */
 export function removeClasses<T extends Element>(el: T, names: string[]): T {
-	for (const name of names) {
-		if (name)
-			el.classList.remove(name);
-	}
-	return el;
+  for (const name of names) {
+    if (name) {
+      el.classList.remove(name);
+    }
+  }
+
+  return el;
 }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -106,11 +118,13 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
  * `xmlns` set. Caller appends path/symbol/use children directly on the return value.
  */
 export function createSVG(id: string, viewBox: string): SVGSVGElement {
-	const svg = document.createElementNS(SVG_NS, 'svg');
-	svg.setAttribute('id', id);
-	svg.setAttribute('viewBox', viewBox);
-	svg.setAttribute('xmlns', SVG_NS);
-	return svg;
+  const svg = document.createElementNS(SVG_NS, 'svg');
+
+  svg.setAttribute('id', id);
+  svg.setAttribute('viewBox', viewBox);
+  svg.setAttribute('xmlns', SVG_NS);
+
+  return svg;
 }
 
 /**
@@ -119,13 +133,15 @@ export function createSVG(id: string, viewBox: string): SVGSVGElement {
  * additional attribute setup is required.
  */
 export function createButton(id: string, label: string, onClick: (event: Event) => void): HTMLButtonElement {
-	const button = document.createElement('button');
-	button.id = id;
-	button.type = 'button';
-	button.setAttribute('aria-label', label);
-	button.title = label;
-	button.addEventListener('click', onClick);
-	return button;
+  const button = document.createElement('button');
+
+  button.id = id;
+  button.type = 'button';
+  button.setAttribute('aria-label', label);
+  button.title = label;
+  button.addEventListener('click', onClick);
+
+  return button;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -133,44 +149,52 @@ export function createButton(id: string, label: string, onClick: (event: Event) 
 // ─────────────────────────────────────────────────────────────────────────
 
 function placeNextTo<T extends Element>(el: T, sibling: Element, where: 'before' | 'after'): AppendTo<T> {
-	if (!sibling.parentNode)
-		throw new Error(`createElement: cannot insert ${where} a sibling that has no parent`);
-	if (where === 'before')
-		sibling.before(el);
-	else
-		sibling.after(el);
-	return makeAppendTo(el);
+  if (!sibling.parentNode)
+    throw new Error(`createElement: cannot insert ${where} a sibling that has no parent`);
+
+  if (where === 'before') {
+    sibling.before(el);
+  } else {
+    sibling.after(el);
+  }
+
+  return makeAppendTo(el);
 }
 
 function makeAppendTo<T extends Element>(el: T): AppendTo<T> {
-	return {
-		get: () => el,
-		addClasses: (names: string[]) => addClasses(el, names),
-	};
+  return {
+    get: () => el,
+    addClasses: (names: string[]) => addClasses(el, names),
+  };
 }
 
 function makeAddClasses<T extends Element>(el: T): AddClasses<T> {
-	return {
-		get: () => el,
-		appendTo: (parent: Element) => {
-			parent.appendChild(el);
-			return makeAppendTo(el);
-		},
-		prependTo: (parent: Element) => {
-			parent.insertBefore(el, parent.firstChild);
-			return makeAppendTo(el);
-		},
-		insertBefore: (sibling: Element) => placeNextTo(el, sibling, 'before'),
-		insertAfter: (sibling: Element) => placeNextTo(el, sibling, 'after'),
-		addClasses: (names: string[]) => addClasses(el, names),
-		setAttribute: (name: string, value: string) => {
-			el.setAttribute(name, value);
-			return makeAddClasses(el);
-		},
-		setProperty: (name: string, value: string) => {
-			if (el instanceof HTMLElement)
-				el.style.setProperty(name, value);
-			return makeAddClasses(el);
-		},
-	};
+  return {
+    get: () => el,
+    appendTo: (parent: Element) => {
+      parent.appendChild(el);
+
+      return makeAppendTo(el);
+    },
+    prependTo: (parent: Element) => {
+      parent.insertBefore(el, parent.firstChild);
+
+      return makeAppendTo(el);
+    },
+    insertBefore: (sibling: Element) => placeNextTo(el, sibling, 'before'),
+    insertAfter: (sibling: Element) => placeNextTo(el, sibling, 'after'),
+    addClasses: (names: string[]) => addClasses(el, names),
+    setAttribute: (name: string, value: string) => {
+      el.setAttribute(name, value);
+
+      return makeAddClasses(el);
+    },
+    setProperty: (name: string, value: string) => {
+      if (el instanceof HTMLElement) {
+        el.style.setProperty(name, value);
+      }
+
+      return makeAddClasses(el);
+    },
+  };
 }

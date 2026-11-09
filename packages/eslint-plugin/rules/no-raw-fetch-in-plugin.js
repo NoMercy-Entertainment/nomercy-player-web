@@ -27,51 +27,49 @@ import { inPluginSubclass } from './_in-plugin-subclass.js';
 
 /** @type {import('eslint').Rule.RuleModule} */
 export default {
-	meta: {
-		type: 'problem',
-		docs: {
-			description: 'Ban the global fetch inside a plugin — use this.fetch() (auth pipeline + abort-on-dispose).',
-		},
-		schema: [],
-		messages: {
-			rawFetch: 'Global {{form}} inside a plugin sends no auth and never aborts on dispose — use this.fetch(url, options?) instead.',
-		},
-	},
+  meta: {
+    type: 'problem',
+    docs: {
+      description: 'Ban the global fetch inside a plugin — use this.fetch() (auth pipeline + abort-on-dispose).',
+    },
+    schema: [],
+    messages: {
+      rawFetch: 'Global {{form}} inside a plugin sends no auth and never aborts on dispose — use this.fetch(url, options?) instead.',
+    },
+  },
 
-	create(context) {
-		return {
-			CallExpression(node) {
-				const callee = node.callee;
-				let form;
+  create(context) {
+    return {
+      CallExpression(node) {
+        const callee = node.callee;
+        let form;
 
-				// Bare global form: fetch(...)
-				if (callee.type === 'Identifier' && callee.name === 'fetch') {
-					form = 'fetch(...)';
-				}
-				// Member form: window.fetch(...) / globalThis.fetch(...) / self.fetch(...)
-				else if (
-					callee.type === 'MemberExpression'
-					&& !callee.computed
-					&& callee.property.type === 'Identifier'
-					&& callee.property.name === 'fetch'
-					&& callee.object.type === 'Identifier'
-					&& (callee.object.name === 'window' || callee.object.name === 'globalThis' || callee.object.name === 'self')
-				) {
-					form = `${callee.object.name}.fetch(...)`;
-				}
-				else {
-					return;
-				}
+        // Bare global form: fetch(...)
+        if (callee.type === 'Identifier' && callee.name === 'fetch') {
+          form = 'fetch(...)';
+        } else if (
+          // Member form: window.fetch(...) / globalThis.fetch(...) / self.fetch(...)
+          callee.type === 'MemberExpression'
+          && !callee.computed
+          && callee.property.type === 'Identifier'
+          && callee.property.name === 'fetch'
+          && callee.object.type === 'Identifier'
+          && (callee.object.name === 'window' || callee.object.name === 'globalThis' || callee.object.name === 'self')
+        ) {
+          form = `${callee.object.name}.fetch(...)`;
+        } else {
+          return;
+        }
 
-				if (!inPluginSubclass(node))
-					return;
+        if (!inPluginSubclass(node))
+          return;
 
-				context.report({
-					node: callee,
-					messageId: 'rawFetch',
-					data: { form },
-				});
-			},
-		};
-	},
+        context.report({
+          node: callee,
+          messageId: 'rawFetch',
+          data: { form },
+        });
+      },
+    };
+  },
 };

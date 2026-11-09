@@ -18,39 +18,46 @@ import { desktopUiPlugin } from '../../plugins/desktop-ui';
 import { tvKeyHandlerPlugin } from '../../plugins/tv-key-handler';
 
 const MockResizeObserver = vi.fn(function (this: unknown) {
-	return { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() };
+  return {
+    observe: vi.fn(),
+    disconnect: vi.fn(),
+    unobserve: vi.fn(),
+  };
 });
 
 describe('tvKeyHandler aspect-ratio toast', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		vi.useRealTimers();
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	it('hides the toast after a few seconds without MessagePlugin mounted', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(desktopUiPlugin);
-		player.addPlugin(tvKeyHandlerPlugin, { cooldownMs: 0 } as never);
-		await player.ready();
+  afterEach(() => {
+    vi.useRealTimers();
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-		vi.useFakeTimers();
-		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+  it('hides the toast after a few seconds without MessagePlugin mounted', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const toast = document.querySelector('.player-message');
-		expect(toast?.classList.contains('visible')).toBe(true);
+    player.addPlugin(desktopUiPlugin);
+    player.addPlugin(tvKeyHandlerPlugin, { cooldownMs: 0 } as never);
+    await player.ready();
 
-		vi.advanceTimersByTime(3500);
-		expect(toast?.classList.contains('visible')).toBe(false);
-	});
+    vi.useFakeTimers();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+
+    const toast = document.querySelector('.player-message');
+
+    expect(toast?.classList.contains('visible')).toBe(true);
+
+    vi.advanceTimersByTime(3500);
+    expect(toast?.classList.contains('visible')).toBe(false);
+  });
 });

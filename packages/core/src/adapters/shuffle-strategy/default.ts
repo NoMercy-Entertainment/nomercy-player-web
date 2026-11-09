@@ -18,16 +18,17 @@ import type { IShuffleStrategy } from './IShuffleStrategy';
  * shuffle became pluggable.
  */
 export class FisherYatesShuffle implements IShuffleStrategy {
-	order<T extends BasePlaylistItem>(items: ReadonlyArray<T>, _currentIndex: number): T[] {
-		const result = [...items];
+  order<T extends BasePlaylistItem>(items: ReadonlyArray<T>, _currentIndex: number): T[] {
+    const result = [...items];
 
-		for (let i = result.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[result[i], result[j]] = [result[j]!, result[i]!];
-		}
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
 
-		return result;
-	}
+      [result[i], result[j]] = [result[j]!, result[i]!];
+    }
+
+    return result;
+  }
 }
 
 /** Singleton default instance used when no custom strategy is supplied. */

@@ -14,11 +14,11 @@ import { StateError } from '../errors';
  * listeners / timers / observers after `dispose()` — test fails.
  */
 export interface LeakAssertionResult {
-	subjectId: string;
-	listenersBefore: number;
-	listenersAfterSetup: number;
-	listenersAfterTeardown: number;
-	leaked: number;
+  subjectId: string;
+  listenersBefore: number;
+  listenersAfterSetup: number;
+  listenersAfterTeardown: number;
+  leaked: number;
 }
 
 /**
@@ -28,20 +28,22 @@ export interface LeakAssertionResult {
  * method, returns `0` and the harness reports zero leaks (no false positives).
  */
 export function countAllListeners(player: IPlayer): number {
-	// listenerCount is an internal diagnostic method; not on IPlayer — accessed via structural narrowing.
-	const fn = (player as unknown as { listenerCount?: () => number }).listenerCount;
-	if (typeof fn !== 'function') {
-		// Returning 0 here used to make the harness report zero leaks for any
-		// subject that could not be measured, so the assertion could never fail
-		// and read as coverage. Say so instead. Every player built on the kit's
-		// EventEmitter has this method; a subject that lacks it needs one before
-		// a leak claim about it means anything.
-		throw new TypeError(
-			'countAllListeners: this player exposes no listenerCount(), so listener leaks cannot be measured. '
-			+ 'Extend the kit EventEmitter, or provide listenerCount() on the test double.',
-		);
-	}
-	return fn.call(player);
+  // listenerCount is an internal diagnostic method; not on IPlayer — accessed via structural narrowing.
+  const fn = (player as unknown as { listenerCount?: () => number }).listenerCount;
+
+  if (typeof fn !== 'function') {
+    // Returning 0 here used to make the harness report zero leaks for any
+    // subject that could not be measured, so the assertion could never fail
+    // and read as coverage. Say so instead. Every player built on the kit's
+    // EventEmitter has this method; a subject that lacks it needs one before
+    // a leak claim about it means anything.
+    throw new TypeError(
+      'countAllListeners: this player exposes no listenerCount(), so listener leaks cannot be measured. ' +
+      'Extend the kit EventEmitter, or provide listenerCount() on the test double.',
+    );
+  }
+
+  return fn.call(player);
 }
 
 /**
@@ -74,52 +76,53 @@ export function countAllListeners(player: IPlayer): number {
  * tooling that wants to inspect the numbers.
  */
 export async function assertNoListenerLeak(opts: {
-	subjectId: string;
-	player: IPlayer;
-	setup: () => void | Promise<void>;
-	exercise?: () => void | Promise<void>;
-	teardown: () => void | Promise<void>;
+  subjectId: string;
+  player: IPlayer;
+  setup: () => void | Promise<void>;
+  exercise?: () => void | Promise<void>;
+  teardown: () => void | Promise<void>;
 }): Promise<LeakAssertionResult> {
-	const listenersBefore = countAllListeners(opts.player);
+  const listenersBefore = countAllListeners(opts.player);
 
-	await opts.setup();
-	const listenersAfterSetup = countAllListeners(opts.player);
+  await opts.setup();
+  const listenersAfterSetup = countAllListeners(opts.player);
 
-	if (opts.exercise)
-		await opts.exercise();
+  if (opts.exercise) {
+    await opts.exercise();
+  }
 
-	await opts.teardown();
-	const listenersAfterTeardown = countAllListeners(opts.player);
+  await opts.teardown();
+  const listenersAfterTeardown = countAllListeners(opts.player);
 
-	const leaked = listenersAfterTeardown - listenersBefore;
-	const result: LeakAssertionResult = {
-		subjectId: opts.subjectId,
-		listenersBefore,
-		listenersAfterSetup,
-		listenersAfterTeardown,
-		leaked,
-	};
+  const leaked = listenersAfterTeardown - listenersBefore;
+  const result: LeakAssertionResult = {
+    subjectId: opts.subjectId,
+    listenersBefore,
+    listenersAfterSetup,
+    listenersAfterTeardown,
+    leaked,
+  };
 
-	if (leaked > 0) {
-		throw new StateError({
-			code: 'core:test/listener-leak',
-			severity: 'error',
-			scope: {
-				kind: 'plugin',
-				id: opts.subjectId,
-			},
-			message: `[leak-harness] "${opts.subjectId}" leaked ${leaked} listener(s). before=${listenersBefore} afterSetup=${listenersAfterSetup} afterTeardown=${listenersAfterTeardown}.`,
-			suggestion: 'Register listeners via `this.on()` / `this.listen()`, or pair every manual `player.on()` with `off()` in dispose().',
-			context: {
-				leaked,
-				before: listenersBefore,
-				afterSetup: listenersAfterSetup,
-				afterTeardown: listenersAfterTeardown,
-			},
-		});
-	}
+  if (leaked > 0) {
+    throw new StateError({
+      code: 'core:test/listener-leak',
+      severity: 'error',
+      scope: {
+        kind: 'plugin',
+        id: opts.subjectId,
+      },
+      message: `[leak-harness] "${opts.subjectId}" leaked ${leaked} listener(s). before=${listenersBefore} afterSetup=${listenersAfterSetup} afterTeardown=${listenersAfterTeardown}.`,
+      suggestion: 'Register listeners via `this.on()` / `this.listen()`, or pair every manual `player.on()` with `off()` in dispose().',
+      context: {
+        leaked,
+        before: listenersBefore,
+        afterSetup: listenersAfterSetup,
+        afterTeardown: listenersAfterTeardown,
+      },
+    });
+  }
 
-	return result;
+  return result;
 }
 
 /**
@@ -128,23 +131,25 @@ export async function assertNoListenerLeak(opts: {
  * suspicious subjects.
  */
 export async function assertNoListenerLeakOverCycles(opts: {
-	subjectId: string;
-	player: IPlayer;
-	setup: () => void | Promise<void>;
-	exercise?: () => void | Promise<void>;
-	teardown: () => void | Promise<void>;
-	cycles?: number;
+  subjectId: string;
+  player: IPlayer;
+  setup: () => void | Promise<void>;
+  exercise?: () => void | Promise<void>;
+  teardown: () => void | Promise<void>;
+  cycles?: number;
 }): Promise<LeakAssertionResult[]> {
-	const cycles = opts.cycles ?? 5;
-	const results: LeakAssertionResult[] = [];
-	for (let i = 0; i < cycles; i++) {
-		results.push(await assertNoListenerLeak({
-			subjectId: `${opts.subjectId}#${i + 1}`,
-			player: opts.player,
-			setup: opts.setup,
-			exercise: opts.exercise,
-			teardown: opts.teardown,
-		}));
-	}
-	return results;
+  const cycles = opts.cycles ?? 5;
+  const results: LeakAssertionResult[] = [];
+
+  for (let i = 0; i < cycles; i++) {
+    results.push(await assertNoListenerLeak({
+      subjectId: `${opts.subjectId}#${i + 1}`,
+      player: opts.player,
+      setup: opts.setup,
+      exercise: opts.exercise,
+      teardown: opts.teardown,
+    }));
+  }
+
+  return results;
 }

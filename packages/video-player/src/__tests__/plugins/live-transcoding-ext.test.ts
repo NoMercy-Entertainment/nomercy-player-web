@@ -21,150 +21,163 @@ import { NMVideoPlayer } from '../../index';
 import { LiveTranscodingPlugin, liveTranscodingPlugin } from '../../plugins/live-transcoding';
 
 function resetAndMount(): void {
-	(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	const div = document.createElement('div');
-	div.id = 'test';
-	document.body.appendChild(div);
+  (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  const div = document.createElement('div');
+
+  div.id = 'test';
+  document.body.appendChild(div);
 }
 
 function cleanup(): void {
-	(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	document.body.innerHTML = '';
-	vi.restoreAllMocks();
-	vi.useRealTimers();
+  (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  document.body.innerHTML = '';
+  vi.restoreAllMocks();
+  vi.useRealTimers();
 }
 
 // Direct access to private onServerMessage — consistent with existing test pattern.
 function callOnServerMsg(inst: LiveTranscodingPlugin, msg: unknown): void {
-	(inst as unknown as { onServerMessage: (serverMsg: unknown) => void }).onServerMessage?.(msg);
+  (inst as unknown as { onServerMessage: (serverMsg: unknown) => void }).onServerMessage?.(msg);
 }
 
 // ── waitFor timeout ───────────────────────────────────────────────────────────
 
 describe('LiveTranscodingPlugin — waitFor timeout resolution', () => {
-	beforeEach(resetAndMount);
-	afterEach(cleanup);
+  beforeEach(resetAndMount);
+  afterEach(cleanup);
 
-	it('waitFor resolves after seekTimeoutMs when no progress arrives', async () => {
-		vi.useFakeTimers();
+  it('waitFor resolves after seekTimeoutMs when no progress arrives', async () => {
+    vi.useFakeTimers();
 
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(liveTranscodingPlugin, {
-			wsUrl: 'wss://transcode.example.com',
-			seekTimeoutMs: 300,
-		});
-		await player.ready();
+    const player = new NMVideoPlayer('test').setup({});
 
-		const inst = player.getPlugin(LiveTranscodingPlugin)!;
+    player.addPlugin(liveTranscodingPlugin, {
+      wsUrl: 'wss://transcode.example.com',
+      seekTimeoutMs: 300,
+    });
 
-		// Directly call waitFor via the private method so we can time it.
-		const waitFor = (inst as unknown as { waitFor: (target: number) => Promise<void> }).waitFor.bind(inst);
+    await player.ready();
 
-		let resolved = false;
-		const waitPromise = waitFor(999).then(() => { resolved = false; resolved = true; });
+    const inst = player.getPlugin(LiveTranscodingPlugin)!;
 
-		// Before timeout: not yet resolved.
-		expect(resolved).toBe(false);
+    // Directly call waitFor via the private method so we can time it.
+    const waitFor = (inst as unknown as { waitFor: (target: number) => Promise<void> }).waitFor.bind(inst);
 
-		// Advance past seekTimeoutMs in 100ms steps (matching the internal tick interval).
-		vi.advanceTimersByTime(100);
-		await Promise.resolve();
-		vi.advanceTimersByTime(100);
-		await Promise.resolve();
-		vi.advanceTimersByTime(100);
-		await Promise.resolve();
-		vi.advanceTimersByTime(100);
-		await Promise.resolve();
+    let resolved = false;
+    const waitPromise = waitFor(999).then(() => { resolved = false; resolved = true; });
 
-		await waitPromise;
-		expect(resolved).toBe(true);
-	});
+    // Before timeout: not yet resolved.
+    expect(resolved).toBe(false);
 
-	it('waitFor resolves immediately when target <= transcodedTo', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(liveTranscodingPlugin, {
-			wsUrl: 'wss://transcode.example.com',
-			seekTimeoutMs: 5000,
-		});
-		await player.ready();
+    // Advance past seekTimeoutMs in 100ms steps (matching the internal tick interval).
+    vi.advanceTimersByTime(100);
+    await Promise.resolve();
+    vi.advanceTimersByTime(100);
+    await Promise.resolve();
+    vi.advanceTimersByTime(100);
+    await Promise.resolve();
+    vi.advanceTimersByTime(100);
+    await Promise.resolve();
 
-		const inst = player.getPlugin(LiveTranscodingPlugin)!;
+    await waitPromise;
+    expect(resolved).toBe(true);
+  });
 
-		// Advance transcodedTo past the target.
-		callOnServerMsg(inst, { type: 'progress', transcodedSeconds: 100 });
+  it('waitFor resolves immediately when target <= transcodedTo', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const waitFor = (inst as unknown as { waitFor: (target: number) => Promise<void> }).waitFor.bind(inst);
+    player.addPlugin(liveTranscodingPlugin, {
+      wsUrl: 'wss://transcode.example.com',
+      seekTimeoutMs: 5000,
+    });
 
-		let resolved = false;
-		const waitPromise = waitFor(50).then(() => { resolved = true; });
-		await waitPromise;
+    await player.ready();
 
-		expect(resolved).toBe(true);
-	});
+    const inst = player.getPlugin(LiveTranscodingPlugin)!;
 
-	it('waitFor unblocks mid-wait when a progress message advances transcodedTo past target', async () => {
-		vi.useFakeTimers();
+    // Advance transcodedTo past the target.
+    callOnServerMsg(inst, { type: 'progress', transcodedSeconds: 100 });
 
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(liveTranscodingPlugin, {
-			wsUrl: 'wss://transcode.example.com',
-			seekTimeoutMs: 10_000,
-		});
-		await player.ready();
+    const waitFor = (inst as unknown as { waitFor: (target: number) => Promise<void> }).waitFor.bind(inst);
 
-		const inst = player.getPlugin(LiveTranscodingPlugin)!;
+    let resolved = false;
+    const waitPromise = waitFor(50).then(() => { resolved = true; });
 
-		const waitFor = (inst as unknown as { waitFor: (target: number) => Promise<void> }).waitFor.bind(inst);
+    await waitPromise;
 
-		let resolved = false;
-		const waitPromise = waitFor(60).then(() => { resolved = true; });
+    expect(resolved).toBe(true);
+  });
 
-		// Tick once — not resolved yet (transcodedTo = 0, target = 60).
-		vi.advanceTimersByTime(100);
-		await Promise.resolve();
-		expect(resolved).toBe(false);
+  it('waitFor unblocks mid-wait when a progress message advances transcodedTo past target', async () => {
+    vi.useFakeTimers();
 
-		// A progress message advances past the target.
-		callOnServerMsg(inst, { type: 'progress', transcodedSeconds: 60 });
+    const player = new NMVideoPlayer('test').setup({});
 
-		// Next tick sees transcodedTo >= 60 and resolves.
-		vi.advanceTimersByTime(100);
-		await Promise.resolve();
-		await waitPromise;
+    player.addPlugin(liveTranscodingPlugin, {
+      wsUrl: 'wss://transcode.example.com',
+      seekTimeoutMs: 10_000,
+    });
 
-		expect(resolved).toBe(true);
-	});
+    await player.ready();
+
+    const inst = player.getPlugin(LiveTranscodingPlugin)!;
+
+    const waitFor = (inst as unknown as { waitFor: (target: number) => Promise<void> }).waitFor.bind(inst);
+
+    let resolved = false;
+    const waitPromise = waitFor(60).then(() => { resolved = true; });
+
+    // Tick once — not resolved yet (transcodedTo = 0, target = 60).
+    vi.advanceTimersByTime(100);
+    await Promise.resolve();
+    expect(resolved).toBe(false);
+
+    // A progress message advances past the target.
+    callOnServerMsg(inst, { type: 'progress', transcodedSeconds: 60 });
+
+    // Next tick sees transcodedTo >= 60 and resolves.
+    vi.advanceTimersByTime(100);
+    await Promise.resolve();
+    await waitPromise;
+
+    expect(resolved).toBe(true);
+  });
 });
 
 // ── dispose clears state ──────────────────────────────────────────────────────
 
 describe('LiveTranscodingPlugin — dispose()', () => {
-	beforeEach(resetAndMount);
-	afterEach(cleanup);
+  beforeEach(resetAndMount);
+  afterEach(cleanup);
 
-	it('dispose resets transcodedTo to 0', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(liveTranscodingPlugin, { wsUrl: 'wss://transcode.example.com' });
-		await player.ready();
+  it('dispose resets transcodedTo to 0', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const inst = player.getPlugin(LiveTranscodingPlugin)!;
-		callOnServerMsg(inst, { type: 'progress', transcodedSeconds: 75 });
-		expect(inst.transcodedTo()).toBe(75);
+    player.addPlugin(liveTranscodingPlugin, { wsUrl: 'wss://transcode.example.com' });
+    await player.ready();
 
-		inst.dispose();
-		expect(inst.transcodedTo()).toBe(0);
-	});
+    const inst = player.getPlugin(LiveTranscodingPlugin)!;
 
-	it('dispose clears channel reference', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(liveTranscodingPlugin, { wsUrl: 'wss://transcode.example.com' });
-		await player.ready();
+    callOnServerMsg(inst, { type: 'progress', transcodedSeconds: 75 });
+    expect(inst.transcodedTo()).toBe(75);
 
-		const inst = player.getPlugin(LiveTranscodingPlugin)!;
-		inst.dispose();
+    inst.dispose();
+    expect(inst.transcodedTo()).toBe(0);
+  });
 
-		// After dispose, channel is undefined — verified by reading the private field.
-		const channel = (inst as unknown as { channel: unknown }).channel;
-		expect(channel).toBeUndefined();
-	});
+  it('dispose clears channel reference', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    player.addPlugin(liveTranscodingPlugin, { wsUrl: 'wss://transcode.example.com' });
+    await player.ready();
+
+    const inst = player.getPlugin(LiveTranscodingPlugin)!;
+
+    inst.dispose();
+
+    // After dispose, channel is undefined — verified by reading the private field.
+    const channel = (inst as unknown as { channel: unknown }).channel;
+
+    expect(channel).toBeUndefined();
+  });
 });

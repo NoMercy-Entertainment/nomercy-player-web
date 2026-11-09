@@ -23,216 +23,226 @@ import { Html5VideoBackend } from '../adapters/video-backend/html5';
 // The stub reports isSupported()=true but the HLS instance never fires events,
 // so tests control the load lifecycle manually via backend EventEmitter / DOM events.
 vi.mock('hls.js', () => {
-	class FakeHls {
-		levels: unknown[] = [];
-		audioTracks: unknown[] = [];
-		subtitleTracks: unknown[] = [];
-		audioTrack = 0;
-		subtitleTrack = -1;
-		currentLevel = -1;
-		loadLevel = -1;
-		nextLevel = -1;
-		autoLevelCapping = -1;
-		/** Config the most recent instance was constructed with — lets tests assert startPosition. */
-		static lastConfig: Record<string, unknown> | undefined;
+  class FakeHls {
+    levels: unknown[] = [];
+    audioTracks: unknown[] = [];
+    subtitleTracks: unknown[] = [];
+    audioTrack = 0;
+    subtitleTrack = -1;
+    currentLevel = -1;
+    loadLevel = -1;
+    nextLevel = -1;
+    autoLevelCapping = -1;
+    /** Config the most recent instance was constructed with — lets tests assert startPosition. */
+    static lastConfig: Record<string, unknown> | undefined;
 
-		constructor(config?: Record<string, unknown>) {
-			FakeHls.lastConfig = config;
-		}
+    constructor(config?: Record<string, unknown>) {
+      FakeHls.lastConfig = config;
+    }
 
-		static isSupported = (): boolean => true;
-		static Events: Record<string, string> = {
-			MANIFEST_PARSED: 'hlsManifestParsed',
-			ERROR: 'hlsError',
-			FRAG_LOADED: 'hlsFragLoaded',
-			LEVEL_SWITCHED: 'hlsLevelSwitched',
-			FRAG_CHANGED: 'hlsFragChanged',
-		};
+    static isSupported = (): boolean => true;
+    static Events: Record<string, string> = {
+      MANIFEST_PARSED: 'hlsManifestParsed',
+      ERROR: 'hlsError',
+      FRAG_LOADED: 'hlsFragLoaded',
+      LEVEL_SWITCHED: 'hlsLevelSwitched',
+      FRAG_CHANGED: 'hlsFragChanged',
+    };
 
-		static ErrorTypes: Record<string, string> = {
-			NETWORK_ERROR: 'networkError',
-			MEDIA_ERROR: 'mediaError',
-		};
+    static ErrorTypes: Record<string, string> = {
+      NETWORK_ERROR: 'networkError',
+      MEDIA_ERROR: 'mediaError',
+    };
 
-		on(_event: string, _fn: (...args: any[]) => void): void { /* stub */ }
-		attachMedia(_el: HTMLVideoElement): void { /* stub */ }
-		loadSource(_url: string): void { /* stub */ }
-		detachMedia(): void { /* stub */ }
-		destroy(): void { /* stub */ }
-		startLoad(): void { /* stub */ }
-		stopLoad(): void { /* stub */ }
-		recoverMediaError(): void { /* stub */ }
-	}
-	return { default: FakeHls };
+    on(_event: string, _fn: (...args: any[]) => void): void { /* stub */ }
+    attachMedia(_el: HTMLVideoElement): void { /* stub */ }
+    loadSource(_url: string): void { /* stub */ }
+    detachMedia(): void { /* stub */ }
+    destroy(): void { /* stub */ }
+    startLoad(): void { /* stub */ }
+    stopLoad(): void { /* stub */ }
+    recoverMediaError(): void { /* stub */ }
+  }
+
+  return { default: FakeHls };
 });
 
 /** Flush all pending microtasks so async imports and promise chains settle. */
 async function flushMicrotasks(iterations = 10): Promise<void> {
-	for (let i = 0; i < iterations; i++) {
-		await new Promise<void>(resolve => setTimeout(resolve, 0));
-	}
+  for (let i = 0; i < iterations; i++) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  }
 }
 
 describe('Html5VideoBackend — load() error propagation', () => {
-	let container: HTMLDivElement;
-	let backend: Html5VideoBackend;
+  let container: HTMLDivElement;
+  let backend: Html5VideoBackend;
 
-	beforeEach(() => {
-		container = document.createElement('div');
-		document.body.appendChild(container);
-		backend = new Html5VideoBackend(container);
-	});
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    backend = new Html5VideoBackend(container);
+  });
 
-	afterEach(() => {
-		try { backend.dispose(); }
-		catch { /* defensive */ }
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    try { backend.dispose(); } catch { /* defensive */ }
 
-	it('rejects load() when a fatal stream:error fires before loadedmetadata', async () => {
-		// Simulate what happens when HLS.js reports MANIFEST_INCOMPATIBLE_CODECS:
-		// The backend emits 'stream:error' with fatal:true but the DOM element
-		// never fires its 'error' event (because no media data reached it yet).
-		// load() must reject so callers can surface the failure.
-		const loadPromise = backend.load('https://example.invalid/test.m3u8');
+    document.body.innerHTML = '';
+  });
 
-		// Wait long enough for the dynamic `import('hls.js')` to resolve AND for
-		// waitForLoadedMetadata to register its 'stream:error' listener.
-		await flushMicrotasks();
+  it('rejects load() when a fatal stream:error fires before loadedmetadata', async () => {
+    // Simulate what happens when HLS.js reports MANIFEST_INCOMPATIBLE_CODECS:
+    // The backend emits 'stream:error' with fatal:true but the DOM element
+    // never fires its 'error' event (because no media data reached it yet).
+    // load() must reject so callers can surface the failure.
+    const loadPromise = backend.load('https://example.invalid/test.m3u8');
 
-		// Emit the fatal HLS error (simulates _escalateHlsError path).
-		backend.emit('stream:error', {
-			details: 'manifestIncompatibleCodecsError',
-			fatal: true,
-			message: 'no level with compatible codecs found in manifest',
-		});
+    // Wait long enough for the dynamic `import('hls.js')` to resolve AND for
+    // waitForLoadedMetadata to register its 'stream:error' listener.
+    await flushMicrotasks();
 
-		await expect(loadPromise).rejects.toThrow();
-	}, 10_000);
+    // Emit the fatal HLS error (simulates _escalateHlsError path).
+    backend.emit('stream:error', {
+      details: 'manifestIncompatibleCodecsError',
+      fatal: true,
+      message: 'no level with compatible codecs found in manifest',
+    });
 
-	it('does NOT reject load() for non-fatal stream:error', async () => {
-		const settled: Array<'resolved' | 'rejected'> = [];
+    await expect(loadPromise).rejects.toThrow();
+  }, 10_000);
 
-		const loadPromise = backend
-			.load('https://example.invalid/test.m3u8')
-			.then(() => settled.push('resolved'))
-			.catch(() => settled.push('rejected'));
+  it('does NOT reject load() for non-fatal stream:error', async () => {
+    const settled: Array<'resolved' | 'rejected'> = [];
 
-		await flushMicrotasks();
+    const loadPromise = backend
+      .load('https://example.invalid/test.m3u8')
+      .then(() => settled.push('resolved'))
+      .catch(() => settled.push('rejected'));
 
-		// Non-fatal codec warning — must not reject load().
-		backend.emit('stream:error', {
-			details: 'bufferIncompatibleCodecsError',
-			fatal: false,
-			message: 'codec warning',
-			rawCodec: 'hvc1.2.4.L120.B0',
-		});
+    await flushMicrotasks();
 
-		// loadedmetadata fires (simulates successful parse after codec warning).
-		const videoEl = container.querySelector('video') as HTMLVideoElement;
-		Object.defineProperty(videoEl, 'readyState', { value: 1, configurable: true });
-		videoEl.dispatchEvent(new Event('loadedmetadata'));
+    // Non-fatal codec warning — must not reject load().
+    backend.emit('stream:error', {
+      details: 'bufferIncompatibleCodecsError',
+      fatal: false,
+      message: 'codec warning',
+      rawCodec: 'hvc1.2.4.L120.B0',
+    });
 
-		await loadPromise;
-		expect(settled).toEqual(['resolved']);
-	});
+    // loadedmetadata fires (simulates successful parse after codec warning).
+    const videoEl = container.querySelector('video') as HTMLVideoElement;
 
-	it('opts parameter is optional — load(url) without opts resolves on loadedmetadata', async () => {
-		// The IVideoBackend interface previously declared opts as required.
-		// The kit calls backend.load(url) without opts. This test documents
-		// that the implementation accepts opts=undefined without throwing.
-		const loadPromise = backend.load('https://example.invalid/test.m3u8');
+    Object.defineProperty(videoEl, 'readyState', { value: 1, configurable: true });
+    videoEl.dispatchEvent(new Event('loadedmetadata'));
 
-		await flushMicrotasks();
+    await loadPromise;
+    expect(settled).toEqual(['resolved']);
+  });
 
-		const videoEl = container.querySelector('video') as HTMLVideoElement;
-		Object.defineProperty(videoEl, 'readyState', { value: 1, configurable: true });
-		videoEl.dispatchEvent(new Event('loadedmetadata'));
+  it('opts parameter is optional — load(url) without opts resolves on loadedmetadata', async () => {
+    // The IVideoBackend interface previously declared opts as required.
+    // The kit calls backend.load(url) without opts. This test documents
+    // that the implementation accepts opts=undefined without throwing.
+    const loadPromise = backend.load('https://example.invalid/test.m3u8');
 
-		await expect(loadPromise).resolves.toBeUndefined();
-	});
+    await flushMicrotasks();
 
-	it('opts.preload is applied to the element when provided', async () => {
-		const loadPromise = backend.load('https://example.invalid/test.m3u8', {
-			preload: 'metadata',
-		});
+    const videoEl = container.querySelector('video') as HTMLVideoElement;
 
-		await flushMicrotasks();
+    Object.defineProperty(videoEl, 'readyState', { value: 1, configurable: true });
+    videoEl.dispatchEvent(new Event('loadedmetadata'));
 
-		const videoEl = container.querySelector('video') as HTMLVideoElement;
-		expect(videoEl.preload).toBe('metadata');
+    await expect(loadPromise).resolves.toBeUndefined();
+  });
 
-		Object.defineProperty(videoEl, 'readyState', { value: 1, configurable: true });
-		videoEl.dispatchEvent(new Event('loadedmetadata'));
+  it('opts.preload is applied to the element when provided', async () => {
+    const loadPromise = backend.load('https://example.invalid/test.m3u8', {
+      preload: 'metadata',
+    });
 
-		await expect(loadPromise).resolves.toBeUndefined();
-	});
+    await flushMicrotasks();
 
-	it('rejects load() when the DOM element fires error before loadedmetadata', async () => {
-		const loadPromise = backend.load('https://example.invalid/test.mp4');
+    const videoEl = container.querySelector('video') as HTMLVideoElement;
 
-		await flushMicrotasks();
+    expect(videoEl.preload).toBe('metadata');
 
-		const videoEl = container.querySelector('video') as HTMLVideoElement;
-		videoEl.dispatchEvent(new Event('error'));
+    Object.defineProperty(videoEl, 'readyState', { value: 1, configurable: true });
+    videoEl.dispatchEvent(new Event('loadedmetadata'));
 
-		await expect(loadPromise).rejects.toBeDefined();
-	});
+    await expect(loadPromise).resolves.toBeUndefined();
+  });
+
+  it('rejects load() when the DOM element fires error before loadedmetadata', async () => {
+    const loadPromise = backend.load('https://example.invalid/test.mp4');
+
+    await flushMicrotasks();
+
+    const videoEl = container.querySelector('video') as HTMLVideoElement;
+
+    videoEl.dispatchEvent(new Event('error'));
+
+    await expect(loadPromise).rejects.toBeDefined();
+  });
 });
 
 describe('Html5VideoBackend — startTime load hint', () => {
-	let container: HTMLDivElement;
-	let backend: Html5VideoBackend;
+  let container: HTMLDivElement;
+  let backend: Html5VideoBackend;
 
-	beforeEach(() => {
-		container = document.createElement('div');
-		document.body.appendChild(container);
-		backend = new Html5VideoBackend(container);
-	});
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    backend = new Html5VideoBackend(container);
+  });
 
-	afterEach(() => {
-		try { backend.dispose(); }
-		catch { /* defensive */ }
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    try { backend.dispose(); } catch { /* defensive */ }
 
-	async function resolveMetadata(): Promise<void> {
-		await flushMicrotasks();
-		const videoEl = container.querySelector('video') as HTMLVideoElement;
-		Object.defineProperty(videoEl, 'readyState', { value: 1, configurable: true });
-		videoEl.dispatchEvent(new Event('loadedmetadata'));
-	}
+    document.body.innerHTML = '';
+  });
 
-	it('declares canStartAt so the kit skips its post-load seek fallback', () => {
-		expect(backend.canStartAt).toBe(true);
-	});
+  async function resolveMetadata(): Promise<void> {
+    await flushMicrotasks();
+    const videoEl = container.querySelector('video') as HTMLVideoElement;
 
-	it('maps startTime to hls.js startPosition', async () => {
-		const HlsDefault = (await import('hls.js')).default as unknown as { lastConfig?: Record<string, unknown> };
+    Object.defineProperty(videoEl, 'readyState', { value: 1, configurable: true });
+    videoEl.dispatchEvent(new Event('loadedmetadata'));
+  }
 
-		const loadPromise = backend.load('https://example.invalid/test.m3u8', { startTime: 300 });
-		await resolveMetadata();
-		await loadPromise;
+  it('declares canStartAt so the kit skips its post-load seek fallback', () => {
+    expect(backend.canStartAt).toBe(true);
+  });
 
-		expect(HlsDefault.lastConfig?.startPosition).toBe(300);
-	});
+  it('maps startTime to hls.js startPosition', async () => {
+    const HlsDefault = (await import('hls.js')).default as unknown as { lastConfig?: Record<string, unknown> };
 
-	it('defaults startPosition to -1 without a startTime', async () => {
-		const HlsDefault = (await import('hls.js')).default as unknown as { lastConfig?: Record<string, unknown> };
+    const loadPromise = backend.load('https://example.invalid/test.m3u8', { startTime: 300 });
 
-		const loadPromise = backend.load('https://example.invalid/test.m3u8');
-		await resolveMetadata();
-		await loadPromise;
+    await resolveMetadata();
+    await loadPromise;
 
-		expect(HlsDefault.lastConfig?.startPosition).toBe(-1);
-	});
+    expect(HlsDefault.lastConfig?.startPosition).toBe(300);
+  });
 
-	it('positions the element at startTime for progressive sources', async () => {
-		const loadPromise = backend.load('https://example.invalid/test.mp4', { startTime: 120 });
-		await resolveMetadata();
-		await loadPromise;
+  it('defaults startPosition to -1 without a startTime', async () => {
+    const HlsDefault = (await import('hls.js')).default as unknown as { lastConfig?: Record<string, unknown> };
 
-		const videoEl = container.querySelector('video') as HTMLVideoElement;
-		expect(videoEl.currentTime).toBe(120);
-	});
+    const loadPromise = backend.load('https://example.invalid/test.m3u8');
+
+    await resolveMetadata();
+    await loadPromise;
+
+    expect(HlsDefault.lastConfig?.startPosition).toBe(-1);
+  });
+
+  it('positions the element at startTime for progressive sources', async () => {
+    const loadPromise = backend.load('https://example.invalid/test.mp4', { startTime: 120 });
+
+    await resolveMetadata();
+    await loadPromise;
+
+    const videoEl = container.querySelector('video') as HTMLVideoElement;
+
+    expect(videoEl.currentTime).toBe(120);
+  });
 });

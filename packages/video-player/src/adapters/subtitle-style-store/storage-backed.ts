@@ -21,22 +21,23 @@ const STORAGE_KEY = 'subtitle-style';
  * the effective key becomes `'player:subtitle-style'` automatically.
  */
 export class StorageBackedSubtitleStyleStore implements ISubtitleStyleStore {
-	private readonly _storage: IStorage;
+  private readonly _storage: IStorage;
 
-	constructor(storage: IStorage) {
-		this._storage = storage;
-	}
+  constructor(storage: IStorage) {
+    this._storage = storage;
+  }
 
-	async load(): Promise<Partial<SubtitleStyle> | null> {
-		const raw = await this._storage.getJSON<Partial<SubtitleStyle>>(STORAGE_KEY);
-		return raw ?? null;
-	}
+  async load(): Promise<Partial<SubtitleStyle> | null> {
+    const raw = await this._storage.getJSON<Partial<SubtitleStyle>>(STORAGE_KEY);
 
-	async save(style: SubtitleStyle): Promise<void> {
-		await this._storage.setJSON(STORAGE_KEY, style);
-	}
+    return raw ?? null;
+  }
 
-	async clear(): Promise<void> {
-		await this._storage.remove(STORAGE_KEY);
-	}
+  async save(style: SubtitleStyle): Promise<void> {
+    await this._storage.setJSON(STORAGE_KEY, style);
+  }
+
+  async clear(): Promise<void> {
+    await this._storage.remove(STORAGE_KEY);
+  }
 }

@@ -8,14 +8,16 @@
 
 export type { CreateElement } from '../adapters/element-factory';
 export type { Chapter } from './chapter';
+
 export type {
-	AuthConfig,
-	AuthHeaderValue,
-	BasePlayerConfig,
-	CastConfig,
-	CastTarget,
-	DrmConfig,
+  AuthConfig,
+  AuthHeaderValue,
+  BasePlayerConfig,
+  CastConfig,
+  CastTarget,
+  DrmConfig,
 } from './config';
+
 export type { CueEventPayload, SubtitleCue, SubtitleCueChange } from './cues';
 export type { DeviceCapabilities } from './device';
 export type { BaseEventMap, BeforeEvent } from './events';
@@ -23,52 +25,59 @@ export type { PlayerExperimental } from './experimental';
 export type { LogLevel, LogSink } from './log';
 export type { PlaybackMetrics } from './metrics';
 export type { AriaLiveLevel, TimeState } from './playback';
+
 export type {
-	ActionOptions,
-	ActionSource,
-	IPlayer,
-	IPlayerBackend,
-	LoadOptions,
-	PlayerConstructorId,
-	PlayerPhase,
-	PreventedReason,
-	WithCurrentItem,
+  ActionOptions,
+  ActionSource,
+  IPlayer,
+  IPlayerBackend,
+  LoadOptions,
+  PlayerConstructorId,
+  PlayerPhase,
+  PreventedReason,
+  WithCurrentItem,
 } from './player';
+
 export type { BasePlaylistItem } from './playlist';
+
 export type {
-	PluginAdvisory,
-	PluginCtorWithId,
-	PluginSpec,
-	RequireSpec,
+  PluginAdvisory,
+  PluginCtorWithId,
+  PluginSpec,
+  RequireSpec,
 } from './plugin';
+
 export {
-	AudioTrackState,
-	BufferState,
-	CastState,
-	NetworkState,
-	PlayState,
-	QualityState,
-	RepeatState,
-	SetupState,
-	ShuffleState,
-	VisibilityState,
-	VolumeState,
+  AudioTrackState,
+  BufferState,
+  CastState,
+  NetworkState,
+  PlayState,
+  QualityState,
+  RepeatState,
+  SetupState,
+  ShuffleState,
+  VisibilityState,
+  VolumeState,
 } from './state';
+
 export type {
-	AudioTrack,
-	CanPlayResult,
-	CurrentAudioTrackSelection,
-	CurrentQualitySelection,
-	CurrentSubtitleSelection,
-	QualityLevel,
-	SidecarSubtitleInput,
-	SubtitleStyle,
-	SubtitleTrack,
+  AudioTrack,
+  CanPlayResult,
+  CurrentAudioTrackSelection,
+  CurrentQualitySelection,
+  CurrentSubtitleSelection,
+  QualityLevel,
+  SidecarSubtitleInput,
+  SubtitleStyle,
+  SubtitleTrack,
 } from './tracks';
+
 export type { TranslationLoader, Translations } from './translations';
+
 export type {
-	IUrlResolver,
-	ResolvedUrl,
-	UrlCategory,
-	UrlResolverContext,
+  IUrlResolver,
+  ResolvedUrl,
+  UrlCategory,
+  UrlResolverContext,
 } from './url';

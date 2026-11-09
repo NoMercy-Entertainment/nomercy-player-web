@@ -9,13 +9,13 @@
 import type { TvKeyHandlerTranslationKey } from './en';
 
 export default {
-	'plugin.tv-key-handler.info.chapter': 'Kapitola',
-	'plugin.tv-key-handler.info.noTitle': 'Bez názvu',
-	'plugin.tv-key-handler.info.timeRemaining': 'zbývá',
-	'plugin.tv-key-handler.seek.red': '+30s',
-	'plugin.tv-key-handler.seek.green': '+60s',
-	'plugin.tv-key-handler.seek.yellow': '+90s',
-	'plugin.tv-key-handler.seek.blue': '+120s',
-	'plugin.tv-key-handler.aspectRatio.cycled': 'Poměr stran',
-	'plugin.tv-key-handler.bookmark.added': 'Záložka přidána',
+  'plugin.tv-key-handler.info.chapter': 'Kapitola',
+  'plugin.tv-key-handler.info.noTitle': 'Bez názvu',
+  'plugin.tv-key-handler.info.timeRemaining': 'zbývá',
+  'plugin.tv-key-handler.seek.red': '+30s',
+  'plugin.tv-key-handler.seek.green': '+60s',
+  'plugin.tv-key-handler.seek.yellow': '+90s',
+  'plugin.tv-key-handler.seek.blue': '+120s',
+  'plugin.tv-key-handler.aspectRatio.cycled': 'Poměr stran',
+  'plugin.tv-key-handler.bookmark.added': 'Záložka přidána',
 } satisfies Record<TvKeyHandlerTranslationKey, string>;

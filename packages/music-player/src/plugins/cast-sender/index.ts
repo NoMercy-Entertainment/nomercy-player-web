@@ -30,34 +30,43 @@ export type { CastSenderEvents, CastSenderOptions } from '@nomercy-entertainment
  * mirroring, forward* helpers, resume-on-disconnect — lives in the kit.
  */
 export class CastSenderPlugin<T extends MusicPlaylistItem = MusicPlaylistItem> extends BaseCastSenderPlugin<NMMusicPlayer<T>, T> {
-	static override readonly id: string = 'cast-sender';
-	static override readonly description: string = 'Chromecast sender — full media bridge for music';
-	static override readonly translations: Translations = translationsFromGlob('./i18n/*.ts');
+  static override readonly id: string = 'cast-sender';
+  static override readonly description: string = 'Chromecast sender — full media bridge for music';
+  static override readonly translations: Translations = translationsFromGlob('./i18n/*.ts');
 
-	/** Returns `'audio/mpeg'` as the default content type for music items. */
-	protected override defaultContentType(): string {
-		return 'audio/mpeg';
-	}
+  /** Returns `'audio/mpeg'` as the default content type for music items. */
+  protected override defaultContentType(): string {
+    return 'audio/mpeg';
+  }
 
-	/** Builds a `MusicTrackMediaMetadata` (or `GenericMediaMetadata` fallback) from the music item. */
-	protected override async buildMetadata(
-		item: T,
-		ctors: ChromeCastMediaCtors & { MusicTrackMediaMetadata?: new () => Record<string, unknown> },
-	): Promise<unknown> {
-		const Music = ctors.MusicTrackMediaMetadata ?? ctors.GenericMediaMetadata;
-		const meta = new Music();
-		meta['title'] = item.name ?? '';
-		if (item.artist)
-			meta['artist'] = item.artist;
-		if (item.album)
-			meta['albumName'] = item.album;
-		const cover = item.image ?? item.cover;
-		if (cover) {
-			const coverUrl = (await this.resolveUrl(cover, 'poster')).href;
-			meta['images'] = [{ url: coverUrl }];
-		}
-		return meta;
-	}
+  /** Builds a `MusicTrackMediaMetadata` (or `GenericMediaMetadata` fallback) from the music item. */
+  protected override async buildMetadata(
+    item: T,
+    ctors: ChromeCastMediaCtors & { MusicTrackMediaMetadata?: new () => Record<string, unknown> },
+  ): Promise<unknown> {
+    const Music = ctors.MusicTrackMediaMetadata ?? ctors.GenericMediaMetadata;
+    const meta = new Music();
+
+    meta['title'] = item.name ?? '';
+
+    if (item.artist) {
+      meta['artist'] = item.artist;
+    }
+
+    if (item.album) {
+      meta['albumName'] = item.album;
+    }
+
+    const cover = item.image ?? item.cover;
+
+    if (cover) {
+      const coverUrl = (await this.resolveUrl(cover, 'poster')).href;
+
+      meta['images'] = [{ url: coverUrl }];
+    }
+
+    return meta;
+  }
 }
 
 /** Plugin alias for the music {@link CastSenderPlugin}. Pass to `addPlugin(castSenderPlugin)`. */

@@ -9,11 +9,11 @@
 import { playerVitestConfig } from '../../config/vitest';
 
 export default playerVitestConfig({
-	configUrl: import.meta.url,
-	coreSource: true,
-	hlsMock: true,
-	thresholds: {
-		lines: 70,
-		functions: 75,
-	},
+  configUrl: import.meta.url,
+  coreSource: true,
+  hlsMock: true,
+  thresholds: {
+    lines: 70,
+    functions: 75,
+  },
 });

@@ -24,88 +24,88 @@ const DEFAULT_ALLOW = ['x', 'y', 'z', 'i', 'j', 'k'];
 
 /** @type {import('eslint').Rule.RuleModule} */
 export default {
-	meta: {
-		type: 'suggestion',
-		docs: {
-			description: 'Disallow single-letter parameter and variable names (except maths x/y/z and loop i/j/k).',
-		},
-		schema: [
-			{
-				type: 'object',
-				properties: {
-					allow: {
-						type: 'array',
-						items: { type: 'string' },
-					},
-				},
-				additionalProperties: false,
-			},
-		],
-		messages: {
-			singleLetter: 'Single-letter name \'{{name}}\' — use a descriptive word (allowed only: {{allowed}}).',
-		},
-	},
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description: 'Disallow single-letter parameter and variable names (except maths x/y/z and loop i/j/k).',
+    },
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          allow: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
+    messages: {
+      singleLetter: 'Single-letter name \'{{name}}\' — use a descriptive word (allowed only: {{allowed}}).',
+    },
+  },
 
-	create(context) {
-		const allow = new Set(context.options[0]?.allow ?? DEFAULT_ALLOW);
-		const allowedText = [...allow].join(', ');
-		const sourceCode = context.sourceCode ?? context.getSourceCode();
+  create(context) {
+    const allow = new Set(context.options[0]?.allow ?? DEFAULT_ALLOW);
+    const allowedText = [...allow].join(', ');
+    const sourceCode = context.sourceCode ?? context.getSourceCode();
 
-		function report(identifier) {
-			if (identifier && identifier.type === 'Identifier' && identifier.name.length === 1 && !allow.has(identifier.name)) {
-				context.report({
-					node: identifier,
-					messageId: 'singleLetter',
-					data: {
-						name: identifier.name,
-						allowed: allowedText,
-					},
-				});
-			}
-		}
+    function report(identifier) {
+      if (identifier && identifier.type === 'Identifier' && identifier.name.length === 1 && !allow.has(identifier.name)) {
+        context.report({
+          node: identifier,
+          messageId: 'singleLetter',
+          data: {
+            name: identifier.name,
+            allowed: allowedText,
+          },
+        });
+      }
+    }
 
-		function unwrap(param) {
-			if (!param)
-				return null;
-			switch (param.type) {
-				case 'Identifier':
-					return param;
-				case 'AssignmentPattern':
-					return unwrap(param.left);
-				case 'RestElement':
-					return unwrap(param.argument);
-				case 'TSParameterProperty':
-					return unwrap(param.parameter);
-				default:
-					return null;
-			}
-		}
+    function unwrap(param) {
+      if (!param)
+        return null;
+      switch (param.type) {
+        case 'Identifier':
+          return param;
+        case 'AssignmentPattern':
+          return unwrap(param.left);
+        case 'RestElement':
+          return unwrap(param.argument);
+        case 'TSParameterProperty':
+          return unwrap(param.parameter);
+        default:
+          return null;
+      }
+    }
 
-		function reportSignatureParams(node) {
-			for (const param of node.params ?? [])
-				report(unwrap(param));
-		}
+    function reportSignatureParams(node) {
+      for (const param of node.params ?? [])
+        report(unwrap(param));
+    }
 
-		function reportDeclared(node) {
-			for (const variable of sourceCode.getDeclaredVariables(node)) {
-				const declaration = variable.identifiers[0];
-				if (declaration)
-					report(declaration);
-			}
-		}
+    function reportDeclared(node) {
+      for (const variable of sourceCode.getDeclaredVariables(node)) {
+        const declaration = variable.identifiers[0];
+        if (declaration)
+          report(declaration);
+      }
+    }
 
-		return {
-			FunctionDeclaration: reportDeclared,
-			FunctionExpression: reportDeclared,
-			ArrowFunctionExpression: reportDeclared,
-			VariableDeclaration: reportDeclared,
-			CatchClause: reportDeclared,
-			TSDeclareFunction: reportSignatureParams,
-			TSFunctionType: reportSignatureParams,
-			TSMethodSignature: reportSignatureParams,
-			TSCallSignatureDeclaration: reportSignatureParams,
-			TSConstructSignatureDeclaration: reportSignatureParams,
-			TSEmptyBodyFunctionExpression: reportSignatureParams,
-		};
-	},
+    return {
+      FunctionDeclaration: reportDeclared,
+      FunctionExpression: reportDeclared,
+      ArrowFunctionExpression: reportDeclared,
+      VariableDeclaration: reportDeclared,
+      CatchClause: reportDeclared,
+      TSDeclareFunction: reportSignatureParams,
+      TSFunctionType: reportSignatureParams,
+      TSMethodSignature: reportSignatureParams,
+      TSCallSignatureDeclaration: reportSignatureParams,
+      TSConstructSignatureDeclaration: reportSignatureParams,
+      TSEmptyBodyFunctionExpression: reportSignatureParams,
+    };
+  },
 };

@@ -10,7 +10,7 @@
  * English strings for the media-session plugin. Drop a sibling `<tag>.ts` to add a language.
  */
 const translations = {
-	'plugin.media-session.season': 'Season {season}',
+  'plugin.media-session.season': 'Season {season}',
 };
 
 /** Canonical translation key set for the media-session plugin, derived from English. */

@@ -10,7 +10,7 @@ import type { IShuffleStrategy } from '../../adapters/shuffle-strategy/IShuffleS
 import type { BasePlaylistItem } from '../../types';
 
 export interface FakeShuffleStrategy extends IShuffleStrategy {
-	shuffleCalled: boolean;
+  shuffleCalled: boolean;
 }
 
 /**
@@ -19,16 +19,17 @@ export interface FakeShuffleStrategy extends IShuffleStrategy {
  * strategy was called AND that its result was used.
  */
 export function makeFakeShuffleStrategy(): FakeShuffleStrategy {
-	let shuffleCalled = false;
+  let shuffleCalled = false;
 
-	const strategy: FakeShuffleStrategy = {
-		get shuffleCalled(): boolean { return shuffleCalled; },
+  const strategy: FakeShuffleStrategy = {
+    get shuffleCalled(): boolean { return shuffleCalled; },
 
-		order<T extends BasePlaylistItem>(items: ReadonlyArray<T>, _currentIndex: number): T[] {
-			shuffleCalled = true;
-			return [...items].reverse();
-		},
-	};
+    order<T extends BasePlaylistItem>(items: ReadonlyArray<T>, _currentIndex: number): T[] {
+      shuffleCalled = true;
 
-	return strategy;
+      return [...items].reverse();
+    },
+  };
+
+  return strategy;
 }

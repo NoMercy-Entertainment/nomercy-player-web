@@ -48,127 +48,139 @@ import { NMMusicPlayer } from '../index';
 // ── Shared DOM helpers ────────────────────────────────────────────────────────
 
 function makeContainer(): HTMLDivElement {
-	const div = document.createElement('div');
-	document.body.appendChild(div);
-	return div;
+  const div = document.createElement('div');
+
+  document.body.appendChild(div);
+
+  return div;
 }
 
 function fireMetadata(container: HTMLElement): void {
-	const audios = container.querySelectorAll('audio');
-	const last = audios[audios.length - 1];
-	if (last)
-		last.dispatchEvent(new Event('loadedmetadata'));
+  const audios = container.querySelectorAll('audio');
+  const last = audios[audios.length - 1];
+
+  if (last) {
+    last.dispatchEvent(new Event('loadedmetadata'));
+  }
 }
 
 function fireCanPlay(container: HTMLElement): void {
-	const audios = container.querySelectorAll('audio');
-	const last = audios[audios.length - 1];
-	if (last)
-		last.dispatchEvent(new Event('canplay'));
+  const audios = container.querySelectorAll('audio');
+  const last = audios[audios.length - 1];
+
+  if (last) {
+    last.dispatchEvent(new Event('canplay'));
+  }
 }
 
 function stubPlay(el: HTMLAudioElement): void {
-	Object.defineProperty(el, 'play', {
-		value: vi.fn(() => Promise.resolve()),
-		writable: true,
-		configurable: true,
-	});
+  Object.defineProperty(el, 'play', {
+    value: vi.fn(() => Promise.resolve()),
+    writable: true,
+    configurable: true,
+  });
 }
 
 // ── Web Audio stubs ───────────────────────────────────────────────────────────
 
 function makeMockGain(initial = 1): {
-	value: number;
-	setValueAtTime: ReturnType<typeof vi.fn>;
-	linearRampToValueAtTime: ReturnType<typeof vi.fn>;
-	cancelScheduledValues: ReturnType<typeof vi.fn>;
+  value: number;
+  setValueAtTime: ReturnType<typeof vi.fn>;
+  linearRampToValueAtTime: ReturnType<typeof vi.fn>;
+  cancelScheduledValues: ReturnType<typeof vi.fn>;
 } {
-	let _v = initial;
-	return {
-		get value(): number { return _v; },
-		set value(level: number) { _v = level; },
-		setValueAtTime: vi.fn((target: number) => { _v = target; }),
-		linearRampToValueAtTime: vi.fn((target: number) => { _v = target; }),
-		cancelScheduledValues: vi.fn(),
-	};
+  let _v = initial;
+
+  return {
+    get value(): number { return _v; },
+    set value(level: number) { _v = level; },
+    setValueAtTime: vi.fn((target: number) => { _v = target; }),
+    linearRampToValueAtTime: vi.fn((target: number) => { _v = target; }),
+    cancelScheduledValues: vi.fn(),
+  };
 }
 
 class MockGainNode {
-	gain = makeMockGain(1);
-	connect = vi.fn();
-	disconnect = vi.fn();
+  gain = makeMockGain(1);
+  connect = vi.fn();
+  disconnect = vi.fn();
 }
 
 class MockAudioContext {
-	static lastInstance: MockAudioContext | null = null;
+  static lastInstance: MockAudioContext | null = null;
 
-	state: AudioContextState = 'running';
-	currentTime = 0;
-	destination = {} as AudioDestinationNode;
+  state: AudioContextState = 'running';
+  currentTime = 0;
+  destination = {} as AudioDestinationNode;
 
-	createGain = vi.fn(() => new MockGainNode());
-	createAnalyser = vi.fn(() => ({ fftSize: 2048, connect: vi.fn(), disconnect: vi.fn() }));
-	createMediaElementSource = vi.fn(() => new MockSourceNode());
-	resume = vi.fn(() => Promise.resolve());
+  createGain = vi.fn(() => new MockGainNode());
+  createAnalyser = vi.fn(() => ({
+    fftSize: 2048,
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  }));
 
-	constructor() {
-		MockAudioContext.lastInstance = this;
-	}
+  createMediaElementSource = vi.fn(() => new MockSourceNode());
+  resume = vi.fn(() => Promise.resolve());
+
+  constructor() {
+    MockAudioContext.lastInstance = this;
+  }
 }
 
 function installAudioContext(): void {
-	(globalThis as unknown as { AudioContext: typeof MockAudioContext }).AudioContext = MockAudioContext;
-	MockAudioContext.lastInstance = null;
+  (globalThis as unknown as { AudioContext: typeof MockAudioContext }).AudioContext = MockAudioContext;
+  MockAudioContext.lastInstance = null;
 }
 
 function removeAudioContext(): void {
-	delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
-	MockAudioContext.lastInstance = null;
+  delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
+  MockAudioContext.lastInstance = null;
 }
 
 // ── Mock backend for orchestration tests ─────────────────────────────────────
 
 function makeMockBackend(overrides: Partial<IAudioBackend> = {}): IAudioBackend {
-	return {
-		kind: 'audio-element',
-		load: vi.fn(() => Promise.resolve()),
-		unload: vi.fn(),
-		dispose: vi.fn(),
-		play: vi.fn(() => Promise.resolve()),
-		pause: vi.fn(),
-		stop: vi.fn(),
-		currentTime: vi.fn(() => 0) as IAudioBackend['currentTime'],
-		duration: vi.fn(() => 0),
-		buffered: vi.fn(() => 0),
-		bufferedRanges: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
-		seekable: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
-		playbackRate: vi.fn(() => 1) as IAudioBackend['playbackRate'],
-		volume: vi.fn(() => 0.8) as IAudioBackend['volume'],
-		mute: vi.fn(),
-		unmute: vi.fn(),
-		state: vi.fn(() => 'idle' as const),
-		outputNode: vi.fn(() => ({} as AudioNode)),
-		analyserSource: vi.fn(() => ({} as AudioNode)),
-		mediaElement: vi.fn(() => document.createElement('audio')),
-		captureStream: vi.fn(() => ({} as MediaStream)),
-		setSinkId: vi.fn(() => Promise.resolve()),
-		getSinkId: vi.fn(() => ''),
-		mediaKeys: vi.fn(() => undefined),
-		setMediaKeys: vi.fn(() => Promise.resolve()),
-		outputProtectionState: vi.fn(() => 'unsupported' as const),
-		pauseLoader: vi.fn(),
-		resumeLoader: vi.fn(),
-		loaderState: vi.fn(() => 'running' as const),
-		on: vi.fn(),
-		off: vi.fn(),
-		supportsCrossfade: vi.fn(() => true),
-		loadSecondary: vi.fn(() => Promise.resolve()),
-		disposeSecondary: vi.fn(),
-		primeSecondary: vi.fn(() => Promise.resolve()),
-		crossfade: vi.fn(() => Promise.resolve()),
-		secondaryGain: vi.fn(() => 0) as IAudioBackend['secondaryGain'],
-		...overrides,
-	};
+  return {
+    kind: 'audio-element',
+    load: vi.fn(() => Promise.resolve()),
+    unload: vi.fn(),
+    dispose: vi.fn(),
+    play: vi.fn(() => Promise.resolve()),
+    pause: vi.fn(),
+    stop: vi.fn(),
+    currentTime: vi.fn(() => 0) as IAudioBackend['currentTime'],
+    duration: vi.fn(() => 0),
+    buffered: vi.fn(() => 0),
+    bufferedRanges: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
+    seekable: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
+    playbackRate: vi.fn(() => 1) as IAudioBackend['playbackRate'],
+    volume: vi.fn(() => 0.8) as IAudioBackend['volume'],
+    mute: vi.fn(),
+    unmute: vi.fn(),
+    state: vi.fn(() => 'idle' as const),
+    outputNode: vi.fn(() => ({} as AudioNode)),
+    analyserSource: vi.fn(() => ({} as AudioNode)),
+    mediaElement: vi.fn(() => document.createElement('audio')),
+    captureStream: vi.fn(() => ({} as MediaStream)),
+    setSinkId: vi.fn(() => Promise.resolve()),
+    getSinkId: vi.fn(() => ''),
+    mediaKeys: vi.fn(() => undefined),
+    setMediaKeys: vi.fn(() => Promise.resolve()),
+    outputProtectionState: vi.fn(() => 'unsupported' as const),
+    pauseLoader: vi.fn(),
+    resumeLoader: vi.fn(),
+    loaderState: vi.fn(() => 'running' as const),
+    on: vi.fn(),
+    off: vi.fn(),
+    supportsCrossfade: vi.fn(() => true),
+    loadSecondary: vi.fn(() => Promise.resolve()),
+    disposeSecondary: vi.fn(),
+    primeSecondary: vi.fn(() => Promise.resolve()),
+    crossfade: vi.fn(() => Promise.resolve()),
+    secondaryGain: vi.fn(() => 0) as IAudioBackend['secondaryGain'],
+    ...overrides,
+  };
 }
 
 // =============================================================================
@@ -176,130 +188,146 @@ function makeMockBackend(overrides: Partial<IAudioBackend> = {}): IAudioBackend 
 // =============================================================================
 
 describe('WebAudioBackend.crossfade(durationMs>0) — gain ramp scheduling', () => {
-	beforeEach(() => {
-		installAudioContext();
-		vi.useFakeTimers();
-	});
+  beforeEach(() => {
+    installAudioContext();
+    vi.useFakeTimers();
+  });
 
-	afterEach(() => {
-		vi.useRealTimers();
-		removeAudioContext();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    vi.useRealTimers();
+    removeAudioContext();
+    document.body.innerHTML = '';
+  });
 
-	it('calls linearRampToValueAtTime on the secondary GainNode for a positive duration', async () => {
-		const container = makeContainer();
-		const backend = new WebAudioBackend(container);
+  it('calls linearRampToValueAtTime on the secondary GainNode for a positive duration', async () => {
+    const container = makeContainer();
+    const backend = new WebAudioBackend(container);
 
-		// Init the primary Web Audio graph so gainNode is populated.
-		const ctx = MockAudioContext.lastInstance! as unknown as AudioContext;
-		backend.outputNode(ctx);
+    // Init the primary Web Audio graph so gainNode is populated.
+    const ctx = MockAudioContext.lastInstance! as unknown as AudioContext;
 
-		// Load and prime secondary.
-		const loadPromise = backend.loadSecondary('http://test/next.mp3');
-		fireMetadata(container);
-		await loadPromise;
+    backend.outputNode(ctx);
 
-		const primePromise = backend.primeSecondary();
-		fireCanPlay(container);
-		await primePromise;
+    // Load and prime secondary.
+    const loadPromise = backend.loadSecondary('http://test/next.mp3');
 
-		// Stub play on all audio elements.
-		container.querySelectorAll('audio').forEach(el => stubPlay(el as HTMLAudioElement));
+    fireMetadata(container);
+    await loadPromise;
 
-		// Capture the secondary GainNode before the crossfade.
-		const raw = backend as unknown as Record<string, unknown>;
-		const secondaryGain = raw['_secondaryGain'] as MockGainNode;
-		expect(secondaryGain).toBeDefined();
+    const primePromise = backend.primeSecondary();
 
-		// Start crossfade with 300 ms duration — does not resolve until the timer fires.
-		const crossfadePromise = backend.crossfade(300);
+    fireCanPlay(container);
+    await primePromise;
 
-		// linearRampToValueAtTime must have been called on the secondary gain
-		// to ramp it up to the target volume.
-		expect((secondaryGain.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(0);
+    // Stub play on all audio elements.
+    container.querySelectorAll('audio').forEach((el) => stubPlay(el as HTMLAudioElement));
 
-		// The final scheduled target value for the secondary must be > 0 (target volume).
-		const rampCalls = (secondaryGain.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>).mock.calls;
-		const finalTarget: number = rampCalls[rampCalls.length - 1]![0] as number;
-		expect(finalTarget).toBeGreaterThan(0);
+    // Capture the secondary GainNode before the crossfade.
+    const raw = backend as unknown as Record<string, unknown>;
+    const secondaryGain = raw['_secondaryGain'] as MockGainNode;
 
-		// Advance fake timers to let the internal setTimeout(resolve, durationMs) fire.
-		await vi.advanceTimersByTimeAsync(300);
-		await crossfadePromise;
+    expect(secondaryGain).toBeDefined();
 
-		// After the crossfade the secondary slot must be cleared.
-		expect(raw['_secondaryEl']).toBeUndefined();
-		expect(raw['_secondaryGain']).toBeUndefined();
-	});
+    // Start crossfade with 300 ms duration — does not resolve until the timer fires.
+    const crossfadePromise = backend.crossfade(300);
 
-	it('ramps primary GainNode to 0 over the duration', async () => {
-		const container = makeContainer();
-		const backend = new WebAudioBackend(container);
+    // linearRampToValueAtTime must have been called on the secondary gain
+    // to ramp it up to the target volume.
+    expect((secondaryGain.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(0);
 
-		const ctx = MockAudioContext.lastInstance! as unknown as AudioContext;
-		backend.outputNode(ctx);
+    // The final scheduled target value for the secondary must be > 0 (target volume).
+    const rampCalls = (secondaryGain.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>).mock.calls;
+    const finalTarget: number = rampCalls[rampCalls.length - 1]![0] as number;
 
-		// Capture primary GainNode reference before loadSecondary creates the secondary.
-		const rawBefore = backend as unknown as Record<string, unknown>;
-		const primaryGain = rawBefore['gainNode'] as MockGainNode;
-		expect(primaryGain).toBeDefined();
+    expect(finalTarget).toBeGreaterThan(0);
 
-		const loadPromise = backend.loadSecondary('http://test/next.mp3');
-		fireMetadata(container);
-		await loadPromise;
+    // Advance fake timers to let the internal setTimeout(resolve, durationMs) fire.
+    await vi.advanceTimersByTimeAsync(300);
+    await crossfadePromise;
 
-		const primePromise = backend.primeSecondary();
-		fireCanPlay(container);
-		await primePromise;
+    // After the crossfade the secondary slot must be cleared.
+    expect(raw['_secondaryEl']).toBeUndefined();
+    expect(raw['_secondaryGain']).toBeUndefined();
+  });
 
-		container.querySelectorAll('audio').forEach(el => stubPlay(el as HTMLAudioElement));
+  it('ramps primary GainNode to 0 over the duration', async () => {
+    const container = makeContainer();
+    const backend = new WebAudioBackend(container);
 
-		const crossfadePromise = backend.crossfade(200);
+    const ctx = MockAudioContext.lastInstance! as unknown as AudioContext;
 
-		// Primary gain must have been scheduled to ramp to 0.
-		const rampCalls = (primaryGain.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>).mock.calls;
-		expect(rampCalls.length).toBeGreaterThan(0);
-		const primaryFinalTarget: number = rampCalls[rampCalls.length - 1]![0] as number;
-		expect(primaryFinalTarget).toBe(0);
+    backend.outputNode(ctx);
 
-		await vi.advanceTimersByTimeAsync(200);
-		await crossfadePromise;
-	});
+    // Capture primary GainNode reference before loadSecondary creates the secondary.
+    const rawBefore = backend as unknown as Record<string, unknown>;
+    const primaryGain = rawBefore['gainNode'] as MockGainNode;
 
-	it('promotes secondary element and GainNode to primary after ramp completes', async () => {
-		const container = makeContainer();
-		const backend = new WebAudioBackend(container);
+    expect(primaryGain).toBeDefined();
 
-		const ctx = MockAudioContext.lastInstance! as unknown as AudioContext;
-		backend.outputNode(ctx);
+    const loadPromise = backend.loadSecondary('http://test/next.mp3');
 
-		const loadPromise = backend.loadSecondary('http://test/next.mp3');
-		fireMetadata(container);
-		await loadPromise;
+    fireMetadata(container);
+    await loadPromise;
 
-		const primePromise = backend.primeSecondary();
-		fireCanPlay(container);
-		await primePromise;
+    const primePromise = backend.primeSecondary();
 
-		container.querySelectorAll('audio').forEach(el => stubPlay(el as HTMLAudioElement));
+    fireCanPlay(container);
+    await primePromise;
 
-		const rawBefore = backend as unknown as Record<string, unknown>;
-		const secondaryElBefore = rawBefore['_secondaryEl'] as HTMLAudioElement;
+    container.querySelectorAll('audio').forEach((el) => stubPlay(el as HTMLAudioElement));
 
-		const crossfadePromise = backend.crossfade(150);
-		await vi.advanceTimersByTimeAsync(150);
-		await crossfadePromise;
+    const crossfadePromise = backend.crossfade(200);
 
-		// After promotion: mediaElement() must be what was the secondary.
-		expect(backend.mediaElement()).toBe(secondaryElBefore);
+    // Primary gain must have been scheduled to ramp to 0.
+    const rampCalls = (primaryGain.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>).mock.calls;
 
-		// Secondary slots cleared.
-		const rawAfter = backend as unknown as Record<string, unknown>;
-		expect(rawAfter['_secondaryEl']).toBeUndefined();
-		expect(rawAfter['_secondarySource']).toBeUndefined();
-		expect(rawAfter['_secondaryGain']).toBeUndefined();
-	});
+    expect(rampCalls.length).toBeGreaterThan(0);
+    const primaryFinalTarget: number = rampCalls[rampCalls.length - 1]![0] as number;
+
+    expect(primaryFinalTarget).toBe(0);
+
+    await vi.advanceTimersByTimeAsync(200);
+    await crossfadePromise;
+  });
+
+  it('promotes secondary element and GainNode to primary after ramp completes', async () => {
+    const container = makeContainer();
+    const backend = new WebAudioBackend(container);
+
+    const ctx = MockAudioContext.lastInstance! as unknown as AudioContext;
+
+    backend.outputNode(ctx);
+
+    const loadPromise = backend.loadSecondary('http://test/next.mp3');
+
+    fireMetadata(container);
+    await loadPromise;
+
+    const primePromise = backend.primeSecondary();
+
+    fireCanPlay(container);
+    await primePromise;
+
+    container.querySelectorAll('audio').forEach((el) => stubPlay(el as HTMLAudioElement));
+
+    const rawBefore = backend as unknown as Record<string, unknown>;
+    const secondaryElBefore = rawBefore['_secondaryEl'] as HTMLAudioElement;
+
+    const crossfadePromise = backend.crossfade(150);
+
+    await vi.advanceTimersByTimeAsync(150);
+    await crossfadePromise;
+
+    // After promotion: mediaElement() must be what was the secondary.
+    expect(backend.mediaElement()).toBe(secondaryElBefore);
+
+    // Secondary slots cleared.
+    const rawAfter = backend as unknown as Record<string, unknown>;
+
+    expect(rawAfter['_secondaryEl']).toBeUndefined();
+    expect(rawAfter['_secondarySource']).toBeUndefined();
+    expect(rawAfter['_secondaryGain']).toBeUndefined();
+  });
 });
 
 // =============================================================================
@@ -319,118 +347,128 @@ describe('WebAudioBackend.crossfade(durationMs>0) — gain ramp scheduling', () 
 // =============================================================================
 
 describe('AudioElementBackend.crossfade(durationMs>0) — RAF fade loop', () => {
-	let originalRaf: typeof requestAnimationFrame;
-	let rafCallbacks: Array<FrameRequestCallback>;
-	let nowValue: number;
+  let originalRaf: typeof requestAnimationFrame;
+  let rafCallbacks: Array<FrameRequestCallback>;
+  let nowValue: number;
 
-	beforeEach(() => {
-		originalRaf = globalThis.requestAnimationFrame;
-		rafCallbacks = [];
-		nowValue = 0;
+  beforeEach(() => {
+    originalRaf = globalThis.requestAnimationFrame;
+    rafCallbacks = [];
+    nowValue = 0;
 
-		// Replace rAF with a synchronous collector.
-		globalThis.requestAnimationFrame = (cb: FrameRequestCallback): number => {
-			rafCallbacks.push(cb);
-			return rafCallbacks.length;
-		};
+    // Replace rAF with a synchronous collector.
+    globalThis.requestAnimationFrame = (cb: FrameRequestCallback): number => {
+      rafCallbacks.push(cb);
 
-		// Stub performance.now() to return a controllable value.
-		vi.spyOn(performance, 'now').mockImplementation(() => nowValue);
-	});
+      return rafCallbacks.length;
+    };
 
-	afterEach(() => {
-		globalThis.requestAnimationFrame = originalRaf;
-		vi.mocked(performance.now).mockRestore?.();
-		vi.restoreAllMocks();
-		document.body.innerHTML = '';
-	});
+    // Stub performance.now() to return a controllable value.
+    vi.spyOn(performance, 'now').mockImplementation(() => nowValue);
+  });
 
-	/**
-	 * Drive all rAF callbacks synchronously with the current nowValue.
-	 * Each call may queue more callbacks — keep draining until empty.
-	 */
-	function flushRaf(): void {
-		while (rafCallbacks.length > 0) {
-			const batch = rafCallbacks.splice(0);
-			for (const cb of batch) {
-				cb(nowValue);
-			}
-		}
-	}
+  afterEach(() => {
+    globalThis.requestAnimationFrame = originalRaf;
+    vi.mocked(performance.now).mockRestore?.();
+    vi.restoreAllMocks();
+    document.body.innerHTML = '';
+  });
 
-	async function setupBackendWithSecondary(durationMs: number): Promise<{
-		backend: AudioElementBackend;
-		container: HTMLDivElement;
-		secondaryEl: HTMLAudioElement;
-		crossfadePromise: Promise<void>;
-	}> {
-		const container = makeContainer();
-		const backend = new AudioElementBackend(container);
+  /**
+   * Drive all rAF callbacks synchronously with the current nowValue.
+   * Each call may queue more callbacks — keep draining until empty.
+   */
+  function flushRaf(): void {
+    while (rafCallbacks.length > 0) {
+      const batch = rafCallbacks.splice(0);
 
-		// Load secondary — fire metadata to resolve loadSecondary().
-		const loadPromise = backend.loadSecondary('http://test/next.mp3');
-		fireMetadata(container);
-		await loadPromise;
+      for (const cb of batch) {
+        cb(nowValue);
+      }
+    }
+  }
 
-		// Prime secondary — fire canplay to resolve primeSecondary().
-		const primePromise = backend.primeSecondary();
-		fireCanPlay(container);
-		await primePromise;
+  async function setupBackendWithSecondary(durationMs: number): Promise<{
+    backend: AudioElementBackend;
+    container: HTMLDivElement;
+    secondaryEl: HTMLAudioElement;
+    crossfadePromise: Promise<void>;
+  }> {
+    const container = makeContainer();
+    const backend = new AudioElementBackend(container);
 
-		// Stub play on ALL audio elements so secondary.play() resolves immediately.
-		container.querySelectorAll('audio').forEach(el => stubPlay(el as HTMLAudioElement));
+    // Load secondary — fire metadata to resolve loadSecondary().
+    const loadPromise = backend.loadSecondary('http://test/next.mp3');
 
-		const raw = backend as unknown as { _secondary?: HTMLAudioElement };
-		const secondaryEl = raw._secondary!;
+    fireMetadata(container);
+    await loadPromise;
 
-		// Start crossfade — performance.now() currently returns 0 (startTime = 0).
-		const crossfadePromise = backend.crossfade(durationMs);
+    // Prime secondary — fire canplay to resolve primeSecondary().
+    const primePromise = backend.primeSecondary();
 
-		// Yield to let secondary.play() resolve and the first rAF callback register.
-		await Promise.resolve();
-		await Promise.resolve();
+    fireCanPlay(container);
+    await primePromise;
 
-		return { backend, container, secondaryEl, crossfadePromise };
-	}
+    // Stub play on ALL audio elements so secondary.play() resolves immediately.
+    container.querySelectorAll('audio').forEach((el) => stubPlay(el as HTMLAudioElement));
 
-	it('element swap occurs after the rAF loop signals t=1', async () => {
-		const DURATION_MS = 300;
-		const { backend, secondaryEl, crossfadePromise } = await setupBackendWithSecondary(DURATION_MS);
+    const raw = backend as unknown as { _secondary?: HTMLAudioElement };
+    const secondaryEl = raw._secondary!;
 
-		// Advance time past the duration so t = min(1, elapsed/durationMs) = 1.
-		nowValue = DURATION_MS + 1;
-		flushRaf();
+    // Start crossfade — performance.now() currently returns 0 (startTime = 0).
+    const crossfadePromise = backend.crossfade(durationMs);
 
-		await crossfadePromise;
+    // Yield to let secondary.play() resolve and the first rAF callback register.
+    await Promise.resolve();
+    await Promise.resolve();
 
-		// After the swap: new primary must be what was the secondary.
-		expect(backend.mediaElement()).toBe(secondaryEl);
+    return {
+      backend,
+      container,
+      secondaryEl,
+      crossfadePromise,
+    };
+  }
 
-		// Secondary slot cleared.
-		const raw = backend as unknown as { _secondary?: HTMLAudioElement };
-		expect(raw._secondary).toBeUndefined();
-	});
+  it('element swap occurs after the rAF loop signals t=1', async () => {
+    const DURATION_MS = 300;
+    const { backend, secondaryEl, crossfadePromise } = await setupBackendWithSecondary(DURATION_MS);
 
-	it('secondary volume reaches startVolume at loop completion', async () => {
-		const DURATION_MS = 200;
-		const { backend, secondaryEl, crossfadePromise } = await setupBackendWithSecondary(DURATION_MS);
+    // Advance time past the duration so t = min(1, elapsed/durationMs) = 1.
+    nowValue = DURATION_MS + 1;
+    flushRaf();
 
-		const startVolume = 1; // default element volume in happy-dom
+    await crossfadePromise;
 
-		// Advance past duration.
-		nowValue = DURATION_MS + 1;
-		flushRaf();
+    // After the swap: new primary must be what was the secondary.
+    expect(backend.mediaElement()).toBe(secondaryEl);
 
-		await crossfadePromise;
+    // Secondary slot cleared.
+    const raw = backend as unknown as { _secondary?: HTMLAudioElement };
 
-		// After swap the old secondary is now the primary element.  Its volume
-		// at t=1 was set to startVolume * 1 = startVolume.
-		// The element was re-promoted, so we can't read it from secondaryEl after
-		// the swap (it became element) — assert the backend reports the right volume.
-		expect(backend.mediaElement()).toBe(secondaryEl);
-		// Volume on the now-primary element was set during the final tick.
-		expect(secondaryEl.volume).toBe(startVolume);
-	});
+    expect(raw._secondary).toBeUndefined();
+  });
+
+  it('secondary volume reaches startVolume at loop completion', async () => {
+    const DURATION_MS = 200;
+    const { backend, secondaryEl, crossfadePromise } = await setupBackendWithSecondary(DURATION_MS);
+
+    const startVolume = 1; // default element volume in happy-dom
+
+    // Advance past duration.
+    nowValue = DURATION_MS + 1;
+    flushRaf();
+
+    await crossfadePromise;
+
+    // After swap the old secondary is now the primary element.  Its volume
+    // at t=1 was set to startVolume * 1 = startVolume.
+    // The element was re-promoted, so we can't read it from secondaryEl after
+    // the swap (it became element) — assert the backend reports the right volume.
+    expect(backend.mediaElement()).toBe(secondaryEl);
+    // Volume on the now-primary element was set during the final tick.
+    expect(secondaryEl.volume).toBe(startVolume);
+  });
 });
 
 // =============================================================================
@@ -438,56 +476,79 @@ describe('AudioElementBackend.crossfade(durationMs>0) — RAF fade loop', () => 
 // =============================================================================
 
 describe('NMMusicPlayer.crossfadeTo() — item cursor update', () => {
-	beforeEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'cursor-test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    div.id = 'cursor-test';
+    document.body.appendChild(div);
+  });
 
-	it('moves the cursor to the incoming track after crossfade completes', async () => {
-		const div = document.getElementById('cursor-test')!;
-		const player = new NMMusicPlayer(div.id);
-		player.setup({});
+  afterEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		const mock = makeMockBackend();
-		(player as unknown as Record<string, unknown>)['_backend'] = mock;
+  it('moves the cursor to the incoming track after crossfade completes', async () => {
+    const div = document.getElementById('cursor-test')!;
+    const player = new NMMusicPlayer(div.id);
 
-		// Set up an initial queue so item() has context.
-		const trackA: MusicPlaylistItem = { id: 'a', name: 'Track A', url: 'http://test/a.mp3' };
-		const trackB: MusicPlaylistItem = { id: 'b', name: 'Track B', url: 'http://test/b.mp3' };
-		player.queue([trackA, trackB]);
+    player.setup({});
 
-		await player.crossfadeTo(trackB);
+    const mock = makeMockBackend();
 
-		expect(player.item()?.id).toBe(trackB.id);
-	});
+    (player as unknown as Record<string, unknown>)['_backend'] = mock;
 
-	it('emits the item event that downstream plugins (mediaSession, lyrics) listen to', async () => {
-		const div = document.getElementById('cursor-test')!;
-		const player = new NMMusicPlayer(div.id);
-		player.setup({});
+    // Set up an initial queue so item() has context.
+    const trackA: MusicPlaylistItem = {
+      id: 'a',
+      name: 'Track A',
+      url: 'http://test/a.mp3',
+    };
+    const trackB: MusicPlaylistItem = {
+      id: 'b',
+      name: 'Track B',
+      url: 'http://test/b.mp3',
+    };
 
-		const mock = makeMockBackend();
-		(player as unknown as Record<string, unknown>)['_backend'] = mock;
+    player.queue([trackA, trackB]);
 
-		const trackA: MusicPlaylistItem = { id: 'a', name: 'Track A', url: 'http://test/a.mp3' };
-		const trackB: MusicPlaylistItem = { id: 'b', name: 'Track B', url: 'http://test/b.mp3' };
+    await player.crossfadeTo(trackB);
 
-		// Queue both tracks so item('b') can find trackB and emit 'item' / 'current'.
-		player.queue([trackA, trackB]);
+    expect(player.item()?.id).toBe(trackB.id);
+  });
 
-		const itemEvents: unknown[] = [];
-		player.on('item' as never, (data: unknown) => { itemEvents.push(data); });
+  it('emits the item event that downstream plugins (mediaSession, lyrics) listen to', async () => {
+    const div = document.getElementById('cursor-test')!;
+    const player = new NMMusicPlayer(div.id);
 
-		await player.crossfadeTo(trackB);
+    player.setup({});
 
-		// The item event carries { item, index } — what lyrics/mediaSession listen to.
-		expect(itemEvents.length).toBeGreaterThan(0);
-	});
+    const mock = makeMockBackend();
+
+    (player as unknown as Record<string, unknown>)['_backend'] = mock;
+
+    const trackA: MusicPlaylistItem = {
+      id: 'a',
+      name: 'Track A',
+      url: 'http://test/a.mp3',
+    };
+    const trackB: MusicPlaylistItem = {
+      id: 'b',
+      name: 'Track B',
+      url: 'http://test/b.mp3',
+    };
+
+    // Queue both tracks so item('b') can find trackB and emit 'item' / 'current'.
+    player.queue([trackA, trackB]);
+
+    const itemEvents: unknown[] = [];
+
+    player.on('item' as never, (data: unknown) => { itemEvents.push(data); });
+
+    await player.crossfadeTo(trackB);
+
+    // The item event carries { item, index } — what lyrics/mediaSession listen to.
+    expect(itemEvents.length).toBeGreaterThan(0);
+  });
 });

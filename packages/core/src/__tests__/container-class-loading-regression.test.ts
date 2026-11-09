@@ -33,169 +33,178 @@ import { containerClassEmitMethods } from '../core/mixins/container-class-emit';
 // ── Minimal test emitter ─────────────────────────────────────────────────────
 
 class ContainerEmitter extends EventEmitter<Record<string, unknown>> {
-	constructor(public readonly container: HTMLElement) {
-		super();
-	}
+  constructor(public readonly container: HTMLElement) {
+    super();
+  }
 
-	override emit = containerClassEmitMethods.emit as unknown as (event: string, data?: unknown) => void;
+  override emit = containerClassEmitMethods.emit as unknown as (event: string, data?: unknown) => void;
 }
 
 const PLAY_STATE_CLASSES = ['playing', 'paused', 'stopped', 'ended', 'loading', 'buffering'];
 
 function presentClasses(container: HTMLElement): string[] {
-	return PLAY_STATE_CLASSES.filter(cls => container.classList.contains(cls));
+  return PLAY_STATE_CLASSES.filter((cls) => container.classList.contains(cls));
 }
 
 afterEach(() => {
-	document.body.innerHTML = '';
+  document.body.innerHTML = '';
 });
 
 describe('container-class phase rule — loading after ready', () => {
-	it('adds `loading` class on phase=loading BEFORE the player has ever reached ready (initial bootstrap)', () => {
-		const container = document.createElement('div');
-		document.body.appendChild(container);
-		const player = new ContainerEmitter(container);
+  it('adds `loading` class on phase=loading BEFORE the player has ever reached ready (initial bootstrap)', () => {
+    const container = document.createElement('div');
 
-		player.emit('phase', { from: 'idle', to: 'loading' });
+    document.body.appendChild(container);
+    const player = new ContainerEmitter(container);
 
-		expect(container.classList.contains('loading')).toBe(true);
-		expect(container.classList.contains('buffering')).toBe(false);
-		expect(container.classList.contains('paused')).toBe(false);
-	});
+    player.emit('phase', { from: 'idle', to: 'loading' });
 
-	it('sets `paused` class on phase=ready and marks the container as ready', () => {
-		const container = document.createElement('div');
-		document.body.appendChild(container);
-		const player = new ContainerEmitter(container);
+    expect(container.classList.contains('loading')).toBe(true);
+    expect(container.classList.contains('buffering')).toBe(false);
+    expect(container.classList.contains('paused')).toBe(false);
+  });
 
-		player.emit('phase', { from: 'loading', to: 'ready' });
+  it('sets `paused` class on phase=ready and marks the container as ready', () => {
+    const container = document.createElement('div');
 
-		expect(container.classList.contains('paused')).toBe(true);
-		expect(container.classList.contains('loading')).toBe(false);
-	});
+    document.body.appendChild(container);
+    const player = new ContainerEmitter(container);
 
-	it('leaves container class UNCHANGED (stays paused) when phase=loading fires after ready with idle player', () => {
-		const container = document.createElement('div');
-		document.body.appendChild(container);
-		const player = new ContainerEmitter(container);
+    player.emit('phase', { from: 'loading', to: 'ready' });
 
-		// Normal startup: idle → loading → ready
-		player.emit('phase', { from: 'idle', to: 'loading' });
-		player.emit('phase', { from: 'loading', to: 'ready' });
+    expect(container.classList.contains('paused')).toBe(true);
+    expect(container.classList.contains('loading')).toBe(false);
+  });
 
-		expect(container.classList.contains('paused')).toBe(true);
+  it('leaves container class UNCHANGED (stays paused) when phase=loading fires after ready with idle player', () => {
+    const container = document.createElement('div');
 
-		// autoPlay cold-load (or any new-item load while idle): phase=loading fires again
-		player.emit('phase', { from: 'paused', to: 'loading' });
+    document.body.appendChild(container);
+    const player = new ContainerEmitter(container);
 
-		// Container must stay `paused` — not `loading`, not `buffering`
-		expect(container.classList.contains('paused')).toBe(true);
-		expect(container.classList.contains('loading')).toBe(false);
-		expect(container.classList.contains('buffering')).toBe(false);
-	});
+    // Normal startup: idle → loading → ready
+    player.emit('phase', { from: 'idle', to: 'loading' });
+    player.emit('phase', { from: 'loading', to: 'ready' });
 
-	it('exactly one play-state class present after phase=loading post-ready', () => {
-		const container = document.createElement('div');
-		document.body.appendChild(container);
-		const player = new ContainerEmitter(container);
+    expect(container.classList.contains('paused')).toBe(true);
 
-		player.emit('phase', { from: 'idle', to: 'loading' });
-		player.emit('phase', { from: 'loading', to: 'ready' });
-		player.emit('phase', { from: 'paused', to: 'loading' });
+    // autoPlay cold-load (or any new-item load while idle): phase=loading fires again
+    player.emit('phase', { from: 'paused', to: 'loading' });
 
-		const present = presentClasses(container);
-		expect(present).toHaveLength(1);
-		expect(present[0]).toBe('paused');
-	});
+    // Container must stay `paused` — not `loading`, not `buffering`
+    expect(container.classList.contains('paused')).toBe(true);
+    expect(container.classList.contains('loading')).toBe(false);
+    expect(container.classList.contains('buffering')).toBe(false);
+  });
 
-	it('full autoPlay cold-load cycle: paused stays through both loading transitions', () => {
-		const container = document.createElement('div');
-		document.body.appendChild(container);
-		const player = new ContainerEmitter(container);
+  it('exactly one play-state class present after phase=loading post-ready', () => {
+    const container = document.createElement('div');
 
-		// setup pipeline ends
-		player.emit('phase', { from: 'idle', to: 'loading' });
-		player.emit('phase', { from: 'loading', to: 'ready' });
-		expect(container.classList.contains('paused')).toBe(true);
+    document.body.appendChild(container);
+    const player = new ContainerEmitter(container);
 
-		// autoPlay triggers item load
-		player.emit('phase', { from: 'paused', to: 'loading' });
-		expect(container.classList.contains('paused')).toBe(true);
+    player.emit('phase', { from: 'idle', to: 'loading' });
+    player.emit('phase', { from: 'loading', to: 'ready' });
+    player.emit('phase', { from: 'paused', to: 'loading' });
 
-		// backend load resolves, player re-enters ready
-		player.emit('phase', { from: 'loading', to: 'ready' });
-		expect(container.classList.contains('paused')).toBe(true);
+    const present = presentClasses(container);
 
-		// No `loading` or `buffering` at any point in the cycle
-		expect(container.classList.contains('loading')).toBe(false);
-		expect(container.classList.contains('buffering')).toBe(false);
-	});
+    expect(present).toHaveLength(1);
+    expect(present[0]).toBe('paused');
+  });
 
-	it('waiting/stalled events DO produce buffering during active playback', () => {
-		const container = document.createElement('div');
-		document.body.appendChild(container);
-		const player = new ContainerEmitter(container);
+  it('full autoPlay cold-load cycle: paused stays through both loading transitions', () => {
+    const container = document.createElement('div');
 
-		// Player reaches ready, then plays
-		player.emit('phase', { from: 'idle', to: 'loading' });
-		player.emit('phase', { from: 'loading', to: 'ready' });
-		player.emit('play');
+    document.body.appendChild(container);
+    const player = new ContainerEmitter(container);
 
-		expect(container.classList.contains('playing')).toBe(true);
+    // setup pipeline ends
+    player.emit('phase', { from: 'idle', to: 'loading' });
+    player.emit('phase', { from: 'loading', to: 'ready' });
+    expect(container.classList.contains('paused')).toBe(true);
 
-		// Mid-playback stall arrives via DOM event, not phase
-		player.emit('waiting');
+    // autoPlay triggers item load
+    player.emit('phase', { from: 'paused', to: 'loading' });
+    expect(container.classList.contains('paused')).toBe(true);
 
-		expect(container.classList.contains('buffering')).toBe(true);
-		expect(container.classList.contains('playing')).toBe(false);
+    // backend load resolves, player re-enters ready
+    player.emit('phase', { from: 'loading', to: 'ready' });
+    expect(container.classList.contains('paused')).toBe(true);
 
-		// Recovery
-		player.emit('canplay');
-		expect(container.classList.contains('buffering')).toBe(false);
-	});
+    // No `loading` or `buffering` at any point in the cycle
+    expect(container.classList.contains('loading')).toBe(false);
+    expect(container.classList.contains('buffering')).toBe(false);
+  });
 
-	it('an advancing clock clears buffering even when canplay never arrives', () => {
-		// The backstop half of the same rule. `canplay` is the primary signal,
-		// but it does not fire on every recovery in every engine, and a
-		// `buffering` class left standing over moving video is what the desktop
-		// UI's spinner rides. A time update disproves a stall by itself.
-		const container = document.createElement('div');
-		document.body.appendChild(container);
-		const player = new ContainerEmitter(container);
+  it('waiting/stalled events DO produce buffering during active playback', () => {
+    const container = document.createElement('div');
 
-		player.emit('phase', { from: 'idle', to: 'loading' });
-		player.emit('phase', { from: 'loading', to: 'ready' });
-		player.emit('play');
-		player.emit('waiting');
+    document.body.appendChild(container);
+    const player = new ContainerEmitter(container);
 
-		expect(container.classList.contains('buffering')).toBe(true);
+    // Player reaches ready, then plays
+    player.emit('phase', { from: 'idle', to: 'loading' });
+    player.emit('phase', { from: 'loading', to: 'ready' });
+    player.emit('play');
 
-		player.emit('time', { time: 12 });
+    expect(container.classList.contains('playing')).toBe(true);
 
-		expect(container.classList.contains('buffering')).toBe(false);
-	});
+    // Mid-playback stall arrives via DOM event, not phase
+    player.emit('waiting');
 
-	it('two independent containers do not share ready-state tracking', () => {
-		const container1 = document.createElement('div');
-		const container2 = document.createElement('div');
-		document.body.appendChild(container1);
-		document.body.appendChild(container2);
+    expect(container.classList.contains('buffering')).toBe(true);
+    expect(container.classList.contains('playing')).toBe(false);
 
-		const player1 = new ContainerEmitter(container1);
-		const player2 = new ContainerEmitter(container2);
+    // Recovery
+    player.emit('canplay');
+    expect(container.classList.contains('buffering')).toBe(false);
+  });
 
-		// player1 has reached ready; player2 has not
-		player1.emit('phase', { from: 'idle', to: 'loading' });
-		player1.emit('phase', { from: 'loading', to: 'ready' });
+  it('an advancing clock clears buffering even when canplay never arrives', () => {
+    // The backstop half of the same rule. `canplay` is the primary signal,
+    // but it does not fire on every recovery in every engine, and a
+    // `buffering` class left standing over moving video is what the desktop
+    // UI's spinner rides. A time update disproves a stall by itself.
+    const container = document.createElement('div');
 
-		// player1: phase=loading post-ready → stays paused
-		player1.emit('phase', { from: 'paused', to: 'loading' });
-		expect(container1.classList.contains('paused')).toBe(true);
-		expect(container1.classList.contains('loading')).toBe(false);
+    document.body.appendChild(container);
+    const player = new ContainerEmitter(container);
 
-		// player2: phase=loading pre-ready → shows loading (initial bootstrap)
-		player2.emit('phase', { from: 'idle', to: 'loading' });
-		expect(container2.classList.contains('loading')).toBe(true);
-		expect(container2.classList.contains('paused')).toBe(false);
-	});
+    player.emit('phase', { from: 'idle', to: 'loading' });
+    player.emit('phase', { from: 'loading', to: 'ready' });
+    player.emit('play');
+    player.emit('waiting');
+
+    expect(container.classList.contains('buffering')).toBe(true);
+
+    player.emit('time', { time: 12 });
+
+    expect(container.classList.contains('buffering')).toBe(false);
+  });
+
+  it('two independent containers do not share ready-state tracking', () => {
+    const container1 = document.createElement('div');
+    const container2 = document.createElement('div');
+
+    document.body.appendChild(container1);
+    document.body.appendChild(container2);
+
+    const player1 = new ContainerEmitter(container1);
+    const player2 = new ContainerEmitter(container2);
+
+    // player1 has reached ready; player2 has not
+    player1.emit('phase', { from: 'idle', to: 'loading' });
+    player1.emit('phase', { from: 'loading', to: 'ready' });
+
+    // player1: phase=loading post-ready → stays paused
+    player1.emit('phase', { from: 'paused', to: 'loading' });
+    expect(container1.classList.contains('paused')).toBe(true);
+    expect(container1.classList.contains('loading')).toBe(false);
+
+    // player2: phase=loading pre-ready → shows loading (initial bootstrap)
+    player2.emit('phase', { from: 'idle', to: 'loading' });
+    expect(container2.classList.contains('loading')).toBe(true);
+    expect(container2.classList.contains('paused')).toBe(false);
+  });
 });

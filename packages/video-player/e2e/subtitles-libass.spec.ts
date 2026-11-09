@@ -40,222 +40,242 @@ import { expect, test } from '@playwright/test';
  * wires the subtitleCue listener.
  */
 async function loadFixture(page: import('@playwright/test').Page): Promise<void> {
-	await page.goto('/e2e/fixture-full.html');
-	await page.waitForFunction(
-		() => (window as any).__playerReady === true,
-		{ timeout: 10_000 },
-	);
-	const error = await page.evaluate(() => (window as any).__playerError);
-	if (error)
-		throw new Error(`Player init failed: ${error}`);
+  await page.goto('/e2e/fixture-full.html');
 
-	// Call setup() so the plugin queue flushes and SubtitleOverlayPlugin.use()
-	// runs, mounting the .subtitle-overlay DOM and wiring the subtitleCue handler.
-	await page.evaluate(() => {
-		(window as any).player.setup({ playlist: [] });
-	});
+  await page.waitForFunction(
+    () => (window as any).__playerReady === true,
+    { timeout: 10_000 },
+  );
 
-	// Wait for the SubtitleOverlayPlugin overlay root to appear in the DOM.
-	await page.waitForSelector('.subtitle-overlay', { timeout: 5_000 });
+  const error = await page.evaluate(() => (window as any).__playerError);
+
+  if (error)
+    throw new Error(`Player init failed: ${error}`);
+
+  // Call setup() so the plugin queue flushes and SubtitleOverlayPlugin.use()
+  // runs, mounting the .subtitle-overlay DOM and wiring the subtitleCue handler.
+  await page.evaluate(() => {
+    (window as any).player.setup({ playlist: [] });
+  });
+
+  // Wait for the SubtitleOverlayPlugin overlay root to appear in the DOM.
+  await page.waitForSelector('.subtitle-overlay', { timeout: 5_000 });
 }
 
 // ── SubtitleOverlayPlugin — VTT cue renders into DOM ──────────────────────────
 
 test.describe('SubtitleOverlayPlugin — DOM cue rendering', () => {
-	test('.subtitle-area node appears when subtitleCue event fires with active cues', async ({ page }) => {
-		await loadFixture(page);
+  test('.subtitle-area node appears when subtitleCue event fires with active cues', async ({ page }) => {
+    await loadFixture(page);
 
-		// Emit a subtitleCue event with a single active cue. The SubtitleOverlayPlugin
-		// listens to this event and renders .subtitle-area nodes.
-		await page.evaluate(() => {
-			(window as any).player.emit('subtitleCue', {
-				cues: [{
-					text: 'First cue line',
-					line: undefined,
-				}],
-			});
-		});
+    // Emit a subtitleCue event with a single active cue. The SubtitleOverlayPlugin
+    // listens to this event and renders .subtitle-area nodes.
+    await page.evaluate(() => {
+      (window as any).player.emit('subtitleCue', {
+        cues: [{
+          text: 'First cue line',
+          line: undefined,
+        }],
+      });
+    });
 
-		await page.waitForSelector('.subtitle-area', { timeout: 3_000 });
+    await page.waitForSelector('.subtitle-area', { timeout: 3_000 });
 
-		const areaCount = await page.locator('.subtitle-area').count();
-		expect(areaCount).toBeGreaterThan(0);
-	});
+    const areaCount = await page.locator('.subtitle-area').count();
 
-	test('.subtitle-text span contains the cue text', async ({ page }) => {
-		await loadFixture(page);
+    expect(areaCount).toBeGreaterThan(0);
+  });
 
-		await page.evaluate(() => {
-			(window as any).player.emit('subtitleCue', {
-				cues: [{
-					text: 'First cue line',
-					line: undefined,
-				}],
-			});
-		});
+  test('.subtitle-text span contains the cue text', async ({ page }) => {
+    await loadFixture(page);
 
-		await page.waitForSelector('.subtitle-text', { timeout: 3_000 });
+    await page.evaluate(() => {
+      (window as any).player.emit('subtitleCue', {
+        cues: [{
+          text: 'First cue line',
+          line: undefined,
+        }],
+      });
+    });
 
-		const text = await page.locator('.subtitle-text').first()
-			.textContent();
-		expect(text).toContain('First cue line');
-	});
+    await page.waitForSelector('.subtitle-text', { timeout: 3_000 });
 
-	test('two simultaneous cues produce two .subtitle-area nodes', async ({ page }) => {
-		await loadFixture(page);
+    const text = await page.locator('.subtitle-text').first()
+      .textContent();
 
-		await page.evaluate(() => {
-			(window as any).player.emit('subtitleCue', {
-				cues: [
-					{
-						text: 'Top cue',
-						line: 10,
-					},
-					{
-						text: 'Bottom cue',
-						line: 85,
-					},
-				],
-			});
-		});
+    expect(text).toContain('First cue line');
+  });
 
-		await page.waitForSelector('.subtitle-area', { timeout: 3_000 });
+  test('two simultaneous cues produce two .subtitle-area nodes', async ({ page }) => {
+    await loadFixture(page);
 
-		const areaCount = await page.locator('.subtitle-area').count();
-		expect(areaCount).toBe(2);
-	});
+    await page.evaluate(() => {
+      (window as any).player.emit('subtitleCue', {
+        cues: [
+          {
+            text: 'Top cue',
+            line: 10,
+          },
+          {
+            text: 'Bottom cue',
+            line: 85,
+          },
+        ],
+      });
+    });
 
-	test('empty cue list clears visible .subtitle-area nodes', async ({ page }) => {
-		await loadFixture(page);
+    await page.waitForSelector('.subtitle-area', { timeout: 3_000 });
 
-		// Show a cue.
-		await page.evaluate(() => {
-			(window as any).player.emit('subtitleCue', {
-				cues: [{
-					text: 'Temp cue',
-					line: undefined,
-				}],
-			});
-		});
-		await page.waitForSelector('.subtitle-area', { timeout: 3_000 });
+    const areaCount = await page.locator('.subtitle-area').count();
 
-		// Clear.
-		await page.evaluate(() => {
-			(window as any).player.emit('subtitleCue', { cues: [] });
-		});
+    expect(areaCount).toBe(2);
+  });
 
-		// The plugin pools nodes — it hides them rather than removing them.
-		// Wait until no visible area has non-empty text.
-		await page.waitForFunction(() => {
-			const areas = document.querySelectorAll('.subtitle-area');
-			for (let i = 0; i < areas.length; i++) {
-				const el = areas[i] as HTMLElement;
-				const hidden = el.hidden
-					|| el.style.display === 'none'
-					|| el.style.visibility === 'hidden';
-				const hasText = (el.textContent?.trim().length ?? 0) > 0;
-				if (!hidden && hasText)
-					return false;
-			}
-			return true;
-		}, { timeout: 3_000 });
+  test('empty cue list clears visible .subtitle-area nodes', async ({ page }) => {
+    await loadFixture(page);
 
-		const visibleWithText = await page.evaluate(() => {
-			const areas = document.querySelectorAll('.subtitle-area');
-			let count = 0;
-			for (let i = 0; i < areas.length; i++) {
-				const el = areas[i] as HTMLElement;
-				const hidden = el.hidden
-					|| el.style.display === 'none'
-					|| el.style.visibility === 'hidden';
-				const hasText = (el.textContent?.trim().length ?? 0) > 0;
-				if (!hidden && hasText)
-					count++;
-			}
-			return count;
-		});
-		expect(visibleWithText).toBe(0);
-	});
+    // Show a cue.
+    await page.evaluate(() => {
+      (window as any).player.emit('subtitleCue', {
+        cues: [{
+          text: 'Temp cue',
+          line: undefined,
+        }],
+      });
+    });
+
+    await page.waitForSelector('.subtitle-area', { timeout: 3_000 });
+
+    // Clear.
+    await page.evaluate(() => {
+      (window as any).player.emit('subtitleCue', { cues: [] });
+    });
+
+    // The plugin pools nodes — it hides them rather than removing them.
+    // Wait until no visible area has non-empty text.
+    await page.waitForFunction(() => {
+      const areas = document.querySelectorAll('.subtitle-area');
+
+      for (let i = 0; i < areas.length; i++) {
+        const el = areas[i] as HTMLElement;
+        const hidden = el.hidden ||
+          el.style.display === 'none' ||
+          el.style.visibility === 'hidden';
+        const hasText = (el.textContent?.trim().length ?? 0) > 0;
+
+        if (!hidden && hasText)
+          return false;
+      }
+
+      return true;
+    }, { timeout: 3_000 });
+
+    const visibleWithText = await page.evaluate(() => {
+      const areas = document.querySelectorAll('.subtitle-area');
+      let count = 0;
+
+      for (let i = 0; i < areas.length; i++) {
+        const el = areas[i] as HTMLElement;
+        const hidden = el.hidden ||
+          el.style.display === 'none' ||
+          el.style.visibility === 'hidden';
+        const hasText = (el.textContent?.trim().length ?? 0) > 0;
+
+        if (!hidden && hasText) {
+          count++;
+        }
+      }
+
+      return count;
+    });
+
+    expect(visibleWithText).toBe(0);
+  });
 });
 
 // ── OctopusPlugin (libass WASM) — canvas initialization ───────────────────────
 
 test.describe('OctopusPlugin — libass WASM initialization', () => {
-	test('OctopusPlugin canvas appears or WASM failure is annotated as real residue', async ({ page }) => {
-		await page.goto('/e2e/fixture-full.html');
-		await page.waitForFunction(
-			() => (window as any).__playerReady === true,
-			{ timeout: 10_000 },
-		);
-		const setupError = await page.evaluate(() => (window as any).__playerError);
-		if (setupError) {
-			throw new Error(`Player init failed: ${setupError}`);
-		}
+  test('OctopusPlugin canvas appears or WASM failure is annotated as real residue', async ({ page }) => {
+    await page.goto('/e2e/fixture-full.html');
 
-		// Load a real MP4 with autoPlay:true so videoElement is created.
-		await page.evaluate(() => {
-			(window as any).player.setup({
-				playlist: [{
-					id: 'octopus-src',
-					file: '/e2e/media/sample.mp4',
-				}],
-				muted: true,
-				autoPlay: true,
-			});
-		});
+    await page.waitForFunction(
+      () => (window as any).__playerReady === true,
+      { timeout: 10_000 },
+    );
 
-		// Wait for the video element to be ready before adding OctopusPlugin.
-		await page.waitForFunction(
-			() => {
-				const el = (window as any).player.videoElement;
-				return el && typeof el.duration === 'number' && el.duration > 0;
-			},
-			{ timeout: 20_000 },
-		);
+    const setupError = await page.evaluate(() => (window as any).__playerError);
 
-		// Add OctopusPlugin after setup (post-setup addPlugin runs inline).
-		const addError: string | null = null;
-		const addResult = await page.evaluate(async () => {
-			const player = (window as any).player;
-			const { OctopusPlugin } = window as any;
+    if (setupError) {
+      throw new Error(`Player init failed: ${setupError}`);
+    }
 
-			try {
-				player.addPlugin(OctopusPlugin);
-			}
-			catch (e: unknown) {
-				return {
-					threw: true,
-					message: (e as Error).message ?? String(e),
-				};
-			}
+    // Load a real MP4 with autoPlay:true so videoElement is created.
+    await page.evaluate(() => {
+      (window as any).player.setup({
+        playlist: [{
+          id: 'octopus-src',
+          file: '/e2e/media/sample.mp4',
+        }],
+        muted: true,
+        autoPlay: true,
+      });
+    });
 
-			// Give the async WASM worker time to spin up.
-			await new Promise(r => setTimeout(r, 2500));
+    // Wait for the video element to be ready before adding OctopusPlugin.
+    await page.waitForFunction(
+      () => {
+        const el = (window as any).player.videoElement;
 
-			// Check whether a canvas was mounted by the libass renderer.
-			const canvas = player.container.querySelector('canvas');
-			return {
-				threw: false,
-				canvasPresent: !!canvas,
-				message: null,
-			};
-		});
+        return el && typeof el.duration === 'number' && el.duration > 0;
+      },
+      { timeout: 20_000 },
+    );
 
-		if (!addResult.canvasPresent) {
-			// Honest residue: the WASM worker URL in the fork defaults to a
-			// `/public/` bundle path that is not served by this bare Vite dev-server
-			// setup. The test.skip() documents the gap — do not fake-pass.
-			test.skip(
-				true,
-				`OctopusPlugin WASM canvas did not appear in headless Chromium. `
-				+ `Real residue: the libass WASM worker requires a served worker URL `
-				+ `not available in this bare Vite dev-server (needs workerUrl option `
-				+ `pointing to the built worker bundle). `
-				+ `addPlugin() threw: ${addResult.threw}. Message: ${addResult.message ?? addError ?? 'none'}.`,
-			);
-			return;
-		}
+    // Add OctopusPlugin after setup (post-setup addPlugin runs inline).
+    const addError: string | null = null;
+    const addResult = await page.evaluate(async () => {
+      const player = (window as any).player;
+      const { OctopusPlugin } = window as any;
 
-		expect(addResult.canvasPresent).toBe(true);
-	});
+      try {
+        player.addPlugin(OctopusPlugin);
+      } catch (e: unknown) {
+        return {
+          threw: true,
+          message: (e as Error).message ?? String(e),
+        };
+      }
+
+      // Give the async WASM worker time to spin up.
+      await new Promise((r) => setTimeout(r, 2500));
+
+      // Check whether a canvas was mounted by the libass renderer.
+      const canvas = player.container.querySelector('canvas');
+
+      return {
+        threw: false,
+        canvasPresent: !!canvas,
+        message: null,
+      };
+    });
+
+    if (!addResult.canvasPresent) {
+      // Honest residue: the WASM worker URL in the fork defaults to a
+      // `/public/` bundle path that is not served by this bare Vite dev-server
+      // setup. The test.skip() documents the gap — do not fake-pass.
+      test.skip(
+        true,
+        `OctopusPlugin WASM canvas did not appear in headless Chromium. ` +
+        `Real residue: the libass WASM worker requires a served worker URL ` +
+        `not available in this bare Vite dev-server (needs workerUrl option ` +
+        `pointing to the built worker bundle). ` +
+        `addPlugin() threw: ${addResult.threw}. Message: ${addResult.message ?? addError ?? 'none'}.`,
+      );
+
+      return;
+    }
+
+    expect(addResult.canvasPresent).toBe(true);
+  });
 });

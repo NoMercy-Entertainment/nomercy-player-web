@@ -17,8 +17,8 @@ const _w: _HasWaiting = true as const;
 const _f: _HasFullscreen = true as const;
 
 describe('VideoEventMap shape', () => {
-	it('keeps the `waiting` + `fullscreen` keys consumers depend on', () => {
-		expect(_w).toBe(true);
-		expect(_f).toBe(true);
-	});
+  it('keeps the `waiting` + `fullscreen` keys consumers depend on', () => {
+    expect(_w).toBe(true);
+    expect(_f).toBe(true);
+  });
 });

@@ -48,13 +48,14 @@ export { streamRegistrationMethods } from './core/mixins/stream-registration';
 export { timeMethods } from './core/mixins/time';
 export { transportMethods } from './core/mixins/transport';
 export { volumeMethods } from './core/mixins/volume';
+
 export {
-	initPlayerCoreState,
-	setPlayerAudioContext,
+  initPlayerCoreState,
+  setPlayerAudioContext,
 } from './core/state';
 
 export {
-	pluginError,
-	resourceError,
-	stateError,
+  pluginError,
+  resourceError,
+  stateError,
 } from './errors';

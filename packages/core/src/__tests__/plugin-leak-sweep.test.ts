@@ -15,8 +15,8 @@
 import type { Plugin } from '../index';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 // Plugin classes — the kit ones. Some throw on `use()` (stubbed); harness
 // catches and skips them so we get a roll-up rather than a per-plugin
@@ -37,81 +37,86 @@ import { assertNoListenerLeak } from '../testing/leak-harness';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => Promise<void>;
-	declare addPlugin: (PluginClass: any, opts?: any) => this;
-	declare removePlugin: (PluginClass: any) => void;
-	declare getPlugin: (PluginClass: any) => any;
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => Promise<void>;
+  declare addPlugin: (PluginClass: any, opts?: any) => this;
+  declare removePlugin: (PluginClass: any) => void;
+  declare getPlugin: (PluginClass: any) => any;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 const PLUGINS: ReadonlyArray<{ name: string; ctor: typeof Plugin }> = [
-	// Plugins with at least partial real impls — leak harness exercises them.
-	// `audio-graph` is included; in happy-dom (no AudioContext) it fails install
-	// via BrowserPolicyError and the harness records `installable=false`.
-	{ name: 'audio-graph', ctor: AudioGraphPlugin as unknown as typeof Plugin },
-	{ name: 'canvas', ctor: CanvasPlugin as unknown as typeof Plugin },
-	{ name: 'embed', ctor: EmbedPlugin as unknown as typeof Plugin },
-	{ name: 'equalizer', ctor: EqualizerPlugin as unknown as typeof Plugin },
-	{ name: 'key-handler', ctor: KeyHandlerPlugin as unknown as typeof Plugin },
-	{ name: 'media-session', ctor: MediaSessionPlugin as unknown as typeof Plugin },
-	{ name: 'message', ctor: MessagePlugin as unknown as typeof Plugin },
-	{ name: 'mixer', ctor: MixerPlugin as unknown as typeof Plugin },
-	{ name: 'spectrum', ctor: SpectrumPlugin as unknown as typeof Plugin },
-	{ name: 'tab-leader', ctor: TabLeaderPlugin as unknown as typeof Plugin },
-	{ name: 'visualization', ctor: VisualizationPlugin as unknown as typeof Plugin },
+  // Plugins with at least partial real impls — leak harness exercises them.
+  // `audio-graph` is included; in happy-dom (no AudioContext) it fails install
+  // via BrowserPolicyError and the harness records `installable=false`.
+  { name: 'audio-graph', ctor: AudioGraphPlugin as unknown as typeof Plugin },
+  { name: 'canvas', ctor: CanvasPlugin as unknown as typeof Plugin },
+  { name: 'embed', ctor: EmbedPlugin as unknown as typeof Plugin },
+  { name: 'equalizer', ctor: EqualizerPlugin as unknown as typeof Plugin },
+  { name: 'key-handler', ctor: KeyHandlerPlugin as unknown as typeof Plugin },
+  { name: 'media-session', ctor: MediaSessionPlugin as unknown as typeof Plugin },
+  { name: 'message', ctor: MessagePlugin as unknown as typeof Plugin },
+  { name: 'mixer', ctor: MixerPlugin as unknown as typeof Plugin },
+  { name: 'spectrum', ctor: SpectrumPlugin as unknown as typeof Plugin },
+  { name: 'tab-leader', ctor: TabLeaderPlugin as unknown as typeof Plugin },
+  { name: 'visualization', ctor: VisualizationPlugin as unknown as typeof Plugin },
 ];
 
 describe('Kit plugin leak-harness sweep', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => MockPlayer._resetRegistry());
 
-	for (const { name, ctor } of PLUGINS) {
-		it(`${name} plugin installs and disposes without listener leak (or fails install gracefully if stubbed)`, async () => {
-			const div = document.createElement('div');
-			div.id = `leak-${name}`;
-			document.body.appendChild(div);
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-			const player = new MockPlayer(`leak-${name}`).setup({});
-			await player.ready();
+  for (const { name, ctor } of PLUGINS) {
+    it(`${name} plugin installs and disposes without listener leak (or fails install gracefully if stubbed)`, async () => {
+      const div = document.createElement('div');
 
-			let installable = true;
-			try {
-				const Class = ctor as unknown as new () => Plugin;
-				player.addPlugin(Class);
-				await player.ready();
-			}
-			catch {
-				// Plugin's use() threw — likely still-stubbed. Skip the leak
-				// assertion since the install path didn't complete.
-				installable = false;
-			}
+      div.id = `leak-${name}`;
+      document.body.appendChild(div);
 
-			if (!installable) {
-				expect(installable).toBe(false);
-				return;
-			}
+      const player = new MockPlayer(`leak-${name}`).setup({});
 
-			const result = await assertNoListenerLeak({
-				subjectId: `kit:${name}`,
-				player: player as any,
-				setup: async () => {
-					// Already installed above; no-op here so the harness's
-					// before/after measurements bracket only the dispose.
-				},
-				teardown: async () => {
-					player.removePlugin(ctor as unknown as new () => Plugin);
-				},
-			});
+      await player.ready();
 
-			expect(result.leaked).toBeLessThanOrEqual(0);
-		});
-	}
+      let installable = true;
+
+      try {
+        const Class = ctor as unknown as new () => Plugin;
+
+        player.addPlugin(Class);
+        await player.ready();
+      } catch {
+        // Plugin's use() threw — likely still-stubbed. Skip the leak
+        // assertion since the install path didn't complete.
+        installable = false;
+      }
+
+      if (!installable) {
+        expect(installable).toBe(false);
+
+        return;
+      }
+
+      const result = await assertNoListenerLeak({
+        subjectId: `kit:${name}`,
+        player: player as any,
+        setup: async () => {
+          // Already installed above; no-op here so the harness's
+          // before/after measurements bracket only the dispose.
+        },
+        teardown: async () => {
+          player.removePlugin(ctor as unknown as new () => Plugin);
+        },
+      });
+
+      expect(result.leaked).toBeLessThanOrEqual(0);
+    });
+  }
 });
 
 /**
@@ -124,46 +129,54 @@ describe('Kit plugin leak-harness sweep', () => {
  * so this sweep spies on each plugin's `dispose()` directly.
  */
 describe('Kit plugin leak-harness sweep — player.dispose() path', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => MockPlayer._resetRegistry());
 
-	for (const { name, ctor } of PLUGINS) {
-		it(`${name} plugin's dispose() is invoked by player.dispose() (or fails install gracefully if stubbed)`, async () => {
-			const div = document.createElement('div');
-			div.id = `dispose-sweep-${name}`;
-			document.body.appendChild(div);
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-			const player = new MockPlayer(`dispose-sweep-${name}`).setup({});
-			await player.ready();
+  for (const { name, ctor } of PLUGINS) {
+    it(`${name} plugin's dispose() is invoked by player.dispose() (or fails install gracefully if stubbed)`, async () => {
+      const div = document.createElement('div');
 
-			let installable = true;
-			try {
-				const Class = ctor as unknown as new () => Plugin;
-				player.addPlugin(Class);
-				await player.ready();
-			}
-			catch {
-				installable = false;
-			}
+      div.id = `dispose-sweep-${name}`;
+      document.body.appendChild(div);
 
-			// A plugin whose use() throws (e.g. audio-graph — no AudioContext in
-			// happy-dom) fails registration internally via _failRegistration
-			// without addPlugin()/ready() ever rejecting — getPlugin() returning
-			// undefined is the only observable signal that install didn't land.
-			const instance = installable ? player.getPlugin(ctor as unknown as new () => Plugin) : undefined;
-			if (!instance) {
-				expect(instance).toBeUndefined();
-				return;
-			}
+      const player = new MockPlayer(`dispose-sweep-${name}`).setup({});
 
-			const disposeSpy = vi.spyOn(instance, 'dispose');
+      await player.ready();
 
-			await player.dispose();
+      let installable = true;
 
-			expect(disposeSpy).toHaveBeenCalledTimes(1);
-		});
-	}
+      try {
+        const Class = ctor as unknown as new () => Plugin;
+
+        player.addPlugin(Class);
+        await player.ready();
+      } catch {
+        installable = false;
+      }
+
+      // A plugin whose use() throws (e.g. audio-graph — no AudioContext in
+      // happy-dom) fails registration internally via _failRegistration
+      // without addPlugin()/ready() ever rejecting — getPlugin() returning
+      // undefined is the only observable signal that install didn't land.
+      const instance = installable
+        ? player.getPlugin(ctor as unknown as new () => Plugin)
+        : undefined;
+
+      if (!instance) {
+        expect(instance).toBeUndefined();
+
+        return;
+      }
+
+      const disposeSpy = vi.spyOn(instance, 'dispose');
+
+      await player.dispose();
+
+      expect(disposeSpy).toHaveBeenCalledTimes(1);
+    });
+  }
 });

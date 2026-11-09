@@ -9,9 +9,9 @@
 import type { CastSenderTranslationKey } from './en';
 
 export default {
-	'plugin.cast-sender.casting.track': 'Isakaza i-"{title}" ka-{artist}',
-	'plugin.cast-sender.casting.album': 'Isakaza i-albhamu "{album}"',
-	'plugin.cast-sender.casting.queue': 'Isakaza amathrekhi angu-{count}',
-	'plugin.cast-sender.action.cast-album': 'Sakaza i-albhamu',
-	'plugin.cast-sender.action.cast-queue': 'Sakaza ulayini',
+  'plugin.cast-sender.casting.track': 'Isakaza i-"{title}" ka-{artist}',
+  'plugin.cast-sender.casting.album': 'Isakaza i-albhamu "{album}"',
+  'plugin.cast-sender.casting.queue': 'Isakaza amathrekhi angu-{count}',
+  'plugin.cast-sender.action.cast-album': 'Sakaza i-albhamu',
+  'plugin.cast-sender.action.cast-queue': 'Sakaza ulayini',
 } satisfies Record<CastSenderTranslationKey, string>;

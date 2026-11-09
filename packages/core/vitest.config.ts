@@ -9,9 +9,9 @@
 import { playerVitestConfig } from '../../config/vitest';
 
 export default playerVitestConfig({
-	configUrl: import.meta.url,
-	thresholds: {
-		lines: 75,
-		functions: 80,
-	},
+  configUrl: import.meta.url,
+  thresholds: {
+    lines: 75,
+    functions: 80,
+  },
 });

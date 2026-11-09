@@ -24,110 +24,123 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare options: Record<string, unknown>;
-	declare setup: (config: Record<string, unknown>) => this;
-	declare ready: () => Promise<void>;
-	declare t: (key: string, vars?: Record<string, string>) => string;
-	declare language: { (): string; (lang: string): Promise<void> };
-	declare translation: (lang: string, key: string, value?: string) => string | undefined;
+  declare options: Record<string, unknown>;
+  declare setup: (config: Record<string, unknown>) => this;
+  declare ready: () => Promise<void>;
+  declare t: (key: string, vars?: Record<string, string>) => string;
+  declare language: { (): string; (lang: string): Promise<void> };
+  declare translation: (lang: string, key: string, value?: string) => string | undefined;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 describe('kit core.* translations — zero-config default', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => MockPlayer._resetRegistry());
 
-	it('t("core.network.timeout") resolves the kit English default with zero config', async () => {
-		const player = makePlayer('kit-i18n-default').setup({});
-		await player.ready();
-		expect(player.t('core.network.timeout')).toBe('The connection timed out. Trying again…');
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('does not return the raw key for a kit core.* key (the pre-fix regression)', async () => {
-		const player = makePlayer('kit-i18n-raw-key').setup({});
-		await player.ready();
-		expect(player.t('core.network.offline')).not.toBe('core.network.offline');
-	});
+  it('t("core.network.timeout") resolves the kit English default with zero config', async () => {
+    const player = makePlayer('kit-i18n-default').setup({});
+
+    await player.ready();
+    expect(player.t('core.network.timeout')).toBe('The connection timed out. Trying again…');
+  });
+
+  it('does not return the raw key for a kit core.* key (the pre-fix regression)', async () => {
+    const player = makePlayer('kit-i18n-raw-key').setup({});
+
+    await player.ready();
+    expect(player.t('core.network.offline')).not.toBe('core.network.offline');
+  });
 });
 
 describe('kit core.* translations — consumer overrides win', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => MockPlayer._resetRegistry());
 
-	it('consumer-supplied translations.en wins over the kit default for the same key', async () => {
-		const player = makePlayer('kit-i18n-override').setup({
-			translations: { en: { 'core.network.timeout': 'CUSTOM TIMEOUT' } },
-		});
-		await player.ready();
-		expect(player.t('core.network.timeout')).toBe('CUSTOM TIMEOUT');
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('a kit key the consumer did NOT override still resolves from the kit default', async () => {
-		const player = makePlayer('kit-i18n-partial').setup({
-			translations: { en: { 'core.network.timeout': 'CUSTOM TIMEOUT' } },
-		});
-		await player.ready();
-		expect(player.t('core.network.offline')).toBe('No internet connection.');
-	});
+  it('consumer-supplied translations.en wins over the kit default for the same key', async () => {
+    const player = makePlayer('kit-i18n-override').setup({
+      translations: { en: { 'core.network.timeout': 'CUSTOM TIMEOUT' } },
+    });
+
+    await player.ready();
+    expect(player.t('core.network.timeout')).toBe('CUSTOM TIMEOUT');
+  });
+
+  it('a kit key the consumer did NOT override still resolves from the kit default', async () => {
+    const player = makePlayer('kit-i18n-partial').setup({
+      translations: { en: { 'core.network.timeout': 'CUSTOM TIMEOUT' } },
+    });
+
+    await player.ready();
+    expect(player.t('core.network.offline')).toBe('No internet connection.');
+  });
 });
 
 describe('kit core.* translations — non-English lazy loading', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => MockPlayer._resetRegistry());
 
-	it('setup({ language: "nl" }) lazy-loads the Dutch kit bundle and resolves it', async () => {
-		const player = makePlayer('kit-i18n-nl').setup({ language: 'nl' });
-		await player.ready();
-		expect(player.t('core.network.timeout')).toBe('De verbinding duurde te lang. Opnieuw proberen…');
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('language() to a new kit language lazy-loads on demand and resolves', async () => {
-		const player = makePlayer('kit-i18n-de-switch').setup({});
-		await player.ready();
-		await player.language('de');
-		expect(player.t('core.network.timeout')).toBe('Verbindungszeitüberschreitung. Erneut versuchen…');
-	});
+  it('setup({ language: "nl" }) lazy-loads the Dutch kit bundle and resolves it', async () => {
+    const player = makePlayer('kit-i18n-nl').setup({ language: 'nl' });
 
-	it('a non-active kit language is NOT loaded eagerly', async () => {
-		const player = makePlayer('kit-i18n-lazy-untouched').setup({});
-		await player.ready();
+    await player.ready();
+    expect(player.t('core.network.timeout')).toBe('De verbinding duurde te lang. Opnieuw proberen…');
+  });
 
-		// Never switched to German — its bundle must not be in memory yet.
-		expect(player.translation('de', 'core.network.timeout')).toBeUndefined();
+  it('language() to a new kit language lazy-loads on demand and resolves', async () => {
+    const player = makePlayer('kit-i18n-de-switch').setup({});
 
-		await player.language('de');
-		expect(player.translation('de', 'core.network.timeout')).toBe('Verbindungszeitüberschreitung. Erneut versuchen…');
-	});
+    await player.ready();
+    await player.language('de');
+    expect(player.t('core.network.timeout')).toBe('Verbindungszeitüberschreitung. Erneut versuchen…');
+  });
 
-	it('English stays resolvable as the fallback even while a non-English language is active', async () => {
-		const player = makePlayer('kit-i18n-fallback').setup({ language: 'de' });
-		await player.ready();
-		// A key present only conceptually in English (simulated by asserting the
-		// German bundle mirrors it) — real fallback contract: unknown / not-yet-
-		// loaded languages fall through to the seeded English bundle.
-		expect(player.translation('en', 'core.network.timeout')).toBe('The connection timed out. Trying again…');
-	});
+  it('a non-active kit language is NOT loaded eagerly', async () => {
+    const player = makePlayer('kit-i18n-lazy-untouched').setup({});
+
+    await player.ready();
+
+    // Never switched to German — its bundle must not be in memory yet.
+    expect(player.translation('de', 'core.network.timeout')).toBeUndefined();
+
+    await player.language('de');
+    expect(player.translation('de', 'core.network.timeout')).toBe('Verbindungszeitüberschreitung. Erneut versuchen…');
+  });
+
+  it('English stays resolvable as the fallback even while a non-English language is active', async () => {
+    const player = makePlayer('kit-i18n-fallback').setup({ language: 'de' });
+
+    await player.ready();
+    // A key present only conceptually in English (simulated by asserting the
+    // German bundle mirrors it) — real fallback contract: unknown / not-yet-
+    // loaded languages fall through to the seeded English bundle.
+    expect(player.translation('en', 'core.network.timeout')).toBe('The connection timed out. Trying again…');
+  });
 });

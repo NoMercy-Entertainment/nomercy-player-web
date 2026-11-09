@@ -15,32 +15,33 @@ const CHANNEL_TOKEN = `query TwitchChannelToken($login: String!) {
 }`;
 
 interface StreamData {
-	streamPlaybackAccessToken?: { value: string; signature: string } | null;
-	user?: { stream: { id: string } | null } | null;
+  streamPlaybackAccessToken?: { value: string; signature: string } | null;
+  user?: { stream: { id: string } | null } | null;
 }
 
 /** Finds the HLS address of a live channel. A channel that is not streaming has none. */
 export async function lookUpLiveStream(channel: string, clientId?: string, signal?: AbortSignal): Promise<string | undefined> {
-	const data = await postGql<StreamData>(CHANNEL_TOKEN, { login: channel }, clientId, signal);
-	const token = data?.streamPlaybackAccessToken;
-	if (!data?.user?.stream || !token)
-		return undefined;
+  const data = await postGql<StreamData>(CHANNEL_TOKEN, { login: channel }, clientId, signal);
+  const token = data?.streamPlaybackAccessToken;
 
-	const query = new URLSearchParams({
-		allow_source: 'true',
-		player: 'twitchweb',
-		sig: token.signature,
-		token: token.value,
-	});
+  if (!data?.user?.stream || !token)
+    return undefined;
 
-	return `${USHER_URL}/api/channel/hls/${channel}.m3u8?${query}`;
+  const query = new URLSearchParams({
+    allow_source: 'true',
+    player: 'twitchweb',
+    sig: token.signature,
+    token: token.value,
+  });
+
+  return `${USHER_URL}/api/channel/hls/${channel}.m3u8?${query}`;
 }
 
 /** Wraps the address for the proxy. The `.m3u8` ending is what makes the player treat it as HLS. */
 export function proxiedUrl(proxyUrl: string, target: string): string {
-	const encoded = btoa(target).replaceAll('+', '-')
-		.replaceAll('/', '_')
-		.replace(/=+$/u, '');
+  const encoded = btoa(target).replaceAll('+', '-')
+    .replaceAll('/', '_')
+    .replace(/=+$/u, '');
 
-	return `${proxyUrl}/${encoded}/index.m3u8`;
+  return `${proxyUrl}/${encoded}/index.m3u8`;
 }

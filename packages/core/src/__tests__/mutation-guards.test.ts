@@ -28,242 +28,319 @@
 import type { BeforeEvent } from '../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => Promise<void>;
-	declare phase: () => string;
-	declare play: (opts?: any) => Promise<void>;
-	declare pause: (opts?: any) => Promise<void>;
-	declare volume: { (): number; (level: number): Promise<void> };
-	declare queue: {
-		(): ReadonlyArray<any>;
-		(items: any[]): void;
-	};
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => Promise<void>;
+  declare phase: () => string;
+  declare play: (opts?: any) => Promise<void>;
+  declare pause: (opts?: any) => Promise<void>;
+  declare volume: { (): number; (level: number): Promise<void> };
+  declare queue: {
+    (): ReadonlyArray<any>;
+    (items: any[]): void;
+  };
 
-	declare item: { (): any; (target: any): void };
-	declare index: () => number;
-	declare playbackRate: { (): number; (rate: number): Promise<void> };
+  declare item: { (): any; (target: any): void };
+  declare index: () => number;
+  declare playbackRate: { (): number; (rate: number): Promise<void> };
 
-	/**
-	 * Test-only: exercises the generic `beforeMutation` gate directly using the
-	 * still-hot `'bandwidth'` label. No production method calls
-	 * `_emitBeforeMutation('bandwidth', ...)` today — this is purely a probe
-	 * into the `mutationGuards` config-resolution mechanism itself. Returns
-	 * `true` when the mutation proceeded (matches `_emitBeforeMutation`'s own
-	 * return contract).
-	 */
-	triggerHotMutation(value: number): boolean {
-		return (this as unknown as { _emitBeforeMutation: (method: string, args: ReadonlyArray<unknown>) => boolean })
-			._emitBeforeMutation('bandwidth', [value]);
-	}
+  /**
+   * Test-only: exercises the generic `beforeMutation` gate directly using the
+   * still-hot `'bandwidth'` label. No production method calls
+   * `_emitBeforeMutation('bandwidth', ...)` today — this is purely a probe
+   * into the `mutationGuards` config-resolution mechanism itself. Returns
+   * `true` when the mutation proceeded (matches `_emitBeforeMutation`'s own
+   * return contract).
+   */
+  triggerHotMutation(value: number): boolean {
+    return (this as unknown as { _emitBeforeMutation: (method: string, args: ReadonlyArray<unknown>) => boolean })
+      ._emitBeforeMutation('bandwidth', [value]);
+  }
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 function seedQueue(mockPlayer: MockPlayer): void {
-	mockPlayer.queue([
-		{ id: 'a' },
-		{ id: 'b' },
-		{ id: 'c' },
-	]);
+  mockPlayer.queue([
+    { id: 'a' },
+    { id: 'b' },
+    { id: 'c' },
+  ]);
 }
 
 describe('mutationGuards config + beforeMutation event', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	// ── 1. Default config (undefined) — normal mutations fire, hot ones skip ──
+  // ── 1. Default config (undefined) — normal mutations fire, hot ones skip ──
 
-	it('default config: current() fires beforeMutation, a hot mutation does not', async () => {
-		const mockPlayer = makePlayer('mg-default').setup({});
-		await mockPlayer.ready();
-		seedQueue(mockPlayer);
+  it('default config: current() fires beforeMutation, a hot mutation does not', async () => {
+    const mockPlayer = makePlayer('mg-default').setup({});
 
-		const seen: string[] = [];
-		mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{ method: string; args: ReadonlyArray<unknown>; phase: string; dispatchStack: ReadonlyArray<string> }>) => {
-			seen.push(beforeEvent.data.method);
-		});
+    await mockPlayer.ready();
+    seedQueue(mockPlayer);
 
-		mockPlayer.item('a');
-		mockPlayer.triggerHotMutation(0.5);
+    const seen: string[] = [];
 
-		expect(seen).toContain('current');
-		expect(seen).not.toContain('bandwidth');
-	});
+    mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{
+      method: string;
+      args: ReadonlyArray<unknown>;
+      phase: string;
+      dispatchStack: ReadonlyArray<string>;
+    }>) => {
+      seen.push(beforeEvent.data.method);
+    });
 
-	// ── 2. mutationGuards: false — nothing fires ──
+    mockPlayer.item('a');
+    mockPlayer.triggerHotMutation(0.5);
 
-	it('mutationGuards:false: neither current() nor a hot mutation fires beforeMutation', async () => {
-		const mockPlayer = makePlayer('mg-false').setup({ mutationGuards: false });
-		await mockPlayer.ready();
-		seedQueue(mockPlayer);
+    expect(seen).toContain('current');
+    expect(seen).not.toContain('bandwidth');
+  });
 
-		const seen: string[] = [];
-		mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{ method: string; args: ReadonlyArray<unknown>; phase: string; dispatchStack: ReadonlyArray<string> }>) => {
-			seen.push(beforeEvent.data.method);
-		});
+  // ── 2. mutationGuards: false — nothing fires ──
 
-		mockPlayer.item('a');
-		mockPlayer.triggerHotMutation(0.5);
+  it('mutationGuards:false: neither current() nor a hot mutation fires beforeMutation', async () => {
+    const mockPlayer = makePlayer('mg-false').setup({ mutationGuards: false });
 
-		expect(seen).toEqual([]);
-	});
+    await mockPlayer.ready();
+    seedQueue(mockPlayer);
 
-	// ── 3. mutationGuards: 'all' — both fire ──
+    const seen: string[] = [];
 
-	it('mutationGuards:\'all\': both current() and a hot mutation fire beforeMutation', async () => {
-		const mockPlayer = makePlayer('mg-all').setup({ mutationGuards: 'all' });
-		await mockPlayer.ready();
-		seedQueue(mockPlayer);
+    mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{
+      method: string;
+      args: ReadonlyArray<unknown>;
+      phase: string;
+      dispatchStack: ReadonlyArray<string>;
+    }>) => {
+      seen.push(beforeEvent.data.method);
+    });
 
-		const seen: string[] = [];
-		mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{ method: string; args: ReadonlyArray<unknown>; phase: string; dispatchStack: ReadonlyArray<string> }>) => {
-			seen.push(beforeEvent.data.method);
-		});
+    mockPlayer.item('a');
+    mockPlayer.triggerHotMutation(0.5);
 
-		mockPlayer.item('a');
-		mockPlayer.triggerHotMutation(0.5);
+    expect(seen).toEqual([]);
+  });
 
-		expect(seen).toContain('current');
-		expect(seen).toContain('bandwidth');
-	});
+  // ── 3. mutationGuards: 'all' — both fire ──
 
-	// ── 4. mutationGuards: ['bandwidth'] — normal still fires, named hot fires ──
+  it('mutationGuards:\'all\': both current() and a hot mutation fire beforeMutation', async () => {
+    const mockPlayer = makePlayer('mg-all').setup({ mutationGuards: 'all' });
 
-	it('mutationGuards:[\'bandwidth\']: current() fires (normal always fires), bandwidth fires (named hot)', async () => {
-		const mockPlayer = makePlayer('mg-array').setup({ mutationGuards: ['bandwidth'] });
-		await mockPlayer.ready();
-		seedQueue(mockPlayer);
+    await mockPlayer.ready();
+    seedQueue(mockPlayer);
 
-		const seen: string[] = [];
-		mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{ method: string; args: ReadonlyArray<unknown>; phase: string; dispatchStack: ReadonlyArray<string> }>) => {
-			seen.push(beforeEvent.data.method);
-		});
+    const seen: string[] = [];
 
-		mockPlayer.item('a');
-		mockPlayer.triggerHotMutation(0.5);
+    mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{
+      method: string;
+      args: ReadonlyArray<unknown>;
+      phase: string;
+      dispatchStack: ReadonlyArray<string>;
+    }>) => {
+      seen.push(beforeEvent.data.method);
+    });
 
-		expect(seen).toContain('current');
-		expect(seen).toContain('bandwidth');
-	});
+    mockPlayer.item('a');
+    mockPlayer.triggerHotMutation(0.5);
 
-	it('mutationGuards:[\'bandwidth\']: a non-named hot method (recordMetric) still skips', async () => {
-		const mockPlayer = makePlayer('mg-array-skip').setup({ mutationGuards: ['bandwidth'] });
-		await mockPlayer.ready();
+    expect(seen).toContain('current');
+    expect(seen).toContain('bandwidth');
+  });
 
-		const seen: string[] = [];
-		mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{ method: string; args: ReadonlyArray<unknown>; phase: string; dispatchStack: ReadonlyArray<string> }>) => {
-			seen.push(beforeEvent.data.method);
-		});
+  // ── 4. mutationGuards: ['bandwidth'] — normal still fires, named hot fires ──
 
-		(mockPlayer as unknown as { _emitBeforeMutation: (method: string, args: ReadonlyArray<unknown>) => boolean })
-			._emitBeforeMutation('recordMetric', [1]);
+  it('mutationGuards:[\'bandwidth\']: current() fires (normal always fires), bandwidth fires (named hot)', async () => {
+    const mockPlayer = makePlayer('mg-array').setup({ mutationGuards: ['bandwidth'] });
 
-		expect(seen).not.toContain('recordMetric');
-	});
+    await mockPlayer.ready();
+    seedQueue(mockPlayer);
 
-	// ── 5. preventDefault cancels mutation, emits mutationPrevented ──
+    const seen: string[] = [];
 
-	it('preventDefault() cancels the mutation AND emits mutationPrevented', async () => {
-		const mockPlayer = makePlayer('mg-prevent').setup({});
-		await mockPlayer.ready();
-		seedQueue(mockPlayer);
-		mockPlayer.item('a');
-		const before = mockPlayer.index();
+    mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{
+      method: string;
+      args: ReadonlyArray<unknown>;
+      phase: string;
+      dispatchStack: ReadonlyArray<string>;
+    }>) => {
+      seen.push(beforeEvent.data.method);
+    });
 
-		let preventedPayload: { method: string; reason: string } | undefined;
-		mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{ method: string; args: ReadonlyArray<unknown>; phase: string; dispatchStack: ReadonlyArray<string> }>) => {
-			if (beforeEvent.data.method === 'current')
-				beforeEvent.preventDefault();
-		});
-		mockPlayer.on('mutationPrevented', (data: { method: string; reason: string }) => {
-			preventedPayload = data;
-		});
+    mockPlayer.item('a');
+    mockPlayer.triggerHotMutation(0.5);
 
-		mockPlayer.item('c');
+    expect(seen).toContain('current');
+    expect(seen).toContain('bandwidth');
+  });
 
-		expect(preventedPayload).toEqual({ method: 'current', reason: 'listener-prevented' });
-		expect(mockPlayer.index()).toBe(before);
-	});
+  it('mutationGuards:[\'bandwidth\']: a non-named hot method (recordMetric) still skips', async () => {
+    const mockPlayer = makePlayer('mg-array-skip').setup({ mutationGuards: ['bandwidth'] });
 
-	it('preventDefault() on a hot mutation (mutationGuards:all) cancels it', async () => {
-		const mockPlayer = makePlayer('mg-prevent-hot').setup({ mutationGuards: 'all' });
-		await mockPlayer.ready();
+    await mockPlayer.ready();
 
-		let preventedPayload: { method: string; reason: string } | undefined;
-		mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{ method: string; args: ReadonlyArray<unknown>; phase: string; dispatchStack: ReadonlyArray<string> }>) => {
-			if (beforeEvent.data.method === 'bandwidth')
-				beforeEvent.preventDefault();
-		});
-		mockPlayer.on('mutationPrevented', (data: { method: string; reason: string }) => {
-			preventedPayload = data;
-		});
+    const seen: string[] = [];
 
-		const proceeded = mockPlayer.triggerHotMutation(0.25);
+    mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{
+      method: string;
+      args: ReadonlyArray<unknown>;
+      phase: string;
+      dispatchStack: ReadonlyArray<string>;
+    }>) => {
+      seen.push(beforeEvent.data.method);
+    });
 
-		expect(preventedPayload).toEqual({ method: 'bandwidth', reason: 'listener-prevented' });
-		expect(proceeded).toBe(false);
-	});
+    (mockPlayer as unknown as { _emitBeforeMutation: (method: string, args: ReadonlyArray<unknown>) => boolean })
+      ._emitBeforeMutation('recordMetric', [1]);
 
-	// ── 6. Payload shape ──
+    expect(seen).not.toContain('recordMetric');
+  });
 
-	it('beforeMutation payload: { method, args, phase, dispatchStack }', async () => {
-		const mockPlayer = makePlayer('mg-payload').setup({ mutationGuards: 'all' });
-		await mockPlayer.ready();
+  // ── 5. preventDefault cancels mutation, emits mutationPrevented ──
 
-		let captured: { method: string; args: ReadonlyArray<unknown>; phase: string; dispatchStack: ReadonlyArray<string> } | undefined;
-		mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{ method: string; args: ReadonlyArray<unknown>; phase: string; dispatchStack: ReadonlyArray<string> }>) => {
-			if (beforeEvent.data.method === 'bandwidth')
-				captured = beforeEvent.data;
-		});
+  it('preventDefault() cancels the mutation AND emits mutationPrevented', async () => {
+    const mockPlayer = makePlayer('mg-prevent').setup({});
 
-		mockPlayer.triggerHotMutation(0.42);
+    await mockPlayer.ready();
+    seedQueue(mockPlayer);
+    mockPlayer.item('a');
+    const before = mockPlayer.index();
 
-		expect(captured).toBeDefined();
-		expect(captured!.method).toBe('bandwidth');
-		expect(Array.isArray(captured!.args)).toBe(true);
-		expect(captured!.args).toEqual([0.42]);
-		expect(typeof captured!.phase).toBe('string');
-		expect(captured!.phase).toBe('ready');
-		expect(Array.isArray(captured!.dispatchStack)).toBe(true);
-	});
+    let preventedPayload: { method: string; reason: string } | undefined;
 
-	it('beforeMutation.dispatchStack is populated when called inside another event handler', async () => {
-		const mockPlayer = makePlayer('mg-stack').setup({ mutationGuards: 'all' });
-		await mockPlayer.ready();
+    mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{
+      method: string;
+      args: ReadonlyArray<unknown>;
+      phase: string;
+      dispatchStack: ReadonlyArray<string>;
+    }>) => {
+      if (beforeEvent.data.method === 'current') {
+        beforeEvent.preventDefault();
+      }
+    });
 
-		let captured: ReadonlyArray<string> | undefined;
-		mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{ method: string; args: ReadonlyArray<unknown>; phase: string; dispatchStack: ReadonlyArray<string> }>) => {
-			if (beforeEvent.data.method === 'bandwidth')
-				captured = beforeEvent.data.dispatchStack;
-		});
-		mockPlayer.on('beforePlay', () => {
-			mockPlayer.triggerHotMutation(0.3);
-		});
+    mockPlayer.on('mutationPrevented', (data: { method: string; reason: string }) => {
+      preventedPayload = data;
+    });
 
-		await mockPlayer.play();
+    mockPlayer.item('c');
 
-		expect(captured).toBeDefined();
-		expect(captured!.length).toBeGreaterThanOrEqual(1);
-		expect(captured).toContain('beforePlay');
-	});
+    expect(preventedPayload).toEqual({ method: 'current', reason: 'listener-prevented' });
+    expect(mockPlayer.index()).toBe(before);
+  });
+
+  it('preventDefault() on a hot mutation (mutationGuards:all) cancels it', async () => {
+    const mockPlayer = makePlayer('mg-prevent-hot').setup({ mutationGuards: 'all' });
+
+    await mockPlayer.ready();
+
+    let preventedPayload: { method: string; reason: string } | undefined;
+
+    mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{
+      method: string;
+      args: ReadonlyArray<unknown>;
+      phase: string;
+      dispatchStack: ReadonlyArray<string>;
+    }>) => {
+      if (beforeEvent.data.method === 'bandwidth') {
+        beforeEvent.preventDefault();
+      }
+    });
+
+    mockPlayer.on('mutationPrevented', (data: { method: string; reason: string }) => {
+      preventedPayload = data;
+    });
+
+    const proceeded = mockPlayer.triggerHotMutation(0.25);
+
+    expect(preventedPayload).toEqual({ method: 'bandwidth', reason: 'listener-prevented' });
+    expect(proceeded).toBe(false);
+  });
+
+  // ── 6. Payload shape ──
+
+  it('beforeMutation payload: { method, args, phase, dispatchStack }', async () => {
+    const mockPlayer = makePlayer('mg-payload').setup({ mutationGuards: 'all' });
+
+    await mockPlayer.ready();
+
+    let captured: {
+      method: string;
+      args: ReadonlyArray<unknown>;
+      phase: string;
+      dispatchStack: ReadonlyArray<string>;
+    } | undefined;
+
+    mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{
+      method: string;
+      args: ReadonlyArray<unknown>;
+      phase: string;
+      dispatchStack: ReadonlyArray<string>;
+    }>) => {
+      if (beforeEvent.data.method === 'bandwidth') {
+        captured = beforeEvent.data;
+      }
+    });
+
+    mockPlayer.triggerHotMutation(0.42);
+
+    expect(captured).toBeDefined();
+    expect(captured!.method).toBe('bandwidth');
+    expect(Array.isArray(captured!.args)).toBe(true);
+    expect(captured!.args).toEqual([0.42]);
+    expect(typeof captured!.phase).toBe('string');
+    expect(captured!.phase).toBe('ready');
+    expect(Array.isArray(captured!.dispatchStack)).toBe(true);
+  });
+
+  it('beforeMutation.dispatchStack is populated when called inside another event handler', async () => {
+    const mockPlayer = makePlayer('mg-stack').setup({ mutationGuards: 'all' });
+
+    await mockPlayer.ready();
+
+    let captured: ReadonlyArray<string> | undefined;
+
+    mockPlayer.on('beforeMutation', (beforeEvent: BeforeEvent<{
+      method: string;
+      args: ReadonlyArray<unknown>;
+      phase: string;
+      dispatchStack: ReadonlyArray<string>;
+    }>) => {
+      if (beforeEvent.data.method === 'bandwidth') {
+        captured = beforeEvent.data.dispatchStack;
+      }
+    });
+
+    mockPlayer.on('beforePlay', () => {
+      mockPlayer.triggerHotMutation(0.3);
+    });
+
+    await mockPlayer.play();
+
+    expect(captured).toBeDefined();
+    expect(captured!.length).toBeGreaterThanOrEqual(1);
+    expect(captured).toContain('beforePlay');
+  });
 });

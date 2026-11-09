@@ -31,368 +31,411 @@
 import type { BeforeEvent, CastTarget } from '../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
-	RepeatState,
-	ShuffleState,
+  composeMixins,
+  playerCoreMethods,
+  RepeatState,
+  ShuffleState,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare options: any;
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => Promise<void>;
-	declare phase: () => string;
+  declare options: any;
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => Promise<void>;
+  declare phase: () => string;
 
-	declare volume: { (): number; (level: number): Promise<void> };
-	declare mute: () => Promise<void>;
-	declare unmute: () => Promise<void>;
+  declare volume: { (): number; (level: number): Promise<void> };
+  declare mute: () => Promise<void>;
+  declare unmute: () => Promise<void>;
 
-	declare repeatState: { (): RepeatState; (state: RepeatState): Promise<void> };
-	declare shuffleState: { (): ShuffleState; (state: ShuffleState | boolean): Promise<void> };
-	declare playbackRate: { (): number; (rate: number): Promise<void> };
+  declare repeatState: { (): RepeatState; (state: RepeatState): Promise<void> };
+  declare shuffleState: { (): ShuffleState; (state: ShuffleState | boolean): Promise<void> };
+  declare playbackRate: { (): number; (rate: number): Promise<void> };
 
-	declare language: { (): string; (lang: string): Promise<void> };
+  declare language: { (): string; (lang: string): Promise<void> };
 
-	declare subtitle: { (): unknown; (idx: number | null): Promise<void> };
-	declare audioTrack: { (): unknown; (idx: number): Promise<void> };
+  declare subtitle: { (): unknown; (idx: number | null): Promise<void> };
+  declare audioTrack: { (): unknown; (idx: number): Promise<void> };
 
-	declare castState: () => string;
-	declare transferTo: (target: CastTarget) => Promise<void>;
+  declare castState: () => string;
+  declare transferTo: (target: CastTarget) => Promise<void>;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function setupPlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId).setup({});
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId).setup({});
 }
 
 /** Generic `{ reason, cause? }` shape shared by every `*Prevented` event. */
 interface PreventedPayload {
-	reason: string;
-	cause?: unknown;
+  reason: string;
+  cause?: unknown;
 }
 
 describe('Connect before* hooks — cancellation contract', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
-
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
-
-	// ── beforeVolume / volumePrevented ────────────────────────────────────────
-
-	describe('beforeVolume', () => {
-		it('fires with NO mutationGuards config set — proceeds when not prevented (baseline)', async () => {
-			const player = setupPlayer('bh-volume-baseline');
-			expect(player.volume()).toBe(100);
-
-			await player.volume(42);
-
-			expect(player.volume()).toBe(42);
-		});
-
-		it('preventDefault() blocks the level change and fires volumePrevented', async () => {
-			const player = setupPlayer('bh-volume-cancel');
-			const before = player.volume();
-
-			let prevented: PreventedPayload | undefined;
-			player.on('beforeVolume' as never, (event: BeforeEvent<{ level: number }>) => {
-				event.preventDefault();
-			});
-			player.on('volumePrevented' as never, (data: PreventedPayload) => { prevented = data; });
-
-			await player.volume(75);
-
-			expect(player.volume()).toBe(before);
-			expect(prevented).toEqual({ reason: 'listener-prevented' });
-		});
-	});
-
-	// ── beforeMute / mutePrevented (covers both mute() and unmute()) ──────────
-
-	describe('beforeMute', () => {
-		it('mute() with no listener proceeds (baseline)', async () => {
-			const player = setupPlayer('bh-mute-baseline');
-			await player.mute();
-			expect(player.volume()).toBe(0);
-		});
-
-		it('preventDefault() blocks mute() and fires mutePrevented', async () => {
-			const player = setupPlayer('bh-mute-cancel');
-			await player.volume(60);
-
-			let prevented: PreventedPayload | undefined;
-			player.on('beforeMute' as never, (event: BeforeEvent<{ muted: boolean }>) => {
-				event.preventDefault();
-			});
-			player.on('mutePrevented' as never, (data: PreventedPayload) => { prevented = data; });
-
-			await player.mute();
-
-			expect(player.volume()).toBe(60);
-			expect(prevented).toEqual({ reason: 'listener-prevented' });
-		});
-
-		it('preventDefault() blocks unmute() and fires mutePrevented', async () => {
-			const player = setupPlayer('bh-unmute-cancel');
-			await player.volume(60);
-			await player.mute();
-			expect(player.volume()).toBe(0);
-
-			let prevented: PreventedPayload | undefined;
-			player.on('beforeMute' as never, (event: BeforeEvent<{ muted: boolean }>) => {
-				event.preventDefault();
-			});
-			player.on('mutePrevented' as never, (data: PreventedPayload) => { prevented = data; });
-
-			await player.unmute();
-
-			expect(player.volume()).toBe(0);
-			expect(prevented).toEqual({ reason: 'listener-prevented' });
-		});
-	});
-
-	// ── beforeRepeat / repeatPrevented ────────────────────────────────────────
-
-	describe('beforeRepeat', () => {
-		it('repeatState(state) with no listener proceeds (baseline)', async () => {
-			const player = setupPlayer('bh-repeat-baseline');
-			await player.repeatState(RepeatState.ALL);
-			expect(player.repeatState()).toBe(RepeatState.ALL);
-		});
-
-		it('preventDefault() blocks the repeat-mode change and fires repeatPrevented', async () => {
-			const player = setupPlayer('bh-repeat-cancel');
-			expect(player.repeatState()).toBe(RepeatState.OFF);
-
-			let prevented: PreventedPayload | undefined;
-			player.on('beforeRepeat' as never, (event: BeforeEvent<{ state: RepeatState }>) => {
-				event.preventDefault();
-			});
-			player.on('repeatPrevented' as never, (data: PreventedPayload) => { prevented = data; });
-
-			await player.repeatState(RepeatState.ALL);
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-			expect(player.repeatState()).toBe(RepeatState.OFF);
-			expect(prevented).toEqual({ reason: 'listener-prevented' });
-		});
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	// ── beforeShuffle / shufflePrevented ──────────────────────────────────────
+  // ── beforeVolume / volumePrevented ────────────────────────────────────────
 
-	describe('beforeShuffle', () => {
-		it('shuffleState(state) with no listener proceeds (baseline)', async () => {
-			const player = setupPlayer('bh-shuffle-baseline');
-			await player.shuffleState(ShuffleState.ON);
-			expect(player.shuffleState()).toBe(ShuffleState.ON);
-		});
+  describe('beforeVolume', () => {
+    it('fires with NO mutationGuards config set — proceeds when not prevented (baseline)', async () => {
+      const player = setupPlayer('bh-volume-baseline');
 
-		it('preventDefault() blocks the shuffle-mode change and fires shufflePrevented', async () => {
-			const player = setupPlayer('bh-shuffle-cancel');
-			expect(player.shuffleState()).toBe(ShuffleState.OFF);
+      expect(player.volume()).toBe(100);
 
-			let prevented: PreventedPayload | undefined;
-			player.on('beforeShuffle' as never, (event: BeforeEvent<{ state: ShuffleState }>) => {
-				event.preventDefault();
-			});
-			player.on('shufflePrevented' as never, (data: PreventedPayload) => { prevented = data; });
+      await player.volume(42);
 
-			await player.shuffleState(ShuffleState.ON);
+      expect(player.volume()).toBe(42);
+    });
 
-			expect(player.shuffleState()).toBe(ShuffleState.OFF);
-			expect(prevented).toEqual({ reason: 'listener-prevented' });
-		});
+    it('preventDefault() blocks the level change and fires volumePrevented', async () => {
+      const player = setupPlayer('bh-volume-cancel');
+      const before = player.volume();
 
-		it('preventDefault() also works when called via the boolean shorthand', async () => {
-			const player = setupPlayer('bh-shuffle-cancel-bool');
+      let prevented: PreventedPayload | undefined;
 
-			let prevented: PreventedPayload | undefined;
-			player.on('beforeShuffle' as never, (event: BeforeEvent<{ state: ShuffleState }>) => {
-				event.preventDefault();
-			});
-			player.on('shufflePrevented' as never, (data: PreventedPayload) => { prevented = data; });
-
-			await player.shuffleState(true);
-
-			expect(player.shuffleState()).toBe(ShuffleState.OFF);
-			expect(prevented).toEqual({ reason: 'listener-prevented' });
-		});
-	});
-
-	// ── beforePlaybackRate / playbackRatePrevented ────────────────────────────
-
-	describe('beforePlaybackRate', () => {
-		it('fires with NO mutationGuards config set — proceeds when not prevented (baseline)', async () => {
-			const player = setupPlayer('bh-rate-baseline');
-			expect(player.playbackRate()).toBe(1);
-
-			await player.playbackRate(1.5);
-
-			expect(player.playbackRate()).toBe(1.5);
-		});
+      player.on('beforeVolume' as never, (event: BeforeEvent<{ level: number }>) => {
+        event.preventDefault();
+      });
 
-		it('preventDefault() blocks the rate change and fires playbackRatePrevented', async () => {
-			const player = setupPlayer('bh-rate-cancel');
-			const before = player.playbackRate();
-
-			let prevented: PreventedPayload | undefined;
-			player.on('beforePlaybackRate' as never, (event: BeforeEvent<{ rate: number }>) => {
-				event.preventDefault();
-			});
-			player.on('playbackRatePrevented' as never, (data: PreventedPayload) => { prevented = data; });
-
-			await player.playbackRate(1.75);
-
-			expect(player.playbackRate()).toBe(before);
-			expect(prevented).toEqual({ reason: 'listener-prevented' });
-		});
-	});
-
-	// ── beforeLanguage / languagePrevented ────────────────────────────────────
-
-	describe('beforeLanguage', () => {
-		it('language(tag) with no listener proceeds (baseline)', async () => {
-			const player = setupPlayer('bh-language-baseline');
-			await player.language('nl');
-			expect(player.language()).toBe('nl');
-		});
-
-		it('preventDefault() blocks the language switch and fires languagePrevented', async () => {
-			const player = setupPlayer('bh-language-cancel');
-			const before = player.language();
-
-			let prevented: PreventedPayload | undefined;
-			player.on('beforeLanguage' as never, (event: BeforeEvent<{ lang: string }>) => {
-				event.preventDefault();
-			});
-			player.on('languagePrevented' as never, (data: PreventedPayload) => { prevented = data; });
-
-			await player.language('fr');
-
-			expect(player.language()).toBe(before);
-			expect(prevented).toEqual({ reason: 'listener-prevented' });
-		});
-	});
-
-	// ── beforeSubtitle / subtitlePrevented ────────────────────────────────────
-
-	describe('beforeSubtitle', () => {
-		it('subtitle(idx) with no listener proceeds (baseline)', async () => {
-			const player = setupPlayer('bh-subtitle-baseline');
-			await player.subtitle(0);
-			expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).toBe(0);
-		});
-
-		it('preventDefault() blocks the subtitle-track change and fires subtitlePrevented', async () => {
-			const player = setupPlayer('bh-subtitle-cancel');
-			const internals = player as unknown as { _currentSubtitleIdx: number | null };
-			expect(internals._currentSubtitleIdx).toBeNull();
-
-			let prevented: PreventedPayload | undefined;
-			player.on('beforeSubtitle' as never, (event: BeforeEvent<{ track: number | null }>) => {
-				event.preventDefault();
-			});
-			player.on('subtitlePrevented' as never, (data: PreventedPayload) => { prevented = data; });
-
-			await player.subtitle(0);
-
-			expect(internals._currentSubtitleIdx).toBeNull();
-			expect(prevented).toEqual({ reason: 'listener-prevented' });
-		});
-	});
-
-	// ── beforeAudioTrack / audioTrackPrevented ────────────────────────────────
-
-	describe('beforeAudioTrack', () => {
-		it('audioTrack(idx) with no listener proceeds (baseline)', async () => {
-			const player = setupPlayer('bh-audiotrack-baseline');
-			await player.audioTrack(0);
-			expect((player as unknown as { _currentAudioTrackIdx: number | null })._currentAudioTrackIdx).toBe(0);
-		});
-
-		it('preventDefault() blocks the audio-track change and fires audioTrackPrevented', async () => {
-			const player = setupPlayer('bh-audiotrack-cancel');
-			const internals = player as unknown as { _currentAudioTrackIdx: number | null };
-			expect(internals._currentAudioTrackIdx).toBeNull();
-
-			let prevented: PreventedPayload | undefined;
-			player.on('beforeAudioTrack' as never, (event: BeforeEvent<{ id: number }>) => {
-				event.preventDefault();
-			});
-			player.on('audioTrackPrevented' as never, (data: PreventedPayload) => { prevented = data; });
-
-			await player.audioTrack(0);
-
-			expect(internals._currentAudioTrackIdx).toBeNull();
-			expect(prevented).toEqual({ reason: 'listener-prevented' });
-		});
-	});
-
-	// ── beforeDispose / disposePrevented ──────────────────────────────────────
-
-	describe('beforeDispose', () => {
-		it('dispose() with no listener proceeds (baseline)', async () => {
-			const player = setupPlayer('bh-dispose-baseline');
-			await player.dispose();
-			expect(player.phase()).toBe('disposed');
-		});
-
-		it('preventDefault() blocks teardown entirely and fires disposePrevented', async () => {
-			const player = setupPlayer('bh-dispose-cancel');
-			await player.ready();
-			expect(player.phase()).toBe('ready');
-
-			let prevented: PreventedPayload | undefined;
-			player.on('beforeDispose' as never, (event: BeforeEvent<void>) => {
-				event.preventDefault();
-			});
-			player.on('disposePrevented' as never, (data: PreventedPayload) => { prevented = data; });
-
-			await player.dispose();
-
-			expect(player.phase()).toBe('ready');
-			expect(prevented).toEqual({ reason: 'listener-prevented' });
-
-			// The player is still fully alive — a real dispose() (no listener)
-			// still works after the prevented attempt.
-			player.off('beforeDispose' as never);
-			await player.dispose();
-			expect(player.phase()).toBe('disposed');
-		});
-	});
-
-	// ── beforeTransfer / transferPrevented ────────────────────────────────────
-
-	describe('beforeTransfer', () => {
-		it('transferTo(\'local\') with no listener proceeds (baseline)', async () => {
-			const player = setupPlayer('bh-transfer-baseline');
-			await player.transferTo('local');
-			// 'local' resolves to DISCONNECTED — proves the switch body ran.
-			expect(player.castState()).toBe('disconnected');
-		});
-
-		it('preventDefault() blocks the handoff entirely and fires transferPrevented', async () => {
-			const player = setupPlayer('bh-transfer-cancel');
-			const before = player.castState();
-
-			let prevented: PreventedPayload | undefined;
-			player.on('beforeTransfer' as never, (event: BeforeEvent<{ target: CastTarget }>) => {
-				event.preventDefault();
-			});
-			player.on('transferPrevented' as never, (data: PreventedPayload) => { prevented = data; });
-
-			await player.transferTo('local');
-
-			expect(player.castState()).toBe(before);
-			expect(prevented).toEqual({ reason: 'listener-prevented' });
-		});
-	});
+      player.on('volumePrevented' as never, (data: PreventedPayload) => { prevented = data; });
+
+      await player.volume(75);
+
+      expect(player.volume()).toBe(before);
+      expect(prevented).toEqual({ reason: 'listener-prevented' });
+    });
+  });
+
+  // ── beforeMute / mutePrevented (covers both mute() and unmute()) ──────────
+
+  describe('beforeMute', () => {
+    it('mute() with no listener proceeds (baseline)', async () => {
+      const player = setupPlayer('bh-mute-baseline');
+
+      await player.mute();
+      expect(player.volume()).toBe(0);
+    });
+
+    it('preventDefault() blocks mute() and fires mutePrevented', async () => {
+      const player = setupPlayer('bh-mute-cancel');
+
+      await player.volume(60);
+
+      let prevented: PreventedPayload | undefined;
+
+      player.on('beforeMute' as never, (event: BeforeEvent<{ muted: boolean }>) => {
+        event.preventDefault();
+      });
+
+      player.on('mutePrevented' as never, (data: PreventedPayload) => { prevented = data; });
+
+      await player.mute();
+
+      expect(player.volume()).toBe(60);
+      expect(prevented).toEqual({ reason: 'listener-prevented' });
+    });
+
+    it('preventDefault() blocks unmute() and fires mutePrevented', async () => {
+      const player = setupPlayer('bh-unmute-cancel');
+
+      await player.volume(60);
+      await player.mute();
+      expect(player.volume()).toBe(0);
+
+      let prevented: PreventedPayload | undefined;
+
+      player.on('beforeMute' as never, (event: BeforeEvent<{ muted: boolean }>) => {
+        event.preventDefault();
+      });
+
+      player.on('mutePrevented' as never, (data: PreventedPayload) => { prevented = data; });
+
+      await player.unmute();
+
+      expect(player.volume()).toBe(0);
+      expect(prevented).toEqual({ reason: 'listener-prevented' });
+    });
+  });
+
+  // ── beforeRepeat / repeatPrevented ────────────────────────────────────────
+
+  describe('beforeRepeat', () => {
+    it('repeatState(state) with no listener proceeds (baseline)', async () => {
+      const player = setupPlayer('bh-repeat-baseline');
+
+      await player.repeatState(RepeatState.ALL);
+      expect(player.repeatState()).toBe(RepeatState.ALL);
+    });
+
+    it('preventDefault() blocks the repeat-mode change and fires repeatPrevented', async () => {
+      const player = setupPlayer('bh-repeat-cancel');
+
+      expect(player.repeatState()).toBe(RepeatState.OFF);
+
+      let prevented: PreventedPayload | undefined;
+
+      player.on('beforeRepeat' as never, (event: BeforeEvent<{ state: RepeatState }>) => {
+        event.preventDefault();
+      });
+
+      player.on('repeatPrevented' as never, (data: PreventedPayload) => { prevented = data; });
+
+      await player.repeatState(RepeatState.ALL);
+
+      expect(player.repeatState()).toBe(RepeatState.OFF);
+      expect(prevented).toEqual({ reason: 'listener-prevented' });
+    });
+  });
+
+  // ── beforeShuffle / shufflePrevented ──────────────────────────────────────
+
+  describe('beforeShuffle', () => {
+    it('shuffleState(state) with no listener proceeds (baseline)', async () => {
+      const player = setupPlayer('bh-shuffle-baseline');
+
+      await player.shuffleState(ShuffleState.ON);
+      expect(player.shuffleState()).toBe(ShuffleState.ON);
+    });
+
+    it('preventDefault() blocks the shuffle-mode change and fires shufflePrevented', async () => {
+      const player = setupPlayer('bh-shuffle-cancel');
+
+      expect(player.shuffleState()).toBe(ShuffleState.OFF);
+
+      let prevented: PreventedPayload | undefined;
+
+      player.on('beforeShuffle' as never, (event: BeforeEvent<{ state: ShuffleState }>) => {
+        event.preventDefault();
+      });
+
+      player.on('shufflePrevented' as never, (data: PreventedPayload) => { prevented = data; });
+
+      await player.shuffleState(ShuffleState.ON);
+
+      expect(player.shuffleState()).toBe(ShuffleState.OFF);
+      expect(prevented).toEqual({ reason: 'listener-prevented' });
+    });
+
+    it('preventDefault() also works when called via the boolean shorthand', async () => {
+      const player = setupPlayer('bh-shuffle-cancel-bool');
+
+      let prevented: PreventedPayload | undefined;
+
+      player.on('beforeShuffle' as never, (event: BeforeEvent<{ state: ShuffleState }>) => {
+        event.preventDefault();
+      });
+
+      player.on('shufflePrevented' as never, (data: PreventedPayload) => { prevented = data; });
+
+      await player.shuffleState(true);
+
+      expect(player.shuffleState()).toBe(ShuffleState.OFF);
+      expect(prevented).toEqual({ reason: 'listener-prevented' });
+    });
+  });
+
+  // ── beforePlaybackRate / playbackRatePrevented ────────────────────────────
+
+  describe('beforePlaybackRate', () => {
+    it('fires with NO mutationGuards config set — proceeds when not prevented (baseline)', async () => {
+      const player = setupPlayer('bh-rate-baseline');
+
+      expect(player.playbackRate()).toBe(1);
+
+      await player.playbackRate(1.5);
+
+      expect(player.playbackRate()).toBe(1.5);
+    });
+
+    it('preventDefault() blocks the rate change and fires playbackRatePrevented', async () => {
+      const player = setupPlayer('bh-rate-cancel');
+      const before = player.playbackRate();
+
+      let prevented: PreventedPayload | undefined;
+
+      player.on('beforePlaybackRate' as never, (event: BeforeEvent<{ rate: number }>) => {
+        event.preventDefault();
+      });
+
+      player.on('playbackRatePrevented' as never, (data: PreventedPayload) => { prevented = data; });
+
+      await player.playbackRate(1.75);
+
+      expect(player.playbackRate()).toBe(before);
+      expect(prevented).toEqual({ reason: 'listener-prevented' });
+    });
+  });
+
+  // ── beforeLanguage / languagePrevented ────────────────────────────────────
+
+  describe('beforeLanguage', () => {
+    it('language(tag) with no listener proceeds (baseline)', async () => {
+      const player = setupPlayer('bh-language-baseline');
+
+      await player.language('nl');
+      expect(player.language()).toBe('nl');
+    });
+
+    it('preventDefault() blocks the language switch and fires languagePrevented', async () => {
+      const player = setupPlayer('bh-language-cancel');
+      const before = player.language();
+
+      let prevented: PreventedPayload | undefined;
+
+      player.on('beforeLanguage' as never, (event: BeforeEvent<{ lang: string }>) => {
+        event.preventDefault();
+      });
+
+      player.on('languagePrevented' as never, (data: PreventedPayload) => { prevented = data; });
+
+      await player.language('fr');
+
+      expect(player.language()).toBe(before);
+      expect(prevented).toEqual({ reason: 'listener-prevented' });
+    });
+  });
+
+  // ── beforeSubtitle / subtitlePrevented ────────────────────────────────────
+
+  describe('beforeSubtitle', () => {
+    it('subtitle(idx) with no listener proceeds (baseline)', async () => {
+      const player = setupPlayer('bh-subtitle-baseline');
+
+      await player.subtitle(0);
+      expect((player as unknown as { _currentSubtitleIdx: number | null })._currentSubtitleIdx).toBe(0);
+    });
+
+    it('preventDefault() blocks the subtitle-track change and fires subtitlePrevented', async () => {
+      const player = setupPlayer('bh-subtitle-cancel');
+      const internals = player as unknown as { _currentSubtitleIdx: number | null };
+
+      expect(internals._currentSubtitleIdx).toBeNull();
+
+      let prevented: PreventedPayload | undefined;
+
+      player.on('beforeSubtitle' as never, (event: BeforeEvent<{ track: number | null }>) => {
+        event.preventDefault();
+      });
+
+      player.on('subtitlePrevented' as never, (data: PreventedPayload) => { prevented = data; });
+
+      await player.subtitle(0);
+
+      expect(internals._currentSubtitleIdx).toBeNull();
+      expect(prevented).toEqual({ reason: 'listener-prevented' });
+    });
+  });
+
+  // ── beforeAudioTrack / audioTrackPrevented ────────────────────────────────
+
+  describe('beforeAudioTrack', () => {
+    it('audioTrack(idx) with no listener proceeds (baseline)', async () => {
+      const player = setupPlayer('bh-audiotrack-baseline');
+
+      await player.audioTrack(0);
+      expect((player as unknown as { _currentAudioTrackIdx: number | null })._currentAudioTrackIdx).toBe(0);
+    });
+
+    it('preventDefault() blocks the audio-track change and fires audioTrackPrevented', async () => {
+      const player = setupPlayer('bh-audiotrack-cancel');
+      const internals = player as unknown as { _currentAudioTrackIdx: number | null };
+
+      expect(internals._currentAudioTrackIdx).toBeNull();
+
+      let prevented: PreventedPayload | undefined;
+
+      player.on('beforeAudioTrack' as never, (event: BeforeEvent<{ id: number }>) => {
+        event.preventDefault();
+      });
+
+      player.on('audioTrackPrevented' as never, (data: PreventedPayload) => { prevented = data; });
+
+      await player.audioTrack(0);
+
+      expect(internals._currentAudioTrackIdx).toBeNull();
+      expect(prevented).toEqual({ reason: 'listener-prevented' });
+    });
+  });
+
+  // ── beforeDispose / disposePrevented ──────────────────────────────────────
+
+  describe('beforeDispose', () => {
+    it('dispose() with no listener proceeds (baseline)', async () => {
+      const player = setupPlayer('bh-dispose-baseline');
+
+      await player.dispose();
+      expect(player.phase()).toBe('disposed');
+    });
+
+    it('preventDefault() blocks teardown entirely and fires disposePrevented', async () => {
+      const player = setupPlayer('bh-dispose-cancel');
+
+      await player.ready();
+      expect(player.phase()).toBe('ready');
+
+      let prevented: PreventedPayload | undefined;
+
+      player.on('beforeDispose' as never, (event: BeforeEvent<void>) => {
+        event.preventDefault();
+      });
+
+      player.on('disposePrevented' as never, (data: PreventedPayload) => { prevented = data; });
+
+      await player.dispose();
+
+      expect(player.phase()).toBe('ready');
+      expect(prevented).toEqual({ reason: 'listener-prevented' });
+
+      // The player is still fully alive — a real dispose() (no listener)
+      // still works after the prevented attempt.
+      player.off('beforeDispose' as never);
+      await player.dispose();
+      expect(player.phase()).toBe('disposed');
+    });
+  });
+
+  // ── beforeTransfer / transferPrevented ────────────────────────────────────
+
+  describe('beforeTransfer', () => {
+    it('transferTo(\'local\') with no listener proceeds (baseline)', async () => {
+      const player = setupPlayer('bh-transfer-baseline');
+
+      await player.transferTo('local');
+      // 'local' resolves to DISCONNECTED — proves the switch body ran.
+      expect(player.castState()).toBe('disconnected');
+    });
+
+    it('preventDefault() blocks the handoff entirely and fires transferPrevented', async () => {
+      const player = setupPlayer('bh-transfer-cancel');
+      const before = player.castState();
+
+      let prevented: PreventedPayload | undefined;
+
+      player.on('beforeTransfer' as never, (event: BeforeEvent<{ target: CastTarget }>) => {
+        event.preventDefault();
+      });
+
+      player.on('transferPrevented' as never, (data: PreventedPayload) => { prevented = data; });
+
+      await player.transferTo('local');
+
+      expect(player.castState()).toBe(before);
+      expect(prevented).toEqual({ reason: 'listener-prevented' });
+    });
+  });
 });

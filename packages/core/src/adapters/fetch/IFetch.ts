@@ -20,5 +20,5 @@
  * ```
  */
 export interface IFetch {
-	(url: string, opts?: RequestInit): Promise<Response>;
+  (url: string, opts?: RequestInit): Promise<Response>;
 }

@@ -29,100 +29,130 @@ import { NMVideoPlayer } from '../../index';
 import { SubtitleOverlayPlugin, subtitleOverlayPlugin } from '../../plugins/subtitle-overlay';
 
 describe('SubtitleOverlayPlugin', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+  });
 
-	const setup = (): NMVideoPlayer<any> => new NMVideoPlayer('test').setup({});
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	// ── Test 1: overlay DOM structure created on use() ────────────────────────
+  const setup = (): NMVideoPlayer<any> => new NMVideoPlayer('test').setup({});
 
-	it('use() creates .subtitle-overlay containing .subtitle-safezone', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+  // ── Test 1: overlay DOM structure created on use() ────────────────────────
 
-		const overlay = player.container.querySelector('.subtitle-overlay');
-		expect(overlay).not.toBeNull();
+  it('use() creates .subtitle-overlay containing .subtitle-safezone', async () => {
+    const player = setup();
 
-		const safezone = overlay!.querySelector('.subtitle-safezone');
-		expect(safezone).not.toBeNull();
-	});
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
 
-	// ── Test 2: subtitleCue with active cues renders .subtitle-area elements ──
+    const overlay = player.container.querySelector('.subtitle-overlay');
 
-	it('subtitleCue event with active cues renders .subtitle-area with cue text', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+    expect(overlay).not.toBeNull();
 
-		const cue = { text: 'Hello', start: 1, end: 3, line: 85, size: 80, position: 50, align: 'center' as const };
-		(player as any).emit('subtitleCue', {
-			cues: [cue],
-			activeCues: [cue],
-			language: 'en',
-		});
+    const safezone = overlay!.querySelector('.subtitle-safezone');
 
-		// Allow microtask queue to flush.
-		await Promise.resolve();
+    expect(safezone).not.toBeNull();
+  });
 
-		const safezone = player.container.querySelector('.subtitle-safezone')!;
-		const areas = safezone.querySelectorAll('.subtitle-area');
-		expect(areas.length).toBeGreaterThanOrEqual(1);
+  // ── Test 2: subtitleCue with active cues renders .subtitle-area elements ──
 
-		const textContent = Array.from(areas).map(area => area.textContent).join(' ');
-		expect(textContent).toContain('Hello');
-	});
+  it('subtitleCue event with active cues renders .subtitle-area with cue text', async () => {
+    const player = setup();
 
-	// ── Test 3: subtitleCue with empty cues removes all .subtitle-area nodes ──
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
 
-	it('subtitleCue with empty cues removes all .subtitle-area elements', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+    const cue = {
+      text: 'Hello',
+      start: 1,
+      end: 3,
+      line: 85,
+      size: 80,
+      position: 50,
+      align: 'center' as const,
+    };
 
-		// First render an active cue.
-		const cue = { text: 'Visible', start: 1, end: 3, line: 85, size: 80, position: 50, align: 'center' as const };
-		(player as any).emit('subtitleCue', {
-			cues: [cue],
-			activeCues: [cue],
-			language: 'en',
-		});
-		await Promise.resolve();
+    (player as any).emit('subtitleCue', {
+      cues: [cue],
+      activeCues: [cue],
+      language: 'en',
+    });
 
-		const safezone = player.container.querySelector('.subtitle-safezone')!;
-		expect(safezone.querySelectorAll('.subtitle-area').length).toBeGreaterThanOrEqual(1);
+    // Allow microtask queue to flush.
+    await Promise.resolve();
 
-		// Now clear.
-		(player as any).emit('subtitleCue', {
-			cues: [],
-			activeCues: [],
-			language: 'en',
-		});
-		await Promise.resolve();
+    const safezone = player.container.querySelector('.subtitle-safezone')!;
+    const areas = safezone.querySelectorAll('.subtitle-area');
 
-		expect(safezone.querySelectorAll('.subtitle-area').length).toBe(0);
-	});
+    expect(areas.length).toBeGreaterThanOrEqual(1);
 
-	// ── Test 4: removePlugin removes .subtitle-overlay from the DOM ──────────
+    const textContent = Array.from(areas).map((area) => area.textContent).join(' ');
 
-	it('removePlugin removes .subtitle-overlay from DOM', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+    expect(textContent).toContain('Hello');
+  });
 
-		expect(player.container.querySelector('.subtitle-overlay')).not.toBeNull();
+  // ── Test 3: subtitleCue with empty cues removes all .subtitle-area nodes ──
 
-		player.removePlugin(SubtitleOverlayPlugin);
+  it('subtitleCue with empty cues removes all .subtitle-area elements', async () => {
+    const player = setup();
 
-		expect(player.container.querySelector('.subtitle-overlay')).toBeNull();
-	});
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
+
+    // First render an active cue.
+    const cue = {
+      text: 'Visible',
+      start: 1,
+      end: 3,
+      line: 85,
+      size: 80,
+      position: 50,
+      align: 'center' as const,
+    };
+
+    (player as any).emit('subtitleCue', {
+      cues: [cue],
+      activeCues: [cue],
+      language: 'en',
+    });
+
+    await Promise.resolve();
+
+    const safezone = player.container.querySelector('.subtitle-safezone')!;
+
+    expect(safezone.querySelectorAll('.subtitle-area').length).toBeGreaterThanOrEqual(1);
+
+    // Now clear.
+    (player as any).emit('subtitleCue', {
+      cues: [],
+      activeCues: [],
+      language: 'en',
+    });
+
+    await Promise.resolve();
+
+    expect(safezone.querySelectorAll('.subtitle-area').length).toBe(0);
+  });
+
+  // ── Test 4: removePlugin removes .subtitle-overlay from the DOM ──────────
+
+  it('removePlugin removes .subtitle-overlay from DOM', async () => {
+    const player = setup();
+
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
+
+    expect(player.container.querySelector('.subtitle-overlay')).not.toBeNull();
+
+    player.removePlugin(SubtitleOverlayPlugin);
+
+    expect(player.container.querySelector('.subtitle-overlay')).toBeNull();
+  });
 });

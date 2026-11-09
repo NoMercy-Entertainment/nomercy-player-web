@@ -25,60 +25,70 @@ import { DesktopUiPlugin, desktopUiPlugin } from '../../plugins/desktop-ui';
 
 type ResizeCallback = (entries: Array<{ contentRect: { width: number } }>) => void;
 const MockResizeObserver = vi.fn(function (this: unknown, _cb: ResizeCallback) {
-	return { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() };
+  return {
+    observe: vi.fn(),
+    disconnect: vi.fn(),
+    unobserve: vi.fn(),
+  };
 });
 
 describe('DesktopUiPlugin — nomercyplayer class ownership', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	it('setup() self-applies nomercyplayer — container has it before any plugin mounts', () => {
-		const player = new NMVideoPlayer('test').setup({});
-		expect(player.container.classList.contains('nomercyplayer')).toBe(true);
-	});
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-	it('container has nomercyplayer exactly once after plugin use()', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin).ready();
+  it('setup() self-applies nomercyplayer — container has it before any plugin mounts', () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const container = player.container;
-		const count = [...container.classList].filter(cls => cls === 'nomercyplayer').length;
-		expect(count).toBe(1);
-	});
+    expect(player.container.classList.contains('nomercyplayer')).toBe(true);
+  });
 
-	it('overlay() exposes the overlay root for other plugins to mount into', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin).ready();
+  it('container has nomercyplayer exactly once after plugin use()', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const overlay = player.getPlugin(DesktopUiPlugin)!.overlay();
-		expect(overlay).toBeInstanceOf(HTMLElement);
-		expect(overlay!.classList.contains('overlay')).toBe(true);
-		expect(player.container.contains(overlay)).toBe(true);
-	});
+    await player.addPlugin(desktopUiPlugin).ready();
 
-	it('desktop-ui plugin does not add nomercyplayer — only setup() owns it', async () => {
-		const player = new NMVideoPlayer('test').setup({});
+    const container = player.container;
+    const count = [...container.classList].filter((cls) => cls === 'nomercyplayer').length;
 
-		// setup() applied the class; strip it to prove the plugin cannot re-add it.
-		player.container.classList.remove('nomercyplayer');
-		expect(player.container.classList.contains('nomercyplayer')).toBe(false);
+    expect(count).toBe(1);
+  });
 
-		await player.addPlugin(desktopUiPlugin).ready();
+  it('overlay() exposes the overlay root for other plugins to mount into', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		// Class must remain absent — the plugin must not touch it.
-		expect(player.container.classList.contains('nomercyplayer')).toBe(false);
-	});
+    await player.addPlugin(desktopUiPlugin).ready();
+
+    const overlay = player.getPlugin(DesktopUiPlugin)!.overlay();
+
+    expect(overlay).toBeInstanceOf(HTMLElement);
+    expect(overlay!.classList.contains('overlay')).toBe(true);
+    expect(player.container.contains(overlay)).toBe(true);
+  });
+
+  it('desktop-ui plugin does not add nomercyplayer — only setup() owns it', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    // setup() applied the class; strip it to prove the plugin cannot re-add it.
+    player.container.classList.remove('nomercyplayer');
+    expect(player.container.classList.contains('nomercyplayer')).toBe(false);
+
+    await player.addPlugin(desktopUiPlugin).ready();
+
+    // Class must remain absent — the plugin must not touch it.
+    expect(player.container.classList.contains('nomercyplayer')).toBe(false);
+  });
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -101,59 +111,64 @@ describe('DesktopUiPlugin — nomercyplayer class ownership', () => {
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe('DesktopUiPlugin — theater container class ownership (core-only)', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	it('theater(true) adds .theater to container with desktop-ui plugin active', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin).ready();
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-		player.theater(true);
+  it('theater(true) adds .theater to container with desktop-ui plugin active', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		expect(player.container.classList.contains('theater')).toBe(true);
-	});
+    await player.addPlugin(desktopUiPlugin).ready();
 
-	it('theater(false) removes .theater from container with desktop-ui plugin active', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin).ready();
+    player.theater(true);
 
-		player.theater(true);
-		expect(player.container.classList.contains('theater')).toBe(true);
+    expect(player.container.classList.contains('theater')).toBe(true);
+  });
 
-		player.theater(false);
-		expect(player.container.classList.contains('theater')).toBe(false);
-	});
+  it('theater(false) removes .theater from container with desktop-ui plugin active', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-	it('toggleTheater() adds .theater on first call and removes it on second with plugin active', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin).ready();
+    await player.addPlugin(desktopUiPlugin).ready();
 
-		player.toggleTheater();
-		expect(player.container.classList.contains('theater')).toBe(true);
+    player.theater(true);
+    expect(player.container.classList.contains('theater')).toBe(true);
 
-		player.toggleTheater();
-		expect(player.container.classList.contains('theater')).toBe(false);
-	});
+    player.theater(false);
+    expect(player.container.classList.contains('theater')).toBe(false);
+  });
 
-	it('theaterDefault:true results in .theater on container after plugin mounts', async () => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '<div id="test2"></div>';
-		const player = new NMVideoPlayer('test2').setup({ theaterDefault: true } as never);
-		await player.addPlugin(desktopUiPlugin).ready();
+  it('toggleTheater() adds .theater on first call and removes it on second with plugin active', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		expect(player.container.classList.contains('theater')).toBe(true);
-	});
+    await player.addPlugin(desktopUiPlugin).ready();
+
+    player.toggleTheater();
+    expect(player.container.classList.contains('theater')).toBe(true);
+
+    player.toggleTheater();
+    expect(player.container.classList.contains('theater')).toBe(false);
+  });
+
+  it('theaterDefault:true results in .theater on container after plugin mounts', async () => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '<div id="test2"></div>';
+    const player = new NMVideoPlayer('test2').setup({ theaterDefault: true } as never);
+
+    await player.addPlugin(desktopUiPlugin).ready();
+
+    expect(player.container.classList.contains('theater')).toBe(true);
+  });
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -171,49 +186,54 @@ describe('DesktopUiPlugin — theater container class ownership (core-only)', ()
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe('DesktopUiPlugin — buffering container class ownership (core-only)', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	it('mounting the plugin does not put .buffering on the container', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin).ready();
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-		expect(player.container.classList.contains('buffering')).toBe(false);
-	});
+  it('mounting the plugin does not put .buffering on the container', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-	it('the plugin shows its own load spinner while the container stays clean', async () => {
-		// The spinner only shows for a real load in progress (see
-		// feedbackMethods.ts) — queue media before the plugin mounts so this
-		// test still exercises "loading" state, not the idle-mount case.
-		const player = new NMVideoPlayer('test').setup({ playlist: [{ id: 'big-buck-bunny' } as never] });
-		await player.addPlugin(desktopUiPlugin).ready();
+    await player.addPlugin(desktopUiPlugin).ready();
 
-		const center = player.container.querySelector('.center')!;
-		expect(center.classList.contains('busy')).toBe(true);
-		expect(player.container.classList.contains('buffering')).toBe(false);
-	});
+    expect(player.container.classList.contains('buffering')).toBe(false);
+  });
 
-	it('core still raises and drops .buffering with the plugin mounted', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin).ready();
+  it('the plugin shows its own load spinner while the container stays clean', async () => {
+    // The spinner only shows for a real load in progress (see
+    // feedbackMethods.ts) — queue media before the plugin mounts so this
+    // test still exercises "loading" state, not the idle-mount case.
+    const player = new NMVideoPlayer('test').setup({ playlist: [{ id: 'big-buck-bunny' } as never] });
 
-		player.emit('waiting', {} as never);
-		expect(player.container.classList.contains('buffering')).toBe(true);
+    await player.addPlugin(desktopUiPlugin).ready();
 
-		player.emit('canplay', undefined as never);
-		expect(player.container.classList.contains('buffering')).toBe(false);
-	});
+    const center = player.container.querySelector('.center')!;
+
+    expect(center.classList.contains('busy')).toBe(true);
+    expect(player.container.classList.contains('buffering')).toBe(false);
+  });
+
+  it('core still raises and drops .buffering with the plugin mounted', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.addPlugin(desktopUiPlugin).ready();
+
+    player.emit('waiting', {} as never);
+    expect(player.container.classList.contains('buffering')).toBe(true);
+
+    player.emit('canplay', undefined as never);
+    expect(player.container.classList.contains('buffering')).toBe(false);
+  });
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -226,47 +246,54 @@ describe('DesktopUiPlugin — buffering container class ownership (core-only)', 
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe('DesktopUiPlugin — theater button icon state', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	it('theater button shows inactive icon (M16.4059) before any toggle', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, { buttons: { theater: true } }).ready();
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-		const theaterBtn = document.querySelector<HTMLButtonElement>('#theater')!;
-		expect(theaterBtn).not.toBeNull();
-		expect(theaterBtn.querySelector('.btn-icon')!.innerHTML).toContain('M16.4059');
-	});
+  it('theater button shows inactive icon (M16.4059) before any toggle', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-	it('theater button swaps to active icon (M8.40586) after theater(true)', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, { buttons: { theater: true } }).ready();
+    await player.addPlugin(desktopUiPlugin, { buttons: { theater: true } }).ready();
 
-		player.theater(true);
+    const theaterBtn = document.querySelector<HTMLButtonElement>('#theater')!;
 
-		const theaterBtn = document.querySelector<HTMLButtonElement>('#theater')!;
-		expect(theaterBtn.querySelector('.btn-icon')!.innerHTML).toContain('M8.40586');
-	});
+    expect(theaterBtn).not.toBeNull();
+    expect(theaterBtn.querySelector('.btn-icon')!.innerHTML).toContain('M16.4059');
+  });
 
-	it('theater button returns to inactive icon (M16.4059) after theater(false)', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, { buttons: { theater: true } }).ready();
+  it('theater button swaps to active icon (M8.40586) after theater(true)', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		player.theater(true);
-		player.theater(false);
+    await player.addPlugin(desktopUiPlugin, { buttons: { theater: true } }).ready();
 
-		const theaterBtn = document.querySelector<HTMLButtonElement>('#theater')!;
-		expect(theaterBtn.querySelector('.btn-icon')!.innerHTML).toContain('M16.4059');
-	});
+    player.theater(true);
+
+    const theaterBtn = document.querySelector<HTMLButtonElement>('#theater')!;
+
+    expect(theaterBtn.querySelector('.btn-icon')!.innerHTML).toContain('M8.40586');
+  });
+
+  it('theater button returns to inactive icon (M16.4059) after theater(false)', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.addPlugin(desktopUiPlugin, { buttons: { theater: true } }).ready();
+
+    player.theater(true);
+    player.theater(false);
+
+    const theaterBtn = document.querySelector<HTMLButtonElement>('#theater')!;
+
+    expect(theaterBtn.querySelector('.btn-icon')!.innerHTML).toContain('M16.4059');
+  });
 });

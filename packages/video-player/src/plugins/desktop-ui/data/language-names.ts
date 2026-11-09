@@ -22,8 +22,8 @@ import type { SubtitleTrackRef } from '../../../types';
  * chi, …) resolve natively.
  */
 const ISO3_QUIRKS: Readonly<Record<string, string>> = {
-	bra: 'pt-BR',
-	pob: 'pt-BR',
+  bra: 'pt-BR',
+  pob: 'pt-BR',
 };
 
 /**
@@ -32,20 +32,24 @@ const ISO3_QUIRKS: Readonly<Record<string, string>> = {
  * code — callers decide their own fallback.
  */
 export function languageDisplayName(code: string | undefined, locale: string): string | null {
-	if (!code)
-		return null;
-	const bcp47 = ISO3_QUIRKS[code] ?? code;
-	try {
-		const name = new Intl.DisplayNames([locale, 'en'], {
-			type: 'language',
-			fallback: 'none',
-		}).of(bcp47);
-		// Intl echoes unrecognised tags back unchanged — treat that as a miss.
-		return (name && name !== bcp47 && name !== code) ? name : null;
-	}
-	catch {
-		return null;
-	}
+  if (!code)
+    return null;
+
+  const bcp47 = ISO3_QUIRKS[code] ?? code;
+
+  try {
+    const name = new Intl.DisplayNames([locale, 'en'], {
+      type: 'language',
+      fallback: 'none',
+    }).of(bcp47);
+
+    // Intl echoes unrecognised tags back unchanged — treat that as a miss.
+    return (name && name !== bcp47 && name !== code)
+      ? name
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Variants with a translation key in the plugin bundles. Anything else renders raw. */
@@ -57,30 +61,36 @@ const TRANSLATED_VARIANTS = new Set(['full', 'sign']);
  * language code → the provided default when fields are missing.
  */
 export function subtitleTrackLabel(
-	track: SubtitleTrackRef,
-	locale: string,
-	translate: (key: string) => string,
-	fallback: string,
+  track: SubtitleTrackRef,
+  locale: string,
+  translate: (key: string) => string,
+  fallback: string,
 ): string {
-	const langName = languageDisplayName(track.language, locale);
+  const langName = languageDisplayName(track.language, locale);
 
-	const variant = track.type?.toLowerCase();
-	let variantLabel: string | undefined;
-	if (variant && TRANSLATED_VARIANTS.has(variant)) {
-		const key = `plugin.desktop-ui.menu.subtitleType.${variant}`;
-		const translated = translate(key);
-		// translate() echoes the key back when no bundle carries it yet.
-		variantLabel = translated === key ? track.type : translated;
-	}
-	else if (track.type) {
-		variantLabel = track.type;
-	}
+  const variant = track.type?.toLowerCase();
+  let variantLabel: string | undefined;
 
-	if (langName && variantLabel)
-		return `${langName} (${variantLabel})`;
-	if (langName)
-		return langName;
-	if (variantLabel)
-		return variantLabel;
-	return track.label || track.language || fallback;
+  if (variant && TRANSLATED_VARIANTS.has(variant)) {
+    const key = `plugin.desktop-ui.menu.subtitleType.${variant}`;
+    const translated = translate(key);
+
+    // translate() echoes the key back when no bundle carries it yet.
+    variantLabel = translated === key
+      ? track.type
+      : translated;
+  } else if (track.type) {
+    variantLabel = track.type;
+  }
+
+  if (langName && variantLabel)
+    return `${langName} (${variantLabel})`;
+
+  if (langName)
+    return langName;
+
+  if (variantLabel)
+    return variantLabel;
+
+  return track.label || track.language || fallback;
 }

@@ -25,37 +25,38 @@ import { DesktopUiPlugin } from '../../plugins/desktop-ui';
 // ── Fixture consumer plugin ────────────────────────────────────────────────────
 
 class ConsumerPlugin extends Plugin<IPlayer<BaseEventMap>> {
-	static override readonly id = 'consumer-type-test';
-	static override readonly description = 'type-level proof consumer';
+  static override readonly id = 'consumer-type-test';
+  static override readonly description = 'type-level proof consumer';
 
-	probeCorrect(): void {
-		// Correctly typed — payload is LayoutBreakpointPayload
-		this.on(DesktopUiPlugin, 'layout:breakpoint', (data) => {
-			// These fields MUST exist on LayoutBreakpointPayload
-			const _from: string = data.from;
-			const _to: string = data.to;
-			const _visible: ReadonlyArray<string> = data.visibleButtons;
-			const _hidden: ReadonlyArray<string> = data.hiddenButtons;
-			void _from;
-			void _to;
-			void _visible;
-			void _hidden;
-		});
-	}
+  probeCorrect(): void {
+    // Correctly typed — payload is LayoutBreakpointPayload
+    this.on(DesktopUiPlugin, 'layout:breakpoint', (data) => {
+      // These fields MUST exist on LayoutBreakpointPayload
+      const _from: string = data.from;
+      const _to: string = data.to;
+      const _visible: ReadonlyArray<string> = data.visibleButtons;
+      const _hidden: ReadonlyArray<string> = data.hiddenButtons;
 
-	probeMisspelledEvent(): void {
-		// 'layout:breakpoit' is misspelled — TS must reject it.
-		// @ts-expect-error — 'layout:breakpoit' is not a key of DesktopUiEvents
-		this.on(DesktopUiPlugin, 'layout:breakpoit', (_data: unknown) => {});
-	}
+      void _from;
+      void _to;
+      void _visible;
+      void _hidden;
+    });
+  }
 
-	probeWrongPayloadShape(): void {
-		// Accessing a field that does not exist on LayoutBreakpointPayload
-		this.on(DesktopUiPlugin, 'layout:breakpoint', (data) => {
-			// @ts-expect-error — 'nonExistentField' does not exist on LayoutBreakpointPayload
-			void data.nonExistentField;
-		});
-	}
+  probeMisspelledEvent(): void {
+    // 'layout:breakpoit' is misspelled — TS must reject it.
+    // @ts-expect-error — 'layout:breakpoit' is not a key of DesktopUiEvents
+    this.on(DesktopUiPlugin, 'layout:breakpoit', (_data: unknown) => {});
+  }
+
+  probeWrongPayloadShape(): void {
+    // Accessing a field that does not exist on LayoutBreakpointPayload
+    this.on(DesktopUiPlugin, 'layout:breakpoint', (data) => {
+      // @ts-expect-error — 'nonExistentField' does not exist on LayoutBreakpointPayload
+      void data.nonExistentField;
+    });
+  }
 }
 
 // ── Structural proof: LayoutBreakpointPayload has the required shape ───────────

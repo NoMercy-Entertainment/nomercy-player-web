@@ -14,52 +14,53 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nmplayer, NMVideoPlayer } from '../../index';
 import {
-	DesktopUiPlugin,
-	KeyHandlerPlugin,
-	MediaSessionPlugin,
-	SubtitleOverlayPlugin,
-	TouchZonesPlugin,
+  DesktopUiPlugin,
+  KeyHandlerPlugin,
+  MediaSessionPlugin,
+  SubtitleOverlayPlugin,
+  TouchZonesPlugin,
 } from '../../plugins';
 
 describe('app-flow i18n repro', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'player1';
-		div.className = 'group nomercyplayer';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    div.id = 'player1';
+    div.className = 'group nomercyplayer';
+    document.body.appendChild(div);
+  });
 
-	it('fires loadTranslations for the configured language with the full app plugin chain', async () => {
-		const loader = vi.fn(async (lang: string) => ({ skip_intro: `[${lang}] skip` }));
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		const player = nmplayer('player1').setup({
-			controls: false,
-			autoPlay: true,
-			expose: true,
-			playlist: [],
-			logLevel: 'trace',
-			baseUrl: 'https://server.test',
-			baseImageUrl: '/tmdb-images',
-			language: 'nl',
-			auth: { bearerToken: () => 'token' },
-			loadTranslations: loader,
-		} as never);
+  it('fires loadTranslations for the configured language with the full app plugin chain', async () => {
+    const loader = vi.fn(async (lang: string) => ({ skip_intro: `[${lang}] skip` }));
 
-		player.addPlugin(DesktopUiPlugin, { imageBaseUrl: '/tmdb-images' });
-		player.addPlugin(SubtitleOverlayPlugin);
-		player.addPlugin(KeyHandlerPlugin);
-		player.addPlugin(TouchZonesPlugin);
-		player.addPlugin(MediaSessionPlugin);
+    const player = nmplayer('player1').setup({
+      controls: false,
+      autoPlay: true,
+      expose: true,
+      playlist: [],
+      logLevel: 'trace',
+      baseUrl: 'https://server.test',
+      baseImageUrl: '/tmdb-images',
+      language: 'nl',
+      auth: { bearerToken: () => 'token' },
+      loadTranslations: loader,
+    } as never);
 
-		await player.ready();
+    player.addPlugin(DesktopUiPlugin, { imageBaseUrl: '/tmdb-images' });
+    player.addPlugin(SubtitleOverlayPlugin);
+    player.addPlugin(KeyHandlerPlugin);
+    player.addPlugin(TouchZonesPlugin);
+    player.addPlugin(MediaSessionPlugin);
 
-		expect(loader).toHaveBeenCalledWith('nl');
-		expect(player.t('skip_intro')).toBe('[nl] skip');
-	});
+    await player.ready();
+
+    expect(loader).toHaveBeenCalledWith('nl');
+    expect(player.t('skip_intro')).toBe('[nl] skip');
+  });
 });

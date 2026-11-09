@@ -20,86 +20,97 @@ type ResizeCallback = (entries: Array<{ contentRect: { width: number } }>) => vo
 const _observedCallbacks: ResizeCallback[] = [];
 
 function simulateWidth(width: number): void {
-	const entry = [{ contentRect: { width } }];
-	for (const cb of _observedCallbacks) {
-		cb(entry);
-	}
+  const entry = [{ contentRect: { width } }];
+
+  for (const cb of _observedCallbacks) {
+    cb(entry);
+  }
 }
 
 const MockResizeObserver = vi.fn(function (this: unknown, callback: ResizeCallback) {
-	_observedCallbacks.push(callback);
-	return { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() };
+  _observedCallbacks.push(callback);
+
+  return {
+    observe: vi.fn(),
+    disconnect: vi.fn(),
+    unobserve: vi.fn(),
+  };
 });
 
 describe('DesktopUiPlugin — partial buttons map opt-out', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		(globalThis as unknown as Record<string, unknown>).ResizeObserver = MockResizeObserver;
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		delete (globalThis as unknown as Record<string, unknown>).ResizeObserver;
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    (globalThis as unknown as Record<string, unknown>).ResizeObserver = MockResizeObserver;
+  });
 
-	it('keys absent from a present buttons map stay hidden', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(desktopUiPlugin, {
-			buttons: {
-				chapterPrev: true,
-				chapterNext: true,
-				pip: true,
-				quality: true,
-				subtitles: true,
-				audio: true,
-				playlist: true,
-			},
-		});
-		await player.ready();
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    delete (globalThis as unknown as Record<string, unknown>).ResizeObserver;
+  });
 
-		const container = document.getElementById('test')!;
-		const byId = (id: string) => container.querySelector<HTMLButtonElement>(`#${id}`);
+  it('keys absent from a present buttons map stay hidden', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		expect(byId('theater')?.hidden).toBe(true);
-		expect(byId('speed')?.hidden).toBe(true);
-		expect(byId('aspect-ratio')?.hidden).toBe(true);
-		expect(byId('seek-back')?.hidden).toBe(true);
-		expect(byId('seek-forward')?.hidden).toBe(true);
+    player.addPlugin(desktopUiPlugin, {
+      buttons: {
+        chapterPrev: true,
+        chapterNext: true,
+        pip: true,
+        quality: true,
+        subtitles: true,
+        audio: true,
+        playlist: true,
+      },
+    });
 
-		// pip/playlist/subtitles are capability- or content-gated in jsdom
-		// (no PiP API, empty queue, no tracks) — assert on an ungated default.
-		expect(byId('settings')?.hidden).toBe(false);
+    await player.ready();
 
-		// The responsive fit pass must not resurrect opted-out buttons at a
-		// viewport where everything fits.
-		simulateWidth(1600);
+    const container = document.getElementById('test')!;
+    const byId = (id: string) => container.querySelector<HTMLButtonElement>(`#${id}`);
 
-		expect(byId('theater')?.hidden).toBe(true);
-		expect(byId('speed')?.hidden).toBe(true);
-		expect(byId('aspect-ratio')?.hidden).toBe(true);
-		expect(byId('seek-back')?.hidden).toBe(true);
-		expect(byId('seek-forward')?.hidden).toBe(true);
-		expect(byId('settings')?.hidden).toBe(false);
-	});
+    expect(byId('theater')?.hidden).toBe(true);
+    expect(byId('speed')?.hidden).toBe(true);
+    expect(byId('aspect-ratio')?.hidden).toBe(true);
+    expect(byId('seek-back')?.hidden).toBe(true);
+    expect(byId('seek-forward')?.hidden).toBe(true);
 
-	it('buttonOrder re-anchors named buttons to the end in sequence', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(desktopUiPlugin, {
-			buttonOrder: ['playlist', 'subtitles', 'audio', 'quality', 'pip', 'settings', 'fullscreen'],
-		});
-		await player.ready();
+    // pip/playlist/subtitles are capability- or content-gated in jsdom
+    // (no PiP API, empty queue, no tracks) — assert on an ungated default.
+    expect(byId('settings')?.hidden).toBe(false);
 
-		const container = document.getElementById('test')!;
-		const ids = [...container.querySelectorAll('.bottom-row button')].map(button => button.id);
-		const tail = ids.slice(-7);
+    // The responsive fit pass must not resurrect opted-out buttons at a
+    // viewport where everything fits.
+    simulateWidth(1600);
 
-		expect(tail).toEqual(['playlist', 'subtitles', 'audio', 'quality', 'pip', 'settings', 'fullscreen']);
-		// Unnamed buttons keep their natural leading positions.
-		expect(ids[0]).toBe('playback');
-	});
+    expect(byId('theater')?.hidden).toBe(true);
+    expect(byId('speed')?.hidden).toBe(true);
+    expect(byId('aspect-ratio')?.hidden).toBe(true);
+    expect(byId('seek-back')?.hidden).toBe(true);
+    expect(byId('seek-forward')?.hidden).toBe(true);
+    expect(byId('settings')?.hidden).toBe(false);
+  });
+
+  it('buttonOrder re-anchors named buttons to the end in sequence', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    player.addPlugin(desktopUiPlugin, {
+      buttonOrder: ['playlist', 'subtitles', 'audio', 'quality', 'pip', 'settings', 'fullscreen'],
+    });
+
+    await player.ready();
+
+    const container = document.getElementById('test')!;
+    const ids = [...container.querySelectorAll('.bottom-row button')].map((button) => button.id);
+    const tail = ids.slice(-7);
+
+    expect(tail).toEqual(['playlist', 'subtitles', 'audio', 'quality', 'pip', 'settings', 'fullscreen']);
+    // Unnamed buttons keep their natural leading positions.
+    expect(ids[0]).toBe('playback');
+  });
 });

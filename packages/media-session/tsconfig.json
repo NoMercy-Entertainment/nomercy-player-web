@@ -1,12 +1,12 @@
 {
-	"extends": "../../tsconfig.base.json",
-	"compilerOptions": {
-		// Published output and file list stay as they were: ES2020, no map files.
-		"target": "ES2020",
-		"lib": ["ES2020", "DOM"],
-		"types": ["vitest/globals", "node"],
-		"noUncheckedIndexedAccess": false,
-		"declarationMap": false,
-		"sourceMap": false
-	}
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Published output and file list stay as they were: ES2020, no map files.
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM"],
+    "types": ["vitest/globals", "node"],
+    "noUncheckedIndexedAccess": false,
+    "declarationMap": false,
+    "sourceMap": false
+  }
 }

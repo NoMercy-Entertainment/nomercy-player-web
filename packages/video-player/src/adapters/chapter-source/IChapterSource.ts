@@ -17,26 +17,26 @@ import type { BasePlaylistItem, Chapter } from '@nomercy-entertainment/nomercy-p
  * the cue text as chapter titles.
  */
 export interface IChapterSource {
-	/**
-	 * Load chapters for a playlist item. Called after `loadedmetadata`.
-	 * Implementations fetch and cache the chapter list here so `chapters()`
-	 * is synchronous.
-	 *
-	 * @returns The resolved chapter list, or an empty array when no chapters
-	 *   are available for this item.
-	 */
-	load(item: BasePlaylistItem): Promise<Chapter[]>;
+  /**
+   * Load chapters for a playlist item. Called after `loadedmetadata`.
+   * Implementations fetch and cache the chapter list here so `chapters()`
+   * is synchronous.
+   *
+   * @returns The resolved chapter list, or an empty array when no chapters
+   *   are available for this item.
+   */
+  load(item: BasePlaylistItem): Promise<Chapter[]>;
 
-	/**
-	 * Return the chapter that is active at `timeSeconds`, or `null` when
-	 * the time falls outside all chapters (e.g. before the first or after
-	 * the last). Must be synchronous.
-	 */
-	current(timeSeconds: number): Chapter | null;
+  /**
+   * Return the chapter that is active at `timeSeconds`, or `null` when
+   * the time falls outside all chapters (e.g. before the first or after
+   * the last). Must be synchronous.
+   */
+  current(timeSeconds: number): Chapter | null;
 
-	/** The complete chapter list for the current item. Synchronous. */
-	all(): Chapter[];
+  /** The complete chapter list for the current item. Synchronous. */
+  all(): Chapter[];
 
-	/** Release cached chapter data. Called on unload/dispose. */
-	unload(): void;
+  /** Release cached chapter data. Called on unload/dispose. */
+  unload(): void;
 }

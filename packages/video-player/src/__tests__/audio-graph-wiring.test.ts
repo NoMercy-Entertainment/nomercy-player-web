@@ -33,172 +33,176 @@ import { Html5VideoBackend } from '../adapters/video-backend/html5';
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 vi.mock('hls.js', () => {
-	class FakeHls {
-		static isSupported = (): boolean => true;
-		static Events: Record<string, string> = {
-			MANIFEST_PARSED: 'hlsManifestParsed',
-			ERROR: 'hlsError',
-			FRAG_LOADED: 'hlsFragLoaded',
-			LEVEL_SWITCHED: 'hlsLevelSwitched',
-			FRAG_CHANGED: 'hlsFragChanged',
-		};
+  class FakeHls {
+    static isSupported = (): boolean => true;
+    static Events: Record<string, string> = {
+      MANIFEST_PARSED: 'hlsManifestParsed',
+      ERROR: 'hlsError',
+      FRAG_LOADED: 'hlsFragLoaded',
+      LEVEL_SWITCHED: 'hlsLevelSwitched',
+      FRAG_CHANGED: 'hlsFragChanged',
+    };
 
-		static ErrorTypes: Record<string, string> = {
-			NETWORK_ERROR: 'networkError',
-			MEDIA_ERROR: 'mediaError',
-		};
+    static ErrorTypes: Record<string, string> = {
+      NETWORK_ERROR: 'networkError',
+      MEDIA_ERROR: 'mediaError',
+    };
 
-		levels: unknown[] = [];
-		audioTracks: unknown[] = [];
-		subtitleTracks: unknown[] = [];
-		audioTrack = 0;
-		subtitleTrack = -1;
-		currentLevel = -1;
-		loadLevel = -1;
-		nextLevel = -1;
-		autoLevelCapping = -1;
+    levels: unknown[] = [];
+    audioTracks: unknown[] = [];
+    subtitleTracks: unknown[] = [];
+    audioTrack = 0;
+    subtitleTrack = -1;
+    currentLevel = -1;
+    loadLevel = -1;
+    nextLevel = -1;
+    autoLevelCapping = -1;
 
-		on(): void { /* stub */ }
-		attachMedia(): void { /* stub */ }
-		loadSource(): void { /* stub */ }
-		detachMedia(): void { /* stub */ }
-		destroy(): void { /* stub */ }
-		startLoad(): void { /* stub */ }
-		stopLoad(): void { /* stub */ }
-		recoverMediaError(): void { /* stub */ }
-	}
+    on(): void { /* stub */ }
+    attachMedia(): void { /* stub */ }
+    loadSource(): void { /* stub */ }
+    detachMedia(): void { /* stub */ }
+    destroy(): void { /* stub */ }
+    startLoad(): void { /* stub */ }
+    stopLoad(): void { /* stub */ }
+    recoverMediaError(): void { /* stub */ }
+  }
 
-	return { default: FakeHls };
+  return { default: FakeHls };
 });
 
 function makeBackend(): { backend: Html5VideoBackend; container: HTMLDivElement } {
-	const container = document.createElement('div');
-	document.body.appendChild(container);
-	const backend = new Html5VideoBackend(container);
-	return { backend, container };
+  const container = document.createElement('div');
+
+  document.body.appendChild(container);
+  const backend = new Html5VideoBackend(container);
+
+  return { backend, container };
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 describe('Html5VideoBackend — Web Audio graph tap (E4-D1)', () => {
-	beforeEach(() => {
-		(globalThis as unknown as { AudioContext: typeof MockAudioContext }).AudioContext = MockAudioContext;
-	});
+  beforeEach(() => {
+    (globalThis as unknown as { AudioContext: typeof MockAudioContext }).AudioContext = MockAudioContext;
+  });
 
-	afterEach(() => {
-		delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
+    document.body.innerHTML = '';
+  });
 
-	it('neither outputNode nor analysisNode trigger createMediaElementSource at construction', () => {
-		const { backend } = makeBackend();
-		const ctx = new MockAudioContext() as unknown as AudioContext;
+  it('neither outputNode nor analysisNode trigger createMediaElementSource at construction', () => {
+    const { backend } = makeBackend();
+    const ctx = new MockAudioContext() as unknown as AudioContext;
 
-		// Reference the backend to confirm it exists — do NOT call the graph methods.
-		expect(backend).toBeTruthy();
-		expect(ctx.createMediaElementSource).not.toHaveBeenCalled();
-	});
+    // Reference the backend to confirm it exists — do NOT call the graph methods.
+    expect(backend).toBeTruthy();
+    expect(ctx.createMediaElementSource).not.toHaveBeenCalled();
+  });
 
-	it('outputNode returns the GainNode (chain tail)', () => {
-		const { backend } = makeBackend();
-		const ctx = new MockAudioContext() as unknown as AudioContext;
+  it('outputNode returns the GainNode (chain tail)', () => {
+    const { backend } = makeBackend();
+    const ctx = new MockAudioContext() as unknown as AudioContext;
 
-		const node = backend.outputNode!(ctx);
+    const node = backend.outputNode!(ctx);
 
-		const gainNode = (ctx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value;
-		expect(node).toBe(gainNode);
-	});
+    const gainNode = (ctx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value;
 
-	it('analysisNode returns the raw MediaElementAudioSourceNode (pre-volume tap)', () => {
-		const { backend } = makeBackend();
-		const ctx = new MockAudioContext() as unknown as AudioContext;
+    expect(node).toBe(gainNode);
+  });
 
-		const node = backend.analysisNode!(ctx);
+  it('analysisNode returns the raw MediaElementAudioSourceNode (pre-volume tap)', () => {
+    const { backend } = makeBackend();
+    const ctx = new MockAudioContext() as unknown as AudioContext;
 
-		const sourceNode = (ctx.createMediaElementSource as ReturnType<typeof vi.fn>).mock.results[0]?.value;
-		expect(node).toBe(sourceNode);
-	});
+    const node = backend.analysisNode!(ctx);
 
-	it('signal chain is source → analyser → outputGain → destination', () => {
-		const { backend } = makeBackend();
-		const ctx = new MockAudioContext() as unknown as AudioContext;
+    const sourceNode = (ctx.createMediaElementSource as ReturnType<typeof vi.fn>).mock.results[0]?.value;
 
-		backend.outputNode!(ctx);
+    expect(node).toBe(sourceNode);
+  });
 
-		const sourceNode = (ctx.createMediaElementSource as ReturnType<typeof vi.fn>).mock.results[0]?.value as MockSourceNode;
-		const analyserNode = (ctx.createAnalyser as ReturnType<typeof vi.fn>).mock.results[0]?.value as MockAnalyserNode;
-		const gainNode = (ctx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value as MockGainNode;
+  it('signal chain is source → analyser → outputGain → destination', () => {
+    const { backend } = makeBackend();
+    const ctx = new MockAudioContext() as unknown as AudioContext;
 
-		expect(sourceNode._connections).toContain(analyserNode);
-		expect(analyserNode._connections).toContain(gainNode);
-		expect(gainNode._connections).toContain(ctx.destination);
-	});
+    backend.outputNode!(ctx);
 
-	it('createMediaElementSource is called exactly once per AudioContext', () => {
-		const { backend } = makeBackend();
-		const ctx = new MockAudioContext() as unknown as AudioContext;
+    const sourceNode = (ctx.createMediaElementSource as ReturnType<typeof vi.fn>).mock.results[0]?.value as MockSourceNode;
+    const analyserNode = (ctx.createAnalyser as ReturnType<typeof vi.fn>).mock.results[0]?.value as MockAnalyserNode;
+    const gainNode = (ctx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value as MockGainNode;
 
-		backend.outputNode!(ctx);
-		backend.outputNode!(ctx);
-		backend.analysisNode!(ctx);
+    expect(sourceNode._connections).toContain(analyserNode);
+    expect(analyserNode._connections).toContain(gainNode);
+    expect(gainNode._connections).toContain(ctx.destination);
+  });
 
-		expect(ctx.createMediaElementSource).toHaveBeenCalledTimes(1);
-	});
+  it('createMediaElementSource is called exactly once per AudioContext', () => {
+    const { backend } = makeBackend();
+    const ctx = new MockAudioContext() as unknown as AudioContext;
 
-	it('outputNode is idempotent — same GainNode returned on repeated calls', () => {
-		const { backend } = makeBackend();
-		const ctx = new MockAudioContext() as unknown as AudioContext;
+    backend.outputNode!(ctx);
+    backend.outputNode!(ctx);
+    backend.analysisNode!(ctx);
 
-		const first = backend.outputNode!(ctx);
-		const second = backend.outputNode!(ctx);
+    expect(ctx.createMediaElementSource).toHaveBeenCalledTimes(1);
+  });
 
-		expect(first).toBe(second);
-	});
+  it('outputNode is idempotent — same GainNode returned on repeated calls', () => {
+    const { backend } = makeBackend();
+    const ctx = new MockAudioContext() as unknown as AudioContext;
 
-	it('outputNode and analysisNode are consistent across the same context', () => {
-		const { backend } = makeBackend();
-		const ctx = new MockAudioContext() as unknown as AudioContext;
+    const first = backend.outputNode!(ctx);
+    const second = backend.outputNode!(ctx);
 
-		const output = backend.outputNode!(ctx);
-		const analysis = backend.analysisNode!(ctx);
+    expect(first).toBe(second);
+  });
 
-		const gainNode = (ctx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value;
-		const sourceNode = (ctx.createMediaElementSource as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+  it('outputNode and analysisNode are consistent across the same context', () => {
+    const { backend } = makeBackend();
+    const ctx = new MockAudioContext() as unknown as AudioContext;
 
-		expect(output).toBe(gainNode);
-		expect(analysis).toBe(sourceNode);
+    const output = backend.outputNode!(ctx);
+    const analysis = backend.analysisNode!(ctx);
 
-		// They must be different nodes.
-		expect(output).not.toBe(analysis);
-	});
+    const gainNode = (ctx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+    const sourceNode = (ctx.createMediaElementSource as ReturnType<typeof vi.fn>).mock.results[0]?.value;
 
-	it('rebuilds the graph when called with a different AudioContext', () => {
-		const { backend } = makeBackend();
-		const ctx1 = new MockAudioContext() as unknown as AudioContext;
-		const ctx2 = new MockAudioContext() as unknown as AudioContext;
+    expect(output).toBe(gainNode);
+    expect(analysis).toBe(sourceNode);
 
-		backend.outputNode!(ctx1);
-		backend.outputNode!(ctx2);
+    // They must be different nodes.
+    expect(output).not.toBe(analysis);
+  });
 
-		expect(ctx1.createMediaElementSource).toHaveBeenCalledTimes(1);
-		expect(ctx2.createMediaElementSource).toHaveBeenCalledTimes(1);
-	});
+  it('rebuilds the graph when called with a different AudioContext', () => {
+    const { backend } = makeBackend();
+    const ctx1 = new MockAudioContext() as unknown as AudioContext;
+    const ctx2 = new MockAudioContext() as unknown as AudioContext;
 
-	it('dispose() disconnects and releases all audio graph nodes', () => {
-		const { backend } = makeBackend();
-		const ctx = new MockAudioContext() as unknown as AudioContext;
+    backend.outputNode!(ctx1);
+    backend.outputNode!(ctx2);
 
-		backend.outputNode!(ctx);
+    expect(ctx1.createMediaElementSource).toHaveBeenCalledTimes(1);
+    expect(ctx2.createMediaElementSource).toHaveBeenCalledTimes(1);
+  });
 
-		const sourceNode = (ctx.createMediaElementSource as ReturnType<typeof vi.fn>).mock.results[0]?.value as MockSourceNode;
-		const analyserNode = (ctx.createAnalyser as ReturnType<typeof vi.fn>).mock.results[0]?.value as MockAnalyserNode;
-		const gainNode = (ctx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value as MockGainNode;
+  it('dispose() disconnects and releases all audio graph nodes', () => {
+    const { backend } = makeBackend();
+    const ctx = new MockAudioContext() as unknown as AudioContext;
 
-		backend.dispose();
+    backend.outputNode!(ctx);
 
-		// All nodes are disconnected.
-		expect(sourceNode._connections).toHaveLength(0);
-		expect(analyserNode._connections).toHaveLength(0);
-		expect(gainNode._connections).toHaveLength(0);
-	});
+    const sourceNode = (ctx.createMediaElementSource as ReturnType<typeof vi.fn>).mock.results[0]?.value as MockSourceNode;
+    const analyserNode = (ctx.createAnalyser as ReturnType<typeof vi.fn>).mock.results[0]?.value as MockAnalyserNode;
+    const gainNode = (ctx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value as MockGainNode;
+
+    backend.dispose();
+
+    // All nodes are disconnected.
+    expect(sourceNode._connections).toHaveLength(0);
+    expect(analyserNode._connections).toHaveLength(0);
+    expect(gainNode._connections).toHaveLength(0);
+  });
 });

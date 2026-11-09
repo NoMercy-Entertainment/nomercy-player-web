@@ -26,448 +26,474 @@ import { NMMusicPlayer } from '../index';
 // ── Mock backend harness ──────────────────────────────────────────────────────
 
 interface BackendHarness {
-	backend: Record<string, any>;
-	element: HTMLAudioElement;
-	fire: (event: string, data?: unknown) => void;
-	setCurrentTime: (value: number) => void;
-	setDuration: (value: number) => void;
+  backend: Record<string, any>;
+  element: HTMLAudioElement;
+  fire: (event: string, data?: unknown) => void;
+  setCurrentTime: (value: number) => void;
+  setDuration: (value: number) => void;
 }
 
 function makeBackendHarness(): BackendHarness {
-	const element = document.createElement('audio');
-	const handlers = new Map<string, Array<(data?: unknown) => void>>();
-	let currentTime = 0;
-	let duration = 0;
+  const element = document.createElement('audio');
+  const handlers = new Map<string, Array<(data?: unknown) => void>>();
+  let currentTime = 0;
+  let duration = 0;
 
-	const backend: Record<string, any> = {
-		kind: 'audio-element',
-		load: vi.fn(() => Promise.resolve()),
-		unload: vi.fn(),
-		dispose: vi.fn(),
-		play: vi.fn(() => Promise.resolve()),
-		pause: vi.fn(),
-		stop: vi.fn(),
-		currentTime: vi.fn(() => currentTime),
-		duration: vi.fn(() => duration),
-		buffered: vi.fn(() => 0),
-		bufferedRanges: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
-		seekable: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
-		playbackRate: vi.fn(() => 1),
-		volume: vi.fn(() => 0.8),
-		mute: vi.fn(),
-		unmute: vi.fn(),
-		state: vi.fn(() => 'idle' as const),
-		outputNode: vi.fn(() => ({} as AudioNode)),
-		analyserSource: vi.fn(() => ({} as AudioNode)),
-		mediaElement: vi.fn(() => element),
-		captureStream: vi.fn(() => ({} as MediaStream)),
-		setSinkId: vi.fn(() => Promise.resolve()),
-		getSinkId: vi.fn(() => ''),
-		mediaKeys: vi.fn(() => undefined),
-		setMediaKeys: vi.fn(() => Promise.resolve()),
-		outputProtectionState: vi.fn(() => 'unsupported' as const),
-		pauseLoader: vi.fn(),
-		resumeLoader: vi.fn(),
-		loaderState: vi.fn(() => 'running' as const),
-		on: vi.fn((event: string, fn: (data?: unknown) => void) => {
-			const list = handlers.get(event) ?? [];
-			list.push(fn);
-			handlers.set(event, list);
-		}),
-		off: vi.fn(),
-		supportsCrossfade: vi.fn(() => true),
-		loadSecondary: vi.fn(() => Promise.resolve()),
-		disposeSecondary: vi.fn(),
-		primeSecondary: vi.fn(() => Promise.resolve()),
-		crossfade: vi.fn(() => Promise.resolve()),
-		secondaryGain: vi.fn(() => 0),
-	};
+  const backend: Record<string, any> = {
+    kind: 'audio-element',
+    load: vi.fn(() => Promise.resolve()),
+    unload: vi.fn(),
+    dispose: vi.fn(),
+    play: vi.fn(() => Promise.resolve()),
+    pause: vi.fn(),
+    stop: vi.fn(),
+    currentTime: vi.fn(() => currentTime),
+    duration: vi.fn(() => duration),
+    buffered: vi.fn(() => 0),
+    bufferedRanges: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
+    seekable: vi.fn(() => ({ length: 0 } as unknown as TimeRanges)),
+    playbackRate: vi.fn(() => 1),
+    volume: vi.fn(() => 0.8),
+    mute: vi.fn(),
+    unmute: vi.fn(),
+    state: vi.fn(() => 'idle' as const),
+    outputNode: vi.fn(() => ({} as AudioNode)),
+    analyserSource: vi.fn(() => ({} as AudioNode)),
+    mediaElement: vi.fn(() => element),
+    captureStream: vi.fn(() => ({} as MediaStream)),
+    setSinkId: vi.fn(() => Promise.resolve()),
+    getSinkId: vi.fn(() => ''),
+    mediaKeys: vi.fn(() => undefined),
+    setMediaKeys: vi.fn(() => Promise.resolve()),
+    outputProtectionState: vi.fn(() => 'unsupported' as const),
+    pauseLoader: vi.fn(),
+    resumeLoader: vi.fn(),
+    loaderState: vi.fn(() => 'running' as const),
+    on: vi.fn((event: string, fn: (data?: unknown) => void) => {
+      const list = handlers.get(event) ?? [];
 
-	return {
-		backend,
-		element,
-		fire: (event: string, data?: unknown) => {
-			for (const fn of handlers.get(event) ?? []) {
-				fn(data);
-			}
-		},
-		setCurrentTime: (value: number) => { currentTime = value; },
-		setDuration: (value: number) => { duration = value; },
-	};
+      list.push(fn);
+      handlers.set(event, list);
+    }),
+    off: vi.fn(),
+    supportsCrossfade: vi.fn(() => true),
+    loadSecondary: vi.fn(() => Promise.resolve()),
+    disposeSecondary: vi.fn(),
+    primeSecondary: vi.fn(() => Promise.resolve()),
+    crossfade: vi.fn(() => Promise.resolve()),
+    secondaryGain: vi.fn(() => 0),
+  };
+
+  return {
+    backend,
+    element,
+    fire: (event: string, data?: unknown) => {
+      for (const fn of handlers.get(event) ?? []) {
+        fn(data);
+      }
+    },
+    setCurrentTime: (value: number) => { currentTime = value; },
+    setDuration: (value: number) => { duration = value; },
+  };
 }
 
 function track(id: string, extra?: Partial<MusicPlaylistItem>): MusicPlaylistItem {
-	return {
-		id,
-		name: `track ${id}`,
-		url: `blob:${id}`,
-		...extra,
-	};
+  return {
+    id,
+    name: `track ${id}`,
+    url: `blob:${id}`,
+    ...extra,
+  };
 }
 
 let idCounter = 0;
 
 interface FacadeSetup {
-	player: NMMusicPlayer;
-	harness: BackendHarness;
-	factorySpy: ReturnType<typeof vi.fn>;
+  player: NMMusicPlayer;
+  harness: BackendHarness;
+  factorySpy: ReturnType<typeof vi.fn>;
 }
 
 async function makePlayer(config: Record<string, unknown> = {}): Promise<FacadeSetup> {
-	idCounter += 1;
-	const id = `facade-${idCounter}`;
-	const div = document.createElement('div');
-	div.id = id;
-	document.body.appendChild(div);
+  idCounter += 1;
+  const id = `facade-${idCounter}`;
+  const div = document.createElement('div');
 
-	const harness = makeBackendHarness();
-	const factorySpy = vi.fn(() => harness.backend);
-	const player = new NMMusicPlayer(id);
-	player.setup({
-		backendFactory: factorySpy,
-		...config,
-	} as any);
-	await player.ready();
-	player.backend();
+  div.id = id;
+  document.body.appendChild(div);
 
-	return {
-		player,
-		harness,
-		factorySpy,
-	};
+  const harness = makeBackendHarness();
+  const factorySpy = vi.fn(() => harness.backend);
+  const player = new NMMusicPlayer(id);
+
+  player.setup({
+    backendFactory: factorySpy,
+    ...config,
+  } as any);
+
+  await player.ready();
+  player.backend();
+
+  return {
+    player,
+    harness,
+    factorySpy,
+  };
 }
 
 describe('NMMusicPlayer facade residue', () => {
-	beforeEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  beforeEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	afterEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	// ── backendFactory config injection ───────────────────────────────────────
+  // ── backendFactory config injection ───────────────────────────────────────
 
-	describe('backendFactory', () => {
-		it('backend() returns the factory-built backend and passes the resolved kind', async () => {
-			const { player, harness, factorySpy } = await makePlayer();
+  describe('backendFactory', () => {
+    it('backend() returns the factory-built backend and passes the resolved kind', async () => {
+      const { player, harness, factorySpy } = await makePlayer();
 
-			expect(player.backend()).toBe(harness.backend);
-			expect(factorySpy).toHaveBeenCalledTimes(1);
-			expect(factorySpy.mock.calls[0]![0]).toBe('audio-element');
-		});
+      expect(player.backend()).toBe(harness.backend);
+      expect(factorySpy).toHaveBeenCalledTimes(1);
+      expect(factorySpy.mock.calls[0]![0]).toBe('audio-element');
+    });
 
-		it('forwards a configured "webaudio" kind to the factory instead of constructing WebAudioBackend', async () => {
-			const { player, harness, factorySpy } = await makePlayer({ backend: 'webaudio' });
+    it('forwards a configured "webaudio" kind to the factory instead of constructing WebAudioBackend', async () => {
+      const { player, harness, factorySpy } = await makePlayer({ backend: 'webaudio' });
 
-			expect(player.backend()).toBe(harness.backend);
-			expect(factorySpy.mock.calls[0]![0]).toBe('webaudio');
-		});
-	});
+      expect(player.backend()).toBe(harness.backend);
+      expect(factorySpy.mock.calls[0]![0]).toBe('webaudio');
+    });
+  });
 
-	// ── duration fallback ─────────────────────────────────────────────────────
+  // ── duration fallback ─────────────────────────────────────────────────────
 
-	describe('duration fallback on loadedmetadata', () => {
-		it('emits the backend duration when it is a positive number', async () => {
-			const { player, harness } = await makePlayer();
+  describe('duration fallback on loadedmetadata', () => {
+    it('emits the backend duration when it is a positive number', async () => {
+      const { player, harness } = await makePlayer();
 
-			const durations: number[] = [];
-			player.on('duration' as any, (data: { duration: number }) => { durations.push(data.duration); });
+      const durations: number[] = [];
 
-			harness.setDuration(93.5);
-			harness.fire('loadedmetadata');
+      player.on('duration' as any, (data: { duration: number }) => { durations.push(data.duration); });
 
-			expect(durations).toEqual([93.5]);
-		});
+      harness.setDuration(93.5);
+      harness.fire('loadedmetadata');
 
-		it('falls back to the item\'s numeric duration when the backend reports 0', async () => {
-			const { player, harness } = await makePlayer();
+      expect(durations).toEqual([93.5]);
+    });
 
-			player.queue([track('a', { duration: 240 })]);
+    it('falls back to the item\'s numeric duration when the backend reports 0', async () => {
+      const { player, harness } = await makePlayer();
 
-			const durations: number[] = [];
-			player.on('duration' as any, (data: { duration: number }) => { durations.push(data.duration); });
+      player.queue([track('a', { duration: 240 })]);
 
-			harness.setDuration(0);
-			harness.fire('loadedmetadata');
+      const durations: number[] = [];
 
-			expect(durations).toEqual([240]);
-			expect(player.duration()).toBe(240);
-		});
+      player.on('duration' as any, (data: { duration: number }) => { durations.push(data.duration); });
 
-		it('falls back to the item\'s numeric duration when the backend reports NaN', async () => {
-			const { player, harness } = await makePlayer();
+      harness.setDuration(0);
+      harness.fire('loadedmetadata');
 
-			player.queue([track('a', { duration: 187 })]);
+      expect(durations).toEqual([240]);
+      expect(player.duration()).toBe(240);
+    });
 
-			const durations: number[] = [];
-			player.on('duration' as any, (data: { duration: number }) => { durations.push(data.duration); });
+    it('falls back to the item\'s numeric duration when the backend reports NaN', async () => {
+      const { player, harness } = await makePlayer();
 
-			harness.setDuration(Number.NaN);
-			harness.fire('loadedmetadata');
+      player.queue([track('a', { duration: 187 })]);
 
-			expect(durations).toEqual([187]);
-		});
+      const durations: number[] = [];
 
-		it('emits nothing when the item duration is a human-readable string', async () => {
-			const { player, harness } = await makePlayer();
+      player.on('duration' as any, (data: { duration: number }) => { durations.push(data.duration); });
 
-			player.queue([track('a', { duration: '3:42' })]);
+      harness.setDuration(Number.NaN);
+      harness.fire('loadedmetadata');
 
-			let emitCount = 0;
-			player.on('duration' as any, () => { emitCount++; });
+      expect(durations).toEqual([187]);
+    });
 
-			harness.setDuration(0);
-			harness.fire('loadedmetadata');
+    it('emits nothing when the item duration is a human-readable string', async () => {
+      const { player, harness } = await makePlayer();
 
-			expect(emitCount).toBe(0);
-		});
+      player.queue([track('a', { duration: '3:42' })]);
 
-		it('emits nothing when there is no current item to fall back to', async () => {
-			const { player, harness } = await makePlayer();
+      let emitCount = 0;
 
-			let emitCount = 0;
-			player.on('duration' as any, () => { emitCount++; });
+      player.on('duration' as any, () => { emitCount++; });
 
-			harness.setDuration(0);
-			harness.fire('loadedmetadata');
+      harness.setDuration(0);
+      harness.fire('loadedmetadata');
 
-			expect(emitCount).toBe(0);
-		});
-	});
+      expect(emitCount).toBe(0);
+    });
 
-	// ── timeupdate bridge ─────────────────────────────────────────────────────
+    it('emits nothing when there is no current item to fall back to', async () => {
+      const { player, harness } = await makePlayer();
 
-	describe('timeupdate bridge', () => {
-		it('emits a full TimeState snapshot built from the backend position', async () => {
-			const { player, harness } = await makePlayer();
+      let emitCount = 0;
 
-			harness.setDuration(100);
-			harness.fire('loadedmetadata');
+      player.on('duration' as any, () => { emitCount++; });
 
-			const snapshots: Array<Record<string, number>> = [];
-			player.on('time' as any, (data: Record<string, number>) => { snapshots.push(data); });
+      harness.setDuration(0);
+      harness.fire('loadedmetadata');
 
-			harness.setCurrentTime(42);
-			harness.fire('timeupdate');
+      expect(emitCount).toBe(0);
+    });
+  });
 
-			expect(snapshots).toHaveLength(1);
-			expect(snapshots[0]).toMatchObject({
-				time: 42,
-				position: 42,
-				duration: 100,
-				remaining: 58,
-				percentage: 42,
-			});
-			expect(player.time()).toBe(42);
-		});
+  // ── timeupdate bridge ─────────────────────────────────────────────────────
 
-		it('fires itemEndingSoon exactly once when the remaining-time threshold is crossed', async () => {
-			const { player, harness } = await makePlayer();
+  describe('timeupdate bridge', () => {
+    it('emits a full TimeState snapshot built from the backend position', async () => {
+      const { player, harness } = await makePlayer();
 
-			player.queue([track('a'), track('b')]);
+      harness.setDuration(100);
+      harness.fire('loadedmetadata');
 
-			harness.setDuration(100);
-			harness.fire('loadedmetadata');
+      const snapshots: Array<Record<string, number>> = [];
 
-			let endingSoonCount = 0;
-			player.on('itemEndingSoon' as any, () => { endingSoonCount++; });
+      player.on('time' as any, (data: Record<string, number>) => { snapshots.push(data); });
 
-			harness.setCurrentTime(50);
-			harness.fire('timeupdate');
-			expect(endingSoonCount).toBe(0);
+      harness.setCurrentTime(42);
+      harness.fire('timeupdate');
 
-			harness.setCurrentTime(99);
-			harness.fire('timeupdate');
-			expect(endingSoonCount).toBe(1);
+      expect(snapshots).toHaveLength(1);
 
-			// The latch holds — further ticks past the threshold do not re-fire.
-			harness.setCurrentTime(99.5);
-			harness.fire('timeupdate');
-			expect(endingSoonCount).toBe(1);
-		});
-	});
+      expect(snapshots[0]).toMatchObject({
+        time: 42,
+        position: 42,
+        duration: 100,
+        remaining: 58,
+        percentage: 42,
+      });
 
-	// ── canplay dedupe + ended bridge ─────────────────────────────────────────
+      expect(player.time()).toBe(42);
+    });
 
-	describe('play-state bridges', () => {
-		it('emits firstFrame once even when canplay fires repeatedly', async () => {
-			const { player, harness } = await makePlayer();
+    it('fires itemEndingSoon exactly once when the remaining-time threshold is crossed', async () => {
+      const { player, harness } = await makePlayer();
 
-			let firstFrameCount = 0;
-			player.on('firstFrame' as any, () => { firstFrameCount++; });
+      player.queue([track('a'), track('b')]);
 
-			harness.fire('canplay');
-			harness.fire('canplay');
-			harness.fire('canplay');
+      harness.setDuration(100);
+      harness.fire('loadedmetadata');
 
-			expect(firstFrameCount).toBe(1);
-		});
+      let endingSoonCount = 0;
 
-		it('bridges backend ended to the player ended event and the "ended" phase', async () => {
-			const { player, harness } = await makePlayer();
+      player.on('itemEndingSoon' as any, () => { endingSoonCount++; });
 
-			player.queue([track('a')]);
-			await player.play();
-			harness.fire('play');
-			expect(player.phase()).toBe('playing');
+      harness.setCurrentTime(50);
+      harness.fire('timeupdate');
+      expect(endingSoonCount).toBe(0);
 
-			let endedCount = 0;
-			player.on('ended' as any, () => { endedCount++; });
+      harness.setCurrentTime(99);
+      harness.fire('timeupdate');
+      expect(endingSoonCount).toBe(1);
 
-			harness.fire('ended');
+      // The latch holds — further ticks past the threshold do not re-fire.
+      harness.setCurrentTime(99.5);
+      harness.fire('timeupdate');
+      expect(endingSoonCount).toBe(1);
+    });
+  });
 
-			expect(endedCount).toBe(1);
-			expect(player.phase()).toBe('ended');
-		});
-	});
+  // ── canplay dedupe + ended bridge ─────────────────────────────────────────
 
-	// ── dispose prevented ─────────────────────────────────────────────────────
+  describe('play-state bridges', () => {
+    it('emits firstFrame once even when canplay fires repeatedly', async () => {
+      const { player, harness } = await makePlayer();
 
-	describe('beforeDispose preventDefault', () => {
-		it('keeps the backend, phase, and registry entry fully alive', async () => {
-			const { player, harness } = await makePlayer();
-			const playerId = player.id;
+      let firstFrameCount = 0;
 
-			player.once('beforeDispose' as any, (event: any) => { event.preventDefault(); });
+      player.on('firstFrame' as any, () => { firstFrameCount++; });
 
-			const prevented: unknown[] = [];
-			player.on('disposePrevented' as any, (data: unknown) => { prevented.push(data); });
+      harness.fire('canplay');
+      harness.fire('canplay');
+      harness.fire('canplay');
 
-			await player.dispose();
-
-			expect(prevented).toHaveLength(1);
-			expect(player.phase()).not.toBe('disposed');
-			expect(harness.backend['dispose']).not.toHaveBeenCalled();
-			expect(player.backend()).toBe(harness.backend);
-
-			// Registry entry survives — constructing with the same id returns the SAME live instance.
-			expect(new NMMusicPlayer(playerId)).toBe(player);
-		});
-
-		it('a later dispose() without the blocking listener tears everything down', async () => {
-			const { player, harness } = await makePlayer();
-			const playerId = player.id;
-
-			player.once('beforeDispose' as any, (event: any) => { event.preventDefault(); });
-			await player.dispose();
-			expect(player.phase()).not.toBe('disposed');
-
-			await player.dispose();
-
-			expect(player.phase()).toBe('disposed');
-			expect(harness.backend['dispose']).toHaveBeenCalledTimes(1);
-
-			// Registry slot is free — same id now constructs a fresh instance.
-			expect(new NMMusicPlayer(playerId)).not.toBe(player);
-		});
-	});
-
-	// ── crossfadeTo residue ───────────────────────────────────────────────────
-
-	describe('crossfadeTo residue', () => {
-		it('re-validates after a beforeCrossfade listener swaps data.to for a url-less item', async () => {
-			const { player, harness } = await makePlayer();
-
-			player.on('beforeCrossfade' as any, (event: any) => {
-				event.data.to = {
-					id: 'swapped',
-					name: 'listener swapped this in',
-				};
-			});
-
-			await expect(player.crossfadeTo(track('a'))).rejects.toMatchObject({
-				code: 'core:media/missing-url',
-			});
-			expect(harness.backend['loadSecondary']).not.toHaveBeenCalled();
-			expect(player.isTransitioning()).toBe(false);
-		});
-
-		// The primary load() resolves an item URL through `resolveUrl(url,
-		// 'media')`, which is what prepends baseUrl. Handed the raw relative
-		// path instead, the secondary element resolves it against the page
-		// origin and 404s — and every consumer keeps item URLs relative,
-		// because that is the shape the media server sends.
-		it('resolves the target URL against baseUrl before handing it to the backend', async () => {
-			const { player, harness } = await makePlayer({
-				baseUrl: 'https://cdn.example/music',
-			});
-
-			await player.crossfadeTo(track('a', { url: '/K/Ketsa/02.Saviour.Above.mp3' }));
-
-			expect(harness.backend['loadSecondary']).toHaveBeenCalledWith(
-				'https://cdn.example/music/K/Ketsa/02.Saviour.Above.mp3',
-			);
-		});
-
-		it('resets isTransitioning() and rethrows when the backend crossfade fails', async () => {
-			const { player, harness } = await makePlayer();
-
-			harness.backend['crossfade'].mockRejectedValueOnce(new Error('ramp failed'));
-
-			await expect(player.crossfadeTo(track('a'))).rejects.toThrow('ramp failed');
-			expect(player.isTransitioning()).toBe(false);
-
-			// The guard is fully reset — a follow-up crossfade proceeds.
-			await player.crossfadeTo(track('b'));
-			expect(harness.backend['crossfade']).toHaveBeenCalledTimes(2);
-		});
-	});
-
-	// ── auth header provider ──────────────────────────────────────────────────
-
-	describe('auth header provider wiring', () => {
-		it('hands the consumer hook through, url and all', async () => {
-			idCounter += 1;
-			const id = `facade-${idCounter}`;
-			const div = document.createElement('div');
-			div.id = id;
-			document.body.appendChild(div);
-
-			const harness = makeBackendHarness();
-			let capturedProvider: ((url: string) => string | undefined) | undefined;
-			harness.backend['setAuthHeaderProvider'] = vi.fn((provider: (url: string) => string | undefined) => {
-				capturedProvider = provider;
-			});
-
-			const player = new NMMusicPlayer(id);
-			player.setup({
-				backendFactory: () => harness.backend,
-				// The consumer decides, per url. The facade hands its answer straight
-				// through rather than minting a credential out of `bearerToken`.
-				auth: {
-					mediaAuthorization: (url: string) =>
-						url.startsWith('https://mine.test/') ? 'Bearer token-123' : undefined,
-				},
-			} as any);
-			await player.ready();
-			player.backend();
-
-			expect(capturedProvider).toBeTypeOf('function');
-			expect(capturedProvider!('https://mine.test/a.m3u8')).toBe('Bearer token-123');
-			expect(capturedProvider!('https://ice1.somafm.com/groovesalad')).toBeUndefined();
-		});
-
-		it('answers nothing when the consumer wired no media hook', async () => {
-			idCounter += 1;
-			const id = `facade-${idCounter}`;
-			const div = document.createElement('div');
-			div.id = id;
-			document.body.appendChild(div);
-
-			const harness = makeBackendHarness();
-			let capturedProvider: ((url: string) => string | undefined) | undefined;
-			harness.backend['setAuthHeaderProvider'] = vi.fn((provider: (url: string) => string | undefined) => {
-				capturedProvider = provider;
-			});
-
-			const player = new NMMusicPlayer(id);
-			player.setup({ backendFactory: () => harness.backend } as any);
-			await player.ready();
-			player.backend();
-
-			expect(capturedProvider!('https://mine.test/a.m3u8')).toBeUndefined();
-		});
-	});
+      expect(firstFrameCount).toBe(1);
+    });
+
+    it('bridges backend ended to the player ended event and the "ended" phase', async () => {
+      const { player, harness } = await makePlayer();
+
+      player.queue([track('a')]);
+      await player.play();
+      harness.fire('play');
+      expect(player.phase()).toBe('playing');
+
+      let endedCount = 0;
+
+      player.on('ended' as any, () => { endedCount++; });
+
+      harness.fire('ended');
+
+      expect(endedCount).toBe(1);
+      expect(player.phase()).toBe('ended');
+    });
+  });
+
+  // ── dispose prevented ─────────────────────────────────────────────────────
+
+  describe('beforeDispose preventDefault', () => {
+    it('keeps the backend, phase, and registry entry fully alive', async () => {
+      const { player, harness } = await makePlayer();
+      const playerId = player.id;
+
+      player.once('beforeDispose' as any, (event: any) => { event.preventDefault(); });
+
+      const prevented: unknown[] = [];
+
+      player.on('disposePrevented' as any, (data: unknown) => { prevented.push(data); });
+
+      await player.dispose();
+
+      expect(prevented).toHaveLength(1);
+      expect(player.phase()).not.toBe('disposed');
+      expect(harness.backend['dispose']).not.toHaveBeenCalled();
+      expect(player.backend()).toBe(harness.backend);
+
+      // Registry entry survives — constructing with the same id returns the SAME live instance.
+      expect(new NMMusicPlayer(playerId)).toBe(player);
+    });
+
+    it('a later dispose() without the blocking listener tears everything down', async () => {
+      const { player, harness } = await makePlayer();
+      const playerId = player.id;
+
+      player.once('beforeDispose' as any, (event: any) => { event.preventDefault(); });
+      await player.dispose();
+      expect(player.phase()).not.toBe('disposed');
+
+      await player.dispose();
+
+      expect(player.phase()).toBe('disposed');
+      expect(harness.backend['dispose']).toHaveBeenCalledTimes(1);
+
+      // Registry slot is free — same id now constructs a fresh instance.
+      expect(new NMMusicPlayer(playerId)).not.toBe(player);
+    });
+  });
+
+  // ── crossfadeTo residue ───────────────────────────────────────────────────
+
+  describe('crossfadeTo residue', () => {
+    it('re-validates after a beforeCrossfade listener swaps data.to for a url-less item', async () => {
+      const { player, harness } = await makePlayer();
+
+      player.on('beforeCrossfade' as any, (event: any) => {
+        event.data.to = {
+          id: 'swapped',
+          name: 'listener swapped this in',
+        };
+      });
+
+      await expect(player.crossfadeTo(track('a'))).rejects.toMatchObject({
+        code: 'core:media/missing-url',
+      });
+
+      expect(harness.backend['loadSecondary']).not.toHaveBeenCalled();
+      expect(player.isTransitioning()).toBe(false);
+    });
+
+    // The primary load() resolves an item URL through `resolveUrl(url,
+    // 'media')`, which is what prepends baseUrl. Handed the raw relative
+    // path instead, the secondary element resolves it against the page
+    // origin and 404s — and every consumer keeps item URLs relative,
+    // because that is the shape the media server sends.
+    it('resolves the target URL against baseUrl before handing it to the backend', async () => {
+      const { player, harness } = await makePlayer({
+        baseUrl: 'https://cdn.example/music',
+      });
+
+      await player.crossfadeTo(track('a', { url: '/K/Ketsa/02.Saviour.Above.mp3' }));
+
+      expect(harness.backend['loadSecondary']).toHaveBeenCalledWith(
+        'https://cdn.example/music/K/Ketsa/02.Saviour.Above.mp3',
+      );
+    });
+
+    it('resets isTransitioning() and rethrows when the backend crossfade fails', async () => {
+      const { player, harness } = await makePlayer();
+
+      harness.backend['crossfade'].mockRejectedValueOnce(new Error('ramp failed'));
+
+      await expect(player.crossfadeTo(track('a'))).rejects.toThrow('ramp failed');
+      expect(player.isTransitioning()).toBe(false);
+
+      // The guard is fully reset — a follow-up crossfade proceeds.
+      await player.crossfadeTo(track('b'));
+      expect(harness.backend['crossfade']).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // ── auth header provider ──────────────────────────────────────────────────
+
+  describe('auth header provider wiring', () => {
+    it('hands the consumer hook through, url and all', async () => {
+      idCounter += 1;
+      const id = `facade-${idCounter}`;
+      const div = document.createElement('div');
+
+      div.id = id;
+      document.body.appendChild(div);
+
+      const harness = makeBackendHarness();
+      let capturedProvider: ((url: string) => string | undefined) | undefined;
+
+      harness.backend['setAuthHeaderProvider'] = vi.fn((provider: (url: string) => string | undefined) => {
+        capturedProvider = provider;
+      });
+
+      const player = new NMMusicPlayer(id);
+
+      player.setup({
+        backendFactory: () => harness.backend,
+        // The consumer decides, per url. The facade hands its answer straight
+        // through rather than minting a credential out of `bearerToken`.
+        auth: {
+          mediaAuthorization: (url: string) =>
+            url.startsWith('https://mine.test/')
+              ? 'Bearer token-123'
+              : undefined,
+        },
+      } as any);
+
+      await player.ready();
+      player.backend();
+
+      expect(capturedProvider).toBeTypeOf('function');
+      expect(capturedProvider!('https://mine.test/a.m3u8')).toBe('Bearer token-123');
+      expect(capturedProvider!('https://ice1.somafm.com/groovesalad')).toBeUndefined();
+    });
+
+    it('answers nothing when the consumer wired no media hook', async () => {
+      idCounter += 1;
+      const id = `facade-${idCounter}`;
+      const div = document.createElement('div');
+
+      div.id = id;
+      document.body.appendChild(div);
+
+      const harness = makeBackendHarness();
+      let capturedProvider: ((url: string) => string | undefined) | undefined;
+
+      harness.backend['setAuthHeaderProvider'] = vi.fn((provider: (url: string) => string | undefined) => {
+        capturedProvider = provider;
+      });
+
+      const player = new NMMusicPlayer(id);
+
+      player.setup({ backendFactory: () => harness.backend } as any);
+      await player.ready();
+      player.backend();
+
+      expect(capturedProvider!('https://mine.test/a.m3u8')).toBeUndefined();
+    });
+  });
 });

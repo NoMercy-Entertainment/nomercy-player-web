@@ -30,280 +30,319 @@
 import type { BaseEventMap, BasePlaylistItem } from '../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare options: Record<string, unknown>;
-	declare setup: (config: Record<string, unknown>) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare queue: { (): ReadonlyArray<BasePlaylistItem>; (items: BasePlaylistItem[]): void };
-	declare queueAppend: (item: BasePlaylistItem | BasePlaylistItem[]) => void;
-	declare queuePrepend: (item: BasePlaylistItem | BasePlaylistItem[]) => void;
-	declare queueInsert: (item: BasePlaylistItem | BasePlaylistItem[], index: number) => void;
-	declare queueRemove: (id: string | number) => void;
-	declare queueRemoveAt: (index: number) => void;
-	declare queueMove: (from: number, to: number) => void;
-	declare queueClear: () => void;
-	declare queueShuffle: () => void;
-	declare queueSort: (compare: (itemA: BasePlaylistItem, itemB: BasePlaylistItem) => number) => void;
-	declare queueLength: () => number;
-	declare queueIndexOf: (id: string | number) => number;
-	declare peekNext: () => BasePlaylistItem | undefined;
-	declare peekPrevious: () => BasePlaylistItem | undefined;
-	declare item: { (): BasePlaylistItem | undefined; (target: BasePlaylistItem | string | number | ((item: BasePlaylistItem) => boolean)): void };
-	declare index: () => number;
-	declare seekToIndex: (position: number) => void;
-	declare load: (item: BasePlaylistItem, opts?: unknown) => Promise<void>;
-	declare backlog: { (): ReadonlyArray<BasePlaylistItem>; (items: BasePlaylistItem[]): void };
-	declare backlogAppend: (item: BasePlaylistItem | BasePlaylistItem[]) => void;
-	declare backlogRemove: (id: string | number) => void;
-	declare backlogClear: () => void;
+  declare options: Record<string, unknown>;
+  declare setup: (config: Record<string, unknown>) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare queue: { (): ReadonlyArray<BasePlaylistItem>; (items: BasePlaylistItem[]): void };
+  declare queueAppend: (item: BasePlaylistItem | BasePlaylistItem[]) => void;
+  declare queuePrepend: (item: BasePlaylistItem | BasePlaylistItem[]) => void;
+  declare queueInsert: (item: BasePlaylistItem | BasePlaylistItem[], index: number) => void;
+  declare queueRemove: (id: string | number) => void;
+  declare queueRemoveAt: (index: number) => void;
+  declare queueMove: (from: number, to: number) => void;
+  declare queueClear: () => void;
+  declare queueShuffle: () => void;
+  declare queueSort: (compare: (itemA: BasePlaylistItem, itemB: BasePlaylistItem) => number) => void;
+  declare queueLength: () => number;
+  declare queueIndexOf: (id: string | number) => number;
+  declare peekNext: () => BasePlaylistItem | undefined;
+  declare peekPrevious: () => BasePlaylistItem | undefined;
+  declare item: { (): BasePlaylistItem | undefined; (target: BasePlaylistItem | string | number | ((item: BasePlaylistItem) => boolean)): void };
+  declare index: () => number;
+  declare seekToIndex: (position: number) => void;
+  declare load: (item: BasePlaylistItem, opts?: unknown) => Promise<void>;
+  declare backlog: { (): ReadonlyArray<BasePlaylistItem>; (items: BasePlaylistItem[]): void };
+  declare backlogAppend: (item: BasePlaylistItem | BasePlaylistItem[]) => void;
+  declare backlogRemove: (id: string | number) => void;
+  declare backlogClear: () => void;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
-const makeItem = (id: string): BasePlaylistItem => ({ id, title: id, url: `https://example.com/${id}.mp3` } as BasePlaylistItem);
+function makeItem(id: string): BasePlaylistItem {
+  return {
+    id,
+    title: id,
+    url: `https://example.com/${id}.mp3`,
+  } as BasePlaylistItem;
+}
 
 describe('queueMethods — extended (Q-E)', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('Q-E1: queuePrepend prepends and emits queue:prepend', () => {
-		const player = makePlayer('q-1');
-		player.queue([makeItem('b'), makeItem('c')]);
+  it('Q-E1: queuePrepend prepends and emits queue:prepend', () => {
+    const player = makePlayer('q-1');
 
-		let prependEvent: unknown;
-		player.on('queue:prepend' as keyof BaseEventMap, (data: unknown) => {
-			prependEvent = data;
-		});
+    player.queue([makeItem('b'), makeItem('c')]);
 
-		player.queuePrepend(makeItem('a'));
+    let prependEvent: unknown;
 
-		expect((player.queue() as BasePlaylistItem[])[0]!.id).toBe('a');
-		expect(prependEvent).toBeDefined();
-	});
+    player.on('queue:prepend' as keyof BaseEventMap, (data: unknown) => {
+      prependEvent = data;
+    });
 
-	it('Q-E2: queueInsert inserts at given index and emits queue:insert', () => {
-		const player = makePlayer('q-2');
-		player.queue([makeItem('a'), makeItem('c')]);
+    player.queuePrepend(makeItem('a'));
 
-		let insertEvent: unknown;
-		player.on('queue:insert' as keyof BaseEventMap, (data: unknown) => {
-			insertEvent = data;
-		});
+    expect((player.queue() as BasePlaylistItem[])[0]!.id).toBe('a');
+    expect(prependEvent).toBeDefined();
+  });
 
-		player.queueInsert(makeItem('b'), 1);
+  it('Q-E2: queueInsert inserts at given index and emits queue:insert', () => {
+    const player = makePlayer('q-2');
 
-		const items = player.queue() as BasePlaylistItem[];
-		expect(items[1]!.id).toBe('b');
-		expect(items[2]!.id).toBe('c');
-		expect(insertEvent).toBeDefined();
-	});
+    player.queue([makeItem('a'), makeItem('c')]);
 
-	it('Q-E3: queueRemoveAt removes item at index and emits queue:remove', () => {
-		const player = makePlayer('q-3');
-		player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
+    let insertEvent: unknown;
 
-		let removeEvent: unknown;
-		player.on('queue:remove' as keyof BaseEventMap, (data: unknown) => {
-			removeEvent = data;
-		});
+    player.on('queue:insert' as keyof BaseEventMap, (data: unknown) => {
+      insertEvent = data;
+    });
 
-		player.queueRemoveAt(1);
+    player.queueInsert(makeItem('b'), 1);
 
-		const items = player.queue() as BasePlaylistItem[];
-		expect(items).toHaveLength(2);
-		expect(items.some(i => i.id === 'b')).toBe(false);
-		expect(removeEvent).toBeDefined();
-	});
+    const items = player.queue() as BasePlaylistItem[];
 
-	it('Q-E4: queueMove swaps positions and emits queue:move', () => {
-		const player = makePlayer('q-4');
-		player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
+    expect(items[1]!.id).toBe('b');
+    expect(items[2]!.id).toBe('c');
+    expect(insertEvent).toBeDefined();
+  });
 
-		let moveEvent: unknown;
-		player.on('queue:move' as keyof BaseEventMap, (data: unknown) => {
-			moveEvent = data;
-		});
+  it('Q-E3: queueRemoveAt removes item at index and emits queue:remove', () => {
+    const player = makePlayer('q-3');
 
-		player.queueMove(0, 2);
+    player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
 
-		const items = player.queue() as BasePlaylistItem[];
-		expect(items[2]!.id).toBe('a');
-		expect(moveEvent).toBeDefined();
-	});
+    let removeEvent: unknown;
 
-	it('Q-E5: queueSort sorts in-place and emits queue:sort', () => {
-		const player = makePlayer('q-5');
-		player.queue([makeItem('c'), makeItem('a'), makeItem('b')]);
+    player.on('queue:remove' as keyof BaseEventMap, (data: unknown) => {
+      removeEvent = data;
+    });
 
-		let sortFired = false;
-		player.on('queue:sort' as keyof BaseEventMap, () => {
-			sortFired = true;
-		});
+    player.queueRemoveAt(1);
 
-		player.queueSort((x, y) => String(x.id).localeCompare(String(y.id)));
+    const items = player.queue() as BasePlaylistItem[];
 
-		const items = player.queue() as BasePlaylistItem[];
-		expect(items.map(i => i.id)).toEqual(['a', 'b', 'c']);
-		expect(sortFired).toBe(true);
-	});
+    expect(items).toHaveLength(2);
+    expect(items.some((i) => i.id === 'b')).toBe(false);
+    expect(removeEvent).toBeDefined();
+  });
 
-	it('Q-E6: queueShuffle reorders in-place and emits queue:shuffle', () => {
-		const player = makePlayer('q-6');
-		player.queue([makeItem('a'), makeItem('b'), makeItem('c'), makeItem('d'), makeItem('e')]);
+  it('Q-E4: queueMove swaps positions and emits queue:move', () => {
+    const player = makePlayer('q-4');
 
-		let shuffleFired = false;
-		player.on('queue:shuffle' as keyof BaseEventMap, () => {
-			shuffleFired = true;
-		});
+    player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
 
-		player.queueShuffle();
+    let moveEvent: unknown;
 
-		expect(player.queueLength()).toBe(5);
-		expect(shuffleFired).toBe(true);
-	});
+    player.on('queue:move' as keyof BaseEventMap, (data: unknown) => {
+      moveEvent = data;
+    });
 
-	it('Q-E7: queueLength returns item count', () => {
-		const player = makePlayer('q-7');
-		expect(player.queueLength()).toBe(0);
+    player.queueMove(0, 2);
 
-		player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
-		expect(player.queueLength()).toBe(3);
-	});
+    const items = player.queue() as BasePlaylistItem[];
 
-	it('Q-E8: queueIndexOf returns zero-based index or -1', () => {
-		const player = makePlayer('q-8');
-		player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
+    expect(items[2]!.id).toBe('a');
+    expect(moveEvent).toBeDefined();
+  });
 
-		expect(player.queueIndexOf('a')).toBe(0);
-		expect(player.queueIndexOf('c')).toBe(2);
-		expect(player.queueIndexOf('z')).toBe(-1);
-	});
+  it('Q-E5: queueSort sorts in-place and emits queue:sort', () => {
+    const player = makePlayer('q-5');
 
-	it('Q-E9: seekToIndex(1) navigates to the first item by 1-based ordinal', () => {
-		const player = makePlayer('q-9');
-		player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
-		player.item('b');
+    player.queue([makeItem('c'), makeItem('a'), makeItem('b')]);
 
-		player.seekToIndex(1);
+    let sortFired = false;
 
-		expect(player.index()).toBe(0);
-	});
+    player.on('queue:sort' as keyof BaseEventMap, () => {
+      sortFired = true;
+    });
 
-	it('Q-E9b: seekToIndex loads the item on a ready player, like item()', async () => {
-		const player = makePlayer('q-9b').setup({});
-		await player.ready();
-		player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
-		const loaded: string[] = [];
-		player.load = async (item: BasePlaylistItem): Promise<void> => {
-			loaded.push(String(item.id));
-		};
+    player.queueSort((x, y) => String(x.id).localeCompare(String(y.id)));
 
-		player.seekToIndex(2);
-		await new Promise(resolve => setTimeout(resolve, 0));
+    const items = player.queue() as BasePlaylistItem[];
 
-		expect(player.item()?.id).toBe('b');
-		expect(loaded).toEqual(['b']);
-	});
+    expect(items.map((i) => i.id)).toEqual(['a', 'b', 'c']);
+    expect(sortFired).toBe(true);
+  });
 
-	it('Q-E10: seekToIndex with non-positive integer throws RangeError', () => {
-		const player = makePlayer('q-10');
-		player.queue([makeItem('a'), makeItem('b')]);
+  it('Q-E6: queueShuffle reorders in-place and emits queue:shuffle', () => {
+    const player = makePlayer('q-6');
 
-		expect(() => player.seekToIndex(0)).toThrow(RangeError);
-		expect(() => player.seekToIndex(-1)).toThrow(RangeError);
-	});
+    player.queue([makeItem('a'), makeItem('b'), makeItem('c'), makeItem('d'), makeItem('e')]);
 
-	it('Q-E10b: seekToIndex with non-integer throws RangeError', () => {
-		const player = makePlayer('q-10b');
-		player.queue([makeItem('a'), makeItem('b')]);
+    let shuffleFired = false;
 
-		expect(() => player.seekToIndex(1.5)).toThrow(RangeError);
-	});
+    player.on('queue:shuffle' as keyof BaseEventMap, () => {
+      shuffleFired = true;
+    });
 
-	it('Q-E11: seekToIndex with out-of-range ordinal is a no-op', () => {
-		const player = makePlayer('q-11');
-		player.queue([makeItem('a'), makeItem('b')]);
-		player.item('a');
+    player.queueShuffle();
 
-		player.seekToIndex(99);
+    expect(player.queueLength()).toBe(5);
+    expect(shuffleFired).toBe(true);
+  });
 
-		expect(player.index()).toBe(0);
-	});
+  it('Q-E7: queueLength returns item count', () => {
+    const player = makePlayer('q-7');
 
-	it('Q-E12: item(predicate) function predicate finds and sets cursor', () => {
-		const player = makePlayer('q-12');
-		player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
+    expect(player.queueLength()).toBe(0);
 
-		player.item((item: BasePlaylistItem) => item.id === 'b');
+    player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
+    expect(player.queueLength()).toBe(3);
+  });
 
-		expect(player.item()?.id).toBe('b');
-	});
+  it('Q-E8: queueIndexOf returns zero-based index or -1', () => {
+    const player = makePlayer('q-8');
 
-	it('Q-E13: index() returns zero-based cursor position', () => {
-		const player = makePlayer('q-13');
-		player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
-		player.item('c');
+    player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
 
-		expect(player.index()).toBe(2);
-	});
+    expect(player.queueIndexOf('a')).toBe(0);
+    expect(player.queueIndexOf('c')).toBe(2);
+    expect(player.queueIndexOf('z')).toBe(-1);
+  });
 
-	it('Q-E14: backlogAppend appends and emits backlog:append', () => {
-		const player = makePlayer('q-14');
-		let appendFired = false;
-		player.on('backlog:append' as keyof BaseEventMap, () => {
-			appendFired = true;
-		});
+  it('Q-E9: seekToIndex(1) navigates to the first item by 1-based ordinal', () => {
+    const player = makePlayer('q-9');
 
-		player.backlogAppend(makeItem('x'));
+    player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
+    player.item('b');
 
-		expect((player.backlog() as BasePlaylistItem[]).some(i => i.id === 'x')).toBe(true);
-		expect(appendFired).toBe(true);
-	});
+    player.seekToIndex(1);
 
-	it('item(target) on an idle player sets cursor but does not trigger load', () => {
-		const player = makePlayer('q-idle');
-		player.queue([makeItem('a'), makeItem('b')]);
+    expect(player.index()).toBe(0);
+  });
 
-		let mediaReadyFired = false;
-		player.on('mediaReady' as keyof BaseEventMap, () => { mediaReadyFired = true; });
+  it('Q-E9b: seekToIndex loads the item on a ready player, like item()', async () => {
+    const player = makePlayer('q-9b').setup({});
 
-		player.item('b');
+    await player.ready();
+    player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
+    const loaded: string[] = [];
 
-		expect(player.item()?.id).toBe('b');
-		expect(mediaReadyFired).toBe(false);
-	});
+    player.load = async (item: BasePlaylistItem): Promise<void> => {
+      loaded.push(String(item.id));
+    };
 
-	it('Q-E15: backlogRemove removes by id and emits backlog:remove', () => {
-		const player = makePlayer('q-15');
-		player.backlog([makeItem('x'), makeItem('y')]);
+    player.seekToIndex(2);
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
-		let removeFired = false;
-		player.on('backlog:remove' as keyof BaseEventMap, () => {
-			removeFired = true;
-		});
+    expect(player.item()?.id).toBe('b');
+    expect(loaded).toEqual(['b']);
+  });
 
-		player.backlogRemove('x');
+  it('Q-E10: seekToIndex with non-positive integer throws RangeError', () => {
+    const player = makePlayer('q-10');
 
-		expect((player.backlog() as BasePlaylistItem[]).some(i => i.id === 'x')).toBe(false);
-		expect(removeFired).toBe(true);
-	});
+    player.queue([makeItem('a'), makeItem('b')]);
+
+    expect(() => player.seekToIndex(0)).toThrow(RangeError);
+    expect(() => player.seekToIndex(-1)).toThrow(RangeError);
+  });
+
+  it('Q-E10b: seekToIndex with non-integer throws RangeError', () => {
+    const player = makePlayer('q-10b');
+
+    player.queue([makeItem('a'), makeItem('b')]);
+
+    expect(() => player.seekToIndex(1.5)).toThrow(RangeError);
+  });
+
+  it('Q-E11: seekToIndex with out-of-range ordinal is a no-op', () => {
+    const player = makePlayer('q-11');
+
+    player.queue([makeItem('a'), makeItem('b')]);
+    player.item('a');
+
+    player.seekToIndex(99);
+
+    expect(player.index()).toBe(0);
+  });
+
+  it('Q-E12: item(predicate) function predicate finds and sets cursor', () => {
+    const player = makePlayer('q-12');
+
+    player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
+
+    player.item((item: BasePlaylistItem) => item.id === 'b');
+
+    expect(player.item()?.id).toBe('b');
+  });
+
+  it('Q-E13: index() returns zero-based cursor position', () => {
+    const player = makePlayer('q-13');
+
+    player.queue([makeItem('a'), makeItem('b'), makeItem('c')]);
+    player.item('c');
+
+    expect(player.index()).toBe(2);
+  });
+
+  it('Q-E14: backlogAppend appends and emits backlog:append', () => {
+    const player = makePlayer('q-14');
+    let appendFired = false;
+
+    player.on('backlog:append' as keyof BaseEventMap, () => {
+      appendFired = true;
+    });
+
+    player.backlogAppend(makeItem('x'));
+
+    expect((player.backlog() as BasePlaylistItem[]).some((i) => i.id === 'x')).toBe(true);
+    expect(appendFired).toBe(true);
+  });
+
+  it('item(target) on an idle player sets cursor but does not trigger load', () => {
+    const player = makePlayer('q-idle');
+
+    player.queue([makeItem('a'), makeItem('b')]);
+
+    let mediaReadyFired = false;
+
+    player.on('mediaReady' as keyof BaseEventMap, () => { mediaReadyFired = true; });
+
+    player.item('b');
+
+    expect(player.item()?.id).toBe('b');
+    expect(mediaReadyFired).toBe(false);
+  });
+
+  it('Q-E15: backlogRemove removes by id and emits backlog:remove', () => {
+    const player = makePlayer('q-15');
+
+    player.backlog([makeItem('x'), makeItem('y')]);
+
+    let removeFired = false;
+
+    player.on('backlog:remove' as keyof BaseEventMap, () => {
+      removeFired = true;
+    });
+
+    player.backlogRemove('x');
+
+    expect((player.backlog() as BasePlaylistItem[]).some((i) => i.id === 'x')).toBe(false);
+    expect(removeFired).toBe(true);
+  });
 });

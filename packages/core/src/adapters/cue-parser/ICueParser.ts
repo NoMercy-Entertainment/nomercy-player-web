@@ -18,22 +18,22 @@ import type { CueList } from '../../core/cues/cue';
  * `player.registerCueParser(parser)`.
  */
 export interface ICueParser<T = unknown> {
-	/**
-	 * Identifier — `'lrc'`, `'vtt'`, `'sprite-vtt'`, vendor-prefixed for
-	 * custom formats (`'<vendor>:<name>'`).
-	 */
-	readonly id: string;
+  /**
+   * Identifier — `'lrc'`, `'vtt'`, `'sprite-vtt'`, vendor-prefixed for
+   * custom formats (`'<vendor>:<name>'`).
+   */
+  readonly id: string;
 
-	/**
-	 * Whether this parser handles the given URL / content-type. The registry
-	 * walks parsers in registration order (most recent first) and uses the
-	 * first match. Returning `true` here is a commitment — no fall-through.
-	 */
-	canParse(url: string, contentType?: string): boolean;
+  /**
+   * Whether this parser handles the given URL / content-type. The registry
+   * walks parsers in registration order (most recent first) and uses the
+   * first match. Returning `true` here is a commitment — no fall-through.
+   */
+  canParse(url: string, contentType?: string): boolean;
 
-	/**
-	 * Parse raw text into a typed cue list. Errors propagate; the registry
-	 * surfaces them via the player's standard error pipeline.
-	 */
-	parse(raw: string, opts?: { baseUrl?: string }): CueList<T>;
+  /**
+   * Parse raw text into a typed cue list. Errors propagate; the registry
+   * surfaces them via the player's standard error pipeline.
+   */
+  parse(raw: string, opts?: { baseUrl?: string }): CueList<T>;
 }

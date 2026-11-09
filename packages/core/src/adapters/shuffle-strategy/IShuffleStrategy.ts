@@ -26,12 +26,12 @@ import type { BasePlaylistItem } from '../../types';
  * default `FisherYatesShuffle`.
  */
 export interface IShuffleStrategy {
-	/**
-	 * Return a permutation of `items` — same items, no drops, no duplicates.
-	 *
-	 * @param items        The current queue contents, read-only.
-	 * @param currentIndex Zero-based index of the playing item, or `-1` when
-	 *                     no item is active (empty queue or before first load).
-	 */
-	order<T extends BasePlaylistItem>(items: ReadonlyArray<T>, currentIndex: number): T[];
+  /**
+   * Return a permutation of `items` — same items, no drops, no duplicates.
+   *
+   * @param items        The current queue contents, read-only.
+   * @param currentIndex Zero-based index of the playing item, or `-1` when
+   *                     no item is active (empty queue or before first load).
+   */
+  order<T extends BasePlaylistItem>(items: ReadonlyArray<T>, currentIndex: number): T[];
 }

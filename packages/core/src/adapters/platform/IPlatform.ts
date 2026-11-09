@@ -29,14 +29,14 @@
  * invoked when the field was not supplied.
  */
 export interface IPlatform {
-	wakeLock: IWakeLock;
-	network: INetworkMonitor;
-	visibility: IVisibilityMonitor;
-	capabilities: ICapabilitiesProbe;
-	/** Video player only. Required when wiring a video player. */
-	fullscreen?: IFullscreenController;
-	/** Video player only. Required when wiring a video player. */
-	pip?: IPipController;
+  wakeLock: IWakeLock;
+  network: INetworkMonitor;
+  visibility: IVisibilityMonitor;
+  capabilities: ICapabilitiesProbe;
+  /** Video player only. Required when wiring a video player. */
+  fullscreen?: IFullscreenController;
+  /** Video player only. Required when wiring a video player. */
+  pip?: IPipController;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -54,10 +54,10 @@ export interface IPlatform {
  * keep-awake call rather than the browser API.
  */
 export interface IWakeLock {
-	acquire(): Promise<void>;
-	release(): Promise<void>;
-	isHeld(): boolean;
-	isSupported?(): boolean | Promise<boolean>;
+  acquire(): Promise<void>;
+  release(): Promise<void>;
+  isHeld(): boolean;
+  isSupported?(): boolean | Promise<boolean>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -65,11 +65,11 @@ export interface IWakeLock {
 // ─────────────────────────────────────────────────────────────────────────
 
 export const NETWORK_TYPE = {
-	WIFI: 'wifi',
-	CELLULAR: 'cellular',
-	ETHERNET: 'ethernet',
-	NONE: 'none',
-	UNKNOWN: 'unknown',
+  WIFI: 'wifi',
+  CELLULAR: 'cellular',
+  ETHERNET: 'ethernet',
+  NONE: 'none',
+  UNKNOWN: 'unknown',
 } as const;
 
 /** Canonical network connection type reported by `INetworkMonitor.type()`. */
@@ -86,11 +86,11 @@ export type NetworkType = typeof NETWORK_TYPE[keyof typeof NETWORK_TYPE];
  * Network Information API is absent (Firefox, Safari as of 2025).
  */
 export interface INetworkMonitor {
-	isOnline(): boolean;
-	type(): NetworkType;
-	downlinkMbps(): number | undefined;
-	rttMs(): number | undefined;
-	subscribe(fn: (state: { online: boolean; type: NetworkType }) => void): () => void;
+  isOnline(): boolean;
+  type(): NetworkType;
+  downlinkMbps(): number | undefined;
+  rttMs(): number | undefined;
+  subscribe(fn: (state: { online: boolean; type: NetworkType }) => void): () => void;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -105,8 +105,8 @@ export interface INetworkMonitor {
  * and resume when it comes back. `subscribe()` returns a teardown function.
  */
 export interface IVisibilityMonitor {
-	isVisible(): boolean;
-	subscribe(fn: (visible: boolean) => void): () => void;
+  isVisible(): boolean;
+  subscribe(fn: (visible: boolean) => void): () => void;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -120,11 +120,11 @@ export interface IVisibilityMonitor {
  * Omit all four for an audio-only probe — `contentType` alone is enough.
  */
 export interface DecodeProfile {
-	contentType: string;
-	width?: number;
-	height?: number;
-	bitrate?: number;
-	framerate?: number;
+  contentType: string;
+  width?: number;
+  height?: number;
+  bitrate?: number;
+  framerate?: number;
 }
 
 /**
@@ -135,9 +135,9 @@ export interface DecodeProfile {
  * `powerEfficient` — hardware acceleration is available for this profile.
  */
 export interface DecodeCapability {
-	supported: boolean;
-	smooth: boolean;
-	powerEfficient: boolean;
+  supported: boolean;
+  smooth: boolean;
+  powerEfficient: boolean;
 }
 
 /**
@@ -149,8 +149,8 @@ export interface DecodeCapability {
  * to platform-native capability APIs instead of `MediaCapabilities`.
  */
 export interface ICapabilitiesProbe {
-	canDecode(profile: DecodeProfile): Promise<DecodeCapability>;
-	supportedCodecs?(): Promise<readonly string[]>;
+  canDecode(profile: DecodeProfile): Promise<DecodeCapability>;
+  supportedCodecs?(): Promise<readonly string[]>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -169,11 +169,11 @@ export interface ICapabilitiesProbe {
  * on the player container.
  */
 export interface IFullscreenController {
-	enter(target: HTMLElement): Promise<void>;
-	exit(): Promise<void>;
-	isActive(): boolean;
-	isSupported(): boolean;
-	subscribe(fn: (active: boolean) => void): () => void;
+  enter(target: HTMLElement): Promise<void>;
+  exit(): Promise<void>;
+  isActive(): boolean;
+  isSupported(): boolean;
+  subscribe(fn: (active: boolean) => void): () => void;
 }
 
 /**
@@ -185,9 +185,9 @@ export interface IFullscreenController {
  * `subscribe()` fires on enter/leave and returns a teardown function.
  */
 export interface IPipController {
-	enter(element: HTMLVideoElement): Promise<void>;
-	exit(): Promise<void>;
-	isActive(): boolean;
-	isSupported(): boolean;
-	subscribe(fn: (active: boolean) => void): () => void;
+  enter(element: HTMLVideoElement): Promise<void>;
+  exit(): Promise<void>;
+  isActive(): boolean;
+  isSupported(): boolean;
+  subscribe(fn: (active: boolean) => void): () => void;
 }

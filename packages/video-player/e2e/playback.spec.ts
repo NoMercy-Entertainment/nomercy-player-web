@@ -9,321 +9,372 @@
 import { expect, test } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
-	await page.goto('/e2e/fixture.html');
-	await page.waitForFunction(
-		() => (window as any).__playerReady === true,
-		{ timeout: 10_000 },
-	);
-	const error = await page.evaluate(() => (window as any).__playerError);
-	if (error) {
-		throw new Error(`Player init failed: ${error}`);
-	}
+  await page.goto('/e2e/fixture.html');
+
+  await page.waitForFunction(
+    () => (window as any).__playerReady === true,
+    { timeout: 10_000 },
+  );
+
+  const error = await page.evaluate(() => (window as any).__playerError);
+
+  if (error) {
+    throw new Error(`Player init failed: ${error}`);
+  }
 });
 
 test.describe('Player initialization', () => {
-	test('creates container as HTMLDivElement', async ({ page }) => {
-		const hasContainer = await page.evaluate(() => {
-			return (window as any).player.container instanceof HTMLDivElement;
-		});
-		expect(hasContainer).toBe(true);
-	});
+  test('creates container as HTMLDivElement', async ({ page }) => {
+    const hasContainer = await page.evaluate(() => {
+      return (window as any).player.container instanceof HTMLDivElement;
+    });
 
-	test('creates video element', async ({ page }) => {
-		const hasVideo = await page.evaluate(() => {
-			return (window as any).player.videoElement instanceof HTMLVideoElement;
-		});
-		expect(hasVideo).toBe(true);
-	});
+    expect(hasContainer).toBe(true);
+  });
 
-	test('container has nomercyplayer class', async ({ page }) => {
-		const cls = await page.evaluate(() => document.getElementById('player')?.className ?? '');
-		expect(cls).toContain('nomercyplayer');
-	});
+  test('creates video element', async ({ page }) => {
+    const hasVideo = await page.evaluate(() => {
+      return (window as any).player.videoElement instanceof HTMLVideoElement;
+    });
 
-	// The player applies overflow/position/display via the 'nomercyplayer'
-	// CSS class, not as inline styles. Inline-style assertions would always
-	// be empty strings. The class-name test above is the correct contract.
-	test.skip('container has required inline styles', async ({ page }) => {
-		const styles = await page.evaluate(() => {
-			const el = document.getElementById('player')!;
-			return {
-				overflow: el.style.overflow,
-				position: el.style.position,
-				display: el.style.display,
-			};
-		});
-		expect(styles.overflow).toBe('hidden');
-		expect(styles.position).toBe('relative');
-		expect(styles.display).toBe('flex');
-	});
+    expect(hasVideo).toBe(true);
+  });
 
-	test('element() returns the container', async ({ page }) => {
-		const same = await page.evaluate(() => {
-			const player = (window as any).player;
-			return player.element() === player.container;
-		});
-		expect(same).toBe(true);
-	});
+  test('container has nomercyplayer class', async ({ page }) => {
+    const cls = await page.evaluate(() => document.getElementById('player')?.className ?? '');
 
-	test('playerId matches the DOM id', async ({ page }) => {
-		const id = await page.evaluate(() => (window as any).player.playerId);
-		expect(id).toBe('player');
-	});
+    expect(cls).toContain('nomercyplayer');
+  });
+
+  // The player applies overflow/position/display via the 'nomercyplayer'
+  // CSS class, not as inline styles. Inline-style assertions would always
+  // be empty strings. The class-name test above is the correct contract.
+  test.skip('container has required inline styles', async ({ page }) => {
+    const styles = await page.evaluate(() => {
+      const el = document.getElementById('player')!;
+
+      return {
+        overflow: el.style.overflow,
+        position: el.style.position,
+        display: el.style.display,
+      };
+    });
+
+    expect(styles.overflow).toBe('hidden');
+    expect(styles.position).toBe('relative');
+    expect(styles.display).toBe('flex');
+  });
+
+  test('element() returns the container', async ({ page }) => {
+    const same = await page.evaluate(() => {
+      const player = (window as any).player;
+
+      return player.element() === player.container;
+    });
+
+    expect(same).toBe(true);
+  });
+
+  test('playerId matches the DOM id', async ({ page }) => {
+    const id = await page.evaluate(() => (window as any).player.playerId);
+
+    expect(id).toBe('player');
+  });
 });
 
 test.describe('Playback controls (no source)', () => {
-	test('isPlaying is false initially', async ({ page }) => {
-		const playing = await page.evaluate(() => (window as any).player.isPlaying);
-		expect(playing).toBe(false);
-	});
+  test('isPlaying is false initially', async ({ page }) => {
+    const playing = await page.evaluate(() => (window as any).player.isPlaying);
 
-	test('state() returns idle or paused', async ({ page }) => {
-		const state = await page.evaluate(() => (window as any).player.state());
-		expect(['idle', 'paused']).toContain(state);
-	});
+    expect(playing).toBe(false);
+  });
 
-	test('currentTime() returns 0 initially', async ({ page }) => {
-		const time = await page.evaluate(() => (window as any).player.currentTime());
-		expect(time).toBe(0);
-	});
+  test('state() returns idle or paused', async ({ page }) => {
+    const state = await page.evaluate(() => (window as any).player.state());
 
-	test('duration() returns NaN or 0 without source', async ({ page }) => {
-		const dur = await page.evaluate(() => (window as any).player.duration());
-		expect(dur === 0 || Number.isNaN(dur)).toBe(true);
-	});
+    expect(['idle', 'paused']).toContain(state);
+  });
 
-	test('togglePlayback() does not throw without source', async ({ page }) => {
-		const threw = await page.evaluate(() => {
-			try {
-				(window as any).player.togglePlayback();
-				return false;
-			}
-			catch {
-				return true;
-			}
-		});
-		expect(threw).toBe(false);
-	});
+  test('currentTime() returns 0 initially', async ({ page }) => {
+    const time = await page.evaluate(() => (window as any).player.currentTime());
 
-	test('pause() does not throw without source', async ({ page }) => {
-		const threw = await page.evaluate(() => {
-			try {
-				(window as any).player.pause();
-				return false;
-			}
-			catch {
-				return true;
-			}
-		});
-		expect(threw).toBe(false);
-	});
+    expect(time).toBe(0);
+  });
 
-	test('stop() does not throw without source', async ({ page }) => {
-		const threw = await page.evaluate(() => {
-			try {
-				(window as any).player.stop();
-				return false;
-			}
-			catch {
-				return true;
-			}
-		});
-		expect(threw).toBe(false);
-	});
+  test('duration() returns NaN or 0 without source', async ({ page }) => {
+    const dur = await page.evaluate(() => (window as any).player.duration());
 
-	test('seek() sets time without source (no duration to clamp)', async ({ page }) => {
-		const result = await page.evaluate(() => {
-			const player = (window as any).player;
-			// Without a source, duration is NaN so no clamping occurs
-			return typeof player.seek(50);
-		});
-		expect(result).toBe('number');
-	});
+    expect(dur === 0 || Number.isNaN(dur)).toBe(true);
+  });
 
-	test('seek() returns a number for negative values', async ({ page }) => {
-		const result = await page.evaluate(() => {
-			const player = (window as any).player;
-			return typeof player.seek(-10);
-		});
-		expect(result).toBe('number');
-	});
+  test('togglePlayback() does not throw without source', async ({ page }) => {
+    const threw = await page.evaluate(() => {
+      try {
+        (window as any).player.togglePlayback();
 
-	test('rewind() does not throw', async ({ page }) => {
-		const threw = await page.evaluate(() => {
-			try {
-				(window as any).player.rewind(5);
-				return false;
-			}
-			catch {
-				return true;
-			}
-		});
-		expect(threw).toBe(false);
-	});
+        return false;
+      } catch {
+        return true;
+      }
+    });
 
-	test('forward() does not throw', async ({ page }) => {
-		const threw = await page.evaluate(() => {
-			try {
-				(window as any).player.forward(5);
-				return false;
-			}
-			catch {
-				return true;
-			}
-		});
-		expect(threw).toBe(false);
-	});
+    expect(threw).toBe(false);
+  });
 
-	test('restart() does not throw', async ({ page }) => {
-		const threw = await page.evaluate(() => {
-			try {
-				(window as any).player.restart();
-				return false;
-			}
-			catch {
-				return true;
-			}
-		});
-		expect(threw).toBe(false);
-	});
+  test('pause() does not throw without source', async ({ page }) => {
+    const threw = await page.evaluate(() => {
+      try {
+        (window as any).player.pause();
+
+        return false;
+      } catch {
+        return true;
+      }
+    });
+
+    expect(threw).toBe(false);
+  });
+
+  test('stop() does not throw without source', async ({ page }) => {
+    const threw = await page.evaluate(() => {
+      try {
+        (window as any).player.stop();
+
+        return false;
+      } catch {
+        return true;
+      }
+    });
+
+    expect(threw).toBe(false);
+  });
+
+  test('seek() sets time without source (no duration to clamp)', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const player = (window as any).player;
+
+      // Without a source, duration is NaN so no clamping occurs
+      return typeof player.seek(50);
+    });
+
+    expect(result).toBe('number');
+  });
+
+  test('seek() returns a number for negative values', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const player = (window as any).player;
+
+      return typeof player.seek(-10);
+    });
+
+    expect(result).toBe('number');
+  });
+
+  test('rewind() does not throw', async ({ page }) => {
+    const threw = await page.evaluate(() => {
+      try {
+        (window as any).player.rewind(5);
+
+        return false;
+      } catch {
+        return true;
+      }
+    });
+
+    expect(threw).toBe(false);
+  });
+
+  test('forward() does not throw', async ({ page }) => {
+    const threw = await page.evaluate(() => {
+      try {
+        (window as any).player.forward(5);
+
+        return false;
+      } catch {
+        return true;
+      }
+    });
+
+    expect(threw).toBe(false);
+  });
+
+  test('restart() does not throw', async ({ page }) => {
+    const threw = await page.evaluate(() => {
+      try {
+        (window as any).player.restart();
+
+        return false;
+      } catch {
+        return true;
+      }
+    });
+
+    expect(threw).toBe(false);
+  });
 });
 
 test.describe('Speed controls', () => {
-	test('speed() returns 1 by default', async ({ page }) => {
-		const speed = await page.evaluate(() => (window as any).player.speed());
-		expect(speed).toBe(1);
-	});
+  test('speed() returns 1 by default', async ({ page }) => {
+    const speed = await page.evaluate(() => (window as any).player.speed());
 
-	test('speed(value) sets playback rate', async ({ page }) => {
-		const speed = await page.evaluate(async () => {
-			const player = (window as any).player;
-			// speed() is the v1-compat shim — a synchronous void wrapper around
-			// the now-async playbackRate(). Flush a macrotask so the underlying
-			// beforePlaybackRate dispatch (no listeners here) settles first.
-			player.speed(2);
-			await new Promise(resolve => setTimeout(resolve, 0));
-			return player.speed();
-		});
-		expect(speed).toBe(2);
-	});
+    expect(speed).toBe(1);
+  });
 
-	test('speeds() returns array of available rates', async ({ page }) => {
-		const result = await page.evaluate(() => {
-			const speeds = (window as any).player.speeds();
-			return {
-				isArray: Array.isArray(speeds),
-				length: speeds.length,
-				includes1: speeds.includes(1),
-			};
-		});
-		expect(result.isArray).toBe(true);
-		expect(result.length).toBeGreaterThan(0);
-		expect(result.includes1).toBe(true);
-	});
+  test('speed(value) sets playback rate', async ({ page }) => {
+    const speed = await page.evaluate(async () => {
+      const player = (window as any).player;
 
-	test('hasSpeeds() returns true when multiple speeds', async ({ page }) => {
-		const has = await page.evaluate(() => (window as any).player.hasSpeeds());
-		expect(has).toBe(true);
-	});
+      // speed() is the v1-compat shim — a synchronous void wrapper around
+      // the now-async playbackRate(). Flush a macrotask so the underlying
+      // beforePlaybackRate dispatch (no listeners here) settles first.
+      player.speed(2);
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
-	test('speed() applies to the video element', async ({ page }) => {
-		const rate = await page.evaluate(async () => {
-			const player = (window as any).player;
-			player.speed(1.5);
-			await new Promise(resolve => setTimeout(resolve, 0));
-			return player.videoElement.playbackRate;
-		});
-		expect(rate).toBe(1.5);
-	});
+      return player.speed();
+    });
+
+    expect(speed).toBe(2);
+  });
+
+  test('speeds() returns array of available rates', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const speeds = (window as any).player.speeds();
+
+      return {
+        isArray: Array.isArray(speeds),
+        length: speeds.length,
+        includes1: speeds.includes(1),
+      };
+    });
+
+    expect(result.isArray).toBe(true);
+    expect(result.length).toBeGreaterThan(0);
+    expect(result.includes1).toBe(true);
+  });
+
+  test('hasSpeeds() returns true when multiple speeds', async ({ page }) => {
+    const has = await page.evaluate(() => (window as any).player.hasSpeeds());
+
+    expect(has).toBe(true);
+  });
+
+  test('speed() applies to the video element', async ({ page }) => {
+    const rate = await page.evaluate(async () => {
+      const player = (window as any).player;
+
+      player.speed(1.5);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      return player.videoElement.playbackRate;
+    });
+
+    expect(rate).toBe(1.5);
+  });
 });
 
 test.describe('Playlist without items', () => {
-	test('playlistItem() returns an object', async ({ page }) => {
-		const result = await page.evaluate(() => {
-			return typeof (window as any).player.playlistItem();
-		});
-		expect(result).toBe('object');
-	});
+  test('playlistItem() returns an object', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      return typeof (window as any).player.playlistItem();
+    });
 
-	test('playlist() returns an array', async ({ page }) => {
-		const result = await page.evaluate(() => {
-			return Array.isArray((window as any).player.playlist());
-		});
-		expect(result).toBe(true);
-	});
+    expect(result).toBe('object');
+  });
 
-	test('playlistIndex() returns -1 with no playlist', async ({ page }) => {
-		const idx = await page.evaluate(() => (window as any).player.playlistIndex());
-		expect(idx).toBe(-1);
-	});
+  test('playlist() returns an array', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      return Array.isArray((window as any).player.playlist());
+    });
 
-	test('isFirstPlaylistItem() returns false with no playlist', async ({ page }) => {
-		const first = await page.evaluate(() => (window as any).player.isFirstPlaylistItem());
-		expect(first).toBe(false);
-	});
+    expect(result).toBe(true);
+  });
 
-	test('isLastPlaylistItem() returns true with empty playlist', async ({ page }) => {
-		// With empty playlist: index is -1, length-1 is -1, so -1 === -1 → true
-		const last = await page.evaluate(() => (window as any).player.isLastPlaylistItem());
-		expect(last).toBe(true);
-	});
+  test('playlistIndex() returns -1 with no playlist', async ({ page }) => {
+    const idx = await page.evaluate(() => (window as any).player.playlistIndex());
 
-	test('hasPlaylists() returns false with single/no items', async ({ page }) => {
-		const has = await page.evaluate(() => (window as any).player.hasPlaylists());
-		expect(has).toBe(false);
-	});
+    expect(idx).toBe(-1);
+  });
 
-	test('currentSrc() returns empty string without source', async ({ page }) => {
-		const src = await page.evaluate(() => (window as any).player.currentSrc());
-		expect(src).toBe('');
-	});
+  test('isFirstPlaylistItem() returns false with no playlist', async ({ page }) => {
+    const first = await page.evaluate(() => (window as any).player.isFirstPlaylistItem());
+
+    expect(first).toBe(false);
+  });
+
+  test('isLastPlaylistItem() returns true with empty playlist', async ({ page }) => {
+    // With empty playlist: index is -1, length-1 is -1, so -1 === -1 → true
+    const last = await page.evaluate(() => (window as any).player.isLastPlaylistItem());
+
+    expect(last).toBe(true);
+  });
+
+  test('hasPlaylists() returns false with single/no items', async ({ page }) => {
+    const has = await page.evaluate(() => (window as any).player.hasPlaylists());
+
+    expect(has).toBe(false);
+  });
+
+  test('currentSrc() returns empty string without source', async ({ page }) => {
+    const src = await page.evaluate(() => (window as any).player.currentSrc());
+
+    expect(src).toBe('');
+  });
 });
 
 test.describe('Dispose', () => {
-	test('emits dispose event', async ({ page }) => {
-		const disposed = await page.evaluate(async () => {
-			const player = (window as any).player;
-			let fired = false;
-			player.on('dispose', () => { fired = true; });
-			await player.dispose();
-			return fired;
-		});
-		expect(disposed).toBe(true);
-	});
+  test('emits dispose event', async ({ page }) => {
+    const disposed = await page.evaluate(async () => {
+      const player = (window as any).player;
+      let fired = false;
 
-	test('clears container innerHTML', async ({ page }) => {
-		const html = await page.evaluate(async () => {
-			await (window as any).player.dispose();
-			return document.getElementById('player')?.innerHTML;
-		});
-		expect(html).toBe('');
-	});
+      player.on('dispose', () => { fired = true; });
+      await player.dispose();
 
-	test('container still exists after dispose but is empty', async ({ page }) => {
-		const result = await page.evaluate(async () => {
-			await (window as any).player.dispose();
-			const el = document.getElementById('player');
-			return {
-				exists: !!el,
-				empty: el?.innerHTML === '',
-			};
-		});
-		expect(result.exists).toBe(true);
-		expect(result.empty).toBe(true);
-	});
+      return fired;
+    });
 
-	test('double dispose does not throw', async ({ page }) => {
-		const threw = await page.evaluate(async () => {
-			try {
-				const player = (window as any).player;
-				await player.dispose();
-				await player.dispose();
-				return false;
-			}
-			catch {
-				return true;
-			}
-		});
-		expect(threw).toBe(false);
-	});
+    expect(disposed).toBe(true);
+  });
+
+  test('clears container innerHTML', async ({ page }) => {
+    const html = await page.evaluate(async () => {
+      await (window as any).player.dispose();
+
+      return document.getElementById('player')?.innerHTML;
+    });
+
+    expect(html).toBe('');
+  });
+
+  test('container still exists after dispose but is empty', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      await (window as any).player.dispose();
+      const el = document.getElementById('player');
+
+      return {
+        exists: !!el,
+        empty: el?.innerHTML === '',
+      };
+    });
+
+    expect(result.exists).toBe(true);
+    expect(result.empty).toBe(true);
+  });
+
+  test('double dispose does not throw', async ({ page }) => {
+    const threw = await page.evaluate(async () => {
+      try {
+        const player = (window as any).player;
+
+        await player.dispose();
+        await player.dispose();
+
+        return false;
+      } catch {
+        return true;
+      }
+    });
+
+    expect(threw).toBe(false);
+  });
 });

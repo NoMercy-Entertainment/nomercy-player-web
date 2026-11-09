@@ -24,37 +24,39 @@ import type { IChapterSource } from './IChapterSource';
  * and is compatible with standard WebVTT chapter tooling.
  */
 export class VttChapterSource implements IChapterSource {
-	private _chapters: Chapter[] = [];
+  private _chapters: Chapter[] = [];
 
-	async load(item: BasePlaylistItem): Promise<Chapter[]> {
-		this._chapters = [];
+  async load(item: BasePlaylistItem): Promise<Chapter[]> {
+    this._chapters = [];
 
-		const typed = item as BasePlaylistItem & {
-			chapters?: Chapter[];
-		};
+    const typed = item as BasePlaylistItem & {
+      chapters?: Chapter[];
+    };
 
-		// Inline chapters — consumer pre-supplied the list.
-		if (Array.isArray(typed.chapters) && typed.chapters.length > 0) {
-			this._chapters = typed.chapters;
-			return this._chapters;
-		}
+    // Inline chapters — consumer pre-supplied the list.
+    if (Array.isArray(typed.chapters) && typed.chapters.length > 0) {
+      this._chapters = typed.chapters;
 
-		return [];
-	}
+      return this._chapters;
+    }
 
-	current(timeSeconds: number): Chapter | null {
-		for (const chapter of this._chapters) {
-			if (timeSeconds >= chapter.start && timeSeconds < chapter.end)
-				return chapter;
-		}
-		return null;
-	}
+    return [];
+  }
 
-	all(): Chapter[] {
-		return this._chapters;
-	}
+  current(timeSeconds: number): Chapter | null {
+    for (const chapter of this._chapters) {
+      if (timeSeconds >= chapter.start && timeSeconds < chapter.end)
+        return chapter;
+    }
 
-	unload(): void {
-		this._chapters = [];
-	}
+    return null;
+  }
+
+  all(): Chapter[] {
+    return this._chapters;
+  }
+
+  unload(): void {
+    this._chapters = [];
+  }
 }

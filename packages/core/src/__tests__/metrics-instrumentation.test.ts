@@ -20,141 +20,159 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare metrics: () => any;
-	declare recordMetric: (name: string, value: number) => void;
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare metrics: () => any;
+  declare recordMetric: (name: string, value: number) => void;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function make(divId: string, opts?: any): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId).setup(opts ?? {});
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId).setup(opts ?? {});
 }
 
 describe('metrics instrumentation', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => MockPlayer._resetRegistry());
 
-	it('records TTFF on the first play → firstFrame pair', async () => {
-		const mockPlayer = make('m1', { metricsIntervalMs: 0 });
-		await mockPlayer.ready();
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		expect(mockPlayer.metrics().ttff).toBe(0);
+  it('records TTFF on the first play → firstFrame pair', async () => {
+    const mockPlayer = make('m1', { metricsIntervalMs: 0 });
 
-		mockPlayer.emit('play', {});
-		await new Promise(resolve => setTimeout(resolve, 30));
-		mockPlayer.emit('firstFrame');
+    await mockPlayer.ready();
 
-		const ttff = mockPlayer.metrics().ttff;
-		expect(ttff).toBeGreaterThan(0);
-		expect(ttff).toBeLessThan(2000);
-	});
+    expect(mockPlayer.metrics().ttff).toBe(0);
 
-	it('does not overwrite TTFF on a second play→firstFrame pair', async () => {
-		const mockPlayer = make('m2', { metricsIntervalMs: 0 });
-		await mockPlayer.ready();
+    mockPlayer.emit('play', {});
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    mockPlayer.emit('firstFrame');
 
-		mockPlayer.emit('play', {});
-		await new Promise(resolve => setTimeout(resolve, 20));
-		mockPlayer.emit('firstFrame');
-		const firstTtff = mockPlayer.metrics().ttff;
+    const ttff = mockPlayer.metrics().ttff;
 
-		// Second play+frame — should NOT reset TTFF.
-		mockPlayer.emit('play', {});
-		await new Promise(resolve => setTimeout(resolve, 50));
-		mockPlayer.emit('firstFrame');
+    expect(ttff).toBeGreaterThan(0);
+    expect(ttff).toBeLessThan(2000);
+  });
 
-		expect(mockPlayer.metrics().ttff).toBe(firstTtff);
-	});
+  it('does not overwrite TTFF on a second play→firstFrame pair', async () => {
+    const mockPlayer = make('m2', { metricsIntervalMs: 0 });
 
-	it('records joinTime as ready→firstFrame elapsed', async () => {
-		const mockPlayer = make('m3', { metricsIntervalMs: 0 });
-		await mockPlayer.ready();
+    await mockPlayer.ready();
 
-		expect(mockPlayer.metrics().joinTime).toBe(0);
+    mockPlayer.emit('play', {});
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    mockPlayer.emit('firstFrame');
+    const firstTtff = mockPlayer.metrics().ttff;
 
-		mockPlayer.emit('play', {});
-		await new Promise(resolve => setTimeout(resolve, 25));
-		mockPlayer.emit('firstFrame');
+    // Second play+frame — should NOT reset TTFF.
+    mockPlayer.emit('play', {});
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    mockPlayer.emit('firstFrame');
 
-		expect(mockPlayer.metrics().joinTime).toBeGreaterThan(0);
-	});
+    expect(mockPlayer.metrics().ttff).toBe(firstTtff);
+  });
 
-	it('accumulates rebufferRatio across multiple stalls', async () => {
-		const mockPlayer = make('m4', { metricsIntervalMs: 0 });
-		await mockPlayer.ready();
+  it('records joinTime as ready→firstFrame elapsed', async () => {
+    const mockPlayer = make('m3', { metricsIntervalMs: 0 });
 
-		expect(mockPlayer.metrics().rebufferRatio).toBe(0);
+    await mockPlayer.ready();
 
-		// Stall 1
-		mockPlayer.emit('backend:waiting');
-		await new Promise(resolve => setTimeout(resolve, 30));
-		mockPlayer.emit('backend:loaded');
+    expect(mockPlayer.metrics().joinTime).toBe(0);
 
-		// Stall 2
-		mockPlayer.emit('backend:waiting');
-		await new Promise(resolve => setTimeout(resolve, 30));
-		mockPlayer.emit('play', {});
+    mockPlayer.emit('play', {});
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    mockPlayer.emit('firstFrame');
 
-		const ratio = mockPlayer.metrics().rebufferRatio;
-		expect(ratio).toBeGreaterThan(0);
-		// ratio ≤ 1 by definition; in this test the entire session is stalls,
-		// so it can hit 1.0 exactly.
-		expect(ratio).toBeLessThanOrEqual(1);
-	});
+    expect(mockPlayer.metrics().joinTime).toBeGreaterThan(0);
+  });
 
-	it('recordMetric writes custom fields to the snapshot', async () => {
-		const mockPlayer = make('m5', { metricsIntervalMs: 0 });
-		await mockPlayer.ready();
+  it('accumulates rebufferRatio across multiple stalls', async () => {
+    const mockPlayer = make('m4', { metricsIntervalMs: 0 });
 
-		mockPlayer.recordMetric('customFoo', 42);
-		expect(mockPlayer.metrics().customFoo).toBe(42);
-	});
+    await mockPlayer.ready();
 
-	it('metrics() snapshot includes a fresh sessionDurationMs', async () => {
-		const mockPlayer = make('m6', { metricsIntervalMs: 0 });
-		await mockPlayer.ready();
+    expect(mockPlayer.metrics().rebufferRatio).toBe(0);
 
-		await new Promise(resolve => setTimeout(resolve, 30));
-		const snap = mockPlayer.metrics();
-		expect(snap.sessionDurationMs).toBeGreaterThan(0);
-	});
+    // Stall 1
+    mockPlayer.emit('backend:waiting');
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    mockPlayer.emit('backend:loaded');
 
-	it('periodic playback:metrics emit fires per metricsIntervalMs', async () => {
-		const mockPlayer = make('m7', { metricsIntervalMs: 50 });
-		await mockPlayer.ready();
+    // Stall 2
+    mockPlayer.emit('backend:waiting');
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    mockPlayer.emit('play', {});
 
-		const seen: any[] = [];
-		mockPlayer.on('playback:metrics', (data: unknown) => seen.push(data));
+    const ratio = mockPlayer.metrics().rebufferRatio;
 
-		await new Promise(resolve => setTimeout(resolve, 130));
+    expect(ratio).toBeGreaterThan(0);
+    // ratio ≤ 1 by definition; in this test the entire session is stalls,
+    // so it can hit 1.0 exactly.
+    expect(ratio).toBeLessThanOrEqual(1);
+  });
 
-		expect(seen.length).toBeGreaterThanOrEqual(2);
-	});
+  it('recordMetric writes custom fields to the snapshot', async () => {
+    const mockPlayer = make('m5', { metricsIntervalMs: 0 });
 
-	it('metricsIntervalMs: 0 disables periodic emit', async () => {
-		const mockPlayer = make('m8', { metricsIntervalMs: 0 });
-		await mockPlayer.ready();
+    await mockPlayer.ready();
 
-		const seen: any[] = [];
-		mockPlayer.on('playback:metrics', (data: unknown) => seen.push(data));
+    mockPlayer.recordMetric('customFoo', 42);
+    expect(mockPlayer.metrics().customFoo).toBe(42);
+  });
 
-		await new Promise(resolve => setTimeout(resolve, 100));
+  it('metrics() snapshot includes a fresh sessionDurationMs', async () => {
+    const mockPlayer = make('m6', { metricsIntervalMs: 0 });
 
-		expect(seen.length).toBe(0);
-	});
+    await mockPlayer.ready();
+
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    const snap = mockPlayer.metrics();
+
+    expect(snap.sessionDurationMs).toBeGreaterThan(0);
+  });
+
+  it('periodic playback:metrics emit fires per metricsIntervalMs', async () => {
+    const mockPlayer = make('m7', { metricsIntervalMs: 50 });
+
+    await mockPlayer.ready();
+
+    const seen: any[] = [];
+
+    mockPlayer.on('playback:metrics', (data: unknown) =>
+      seen.push(data));
+
+    await new Promise((resolve) => setTimeout(resolve, 130));
+
+    expect(seen.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('metricsIntervalMs: 0 disables periodic emit', async () => {
+    const mockPlayer = make('m8', { metricsIntervalMs: 0 });
+
+    await mockPlayer.ready();
+
+    const seen: any[] = [];
+
+    mockPlayer.on('playback:metrics', (data: unknown) =>
+      seen.push(data));
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(seen.length).toBe(0);
+  });
 });

@@ -24,19 +24,19 @@ import type { IVideoPlayer, VideoPlaylistItem } from '@nomercy-entertainment/nom
 // ── State bag ──────────────────────────────────────────────────────────────────
 
 export interface ActivityState {
-	activityActive: boolean;
-	inactivityToken: number | null;
-	menuOpen: boolean;
-	isScrubbing: boolean;
-	isControlsHovered: boolean;
-	/**
-	 * Number of external holders pinning the chrome visible (an outside plugin
-	 * with an open overlay of its own — a device picker, say). A count, not a
-	 * flag, so independent holders compose: the chrome stays until the last one
-	 * releases. `menuOpen` covers this plugin's own menus; this covers everyone
-	 * else's.
-	 */
-	chromeHolds: number;
+  activityActive: boolean;
+  inactivityToken: number | null;
+  menuOpen: boolean;
+  isScrubbing: boolean;
+  isControlsHovered: boolean;
+  /**
+   * Number of external holders pinning the chrome visible (an outside plugin
+   * with an open overlay of its own — a device picker, say). A count, not a
+   * flag, so independent holders compose: the chrome stays until the last one
+   * releases. `menuOpen` covers this plugin's own menus; this covers everyone
+   * else's.
+   */
+  chromeHolds: number;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -51,25 +51,23 @@ export interface ActivityState {
  * `maybeHide()` calls while already hidden don't fire noisy events.
  */
 export function setActivity(
-	state: ActivityState,
-	player: IVideoPlayer<VideoPlaylistItem>,
-	active: boolean,
+  state: ActivityState,
+  player: IVideoPlayer<VideoPlaylistItem>,
+  active: boolean,
 ): void {
-	if (active) {
-		const domIsActive = player.container.classList.contains('active');
-		if (state.activityActive && domIsActive)
-			return;
+  if (active) {
+    const domIsActive = player.container.classList.contains('active');
 
-		state.activityActive = true;
-		player.emit('activity', { active: true });
-	}
-	else {
-		if (!state.activityActive)
-			return;
+    if (state.activityActive && domIsActive) return;
 
-		state.activityActive = false;
-		player.emit('activity', { active: false });
-	}
+    state.activityActive = true;
+    player.emit('activity', { active: true });
+  } else {
+    if (!state.activityActive) return;
+
+    state.activityActive = false;
+    player.emit('activity', { active: false });
+  }
 }
 
 /**
@@ -77,16 +75,18 @@ export function setActivity(
  * `scheduleHide` must call `maybeHide` after `inactivityMs`.
  */
 export function bumpActivity(
-	state: ActivityState,
-	player: IVideoPlayer<VideoPlaylistItem>,
-	inactivityMs: number,
-	scheduleHide: (ms: number) => number,
+  state: ActivityState,
+  player: IVideoPlayer<VideoPlaylistItem>,
+  inactivityMs: number,
+  scheduleHide: (ms: number) => number,
 ): void {
-	setActivity(state, player, true);
+  setActivity(state, player, true);
 
-	if (state.inactivityToken !== null)
-		clearTimeout(state.inactivityToken);
-	state.inactivityToken = scheduleHide(inactivityMs);
+  if (state.inactivityToken !== null) {
+    clearTimeout(state.inactivityToken);
+  }
+
+  state.inactivityToken = scheduleHide(inactivityMs);
 }
 
 /**
@@ -94,19 +94,18 @@ export function bumpActivity(
  * No-op when paused, menu is open, or controls are hovered.
  */
 export function maybeHide(
-	state: ActivityState,
-	player: IVideoPlayer<VideoPlaylistItem>,
+  state: ActivityState,
+  player: IVideoPlayer<VideoPlaylistItem>,
 ): void {
-	if (!player.playState || player.playState() !== 'playing')
-		return;
-	if (state.menuOpen)
-		return;
-	if (state.chromeHolds > 0)
-		return;
-	if (state.isControlsHovered)
-		return;
+  if (!player.playState || player.playState() !== 'playing') return;
 
-	setActivity(state, player, false);
+  if (state.menuOpen) return;
+
+  if (state.chromeHolds > 0) return;
+
+  if (state.isControlsHovered) return;
+
+  setActivity(state, player, false);
 }
 
 /**
@@ -114,15 +113,14 @@ export function maybeHide(
  * Skips when a menu is open or a scrub is releasing.
  */
 export function dismissOverlay(
-	state: ActivityState,
-	player: IVideoPlayer<VideoPlaylistItem>,
+  state: ActivityState,
+  player: IVideoPlayer<VideoPlaylistItem>,
 ): void {
-	if (state.menuOpen)
-		return;
-	if (state.chromeHolds > 0)
-		return;
-	if (state.isScrubbing)
-		return;
+  if (state.menuOpen) return;
 
-	setActivity(state, player, false);
+  if (state.chromeHolds > 0) return;
+
+  if (state.isScrubbing) return;
+
+  setActivity(state, player, false);
 }

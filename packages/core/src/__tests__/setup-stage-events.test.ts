@@ -20,196 +20,216 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare phase: () => string;
-	declare queue: {
-		(): ReadonlyArray<unknown>;
-		(items: unknown[]): void;
-	};
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare phase: () => string;
+  declare queue: {
+    (): ReadonlyArray<unknown>;
+    (items: unknown[]): void;
+  };
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 describe('setup() canonical event order — spec §14 lock-in', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => MockPlayer._resetRegistry());
 
-	it('emits the full lifecycle sequence in EXACT order', async () => {
-		const div = document.createElement('div');
-		div.id = 'lock-in';
-		document.body.appendChild(div);
-		const mockPlayer = new MockPlayer('lock-in');
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		const events: string[] = [];
-		const stages = [
-			'beforeSetup',
-			'setupStart',
-			'configResolved',
-			'pluginsRegistering',
-			'pluginsRegistered',
-			'streamsReady',
-			'authReady',
-			'playlistReady',
-			'mediaReady',
-			'ready',
-		] as const;
-		for (const name of stages) {
-			mockPlayer.on(name, () => events.push(name));
-		}
+  it('emits the full lifecycle sequence in EXACT order', async () => {
+    const div = document.createElement('div');
 
-		mockPlayer.setup({});
-		await mockPlayer.ready();
+    div.id = 'lock-in';
+    document.body.appendChild(div);
+    const mockPlayer = new MockPlayer('lock-in');
 
-		// Strict equality — any reorder or omit fails.
-		expect(events).toEqual([...stages]);
-	});
+    const events: string[] = [];
+    const stages = [
+      'beforeSetup',
+      'setupStart',
+      'configResolved',
+      'pluginsRegistering',
+      'pluginsRegistered',
+      'streamsReady',
+      'authReady',
+      'playlistReady',
+      'mediaReady',
+      'ready',
+    ] as const;
 
-	it('emits playlistResolving BEFORE playlistReady when a URL playlist is configured', async () => {
-		const div = document.createElement('div');
-		div.id = 'pl-url';
-		document.body.appendChild(div);
-		const mockPlayer = new MockPlayer('pl-url');
+    for (const name of stages) {
+      mockPlayer.on(name, () =>
+        events.push(name));
+    }
 
-		// Mock fetch so the playlist URL resolves to a valid array.
-		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-			new Response(JSON.stringify([{ id: '1', url: 'https://cdn.test/a.mp4' }]), {
-				status: 200,
-				headers: { 'Content-Type': 'application/json' },
-			}),
-		);
+    mockPlayer.setup({});
+    await mockPlayer.ready();
 
-		const order: string[] = [];
-		mockPlayer.on('playlistResolving', (data: { url: string }) => order.push(`resolving:${data.url}`));
-		mockPlayer.on('playlistReady', () => order.push('ready'));
+    // Strict equality — any reorder or omit fails.
+    expect(events).toEqual([...stages]);
+  });
 
-		mockPlayer.setup({ playlist: 'https://example.test/list.json' } as any);
-		await mockPlayer.ready();
+  it('emits playlistResolving BEFORE playlistReady when a URL playlist is configured', async () => {
+    const div = document.createElement('div');
 
-		expect(order).toEqual(['resolving:https://example.test/list.json', 'ready']);
+    div.id = 'pl-url';
+    document.body.appendChild(div);
+    const mockPlayer = new MockPlayer('pl-url');
 
-		fetchSpy.mockRestore();
-	});
+    // Mock fetch so the playlist URL resolves to a valid array.
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify([{ id: '1', url: 'https://cdn.test/a.mp4' }]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
 
-	it('fetches + parses playlist URL and hands off to queue; emits playlistReady with correct length', async () => {
-		const div = document.createElement('div');
-		div.id = 'pl-url-queue';
-		document.body.appendChild(div);
-		const mockPlayer = new MockPlayer('pl-url-queue');
+    const order: string[] = [];
 
-		const items = [
-			{ id: '1', url: 'https://cdn.test/a.mp4' },
-			{ id: '2', url: 'https://cdn.test/b.mp4' },
-		];
-		vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-			new Response(JSON.stringify(items), {
-				status: 200,
-				headers: { 'Content-Type': 'application/json' },
-			}),
-		);
+    mockPlayer.on('playlistResolving', (data: { url: string }) =>
+      order.push(`resolving:${data.url}`));
 
-		let readyLength: number | undefined;
-		mockPlayer.on('playlistReady', (data: { length: number }) => { readyLength = data.length; });
+    mockPlayer.on('playlistReady', () =>
+      order.push('ready'));
 
-		mockPlayer.setup({ playlist: 'https://example.test/list.json' } as any);
-		await mockPlayer.ready();
+    mockPlayer.setup({ playlist: 'https://example.test/list.json' } as any);
+    await mockPlayer.ready();
 
-		expect(readyLength).toBe(2);
-		expect(mockPlayer.queue()).toHaveLength(2);
+    expect(order).toEqual(['resolving:https://example.test/list.json', 'ready']);
 
-		vi.restoreAllMocks();
-	});
+    fetchSpy.mockRestore();
+  });
 
-	it('emits playlistError and playlistReady with length 0 when fetch fails', async () => {
-		const div = document.createElement('div');
-		div.id = 'pl-url-err';
-		document.body.appendChild(div);
-		const mockPlayer = new MockPlayer('pl-url-err');
+  it('fetches + parses playlist URL and hands off to queue; emits playlistReady with correct length', async () => {
+    const div = document.createElement('div');
 
-		vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new Error('network failure'));
+    div.id = 'pl-url-queue';
+    document.body.appendChild(div);
+    const mockPlayer = new MockPlayer('pl-url-queue');
 
-		let errFired: unknown;
-		let readyLength: number | undefined;
-		mockPlayer.on('playlistError', (data: unknown) => { errFired = data; });
-		mockPlayer.on('playlistReady', (data: { length: number }) => { readyLength = data.length; });
+    const items = [
+      { id: '1', url: 'https://cdn.test/a.mp4' },
+      { id: '2', url: 'https://cdn.test/b.mp4' },
+    ];
 
-		mockPlayer.setup({ playlist: 'https://example.test/list.json' } as any);
-		await mockPlayer.ready();
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify(items), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
 
-		expect(errFired).toBeDefined();
-		expect(readyLength).toBe(0);
+    let readyLength: number | undefined;
 
-		vi.restoreAllMocks();
-	});
+    mockPlayer.on('playlistReady', (data: { length: number }) => { readyLength = data.length; });
 
-	it('emits playlistError when response body is not a JSON array', async () => {
-		const div = document.createElement('div');
-		div.id = 'pl-url-bad';
-		document.body.appendChild(div);
-		const mockPlayer = new MockPlayer('pl-url-bad');
+    mockPlayer.setup({ playlist: 'https://example.test/list.json' } as any);
+    await mockPlayer.ready();
 
-		vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-			new Response(JSON.stringify({ not: 'an-array' }), {
-				status: 200,
-				headers: { 'Content-Type': 'application/json' },
-			}),
-		);
+    expect(readyLength).toBe(2);
+    expect(mockPlayer.queue()).toHaveLength(2);
 
-		let errFired: unknown;
-		mockPlayer.on('playlistError', (data: unknown) => { errFired = data; });
+    vi.restoreAllMocks();
+  });
 
-		mockPlayer.setup({ playlist: 'https://example.test/list.json' } as any);
-		await mockPlayer.ready();
+  it('emits playlistError and playlistReady with length 0 when fetch fails', async () => {
+    const div = document.createElement('div');
 
-		expect(errFired).toBeDefined();
+    div.id = 'pl-url-err';
+    document.body.appendChild(div);
+    const mockPlayer = new MockPlayer('pl-url-err');
 
-		vi.restoreAllMocks();
-	});
+    vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new Error('network failure'));
 
-	it('emits playlistReady { length: 0 } when no playlist is configured', async () => {
-		const div = document.createElement('div');
-		div.id = 'pl-none';
-		document.body.appendChild(div);
-		const mockPlayer = new MockPlayer('pl-none');
+    let errFired: unknown;
+    let readyLength: number | undefined;
 
-		let length: number | undefined;
-		mockPlayer.on('playlistReady', (data: { length: number }) => { length = data.length; });
+    mockPlayer.on('playlistError', (data: unknown) => { errFired = data; });
+    mockPlayer.on('playlistReady', (data: { length: number }) => { readyLength = data.length; });
 
-		mockPlayer.setup({});
-		await mockPlayer.ready();
+    mockPlayer.setup({ playlist: 'https://example.test/list.json' } as any);
+    await mockPlayer.ready();
 
-		expect(length).toBe(0);
-	});
+    expect(errFired).toBeDefined();
+    expect(readyLength).toBe(0);
 
-	it('does not emit any post-`ready` lifecycle event for a consumer that only listens to `ready`', async () => {
-		const div = document.createElement('div');
-		div.id = 'ready-only';
-		document.body.appendChild(div);
-		const mockPlayer = new MockPlayer('ready-only');
+    vi.restoreAllMocks();
+  });
 
-		let readyFired = false;
-		mockPlayer.on('ready' as any, () => { readyFired = true; });
+  it('emits playlistError when response body is not a JSON array', async () => {
+    const div = document.createElement('div');
 
-		mockPlayer.setup({});
-		await mockPlayer.ready();
+    div.id = 'pl-url-bad';
+    document.body.appendChild(div);
+    const mockPlayer = new MockPlayer('pl-url-bad');
 
-		expect(readyFired).toBe(true);
-	});
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ not: 'an-array' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
 
-	it('skips later stages when an earlier stage throws (covered indirectly — lifecycle.test.ts already proves stage-error path)', () => {
-		// Sentinel — full coverage of the error-path lives in lifecycle.test.ts
-		// for the music + video libraries. This file's responsibility is just
-		// the happy-path event order.
-		expect(true).toBe(true);
-	});
+    let errFired: unknown;
+
+    mockPlayer.on('playlistError', (data: unknown) => { errFired = data; });
+
+    mockPlayer.setup({ playlist: 'https://example.test/list.json' } as any);
+    await mockPlayer.ready();
+
+    expect(errFired).toBeDefined();
+
+    vi.restoreAllMocks();
+  });
+
+  it('emits playlistReady { length: 0 } when no playlist is configured', async () => {
+    const div = document.createElement('div');
+
+    div.id = 'pl-none';
+    document.body.appendChild(div);
+    const mockPlayer = new MockPlayer('pl-none');
+
+    let length: number | undefined;
+
+    mockPlayer.on('playlistReady', (data: { length: number }) => { length = data.length; });
+
+    mockPlayer.setup({});
+    await mockPlayer.ready();
+
+    expect(length).toBe(0);
+  });
+
+  it('does not emit any post-`ready` lifecycle event for a consumer that only listens to `ready`', async () => {
+    const div = document.createElement('div');
+
+    div.id = 'ready-only';
+    document.body.appendChild(div);
+    const mockPlayer = new MockPlayer('ready-only');
+
+    let readyFired = false;
+
+    mockPlayer.on('ready' as any, () => { readyFired = true; });
+
+    mockPlayer.setup({});
+    await mockPlayer.ready();
+
+    expect(readyFired).toBe(true);
+  });
+
+  it('skips later stages when an earlier stage throws (covered indirectly — lifecycle.test.ts already proves stage-error path)', () => {
+    // Sentinel — full coverage of the error-path lives in lifecycle.test.ts
+    // for the music + video libraries. This file's responsibility is just
+    // the happy-path event order.
+    expect(true).toBe(true);
+  });
 });

@@ -26,63 +26,68 @@ import { NMVideoPlayer } from '../index';
  * of awaiting a return value.
  */
 async function flush(): Promise<void> {
-	await new Promise(resolve => setTimeout(resolve, 0));
+  await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 describe('NMVideoPlayer — volume', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+  });
 
-	const setup = (cfg = {}): NMVideoPlayer => new NMVideoPlayer('test').setup(cfg);
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('volume() defaults to 100', () => {
-		expect(setup().volume()).toBe(100);
-	});
+  const setup = (cfg = {}): NMVideoPlayer => new NMVideoPlayer('test').setup(cfg);
 
-	it('volume(v) round-trips and clamps', async () => {
-		const videoPlayer = setup();
-		await videoPlayer.volume(50);
-		expect(videoPlayer.volume()).toBe(50);
-		await videoPlayer.volume(200);
-		expect(videoPlayer.volume()).toBe(100);
-		await videoPlayer.volume(-1);
-		expect(videoPlayer.volume()).toBe(0);
-	});
+  it('volume() defaults to 100', () => {
+    expect(setup().volume()).toBe(100);
+  });
 
-	it('mute() then volume() returns 0; unmute() restores', async () => {
-		const videoPlayer = setup();
-		await videoPlayer.volume(70);
-		await videoPlayer.mute();
-		expect(videoPlayer.volume()).toBe(0);
-		await videoPlayer.unmute();
-		expect(videoPlayer.volume()).toBe(70);
-	});
+  it('volume(v) round-trips and clamps', async () => {
+    const videoPlayer = setup();
 
-	it('volumeUp / volumeDown with explicit step', async () => {
-		const videoPlayer = setup();
-		await videoPlayer.volume(50);
-		videoPlayer.volumeUp(10);
-		await flush();
-		expect(videoPlayer.volume()).toBeCloseTo(60);
-		videoPlayer.volumeDown(20);
-		await flush();
-		expect(videoPlayer.volume()).toBeCloseTo(40);
-	});
+    await videoPlayer.volume(50);
+    expect(videoPlayer.volume()).toBe(50);
+    await videoPlayer.volume(200);
+    expect(videoPlayer.volume()).toBe(100);
+    await videoPlayer.volume(-1);
+    expect(videoPlayer.volume()).toBe(0);
+  });
 
-	it('emits "volume" with the new level', async () => {
-		const videoPlayer = setup();
-		let level: number | undefined;
-		videoPlayer.on('volume' as any, (data: any) => { level = data.level; });
-		await videoPlayer.volume(30);
-		expect(level).toBe(30);
-	});
+  it('mute() then volume() returns 0; unmute() restores', async () => {
+    const videoPlayer = setup();
+
+    await videoPlayer.volume(70);
+    await videoPlayer.mute();
+    expect(videoPlayer.volume()).toBe(0);
+    await videoPlayer.unmute();
+    expect(videoPlayer.volume()).toBe(70);
+  });
+
+  it('volumeUp / volumeDown with explicit step', async () => {
+    const videoPlayer = setup();
+
+    await videoPlayer.volume(50);
+    videoPlayer.volumeUp(10);
+    await flush();
+    expect(videoPlayer.volume()).toBeCloseTo(60);
+    videoPlayer.volumeDown(20);
+    await flush();
+    expect(videoPlayer.volume()).toBeCloseTo(40);
+  });
+
+  it('emits "volume" with the new level', async () => {
+    const videoPlayer = setup();
+    let level: number | undefined;
+
+    videoPlayer.on('volume' as any, (data: any) => { level = data.level; });
+    await videoPlayer.volume(30);
+    expect(level).toBe(30);
+  });
 });

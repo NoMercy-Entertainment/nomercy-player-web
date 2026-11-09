@@ -20,13 +20,13 @@ import type { IScrobbler, ScrobbleContext } from './IScrobbler';
  */
 export class NoopScrobbler<T extends BasePlaylistItem = BasePlaylistItem>
 implements IScrobbler<T> {
-	readonly id = 'noop';
+  readonly id = 'noop';
 
-	scrobble(_item: T, _context: ScrobbleContext): Promise<void> {
-		return Promise.resolve();
-	}
+  scrobble(_item: T, _context: ScrobbleContext): Promise<void> {
+    return Promise.resolve();
+  }
 
-	nowPlaying(_item: T): Promise<void> {
-		return Promise.resolve();
-	}
+  nowPlaying(_item: T): Promise<void> {
+    return Promise.resolve();
+  }
 }

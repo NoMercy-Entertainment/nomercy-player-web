@@ -9,5 +9,5 @@
 import type { MediaSessionTranslationKey } from './en';
 
 export default {
-	'plugin.media-session.season': '{season}. évad',
+  'plugin.media-session.season': '{season}. évad',
 } satisfies Record<MediaSessionTranslationKey, string>;

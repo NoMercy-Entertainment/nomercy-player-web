@@ -9,9 +9,9 @@
 import type { CastSenderTranslationKey } from './en';
 
 export default {
-	'plugin.cast-sender.casting.movie': '"{title}" wird gestreamt',
-	'plugin.cast-sender.casting.episode': '{show} S{season}E{episode}: {title} wird gestreamt',
-	'plugin.cast-sender.casting.live': 'Live-Streaming: {title}',
-	'plugin.cast-sender.action.cast-from-here': 'Ab dieser Stelle streamen',
-	'plugin.cast-sender.action.continue-on-tv': 'Auf dem TV fortsetzen',
+  'plugin.cast-sender.casting.movie': '"{title}" wird gestreamt',
+  'plugin.cast-sender.casting.episode': '{show} S{season}E{episode}: {title} wird gestreamt',
+  'plugin.cast-sender.casting.live': 'Live-Streaming: {title}',
+  'plugin.cast-sender.action.cast-from-here': 'Ab dieser Stelle streamen',
+  'plugin.cast-sender.action.continue-on-tv': 'Auf dem TV fortsetzen',
 } satisfies Record<CastSenderTranslationKey, string>;

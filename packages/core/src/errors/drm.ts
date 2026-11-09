@@ -14,5 +14,5 @@ import { PlayerError } from './player';
  * Codes follow `core:drm/<reason>`.
  */
 export class DrmError extends PlayerError {
-	override readonly name = 'DrmError';
+  override readonly name = 'DrmError';
 }

@@ -18,7 +18,7 @@ import { DesktopUiPlugin } from '../desktop-ui';
 import { formatSeconds as fmtTime } from '../desktop-ui/helpers/progressBar';
 
 function hasDisplayMessage<T extends VideoPlaylistItem>(videoPlayer: NMVideoPlayer<T>): videoPlayer is NMVideoPlayer<T> & { displayMessage: (text: string, ms?: number) => void } {
-	return typeof (videoPlayer as unknown as { displayMessage?: unknown } /* duck-type check: DesktopUiPlugin mixes displayMessage onto the player; not on the public interface */).displayMessage === 'function';
+  return typeof (videoPlayer as unknown as { displayMessage?: unknown } /* duck-type check: DesktopUiPlugin mixes displayMessage onto the player; not on the public interface */).displayMessage === 'function';
 }
 
 /**
@@ -31,257 +31,312 @@ function hasDisplayMessage<T extends VideoPlaylistItem>(videoPlayer: NMVideoPlay
  * whole video set and start fresh.
  */
 export class KeyHandlerPlugin<T extends VideoPlaylistItem = VideoPlaylistItem> extends BaseKeyHandler<NMVideoPlayer<T>> {
-	static override readonly id: string = 'key-handler';
-	static override readonly version: string = '2.0.0';
-	static override readonly description: string = 'Video keyboard shortcuts — playback, media keys, modifier-aware seeks, TV color buttons, chapters, subs/audio, fullscreen, speed, frame-advance, time, subtitle-size, aspect-ratio';
-	static override readonly translations: Translations = translationsFromGlob('./i18n/*.ts');
+  static override readonly id: string = 'key-handler';
+  static override readonly version: string = '2.0.0';
+  static override readonly description: string = 'Video keyboard shortcuts — playback, media keys, modifier-aware seeks, TV color buttons, chapters, subs/audio, fullscreen, speed, frame-advance, time, subtitle-size, aspect-ratio';
+  static override readonly translations: Translations = translationsFromGlob('./i18n/*.ts');
 
-	private get cfg(): VideoPlayerConfig<T> {
-		return this.player.options;
-	}
+  private get cfg(): VideoPlayerConfig<T> {
+    return this.player.options;
+  }
 
-	/**
-	 * Either source can switch the hardware media keys off: the `VideoPlayerConfig`
-	 * field, or the plugin option the base class declares. This override read only
-	 * the config, so `addPlugin(KeyHandlerPlugin, { disableMediaControls: true })`
-	 * type-checked and then did nothing.
-	 */
-	protected mediaControlsAllowed(): boolean {
-		return !this.cfg.disableMediaControls && !this.opts?.disableMediaControls;
-	}
+  /**
+   * Either source can switch the hardware media keys off: the `VideoPlayerConfig`
+   * field, or the plugin option the base class declares. This override read only
+   * the config, so `addPlugin(KeyHandlerPlugin, { disableMediaControls: true })`
+   * type-checked and then did nothing.
+   */
+  protected mediaControlsAllowed(): boolean {
+    return !this.cfg.disableMediaControls && !this.opts?.disableMediaControls;
+  }
 
-	/** Best-effort OSD message — calls `player.displayMessage(...)` if present, also emits `display-message`. */
-	protected message(text: string): void {
-		if (hasDisplayMessage(this.player)) {
-			try { this.player.displayMessage(text); }
-			catch { /* swallow */ }
-		}
-		try { this.player.emit('display-message', { text }); }
-		catch { /* swallow */ }
-	}
+  /** Best-effort OSD message — calls `player.displayMessage(...)` if present, also emits `display-message`. */
+  protected message(text: string): void {
+    if (hasDisplayMessage(this.player)) {
+      try { this.player.displayMessage(text); } catch { /* swallow */ }
+    }
 
-	protected override addDefaults(): void {
-		if (this.cfg.disableControls)
-			return;
-		this.addPlaybackKeys();
-		this.addNavigationKeys();
-		this.addVolumeKeys();
-		this.addMediaKeys();
-		this.addModifierSeekKeys();
-		this.addQuickSkipKeys();
-		this.addNextPrevKeys();
-		this.addChapterKeys();
-		this.addFullscreenKeys();
-		this.addSpeedKeys();
-		this.addFrameAdvanceKey();
-		this.addShowTimeKey();
-		this.addSubtitleSizeKeys();
-		this.addAspectRatioKeys();
-		this.addStopKey();
-		this.addHelpKey();
-	}
+    try { this.player.emit('display-message', { text }); } catch { /* swallow */ }
+  }
 
-	protected override defaultBindings(): void {
-		this.addDefaults();
-	}
+  protected override addDefaults(): void {
+    if (this.cfg.disableControls) return;
 
-	protected override addPlaybackKeys(): void {
-		this.bind(' ', () => { void this.player.togglePlayback?.(); });
-		this.bind('MediaPlay', () => {
-			if (this.mediaControlsAllowed())
-				void this.player.play?.();
-		});
-		this.bind('MediaPause', () => {
-			if (this.mediaControlsAllowed())
-				void this.player.pause?.();
-		});
-		this.bind('MediaPlayPause', () => {
-			if (this.mediaControlsAllowed())
-				void this.player.togglePlayback?.();
-		});
-		this.bind('MediaStop', () => {
-			if (this.mediaControlsAllowed())
-				void this.player.stop?.();
-		});
-		this.bind('MediaRewind', () => {
-			if (this.mediaControlsAllowed())
-				void this.player.rewind?.();
-		});
-		this.bind('MediaFastForward', () => {
-			if (this.mediaControlsAllowed())
-				void this.player.forward?.();
-		});
-	}
+    this.addPlaybackKeys();
+    this.addNavigationKeys();
+    this.addVolumeKeys();
+    this.addMediaKeys();
+    this.addModifierSeekKeys();
+    this.addQuickSkipKeys();
+    this.addNextPrevKeys();
+    this.addChapterKeys();
+    this.addFullscreenKeys();
+    this.addSpeedKeys();
+    this.addFrameAdvanceKey();
+    this.addShowTimeKey();
+    this.addSubtitleSizeKeys();
+    this.addAspectRatioKeys();
+    this.addStopKey();
+    this.addHelpKey();
+  }
 
-	protected override addNavigationKeys(): void {
-		this.bind('ArrowLeft', () => {
-			if (!this.player.isTv?.())
-				void this.player.rewind?.();
-		});
-		this.bind('ArrowRight', () => {
-			if (!this.player.isTv?.())
-				void this.player.forward?.();
-		});
-	}
+  protected override defaultBindings(): void {
+    this.addDefaults();
+  }
 
-	protected override addVolumeKeys(): void {
-		this.bind('ArrowUp', () => {
-			if (!this.player.isTv?.() && !this.player.isMobile?.())
-				void this.player.volumeUp?.();
-		});
-		this.bind('ArrowDown', () => {
-			if (!this.player.isTv?.() && !this.player.isMobile?.())
-				void this.player.volumeDown?.();
-		});
-		this.bind('m', () => { void this.player.toggleMute?.(); });
-	}
+  protected override addPlaybackKeys(): void {
+    this.bind(' ', () => { void this.player.togglePlayback?.(); });
 
-	protected override addMediaKeys(): void {
-		this.bind('Subtitle', () => { void this.player.cycleSubtitles?.(); });
-		this.bind('5', () => { void this.player.cycleSubtitles?.(); });
-		this.bind('v', () => { void this.player.cycleSubtitles?.(); });
-		this.bind('Audio', () => { void this.player.cycleAudioTracks?.(); });
-		this.bind('2', () => { void this.player.cycleAudioTracks?.(); });
-		this.bind('b', () => { void this.player.cycleAudioTracks?.(); });
-	}
+    this.bind('MediaPlay', () => {
+      if (this.mediaControlsAllowed()) {
+        void this.player.play?.();
+      }
+    });
 
-	/** VLC-style modifier seeks: shift = ±3s, alt = ±10s, ctrl = ±60s. */
-	protected addModifierSeekKeys(): void {
-		const seek = (delta: number): void => {
-			if (delta > 0)
-				void this.player.forward?.(delta);
-			else void this.player.rewind?.(Math.abs(delta));
-		};
-		this.bind('shift+ArrowLeft', () => seek(-3));
-		this.bind('shift+ArrowRight', () => seek(3));
-		this.bind('alt+ArrowLeft', () => seek(-10));
-		this.bind('alt+ArrowRight', () => seek(10));
-		this.bind('ctrl+ArrowLeft', () => seek(-60));
-		this.bind('ctrl+ArrowRight', () => seek(60));
-	}
+    this.bind('MediaPause', () => {
+      if (this.mediaControlsAllowed()) {
+        void this.player.pause?.();
+      }
+    });
 
-	/** Numeric quick-skip keys (1/3/6/9) and TV remote color buttons (F0–F3). */
-	protected addQuickSkipKeys(): void {
-		this.bind('1', () => { void this.player.forward?.(120); });
-		this.bind('3', () => { void this.player.forward?.(30); });
-		this.bind('6', () => { void this.player.forward?.(60); });
-		this.bind('9', () => { void this.player.forward?.(90); });
-		this.bind('ColorF0Red', () => { void this.player.forward?.(30); });
-		this.bind('ColorF1Green', () => { void this.player.forward?.(60); });
-		this.bind('ColorF2Yellow', () => { void this.player.forward?.(90); });
-		this.bind('ColorF3Blue', () => { void this.player.forward?.(120); });
-	}
+    this.bind('MediaPlayPause', () => {
+      if (this.mediaControlsAllowed()) {
+        void this.player.togglePlayback?.();
+      }
+    });
 
-	protected addNextPrevKeys(): void {
-		this.bind('MediaTrackNext', () => {
-			if (this.mediaControlsAllowed())
-				void this.player.next?.();
-		});
-		this.bind('MediaTrackPrevious', () => {
-			if (this.mediaControlsAllowed())
-				void this.player.previous?.();
-		});
-		this.bind('n', () => { void this.player.next?.(); });
-		this.bind('p', () => { void this.player.previous?.(); });
-	}
+    this.bind('MediaStop', () => {
+      if (this.mediaControlsAllowed()) {
+        void this.player.stop?.();
+      }
+    });
 
-	/** Chapter cycling — Shift+N forward, Shift+P backward. */
-	protected addChapterKeys(): void {
-		this.bind('shift+n', () => { void this.player.nextChapter?.(); });
-		this.bind('shift+p', () => { void this.player.previousChapter?.(); });
-	}
+    this.bind('MediaRewind', () => {
+      if (this.mediaControlsAllowed()) {
+        void this.player.rewind?.();
+      }
+    });
 
-	protected addFullscreenKeys(): void {
-		this.bind('f', () => { void this.player.toggleFullscreen?.(); });
-		this.bind('F11', () => { void this.player.toggleFullscreen?.(); });
-		this.bind('Escape', () => {
-			const inFs = this.player.fullscreen?.() === 'on';
-			if (inFs)
-				this.player.fullscreen?.(false);
-		});
-	}
+    this.bind('MediaFastForward', () => {
+      if (this.mediaControlsAllowed()) {
+        void this.player.forward?.();
+      }
+    });
+  }
 
-	/** VLC-style speed: `]` faster, `[` slower, `=` reset to 1x. */
-	protected addSpeedKeys(): void {
-		const setRate = (rate: number): void => {
-			this.player.playbackRate?.(rate);
-			this.message(this.t('speed', { speed: String(rate) }));
-		};
-		const currentRate = (): number => this.player.playbackRate?.() ?? 1;
+  protected override addNavigationKeys(): void {
+    this.bind('ArrowLeft', () => {
+      if (!this.player.isTv?.()) {
+        void this.player.rewind?.();
+      }
+    });
 
-		this.bind(']', () => {
-			const rates = this.player.playbackRates?.() ?? [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
-			const cur = currentRate();
-			const idx = rates.indexOf(cur);
-			if (idx >= 0 && idx < rates.length - 1)
-				setRate(rates[idx + 1]!);
-		});
-		this.bind('[', () => {
-			const rates = this.player.playbackRates?.() ?? [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
-			const cur = currentRate();
-			const idx = rates.indexOf(cur);
-			if (idx > 0)
-				setRate(rates[idx - 1]!);
-		});
-		this.bind('=', () => setRate(1));
-	}
+    this.bind('ArrowRight', () => {
+      if (!this.player.isTv?.()) {
+        void this.player.forward?.();
+      }
+    });
+  }
 
-	/** Frame-advance (`e`) — only when paused; advances ~1 frame at 30fps. */
-	protected addFrameAdvanceKey(): void {
-		this.bind('e', () => {
-			const ps = this.player.playState?.();
-			if (ps === 'playing' || ps === 'loading')
-				return;
-			const currentTime = this.player.time?.() ?? 0;
-			void this.player.time?.(currentTime + (1 / 30));
-		});
-	}
+  protected override addVolumeKeys(): void {
+    this.bind('ArrowUp', () => {
+      if (!this.player.isTv?.() && !this.player.isMobile?.()) {
+        void this.player.volumeUp?.();
+      }
+    });
 
-	/** Show current time / remaining time as an OSD message. */
-	protected addShowTimeKey(): void {
-		this.bind('t', () => {
-			const cur = this.player.time?.() ?? 0;
-			const dur = this.player.duration?.() ?? 0;
-			const remaining = Math.max(0, dur - cur);
-			this.message(`${fmtTime(cur)} / -${fmtTime(remaining)}`);
-		});
-	}
+    this.bind('ArrowDown', () => {
+      if (!this.player.isTv?.() && !this.player.isMobile?.()) {
+        void this.player.volumeDown?.();
+      }
+    });
 
-	/** Subtitle font-size events — UI plugins listen on `subtitle-size-up/down`. */
-	protected addSubtitleSizeKeys(): void {
-		const emit = (name: 'subtitle-size-up' | 'subtitle-size-down'): void => {
-			try { this.player.emit(name, undefined); }
-			catch { /* swallow */ }
-		};
-		this.bind('+', () => emit('subtitle-size-up'));
-		this.bind('shift++', () => emit('subtitle-size-up'));
-		this.bind('-', () => emit('subtitle-size-down'));
-	}
+    this.bind('m', () => { void this.player.toggleMute?.(); });
+  }
 
-	protected addAspectRatioKeys(): void {
-		this.bind('a', () => { void this.player.cycleAspectRatio?.(); });
-		this.bind('BrowserFavorites', () => { void this.player.cycleAspectRatio?.(); });
-	}
+  protected override addMediaKeys(): void {
+    this.bind('Subtitle', () => { void this.player.cycleSubtitles?.(); });
+    this.bind('5', () => { void this.player.cycleSubtitles?.(); });
+    this.bind('v', () => { void this.player.cycleSubtitles?.(); });
+    this.bind('Audio', () => { void this.player.cycleAudioTracks?.(); });
+    this.bind('2', () => { void this.player.cycleAudioTracks?.(); });
+    this.bind('b', () => { void this.player.cycleAudioTracks?.(); });
+  }
 
-	protected addStopKey(): void {
-		this.bind('s', () => { void this.player.stop?.(); });
-	}
+  /** VLC-style modifier seeks: shift = ±3s, alt = ±10s, ctrl = ±60s. */
+  protected addModifierSeekKeys(): void {
+    const seek = (delta: number): void => {
+      if (delta > 0) {
+        void this.player.forward?.(delta);
+      } else {
+        void this.player.rewind?.(Math.abs(delta));
+      }
+    };
 
-	/**
-	 * `?` — toggles the desktop UI's keyboard-shortcuts overlay via a direct
-	 * call on the mounted `DesktopUiPlugin` instance. No-op when the plugin
-	 * isn't mounted.
-	 *
-	 * Registered as `'shift+?'` because on standard keyboards pressing `?` sends
-	 * `key='?'` with `shiftKey=true`. The kit canonicalizer folds modifier state into
-	 * the combo key, so `bind('?')` would store `'?'` but the event arrives as
-	 * `'shift+?'` — a miss every time. Binding `'shift+?'` matches the actual event.
-	 */
-	protected addHelpKey(): void {
-		this.bind('shift+?', () => {
-			this.player.getPlugin(DesktopUiPlugin)?.toggleShortcuts();
-		});
-	}
+    this.bind('shift+ArrowLeft', () =>
+      seek(-3));
+
+    this.bind('shift+ArrowRight', () =>
+      seek(3));
+
+    this.bind('alt+ArrowLeft', () =>
+      seek(-10));
+
+    this.bind('alt+ArrowRight', () =>
+      seek(10));
+
+    this.bind('ctrl+ArrowLeft', () =>
+      seek(-60));
+
+    this.bind('ctrl+ArrowRight', () =>
+      seek(60));
+  }
+
+  /** Numeric quick-skip keys (1/3/6/9) and TV remote color buttons (F0–F3). */
+  protected addQuickSkipKeys(): void {
+    this.bind('1', () => { void this.player.forward?.(120); });
+    this.bind('3', () => { void this.player.forward?.(30); });
+    this.bind('6', () => { void this.player.forward?.(60); });
+    this.bind('9', () => { void this.player.forward?.(90); });
+    this.bind('ColorF0Red', () => { void this.player.forward?.(30); });
+    this.bind('ColorF1Green', () => { void this.player.forward?.(60); });
+    this.bind('ColorF2Yellow', () => { void this.player.forward?.(90); });
+    this.bind('ColorF3Blue', () => { void this.player.forward?.(120); });
+  }
+
+  protected addNextPrevKeys(): void {
+    this.bind('MediaTrackNext', () => {
+      if (this.mediaControlsAllowed()) {
+        void this.player.next?.();
+      }
+    });
+
+    this.bind('MediaTrackPrevious', () => {
+      if (this.mediaControlsAllowed()) {
+        void this.player.previous?.();
+      }
+    });
+
+    this.bind('n', () => { void this.player.next?.(); });
+    this.bind('p', () => { void this.player.previous?.(); });
+  }
+
+  /** Chapter cycling — Shift+N forward, Shift+P backward. */
+  protected addChapterKeys(): void {
+    this.bind('shift+n', () => { void this.player.nextChapter?.(); });
+    this.bind('shift+p', () => { void this.player.previousChapter?.(); });
+  }
+
+  protected addFullscreenKeys(): void {
+    this.bind('f', () => { void this.player.toggleFullscreen?.(); });
+    this.bind('F11', () => { void this.player.toggleFullscreen?.(); });
+
+    this.bind('Escape', () => {
+      const inFs = this.player.fullscreen?.() === 'on';
+
+      if (inFs) {
+        this.player.fullscreen?.(false);
+      }
+    });
+  }
+
+  /** VLC-style speed: `]` faster, `[` slower, `=` reset to 1x. */
+  protected addSpeedKeys(): void {
+    const setRate = (rate: number): void => {
+      this.player.playbackRate?.(rate);
+      this.message(this.t('speed', { speed: String(rate) }));
+    };
+
+    const currentRate = (): number => this.player.playbackRate?.() ?? 1;
+
+    this.bind(']', () => {
+      const rates = this.player.playbackRates?.() ?? [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+      const cur = currentRate();
+      const idx = rates.indexOf(cur);
+
+      if (idx >= 0 && idx < rates.length - 1) {
+        setRate(rates[idx + 1]!);
+      }
+    });
+
+    this.bind('[', () => {
+      const rates = this.player.playbackRates?.() ?? [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+      const cur = currentRate();
+      const idx = rates.indexOf(cur);
+
+      if (idx > 0) {
+        setRate(rates[idx - 1]!);
+      }
+    });
+
+    this.bind('=', () =>
+      setRate(1));
+  }
+
+  /** Frame-advance (`e`) — only when paused; advances ~1 frame at 30fps. */
+  protected addFrameAdvanceKey(): void {
+    this.bind('e', () => {
+      const ps = this.player.playState?.();
+
+      if (ps === 'playing' || ps === 'loading') return;
+
+      const currentTime = this.player.time?.() ?? 0;
+
+      void this.player.time?.(currentTime + (1 / 30));
+    });
+  }
+
+  /** Show current time / remaining time as an OSD message. */
+  protected addShowTimeKey(): void {
+    this.bind('t', () => {
+      const cur = this.player.time?.() ?? 0;
+      const dur = this.player.duration?.() ?? 0;
+      const remaining = Math.max(0, dur - cur);
+
+      this.message(`${fmtTime(cur)} / -${fmtTime(remaining)}`);
+    });
+  }
+
+  /** Subtitle font-size events — UI plugins listen on `subtitle-size-up/down`. */
+  protected addSubtitleSizeKeys(): void {
+    const emit = (name: 'subtitle-size-up' | 'subtitle-size-down'): void => {
+      try { this.player.emit(name, undefined); } catch { /* swallow */ }
+    };
+
+    this.bind('+', () =>
+      emit('subtitle-size-up'));
+
+    this.bind('shift++', () =>
+      emit('subtitle-size-up'));
+
+    this.bind('-', () =>
+      emit('subtitle-size-down'));
+  }
+
+  protected addAspectRatioKeys(): void {
+    this.bind('a', () => { void this.player.cycleAspectRatio?.(); });
+    this.bind('BrowserFavorites', () => { void this.player.cycleAspectRatio?.(); });
+  }
+
+  protected addStopKey(): void {
+    this.bind('s', () => { void this.player.stop?.(); });
+  }
+
+  /**
+   * `?` — toggles the desktop UI's keyboard-shortcuts overlay via a direct
+   * call on the mounted `DesktopUiPlugin` instance. No-op when the plugin
+   * isn't mounted.
+   *
+   * Registered as `'shift+?'` because on standard keyboards pressing `?` sends
+   * `key='?'` with `shiftKey=true`. The kit canonicalizer folds modifier state into
+   * the combo key, so `bind('?')` would store `'?'` but the event arrives as
+   * `'shift+?'` — a miss every time. Binding `'shift+?'` matches the actual event.
+   */
+  protected addHelpKey(): void {
+    this.bind('shift+?', () => {
+      this.player.getPlugin(DesktopUiPlugin)?.toggleShortcuts();
+    });
+  }
 }
 
 export const keyHandlerPlugin = KeyHandlerPlugin;

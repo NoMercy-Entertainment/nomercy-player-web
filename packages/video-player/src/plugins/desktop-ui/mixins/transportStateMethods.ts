@@ -29,232 +29,275 @@ import { updateTitleBar } from '../helpers/topBar';
 const LIVE_EDGE_SLACK_SECONDS = 10;
 
 export const transportStateMethods = {
-	setPlayingState(this: DesktopUiInternals, playing: boolean): void {
-		this.centerWrap.classList.toggle('playing', playing);
-		const icon = playing ? fluentIcons.pause : fluentIcons.play;
-		const playIconHolder = this.playBtn.querySelector('.btn-icon') ?? this.playBtn;
-		playIconHolder.innerHTML = svgFromIcon(icon);
-		const centerIconHolder = this.centerBtn.querySelector('.btn-icon') ?? this.centerBtn;
-		centerIconHolder.innerHTML = svgFromIcon(playing ? fluentIcons.pause : fluentIcons.bigPlay, 32);
-		this.playBtn.setAttribute('aria-label', this.t('tooltip.play'));
-	},
+  setPlayingState(this: DesktopUiInternals, playing: boolean): void {
+    this.centerWrap.classList.toggle('playing', playing);
+    const icon = playing
+      ? fluentIcons.pause
+      : fluentIcons.play;
+    const playIconHolder = this.playBtn.querySelector('.btn-icon') ?? this.playBtn;
 
-	handleCurrentChange(this: DesktopUiInternals, item: VideoPlaylistItem | undefined | null): void {
-		if (this.topBarRefs)
-			updateTitleBar(this.player, this.topBarRefs, item);
+    playIconHolder.innerHTML = svgFromIcon(icon);
+    const centerIconHolder = this.centerBtn.querySelector('.btn-icon') ?? this.centerBtn;
 
-		this.cachedDuration = 0;
-		this._menuControlState.playingQualityIdx = null;
+    centerIconHolder.innerHTML = svgFromIcon(playing
+      ? fluentIcons.pause
+      : fluentIcons.bigPlay, 32);
 
-		this.refreshChaptersAndDuration();
-		this.refreshCapabilityVisibility();
+    this.playBtn.setAttribute('aria-label', this.t('tooltip.play'));
+  },
 
-		this.repaintPlaylistIfOpen();
-		this.repaintSubsIfOpen();
-		this.repaintAudioIfOpen();
-		this.repaintQualityIfOpen();
+  handleCurrentChange(this: DesktopUiInternals, item: VideoPlaylistItem | undefined | null): void {
+    if (this.topBarRefs) {
+      updateTitleBar(this.player, this.topBarRefs, item);
+    }
 
-		void this.loadSpritesForItem(item);
-	},
+    this.cachedDuration = 0;
+    this._menuControlState.playingQualityIdx = null;
 
-	_isLive(this: DesktopUiInternals): boolean {
-		return this.player.live?.() === true || this.cachedDuration === Number.POSITIVE_INFINITY;
-	},
+    this.refreshChaptersAndDuration();
+    this.refreshCapabilityVisibility();
 
-	/** The seekable range a live stream keeps, in player seconds; `null` when the player reports none. */
-	_liveWindow(this: DesktopUiInternals): { start: number; end: number } | null {
-		const ranges = this.player.seekable?.();
-		if (!ranges || ranges.length === 0)
-			return null;
-		return {
-			start: ranges.start(0),
-			end: ranges.end(ranges.length - 1),
-		};
-	},
+    this.repaintPlaylistIfOpen();
+    this.repaintSubsIfOpen();
+    this.repaintAudioIfOpen();
+    this.repaintQualityIfOpen();
 
-	applyLive(this: DesktopUiInternals): void {
-		this.applyTime(this.player.time?.() ?? 0);
-	},
+    void this.loadSpritesForItem(item);
+  },
 
-	applyTime(this: DesktopUiInternals, seconds: number): void {
-		const live = this._isLive();
-		const win = live ? this._liveWindow() : null;
-		const dur = win ? win.end - win.start : this.resolveDuration();
-		const offset = win ? win.start : 0;
-		let pct = dur > 0 ? ((seconds - offset) / dur) * 100 : 0;
-		if (live)
-			pct = win && dur > 0 ? Math.min(100, Math.max(0, pct)) : 100;
+  _isLive(this: DesktopUiInternals): boolean {
+    return this.player.live?.() === true || this.cachedDuration === Number.POSITIVE_INFINITY;
+  },
 
-		this.remainingTimeEl.classList.toggle('behind-live', Boolean(win) && win!.end - seconds > LIVE_EDGE_SLACK_SECONDS);
+  /** The seekable range a live stream keeps, in player seconds; `null` when the player reports none. */
+  _liveWindow(this: DesktopUiInternals): { start: number; end: number } | null {
+    const ranges = this.player.seekable?.();
 
-		if (!this.isScrubbing) {
-			this.sliderRefs.sliderProgress.style.width = `${pct}%`;
-			this.sliderRefs.sliderNipple.style.left = `${pct}%`;
-			this.sliderRefs.sliderBar.setAttribute('aria-valuenow', String(Math.round(pct)));
-			this.updateChapterProgress(pct);
-		}
+    if (!ranges || ranges.length === 0)
+      return null;
 
-		try {
-			const buf = this.player.buffered();
-			const bufPct = dur > 0 ? Math.min(100, Math.max(0, ((buf - offset) / dur) * 100)) : 0;
-			if (this.chapterRefs.length > 0) {
-				this.updateChapterBuffer(bufPct);
-			}
-			else {
-				this.sliderRefs.sliderBuffer.style.width = `${bufPct}%`;
-			}
-		}
-		catch { /* SourceBuffer detach */ }
+    return {
+      start: ranges.start(0),
+      end: ranges.end(ranges.length - 1),
+    };
+  },
 
-		this.currentTimeEl.textContent = formatSeconds(seconds);
-		this.remainingTimeEl.textContent = this._formatRemaining(seconds, dur);
-		this.refreshTransportEnablement();
-	},
+  applyLive(this: DesktopUiInternals): void {
+    this.applyTime(this.player.time?.() ?? 0);
+  },
 
-	applyDuration(this: DesktopUiInternals, dur: number): void {
-		this.cachedDuration = dur;
-		const cur = this.player.time?.() ?? 0;
-		this.currentTimeEl.textContent = formatSeconds(cur);
-		this.remainingTimeEl.textContent = this._formatRemaining(cur, dur);
-		this.renderChapterMarkers();
-	},
+  applyTime(this: DesktopUiInternals, seconds: number): void {
+    const live = this._isLive();
+    const win = live
+      ? this._liveWindow()
+      : null;
+    const dur = win
+      ? win.end - win.start
+      : this.resolveDuration();
+    const offset = win
+      ? win.start
+      : 0;
+    let pct = dur > 0
+      ? ((seconds - offset) / dur) * 100
+      : 0;
 
-	_formatRemaining(this: DesktopUiInternals, cur: number, dur: number): string {
-		if (this._isLive())
-			return this.t('time.live');
-		if (dur <= 0)
-			return formatSeconds(0);
-		if (this._showRemaining)
-			return `-${formatSeconds(Math.max(0, dur - cur))}`;
-		return formatSeconds(dur);
-	},
+    if (live) {
+      pct = win && dur > 0
+        ? Math.min(100, Math.max(0, pct))
+        : 100;
+    }
 
-	/**
-	 * Display-state visibility: theater is meaningless inside fullscreen or
-	 * PiP, and PiP chrome floats over another window — navigation buttons
-	 * there act on the wrong surface. Config opt-outs always win.
-	 */
-	applyStateVisibility(this: DesktopUiInternals): void {
-		this.theaterBtn.hidden = this.theaterConfigHidden || this.fsActive || this.pipActive;
-		if (this.topBarRefs) {
-			this.topBarRefs.backBtn.hidden = this.pipActive || !this.player.hasListeners('back');
-			this.topBarRefs.closeBtn.hidden = this.pipActive || !this.player.hasListeners('close');
-			// Opt-in gate (`buttons.cast`), not listener presence — unlike
-			// back/close, the button can ship before its listener is wired. PiP
-			// still hides it: same floating-chrome-wrong-surface reasoning.
-			this.topBarRefs.castBtn.hidden = this.pipActive || !this.opts?.buttons?.cast;
-		}
-	},
+    this.remainingTimeEl.classList.toggle('behind-live', Boolean(win) && win!.end - seconds > LIVE_EDGE_SLACK_SECONDS);
 
-	/**
-	 * Mark a button as content-gated (no relevant tracks/items) so the fit
-	 * algorithm can skip it without counting its width.
-	 * Setting `data-content-hidden="true"` causes `applyAllVisibilityRules`
-	 * to treat the button as absent from the layout.
-	 */
-	setContentHidden(this: DesktopUiInternals, btn: HTMLButtonElement, hidden: boolean): void {
-		if (hidden) {
-			btn.setAttribute('data-content-hidden', 'true');
-			btn.hidden = true;
-		}
-		else {
-			btn.removeAttribute('data-content-hidden');
-		}
-	},
+    if (!this.isScrubbing) {
+      this.sliderRefs.sliderProgress.style.width = `${pct}%`;
+      this.sliderRefs.sliderNipple.style.left = `${pct}%`;
+      this.sliderRefs.sliderBar.setAttribute('aria-valuenow', String(Math.round(pct)));
+      this.updateChapterProgress(pct);
+    }
 
-	refreshCapabilityVisibility(this: DesktopUiInternals): void {
-		const subs = this.player.subtitles?.() ?? [];
-		const subsCount = subs.length;
-		// A consumer-supplied subtitle-menu action (e.g. "Search subtitles
-		// online…") is most useful with zero tracks, so it keeps the subtitles
-		// button/category reachable on its own — same standing as a real track.
-		const hasSubtitleMenuActions = (this.opts?.subtitleMenuActions?.length ?? 0) > 0;
+    try {
+      const buf = this.player.buffered();
+      const bufPct = dur > 0
+        ? Math.min(100, Math.max(0, ((buf - offset) / dur) * 100))
+        : 0;
 
-		const audios = this.player.audioTracks?.() ?? [];
-		const levels = this.player.qualityLevels?.() ?? [];
+      if (this.chapterRefs.length > 0) {
+        this.updateChapterBuffer(bufPct);
+      } else {
+        this.sliderRefs.sliderBuffer.style.width = `${bufPct}%`;
+      }
+    } catch { /* SourceBuffer detach */ }
 
-		this.setContentHidden(this.subsBtn, subsCount === 0 && !hasSubtitleMenuActions);
-		this.setContentHidden(this.audioBtn, audios.length <= 1);
-		this.setContentHidden(this.qualityBtn, levels.length < 2);
+    this.currentTimeEl.textContent = formatSeconds(seconds);
+    this.remainingTimeEl.textContent = this._formatRemaining(seconds, dur);
+    this.refreshTransportEnablement();
+  },
 
-		const chapters = this.player.chapters();
-		this.setContentHidden(this.chapBackBtn, chapters.length === 0);
-		this.setContentHidden(this.chapFwdBtn, chapters.length === 0);
+  applyDuration(this: DesktopUiInternals, dur: number): void {
+    this.cachedDuration = dur;
+    const cur = this.player.time?.() ?? 0;
 
-		const queueLen = this.safeQueueLength();
-		this.setContentHidden(this.playlistBtn, queueLen < 2);
+    this.currentTimeEl.textContent = formatSeconds(cur);
+    this.remainingTimeEl.textContent = this._formatRemaining(cur, dur);
+    this.renderChapterMarkers();
+  },
 
-		this.menus.mainButtons.subtitles.style.display = (subsCount === 0 && !hasSubtitleMenuActions) ? 'none' : 'flex';
-		this.menus.mainButtons.language.style.display = audios.length <= 1 ? 'none' : 'flex';
-		this.menus.mainButtons.quality.style.display = levels.length < 2 ? 'none' : 'flex';
-		this.menus.mainButtons.playlist.style.display = queueLen < 2 ? 'none' : 'flex';
+  _formatRemaining(this: DesktopUiInternals, cur: number, dur: number): string {
+    if (this._isLive())
+      return this.t('time.live');
 
-		const speeds = this.player.playbackRates?.() ?? [];
-		const settingsEmpty = speeds.length <= 1
-			&& audios.length <= 1
-			&& subsCount === 0
-			&& !hasSubtitleMenuActions
-			&& (this.opts?.settingsItems?.length ?? 0) === 0;
-		this.setContentHidden(this.settingsBtn, settingsEmpty);
+    if (dur <= 0)
+      return formatSeconds(0);
 
-		if (this._responsiveState.lastContainerWidth > 0) {
-			applyAllVisibilityRules(
-				this._responsiveState,
-				this.opts,
-				this._responsiveState.lastContainerWidth,
-				payload => this.emit('layout:breakpoint', payload),
-				this.player.container,
-			);
-		}
+    if (this._showRemaining)
+      return `-${formatSeconds(Math.max(0, dur - cur))}`;
 
-		this.refreshTransportEnablement();
-	},
+    return formatSeconds(dur);
+  },
 
-	refreshTransportEnablement(this: DesktopUiInternals): void {
-		const idx = this.safeCurrentIndex();
-		const len = this.safeQueueLength();
+  /**
+   * Display-state visibility: theater is meaningless inside fullscreen or
+   * PiP, and PiP chrome floats over another window — navigation buttons
+   * there act on the wrong surface. Config opt-outs always win.
+   */
+  applyStateVisibility(this: DesktopUiInternals): void {
+    this.theaterBtn.hidden = this.theaterConfigHidden || this.fsActive || this.pipActive;
 
-		const onFirst = idx <= 0 || len <= 1;
-		const onLast = idx >= len - 1 || len <= 1;
-		this.setDisabled(this.prevBtn, onFirst);
-		this.setDisabled(this.nextBtn, onLast);
+    if (this.topBarRefs) {
+      this.topBarRefs.backBtn.hidden = this.pipActive || !this.player.hasListeners('back');
+      this.topBarRefs.closeBtn.hidden = this.pipActive || !this.player.hasListeners('close');
+      // Opt-in gate (`buttons.cast`), not listener presence — unlike
+      // back/close, the button can ship before its listener is wired. PiP
+      // still hides it: same floating-chrome-wrong-surface reasoning.
+      this.topBarRefs.castBtn.hidden = this.pipActive || !this.opts?.buttons?.cast;
+    }
+  },
 
-		const currentTime = this.player.time?.() ?? 0;
-		const dur = this.resolveDuration();
-		this.setDisabled(this.rewindBtn, currentTime <= 0);
-		this.setDisabled(this.forwardBtn, dur > 0 && currentTime >= dur - 0.25);
+  /**
+   * Mark a button as content-gated (no relevant tracks/items) so the fit
+   * algorithm can skip it without counting its width.
+   * Setting `data-content-hidden="true"` causes `applyAllVisibilityRules`
+   * to treat the button as absent from the layout.
+   */
+  setContentHidden(this: DesktopUiInternals, btn: HTMLButtonElement, hidden: boolean): void {
+    if (hidden) {
+      btn.setAttribute('data-content-hidden', 'true');
+      btn.hidden = true;
+    } else {
+      btn.removeAttribute('data-content-hidden');
+    }
+  },
 
-		const chapters = this.player.chapters();
-		const hasPrevChap = chapters.some(chapter => chapter.start < currentTime - 1);
-		const hasNextChap = chapters.some(chapter => chapter.start > currentTime + 1);
-		this.setDisabled(this.chapBackBtn, !hasPrevChap);
-		this.setDisabled(this.chapFwdBtn, !hasNextChap);
-	},
+  refreshCapabilityVisibility(this: DesktopUiInternals): void {
+    const subs = this.player.subtitles?.() ?? [];
+    const subsCount = subs.length;
+    // A consumer-supplied subtitle-menu action (e.g. "Search subtitles
+    // online…") is most useful with zero tracks, so it keeps the subtitles
+    // button/category reachable on its own — same standing as a real track.
+    const hasSubtitleMenuActions = (this.opts?.subtitleMenuActions?.length ?? 0) > 0;
 
-	setDisabled(this: DesktopUiInternals, btn: HTMLButtonElement, disabled: boolean): void {
-		if (disabled) {
-			btn.setAttribute('disabled', 'true');
-			btn.setAttribute('aria-disabled', 'true');
-		}
-		else {
-			btn.removeAttribute('disabled');
-			btn.removeAttribute('aria-disabled');
-		}
-	},
+    const audios = this.player.audioTracks?.() ?? [];
+    const levels = this.player.qualityLevels?.() ?? [];
 
-	safeCurrentIndex(this: DesktopUiInternals): number {
-		try {
-			return this.player.index();
-		}
-		catch { /* not implemented */ }
-		return 0;
-	},
+    this.setContentHidden(this.subsBtn, subsCount === 0 && !hasSubtitleMenuActions);
+    this.setContentHidden(this.audioBtn, audios.length <= 1);
+    this.setContentHidden(this.qualityBtn, levels.length < 2);
 
-	safeQueueLength(this: DesktopUiInternals): number {
-		try {
-			return this.player.queueLength();
-		}
-		catch { /* not implemented */ }
-		return this.player.queue().length;
-	},
+    const chapters = this.player.chapters();
+
+    this.setContentHidden(this.chapBackBtn, chapters.length === 0);
+    this.setContentHidden(this.chapFwdBtn, chapters.length === 0);
+
+    const queueLen = this.safeQueueLength();
+
+    this.setContentHidden(this.playlistBtn, queueLen < 2);
+
+    this.menus.mainButtons.subtitles.style.display = (subsCount === 0 && !hasSubtitleMenuActions)
+      ? 'none'
+      : 'flex';
+
+    this.menus.mainButtons.language.style.display = audios.length <= 1
+      ? 'none'
+      : 'flex';
+
+    this.menus.mainButtons.quality.style.display = levels.length < 2
+      ? 'none'
+      : 'flex';
+
+    this.menus.mainButtons.playlist.style.display = queueLen < 2
+      ? 'none'
+      : 'flex';
+
+    const speeds = this.player.playbackRates?.() ?? [];
+    const settingsEmpty = speeds.length <= 1 &&
+      audios.length <= 1 &&
+      subsCount === 0 &&
+      !hasSubtitleMenuActions &&
+      (this.opts?.settingsItems?.length ?? 0) === 0;
+
+    this.setContentHidden(this.settingsBtn, settingsEmpty);
+
+    if (this._responsiveState.lastContainerWidth > 0) {
+      applyAllVisibilityRules(
+        this._responsiveState,
+        this.opts,
+        this._responsiveState.lastContainerWidth,
+        (payload) => this.emit('layout:breakpoint', payload),
+        this.player.container,
+      );
+    }
+
+    this.refreshTransportEnablement();
+  },
+
+  refreshTransportEnablement(this: DesktopUiInternals): void {
+    const idx = this.safeCurrentIndex();
+    const len = this.safeQueueLength();
+
+    const onFirst = idx <= 0 || len <= 1;
+    const onLast = idx >= len - 1 || len <= 1;
+
+    this.setDisabled(this.prevBtn, onFirst);
+    this.setDisabled(this.nextBtn, onLast);
+
+    const currentTime = this.player.time?.() ?? 0;
+    const dur = this.resolveDuration();
+
+    this.setDisabled(this.rewindBtn, currentTime <= 0);
+    this.setDisabled(this.forwardBtn, dur > 0 && currentTime >= dur - 0.25);
+
+    const chapters = this.player.chapters();
+    const hasPrevChap = chapters.some((chapter) => chapter.start < currentTime - 1);
+    const hasNextChap = chapters.some((chapter) => chapter.start > currentTime + 1);
+
+    this.setDisabled(this.chapBackBtn, !hasPrevChap);
+    this.setDisabled(this.chapFwdBtn, !hasNextChap);
+  },
+
+  setDisabled(this: DesktopUiInternals, btn: HTMLButtonElement, disabled: boolean): void {
+    if (disabled) {
+      btn.setAttribute('disabled', 'true');
+      btn.setAttribute('aria-disabled', 'true');
+    } else {
+      btn.removeAttribute('disabled');
+      btn.removeAttribute('aria-disabled');
+    }
+  },
+
+  safeCurrentIndex(this: DesktopUiInternals): number {
+    try {
+      return this.player.index();
+    } catch { /* not implemented */ }
+
+    return 0;
+  },
+
+  safeQueueLength(this: DesktopUiInternals): number {
+    try {
+      return this.player.queueLength();
+    } catch { /* not implemented */ }
+
+    return this.player.queue().length;
+  },
 } as const;

@@ -9,7 +9,7 @@
 import type { ILogger, LogLevel, LogSink } from '../../adapters/logger/ILogger';
 
 export interface FakeLogger extends ILogger {
-	calls: string[];
+  calls: string[];
 }
 
 /**
@@ -19,36 +19,37 @@ export interface FakeLogger extends ILogger {
  * logger (the listener gates on `LEVEL_RANK[logger.level()] >= LEVEL_RANK.debug`).
  */
 export function makeFakeLogger(): FakeLogger {
-	const calls: string[] = [];
-	let currentLevel: LogLevel = 'debug';
+  const calls: string[] = [];
+  let currentLevel: LogLevel = 'debug';
 
-	const record = (level: string, args: unknown[]): void => {
-		calls.push(`${level}:${args.map(String).join(' ')}`);
-	};
+  const record = (level: string, args: unknown[]): void => {
+    calls.push(`${level}:${args.map(String).join(' ')}`);
+  };
 
-	const logger: FakeLogger = {
-		calls,
+  const logger: FakeLogger = {
+    calls,
 
-		trace(...args: unknown[]): void { record('trace', args); },
-		debug(...args: unknown[]): void { record('debug', args); },
-		info(...args: unknown[]): void { record('info', args); },
-		warn(...args: unknown[]): void { record('warn', args); },
-		error(...args: unknown[]): void { record('error', args); },
+    trace(...args: unknown[]): void { record('trace', args); },
+    debug(...args: unknown[]): void { record('debug', args); },
+    info(...args: unknown[]): void { record('info', args); },
+    warn(...args: unknown[]): void { record('warn', args); },
+    error(...args: unknown[]): void { record('error', args); },
 
-		level(value?: LogLevel): LogLevel | void {
-			if (value === undefined)
-				return currentLevel;
-			currentLevel = value;
-		},
+    level(value?: LogLevel): LogLevel | void {
+      if (value === undefined)
+        return currentLevel;
 
-		addSink(_fn: LogSink): () => void {
-			return (): void => {};
-		},
+      currentLevel = value;
+    },
 
-		child(_suffix: string): ILogger {
-			return logger;
-		},
-	} as unknown as FakeLogger;
+    addSink(_fn: LogSink): () => void {
+      return (): void => {};
+    },
 
-	return logger;
+    child(_suffix: string): ILogger {
+      return logger;
+    },
+  } as unknown as FakeLogger;
+
+  return logger;
 }

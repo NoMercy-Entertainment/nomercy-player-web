@@ -61,7 +61,7 @@
  *   GainNode or HTMLMediaElement.volume.
  */
 export function perceptualGain(position01: number): number {
-	const clamped = Math.max(0, Math.min(1, position01));
+  const clamped = Math.max(0, Math.min(1, position01));
 
-	return clamped ** 2;
+  return clamped ** 2;
 }

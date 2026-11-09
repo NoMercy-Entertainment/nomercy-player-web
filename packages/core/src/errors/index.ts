@@ -22,19 +22,20 @@ export { AuthError } from './auth';
 export type { CodeFields, ErrorScope } from './code';
 
 export {
-	formatCode,
-	makeCode,
-	parseCode,
-	VENDOR,
+  formatCode,
+  makeCode,
+  parseCode,
+  VENDOR,
 } from './code';
+
 export { DrmError } from './drm';
 
 export {
-	MediaFormatError,
-	mediaFormatError,
-	ResourceError,
-	resourceError,
-	StreamError,
+  MediaFormatError,
+  mediaFormatError,
+  ResourceError,
+  resourceError,
+  StreamError,
 } from './media';
 
 export { NetworkError } from './network';
@@ -44,10 +45,10 @@ export { NotImplementedError } from './not-implemented';
 export type { PlayerErrorEvent, PlayerErrorInit } from './player';
 
 export {
-	makePlayerErrorEvent,
-	PlayerError,
-	StateError,
-	stateError,
+  makePlayerErrorEvent,
+  PlayerError,
+  StateError,
+  stateError,
 } from './player';
 
 export { PluginError, pluginError } from './plugin';

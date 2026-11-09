@@ -29,430 +29,477 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LifecycleRegistry } from '../adapters/lifecycle-registry/default';
 
 describe('LifecycleRegistry', () => {
-	let registry: LifecycleRegistry;
-	let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+  let registry: LifecycleRegistry;
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
-	beforeEach(() => {
-		registry = new LifecycleRegistry();
-		consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-	});
+  beforeEach(() => {
+    registry = new LifecycleRegistry();
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
 
-	afterEach(() => {
-		if (!registry.isDisposed())
-			registry.dispose();
-		consoleErrorSpy.mockRestore();
-	});
+  afterEach(() => {
+    if (!registry.isDisposed()) {
+      registry.dispose();
+    }
 
-	// ─────────────────────────────────────────────────────────────────────
-	// Construction
-	// ─────────────────────────────────────────────────────────────────────
+    consoleErrorSpy.mockRestore();
+  });
 
-	describe('construction', () => {
-		it('starts not disposed', () => {
-			expect(registry.isDisposed()).toBe(false);
-		});
-	});
+  // ─────────────────────────────────────────────────────────────────────
+  // Construction
+  // ─────────────────────────────────────────────────────────────────────
 
-	// ─────────────────────────────────────────────────────────────────────
-	// addCleanup()
-	// ─────────────────────────────────────────────────────────────────────
+  describe('construction', () => {
+    it('starts not disposed', () => {
+      expect(registry.isDisposed()).toBe(false);
+    });
+  });
 
-	describe('addCleanup()', () => {
-		it('runs the cleanup on dispose', () => {
-			const cleanup = vi.fn();
-			registry.addCleanup(cleanup);
-			registry.dispose();
-			expect(cleanup).toHaveBeenCalledTimes(1);
-		});
+  // ─────────────────────────────────────────────────────────────────────
+  // addCleanup()
+  // ─────────────────────────────────────────────────────────────────────
 
-		it('runs cleanups in LIFO order (most recent first)', () => {
-			const order: number[] = [];
-			registry.addCleanup(() => order.push(1));
-			registry.addCleanup(() => order.push(2));
-			registry.addCleanup(() => order.push(3));
-			registry.dispose();
-			expect(order).toEqual([3, 2, 1]);
-		});
+  describe('addCleanup()', () => {
+    it('runs the cleanup on dispose', () => {
+      const cleanup = vi.fn();
 
-		it('runs cleanup IMMEDIATELY when registry is already disposed', () => {
-			registry.dispose();
-			const cleanup = vi.fn();
-			registry.addCleanup(cleanup);
-			expect(cleanup).toHaveBeenCalledTimes(1);
-		});
+      registry.addCleanup(cleanup);
+      registry.dispose();
+      expect(cleanup).toHaveBeenCalledTimes(1);
+    });
 
-		it('swallows errors from cleanups added after dispose', () => {
-			registry.dispose();
-			expect(() => {
-				registry.addCleanup(() => {
-					throw new Error('boom');
-				});
-			}).not.toThrow();
-		});
+    it('runs cleanups in LIFO order (most recent first)', () => {
+      const order: number[] = [];
 
-		it('continues running other cleanups when one throws', () => {
-			const cleanupA = vi.fn();
-			const cleanupB = vi.fn(() => {
-				throw new Error('boom');
-			});
-			const cleanupC = vi.fn();
-			registry.addCleanup(cleanupA);
-			registry.addCleanup(cleanupB);
-			registry.addCleanup(cleanupC);
-			registry.dispose();
-			expect(cleanupA).toHaveBeenCalled();
-			expect(cleanupC).toHaveBeenCalled();
-		});
+      registry.addCleanup(() => order.push(1));
+      registry.addCleanup(() => order.push(2));
+      registry.addCleanup(() => order.push(3));
+      registry.dispose();
+      expect(order).toEqual([3, 2, 1]);
+    });
 
-		it('logs error when a cleanup throws', () => {
-			registry.addCleanup(() => {
-				throw new Error('boom');
-			});
-			registry.dispose();
-			expect(consoleErrorSpy).toHaveBeenCalled();
-		});
+    it('runs cleanup IMMEDIATELY when registry is already disposed', () => {
+      registry.dispose();
+      const cleanup = vi.fn();
 
-		it('re-entrant addCleanup during dispose runs immediately, not on next dispose', () => {
-			const inner = vi.fn();
-			registry.addCleanup(() => {
-				registry.addCleanup(inner);
-			});
-			registry.dispose();
-			expect(inner).toHaveBeenCalledTimes(1);
-		});
-	});
+      registry.addCleanup(cleanup);
+      expect(cleanup).toHaveBeenCalledTimes(1);
+    });
 
-	// ─────────────────────────────────────────────────────────────────────
-	// listen() — DOM event listeners
-	// ─────────────────────────────────────────────────────────────────────
+    it('swallows errors from cleanups added after dispose', () => {
+      registry.dispose();
 
-	describe('listen()', () => {
-		it('attaches a DOM event listener', () => {
-			const target = new EventTarget();
-			const handler = vi.fn();
-			registry.listen(target, 'click', handler);
-			target.dispatchEvent(new Event('click'));
-			expect(handler).toHaveBeenCalledTimes(1);
-		});
+      expect(() => {
+        registry.addCleanup(() => {
+          throw new Error('boom');
+        });
+      }).not.toThrow();
+    });
 
-		it('removes the listener on dispose', () => {
-			const target = new EventTarget();
-			const handler = vi.fn();
-			registry.listen(target, 'click', handler);
-			registry.dispose();
-			target.dispatchEvent(new Event('click'));
-			expect(handler).not.toHaveBeenCalled();
-		});
+    it('continues running other cleanups when one throws', () => {
+      const cleanupA = vi.fn();
+      const cleanupB = vi.fn(() => {
+        throw new Error('boom');
+      });
+      const cleanupC = vi.fn();
 
-		it('no-op when called after dispose', () => {
-			const target = new EventTarget();
-			const handler = vi.fn();
-			registry.dispose();
-			registry.listen(target, 'click', handler);
-			target.dispatchEvent(new Event('click'));
-			expect(handler).not.toHaveBeenCalled();
-		});
+      registry.addCleanup(cleanupA);
+      registry.addCleanup(cleanupB);
+      registry.addCleanup(cleanupC);
+      registry.dispose();
+      expect(cleanupA).toHaveBeenCalled();
+      expect(cleanupC).toHaveBeenCalled();
+    });
 
-		it('passes options through to addEventListener', () => {
-			const target = new EventTarget();
-			const handler = vi.fn();
-			registry.listen(target, 'click', handler, { once: true });
-			target.dispatchEvent(new Event('click'));
-			target.dispatchEvent(new Event('click'));
-			expect(handler).toHaveBeenCalledTimes(1);
-		});
-	});
+    it('logs error when a cleanup throws', () => {
+      registry.addCleanup(() => {
+        throw new Error('boom');
+      });
 
-	// ─────────────────────────────────────────────────────────────────────
-	// timeout()
-	// ─────────────────────────────────────────────────────────────────────
+      registry.dispose();
+      expect(consoleErrorSpy).toHaveBeenCalled();
+    });
 
-	describe('timeout()', () => {
-		beforeEach(() => {
-			vi.useFakeTimers();
-		});
+    it('re-entrant addCleanup during dispose runs immediately, not on next dispose', () => {
+      const inner = vi.fn();
 
-		afterEach(() => {
-			vi.useRealTimers();
-		});
+      registry.addCleanup(() => {
+        registry.addCleanup(inner);
+      });
 
-		it('schedules a callback', () => {
-			const cb = vi.fn();
-			registry.timeout(cb, 100);
-			vi.advanceTimersByTime(100);
-			expect(cb).toHaveBeenCalledTimes(1);
-		});
+      registry.dispose();
+      expect(inner).toHaveBeenCalledTimes(1);
+    });
+  });
 
-		it('cleared on dispose before firing', () => {
-			const cb = vi.fn();
-			registry.timeout(cb, 100);
-			registry.dispose();
-			vi.advanceTimersByTime(100);
-			expect(cb).not.toHaveBeenCalled();
-		});
+  // ─────────────────────────────────────────────────────────────────────
+  // listen() — DOM event listeners
+  // ─────────────────────────────────────────────────────────────────────
 
-		it('callback not invoked if registry disposed during the wait', () => {
-			const cb = vi.fn();
-			registry.timeout(cb, 100);
-			vi.advanceTimersByTime(50);
-			registry.dispose();
-			vi.advanceTimersByTime(100);
-			expect(cb).not.toHaveBeenCalled();
-		});
+  describe('listen()', () => {
+    it('attaches a DOM event listener', () => {
+      const target = new EventTarget();
+      const handler = vi.fn();
 
-		it('returns -1 when called after dispose', () => {
-			registry.dispose();
-			const id = registry.timeout(() => {}, 100);
-			expect(id).toBe(-1);
-		});
+      registry.listen(target, 'click', handler);
+      target.dispatchEvent(new Event('click'));
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
 
-		it('catches throws from the callback', () => {
-			registry.timeout(() => {
-				throw new Error('boom');
-			}, 100);
-			expect(() => vi.advanceTimersByTime(100)).not.toThrow();
-			expect(consoleErrorSpy).toHaveBeenCalled();
-		});
-	});
+    it('removes the listener on dispose', () => {
+      const target = new EventTarget();
+      const handler = vi.fn();
 
-	// ─────────────────────────────────────────────────────────────────────
-	// interval()
-	// ─────────────────────────────────────────────────────────────────────
+      registry.listen(target, 'click', handler);
+      registry.dispose();
+      target.dispatchEvent(new Event('click'));
+      expect(handler).not.toHaveBeenCalled();
+    });
 
-	describe('interval()', () => {
-		beforeEach(() => {
-			vi.useFakeTimers();
-		});
+    it('no-op when called after dispose', () => {
+      const target = new EventTarget();
+      const handler = vi.fn();
 
-		afterEach(() => {
-			vi.useRealTimers();
-		});
+      registry.dispose();
+      registry.listen(target, 'click', handler);
+      target.dispatchEvent(new Event('click'));
+      expect(handler).not.toHaveBeenCalled();
+    });
 
-		it('fires repeatedly at the given interval', () => {
-			const cb = vi.fn();
-			registry.interval(cb, 100);
-			vi.advanceTimersByTime(350);
-			expect(cb).toHaveBeenCalledTimes(3);
-		});
+    it('passes options through to addEventListener', () => {
+      const target = new EventTarget();
+      const handler = vi.fn();
 
-		it('stops on dispose', () => {
-			const cb = vi.fn();
-			registry.interval(cb, 100);
-			vi.advanceTimersByTime(150);
-			expect(cb).toHaveBeenCalledTimes(1);
-			registry.dispose();
-			vi.advanceTimersByTime(500);
-			expect(cb).toHaveBeenCalledTimes(1);
-		});
+      registry.listen(target, 'click', handler, { once: true });
+      target.dispatchEvent(new Event('click'));
+      target.dispatchEvent(new Event('click'));
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
+  });
 
-		it('returns -1 when called after dispose', () => {
-			registry.dispose();
-			expect(registry.interval(() => {}, 100)).toBe(-1);
-		});
+  // ─────────────────────────────────────────────────────────────────────
+  // timeout()
+  // ─────────────────────────────────────────────────────────────────────
 
-		it('catches throws and keeps the loop running', () => {
-			let count = 0;
-			registry.interval(() => {
-				count++;
-				if (count === 1)
-					throw new Error('boom');
-			}, 100);
-			vi.advanceTimersByTime(300);
-			expect(count).toBe(3);
-			expect(consoleErrorSpy).toHaveBeenCalled();
-		});
-	});
+  describe('timeout()', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
 
-	// ─────────────────────────────────────────────────────────────────────
-	// observe()
-	// ─────────────────────────────────────────────────────────────────────
+    afterEach(() => {
+      vi.useRealTimers();
+    });
 
-	describe('observe()', () => {
-		it('returns the same observer for chaining', () => {
-			const observer = { disconnect: vi.fn() };
-			const result = registry.observe(observer);
-			expect(result).toBe(observer);
-		});
+    it('schedules a callback', () => {
+      const cb = vi.fn();
 
-		it('disconnects the observer on dispose', () => {
-			const observer = { disconnect: vi.fn() };
-			registry.observe(observer);
-			registry.dispose();
-			expect(observer.disconnect).toHaveBeenCalledTimes(1);
-		});
+      registry.timeout(cb, 100);
+      vi.advanceTimersByTime(100);
+      expect(cb).toHaveBeenCalledTimes(1);
+    });
 
-		it('swallows errors from disconnect()', () => {
-			const observer = { disconnect: vi.fn(() => {
-				throw new Error('boom');
-			}) };
-			registry.observe(observer);
-			expect(() => registry.dispose()).not.toThrow();
-		});
+    it('cleared on dispose before firing', () => {
+      const cb = vi.fn();
 
-		it('returns the observer unchanged when called after dispose', () => {
-			registry.dispose();
-			const observer = { disconnect: vi.fn() };
-			const result = registry.observe(observer);
-			expect(result).toBe(observer);
-			expect(observer.disconnect).not.toHaveBeenCalled();
-		});
-	});
+      registry.timeout(cb, 100);
+      registry.dispose();
+      vi.advanceTimersByTime(100);
+      expect(cb).not.toHaveBeenCalled();
+    });
 
-	// ─────────────────────────────────────────────────────────────────────
-	// abortable()
-	// ─────────────────────────────────────────────────────────────────────
+    it('callback not invoked if registry disposed during the wait', () => {
+      const cb = vi.fn();
 
-	describe('abortable()', () => {
-		it('returns an AbortController', () => {
-			const ctrl = registry.abortable();
-			expect(ctrl).toBeInstanceOf(AbortController);
-			expect(ctrl.signal.aborted).toBe(false);
-		});
+      registry.timeout(cb, 100);
+      vi.advanceTimersByTime(50);
+      registry.dispose();
+      vi.advanceTimersByTime(100);
+      expect(cb).not.toHaveBeenCalled();
+    });
 
-		it('aborts on dispose', () => {
-			const ctrl = registry.abortable();
-			registry.dispose();
-			expect(ctrl.signal.aborted).toBe(true);
-		});
+    it('returns -1 when called after dispose', () => {
+      registry.dispose();
+      const id = registry.timeout(() => {}, 100);
 
-		it('returns a pre-aborted controller when called after dispose', () => {
-			registry.dispose();
-			const ctrl = registry.abortable();
-			expect(ctrl.signal.aborted).toBe(true);
-		});
+      expect(id).toBe(-1);
+    });
 
-		it('multiple abortables all abort on dispose', () => {
-			const ctrlA = registry.abortable();
-			const ctrlB = registry.abortable();
-			const ctrlC = registry.abortable();
-			registry.dispose();
-			expect(ctrlA.signal.aborted).toBe(true);
-			expect(ctrlB.signal.aborted).toBe(true);
-			expect(ctrlC.signal.aborted).toBe(true);
-		});
-	});
+    it('catches throws from the callback', () => {
+      registry.timeout(() => {
+        throw new Error('boom');
+      }, 100);
 
-	// ─────────────────────────────────────────────────────────────────────
-	// frame()
-	// ─────────────────────────────────────────────────────────────────────
+      expect(() => vi.advanceTimersByTime(100)).not.toThrow();
+      expect(consoleErrorSpy).toHaveBeenCalled();
+    });
+  });
 
-	describe('frame()', () => {
-		it('runs the callback once per RAF tick', async () => {
-			const cb = vi.fn();
-			registry.frame(cb);
-			await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
-			await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
-			expect(cb.mock.calls.length).toBeGreaterThanOrEqual(1);
-		});
+  // ─────────────────────────────────────────────────────────────────────
+  // interval()
+  // ─────────────────────────────────────────────────────────────────────
 
-		it('passes deltaMs and time to the callback', async () => {
-			const cb = vi.fn();
-			registry.frame(cb);
-			await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
-			await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
-			if (cb.mock.calls.length > 0) {
-				const [delta, time] = cb.mock.calls[0]!;
-				expect(typeof delta).toBe('number');
-				expect(typeof time).toBe('number');
-			}
-		});
+  describe('interval()', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
 
-		it('stops calling the callback after dispose', async () => {
-			const cb = vi.fn();
-			registry.frame(cb);
-			await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
-			const callsBefore = cb.mock.calls.length;
-			registry.dispose();
-			await new Promise(resolve => setTimeout(resolve, 50));
-			const callsAfter = cb.mock.calls.length;
-			expect(callsAfter).toBeLessThanOrEqual(callsBefore + 1);
-		});
+    afterEach(() => {
+      vi.useRealTimers();
+    });
 
-		it('no-op when called after dispose', async () => {
-			registry.dispose();
-			const cb = vi.fn();
-			registry.frame(cb);
-			await new Promise(resolve => setTimeout(resolve, 50));
-			expect(cb).not.toHaveBeenCalled();
-		});
+    it('fires repeatedly at the given interval', () => {
+      const cb = vi.fn();
 
-		it('catches throws from the callback', async () => {
-			registry.frame(() => {
-				throw new Error('boom');
-			});
-			await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
-			await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
-			expect(consoleErrorSpy).toHaveBeenCalled();
-			registry.dispose();
-		});
+      registry.interval(cb, 100);
+      vi.advanceTimersByTime(350);
+      expect(cb).toHaveBeenCalledTimes(3);
+    });
 
-		it('does not leak fired RAF ids into the internal tracking set', () => {
-			let nextId = 0;
-			let currentCallback: FrameRequestCallback | undefined;
-			vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback): number => {
-				nextId++;
-				currentCallback = cb;
-				return nextId;
-			});
-			vi.stubGlobal('cancelAnimationFrame', vi.fn());
+    it('stops on dispose', () => {
+      const cb = vi.fn();
 
-			const cancel = registry.frame(() => {});
-			const rafs = (registry as unknown as { rafs: Set<number> }).rafs;
-			expect(rafs.size).toBe(1);
+      registry.interval(cb, 100);
+      vi.advanceTimersByTime(150);
+      expect(cb).toHaveBeenCalledTimes(1);
+      registry.dispose();
+      vi.advanceTimersByTime(500);
+      expect(cb).toHaveBeenCalledTimes(1);
+    });
 
-			for (let i = 0; i < 5; i++) {
-				currentCallback?.(i * 16);
-			}
+    it('returns -1 when called after dispose', () => {
+      registry.dispose();
+      expect(registry.interval(() => {}, 100)).toBe(-1);
+    });
 
-			expect(rafs.size).toBe(1);
+    it('catches throws and keeps the loop running', () => {
+      let count = 0;
 
-			cancel();
-			expect(rafs.size).toBe(0);
+      registry.interval(() => {
+        count++;
 
-			vi.unstubAllGlobals();
-		});
-	});
+        if (count === 1)
+          throw new Error('boom');
+      }, 100);
 
-	// ─────────────────────────────────────────────────────────────────────
-	// dispose()
-	// ─────────────────────────────────────────────────────────────────────
+      vi.advanceTimersByTime(300);
+      expect(count).toBe(3);
+      expect(consoleErrorSpy).toHaveBeenCalled();
+    });
+  });
 
-	describe('dispose()', () => {
-		it('isDisposed() returns true after dispose', () => {
-			expect(registry.isDisposed()).toBe(false);
-			registry.dispose();
-			expect(registry.isDisposed()).toBe(true);
-		});
+  // ─────────────────────────────────────────────────────────────────────
+  // observe()
+  // ─────────────────────────────────────────────────────────────────────
 
-		it('is idempotent — second call is a no-op', () => {
-			const cleanup = vi.fn();
-			registry.addCleanup(cleanup);
-			registry.dispose();
-			registry.dispose();
-			expect(cleanup).toHaveBeenCalledTimes(1);
-		});
+  describe('observe()', () => {
+    it('returns the same observer for chaining', () => {
+      const observer = { disconnect: vi.fn() };
+      const result = registry.observe(observer);
 
-		it('runs every cleanup type in a single dispose', () => {
-			const target = new EventTarget();
-			const evt = vi.fn();
-			const ctl = vi.fn();
-			const obs = { disconnect: vi.fn() };
-			const cleanup = vi.fn();
+      expect(result).toBe(observer);
+    });
 
-			registry.listen(target, 'click', evt);
-			const aborter = registry.abortable();
-			registry.observe(obs);
-			registry.addCleanup(cleanup);
-			registry.addCleanup(ctl);
+    it('disconnects the observer on dispose', () => {
+      const observer = { disconnect: vi.fn() };
 
-			registry.dispose();
+      registry.observe(observer);
+      registry.dispose();
+      expect(observer.disconnect).toHaveBeenCalledTimes(1);
+    });
 
-			target.dispatchEvent(new Event('click'));
-			expect(evt).not.toHaveBeenCalled();
-			expect(aborter.signal.aborted).toBe(true);
-			expect(obs.disconnect).toHaveBeenCalled();
-			expect(cleanup).toHaveBeenCalled();
-			expect(ctl).toHaveBeenCalled();
-		});
-	});
+    it('swallows errors from disconnect()', () => {
+      const observer = { disconnect: vi.fn(() => {
+        throw new Error('boom');
+      }) };
+
+      registry.observe(observer);
+      expect(() => registry.dispose()).not.toThrow();
+    });
+
+    it('returns the observer unchanged when called after dispose', () => {
+      registry.dispose();
+      const observer = { disconnect: vi.fn() };
+      const result = registry.observe(observer);
+
+      expect(result).toBe(observer);
+      expect(observer.disconnect).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // abortable()
+  // ─────────────────────────────────────────────────────────────────────
+
+  describe('abortable()', () => {
+    it('returns an AbortController', () => {
+      const ctrl = registry.abortable();
+
+      expect(ctrl).toBeInstanceOf(AbortController);
+      expect(ctrl.signal.aborted).toBe(false);
+    });
+
+    it('aborts on dispose', () => {
+      const ctrl = registry.abortable();
+
+      registry.dispose();
+      expect(ctrl.signal.aborted).toBe(true);
+    });
+
+    it('returns a pre-aborted controller when called after dispose', () => {
+      registry.dispose();
+      const ctrl = registry.abortable();
+
+      expect(ctrl.signal.aborted).toBe(true);
+    });
+
+    it('multiple abortables all abort on dispose', () => {
+      const ctrlA = registry.abortable();
+      const ctrlB = registry.abortable();
+      const ctrlC = registry.abortable();
+
+      registry.dispose();
+      expect(ctrlA.signal.aborted).toBe(true);
+      expect(ctrlB.signal.aborted).toBe(true);
+      expect(ctrlC.signal.aborted).toBe(true);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // frame()
+  // ─────────────────────────────────────────────────────────────────────
+
+  describe('frame()', () => {
+    it('runs the callback once per RAF tick', async () => {
+      const cb = vi.fn();
+
+      registry.frame(cb);
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+      expect(cb.mock.calls.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('passes deltaMs and time to the callback', async () => {
+      const cb = vi.fn();
+
+      registry.frame(cb);
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+
+      if (cb.mock.calls.length > 0) {
+        const [delta, time] = cb.mock.calls[0]!;
+
+        expect(typeof delta).toBe('number');
+        expect(typeof time).toBe('number');
+      }
+    });
+
+    it('stops calling the callback after dispose', async () => {
+      const cb = vi.fn();
+
+      registry.frame(cb);
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+      const callsBefore = cb.mock.calls.length;
+
+      registry.dispose();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const callsAfter = cb.mock.calls.length;
+
+      expect(callsAfter).toBeLessThanOrEqual(callsBefore + 1);
+    });
+
+    it('no-op when called after dispose', async () => {
+      registry.dispose();
+      const cb = vi.fn();
+
+      registry.frame(cb);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(cb).not.toHaveBeenCalled();
+    });
+
+    it('catches throws from the callback', async () => {
+      registry.frame(() => {
+        throw new Error('boom');
+      });
+
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      registry.dispose();
+    });
+
+    it('does not leak fired RAF ids into the internal tracking set', () => {
+      let nextId = 0;
+      let currentCallback: FrameRequestCallback | undefined;
+
+      vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback): number => {
+        nextId++;
+        currentCallback = cb;
+
+        return nextId;
+      });
+
+      vi.stubGlobal('cancelAnimationFrame', vi.fn());
+
+      const cancel = registry.frame(() => {});
+      const rafs = (registry as unknown as { rafs: Set<number> }).rafs;
+
+      expect(rafs.size).toBe(1);
+
+      for (let i = 0; i < 5; i++) {
+        currentCallback?.(i * 16);
+      }
+
+      expect(rafs.size).toBe(1);
+
+      cancel();
+      expect(rafs.size).toBe(0);
+
+      vi.unstubAllGlobals();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // dispose()
+  // ─────────────────────────────────────────────────────────────────────
+
+  describe('dispose()', () => {
+    it('isDisposed() returns true after dispose', () => {
+      expect(registry.isDisposed()).toBe(false);
+      registry.dispose();
+      expect(registry.isDisposed()).toBe(true);
+    });
+
+    it('is idempotent — second call is a no-op', () => {
+      const cleanup = vi.fn();
+
+      registry.addCleanup(cleanup);
+      registry.dispose();
+      registry.dispose();
+      expect(cleanup).toHaveBeenCalledTimes(1);
+    });
+
+    it('runs every cleanup type in a single dispose', () => {
+      const target = new EventTarget();
+      const evt = vi.fn();
+      const ctl = vi.fn();
+      const obs = { disconnect: vi.fn() };
+      const cleanup = vi.fn();
+
+      registry.listen(target, 'click', evt);
+      const aborter = registry.abortable();
+
+      registry.observe(obs);
+      registry.addCleanup(cleanup);
+      registry.addCleanup(ctl);
+
+      registry.dispose();
+
+      target.dispatchEvent(new Event('click'));
+      expect(evt).not.toHaveBeenCalled();
+      expect(aborter.signal.aborted).toBe(true);
+      expect(obs.disconnect).toHaveBeenCalled();
+      expect(cleanup).toHaveBeenCalled();
+      expect(ctl).toHaveBeenCalled();
+    });
+  });
 });

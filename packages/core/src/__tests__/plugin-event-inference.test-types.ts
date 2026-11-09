@@ -30,13 +30,13 @@ import { Plugin } from '../core/plugin';
 // ─── Fixture plugin with a known event map ────────────────────────────────────
 
 interface FooEvents {
-	resize: { width: number; height: number };
-	tick: { count: number };
+  resize: { width: number; height: number };
+  tick: { count: number };
 }
 
 class FooPlugin extends Plugin<IPlayer<BaseEventMap>, Record<string, never>, FooEvents> {
-	static override readonly id = 'foo';
-	static override readonly description = 'type-test foo plugin';
+  static override readonly id = 'foo';
+  static override readonly description = 'type-test foo plugin';
 }
 
 // ─── Proof 1: PluginEventMap resolves to the concrete event map ───────────────
@@ -57,24 +57,24 @@ const _canvasKeyProof: 'anything_at_all' extends CanvasMapKey ? never : 'EXPECTE
 // ─── Proof 2: misspelled event key is rejected ───────────────────────────────
 
 class ConsumerPlugin extends Plugin<IPlayer<BaseEventMap>> {
-	static override readonly id = 'consumer';
-	static override readonly description = 'type-test consumer plugin';
+  static override readonly id = 'consumer';
+  static override readonly description = 'type-test consumer plugin';
 
-	probe(): void {
-		// 'rezize' is misspelled — TS correctly rejects it now that FooMapKey is
-		// the narrow union 'resize' | 'tick' rather than the widened `string`.
-		// @ts-expect-error — 'rezize' is not a key of FooEvents
-		this.on(FooPlugin, 'rezize', (_data: unknown) => {});
-	}
+  probe(): void {
+    // 'rezize' is misspelled — TS correctly rejects it now that FooMapKey is
+    // the narrow union 'resize' | 'tick' rather than the widened `string`.
+    // @ts-expect-error — 'rezize' is not a key of FooEvents
+    this.on(FooPlugin, 'rezize', (_data: unknown) => {});
+  }
 
-	probePayload(): void {
-		// Proof 3: payload is { width: number; height: number }, not `any`.
-		// Accessing a non-existent property is a type error.
-		this.on(FooPlugin, 'resize', (data) => {
-			// @ts-expect-error — 'TOTALLY_ABSENT' does not exist on { width: number; height: number }
-			void data.TOTALLY_ABSENT;
-		});
-	}
+  probePayload(): void {
+    // Proof 3: payload is { width: number; height: number }, not `any`.
+    // Accessing a non-existent property is a type error.
+    this.on(FooPlugin, 'resize', (data) => {
+      // @ts-expect-error — 'TOTALLY_ABSENT' does not exist on { width: number; height: number }
+      void data.TOTALLY_ABSENT;
+    });
+  }
 }
 
 // ─── Proof 3: payload type is correctly narrowed ─────────────────────────────

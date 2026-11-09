@@ -30,71 +30,74 @@ import { NMVideoPlayer } from '../../index';
 import { DrmPlugin, drmPlugin } from '../../plugins/drm';
 
 describe('DrmPlugin', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+  });
 
-	const setup = (): NMVideoPlayer<any> => new NMVideoPlayer('test').setup({});
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	// ── Test 8: plugin:drm:unsupported fires in jsdom (no EME) ───────────────
+  const setup = (): NMVideoPlayer<any> => new NMVideoPlayer('test').setup({});
 
-	it('emits plugin:drm:unsupported (scoped) in jsdom; bare unsupported does NOT fire on player bus', async () => {
-		const player = setup();
+  // ── Test 8: plugin:drm:unsupported fires in jsdom (no EME) ───────────────
 
-		const scopedEvents: unknown[] = [];
-		const bareEvents: unknown[] = [];
+  it('emits plugin:drm:unsupported (scoped) in jsdom; bare unsupported does NOT fire on player bus', async () => {
+    const player = setup();
 
-		player.on('plugin:drm:unsupported' as never, ((data: unknown) => {
-			scopedEvents.push(data);
-		}) as never);
+    const scopedEvents: unknown[] = [];
+    const bareEvents: unknown[] = [];
 
-		player.on('unsupported' as never, (() => {
-			bareEvents.push(true);
-		}) as never);
+    player.on('plugin:drm:unsupported' as never, ((data: unknown) => {
+      scopedEvents.push(data);
+    }) as never);
 
-		player.addPlugin(drmPlugin, { keySystem: 'com.widevine.alpha', licenseUrl: 'https://example.test/license' });
-		await player.ready();
+    player.on('unsupported' as never, (() => {
+      bareEvents.push(true);
+    }) as never);
 
-		// The plugin emits 'unsupported' via this.emit() which auto-scopes it.
-		expect(scopedEvents).toHaveLength(1);
-		expect((scopedEvents[0] as { reason: string }).reason).toBeTruthy();
+    player.addPlugin(drmPlugin, { keySystem: 'com.widevine.alpha', licenseUrl: 'https://example.test/license' });
+    await player.ready();
 
-		// The bare event name must not have reached the player bus.
-		expect(bareEvents).toHaveLength(0);
-	});
+    // The plugin emits 'unsupported' via this.emit() which auto-scopes it.
+    expect(scopedEvents).toHaveLength(1);
+    expect((scopedEvents[0] as { reason: string }).reason).toBeTruthy();
 
-	// ── Test 9: fetchLicense() throws when licenseUrl is missing ─────────────
+    // The bare event name must not have reached the player bus.
+    expect(bareEvents).toHaveLength(0);
+  });
 
-	it('fetchLicense() throws DrmError when licenseUrl is not configured', async () => {
-		const player = setup();
-		player.addPlugin(drmPlugin, {} as any);
-		await player.ready();
+  // ── Test 9: fetchLicense() throws when licenseUrl is missing ─────────────
 
-		const inst = player.getPlugin(DrmPlugin)!;
+  it('fetchLicense() throws DrmError when licenseUrl is not configured', async () => {
+    const player = setup();
 
-		// Confirm fetchLicense is on the public surface. GREEN finding.
-		expect(typeof inst.fetchLicense).toBe('function');
+    player.addPlugin(drmPlugin, {} as any);
+    await player.ready();
 
-		let caught: unknown;
-		try {
-			await inst.fetchLicense(new ArrayBuffer(8));
-		}
-		catch (err) {
-			caught = err;
-		}
+    const inst = player.getPlugin(DrmPlugin)!;
 
-		expect(caught).toBeDefined();
+    // Confirm fetchLicense is on the public surface. GREEN finding.
+    expect(typeof inst.fetchLicense).toBe('function');
 
-		const error = caught as Error & { code?: string };
-		expect(error.message).toMatch(/licenseUrl|license.*url|url.*missing/i);
-		expect(error.code ?? (caught as { code?: string }).code ?? '').toMatch(/drm/i);
-	});
+    let caught: unknown;
+
+    try {
+      await inst.fetchLicense(new ArrayBuffer(8));
+    } catch (err) {
+      caught = err;
+    }
+
+    expect(caught).toBeDefined();
+
+    const error = caught as Error & { code?: string };
+
+    expect(error.message).toMatch(/licenseUrl|license.*url|url.*missing/i);
+    expect(error.code ?? (caught as { code?: string }).code ?? '').toMatch(/drm/i);
+  });
 });

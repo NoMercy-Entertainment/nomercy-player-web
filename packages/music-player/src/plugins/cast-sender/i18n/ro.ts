@@ -9,9 +9,9 @@
 import type { CastSenderTranslationKey } from './en';
 
 export default {
-	'plugin.cast-sender.casting.track': 'Se difuzează "{title}" de {artist}',
-	'plugin.cast-sender.casting.album': 'Se difuzează albumul "{album}"',
-	'plugin.cast-sender.casting.queue': 'Se difuzează {count} piese',
-	'plugin.cast-sender.action.cast-album': 'Difuzează albumul',
-	'plugin.cast-sender.action.cast-queue': 'Difuzează coada',
+  'plugin.cast-sender.casting.track': 'Se difuzează "{title}" de {artist}',
+  'plugin.cast-sender.casting.album': 'Se difuzează albumul "{album}"',
+  'plugin.cast-sender.casting.queue': 'Se difuzează {count} piese',
+  'plugin.cast-sender.action.cast-album': 'Difuzează albumul',
+  'plugin.cast-sender.action.cast-queue': 'Difuzează coada',
 } satisfies Record<CastSenderTranslationKey, string>;

@@ -22,93 +22,104 @@ import { DesktopUiPlugin, desktopUiPlugin } from '../../plugins/desktop-ui';
 
 type ResizeCallback = (entries: Array<{ contentRect: { width: number } }>) => void;
 const MockResizeObserver = vi.fn(function (this: unknown, _cb: ResizeCallback) {
-	return { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() };
+  return {
+    observe: vi.fn(),
+    disconnect: vi.fn(),
+    unobserve: vi.fn(),
+  };
 });
 
 function fakePlayingState(player: NMVideoPlayer): void {
-	Object.assign(player as object, { playState: () => 'playing' });
+  Object.assign(player as object, { playState: () => 'playing' });
 }
 
 async function makePlayer(): Promise<NMVideoPlayer> {
-	const player = new NMVideoPlayer('test').setup({});
-	player.addPlugin(desktopUiPlugin, { inactivityMs: 4000 });
-	await player.ready();
-	return player;
+  const player = new NMVideoPlayer('test').setup({});
+
+  player.addPlugin(desktopUiPlugin, { inactivityMs: 4000 });
+  await player.ready();
+
+  return player;
 }
 
 describe('DesktopUiPlugin — holdChrome / releaseChrome', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		(globalThis as unknown as Record<string, unknown>).ResizeObserver = MockResizeObserver;
-		vi.useFakeTimers();
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		delete (globalThis as unknown as Record<string, unknown>).ResizeObserver;
-		vi.useRealTimers();
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    (globalThis as unknown as Record<string, unknown>).ResizeObserver = MockResizeObserver;
+    vi.useFakeTimers();
+  });
 
-	it('keeps .active past the inactivity timer while a hold is open', async () => {
-		const player = await makePlayer();
-		fakePlayingState(player);
-		const ui = player.getPlugin(DesktopUiPlugin)!;
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    delete (globalThis as unknown as Record<string, unknown>).ResizeObserver;
+    vi.useRealTimers();
+  });
 
-		ui.holdChrome();
-		vi.advanceTimersByTime(4500);
+  it('keeps .active past the inactivity timer while a hold is open', async () => {
+    const player = await makePlayer();
 
-		expect(player.container.classList.contains('active')).toBe(true);
-	});
+    fakePlayingState(player);
+    const ui = player.getPlugin(DesktopUiPlugin)!;
 
-	it('lets the chrome hide again once the hold is released', async () => {
-		const player = await makePlayer();
-		fakePlayingState(player);
-		const ui = player.getPlugin(DesktopUiPlugin)!;
+    ui.holdChrome();
+    vi.advanceTimersByTime(4500);
 
-		ui.holdChrome();
-		vi.advanceTimersByTime(4500);
-		expect(player.container.classList.contains('active')).toBe(true);
+    expect(player.container.classList.contains('active')).toBe(true);
+  });
 
-		ui.releaseChrome();
-		vi.advanceTimersByTime(4500);
-		expect(player.container.classList.contains('active')).toBe(false);
-	});
+  it('lets the chrome hide again once the hold is released', async () => {
+    const player = await makePlayer();
 
-	it('holds until the LAST of several holders releases', async () => {
-		const player = await makePlayer();
-		fakePlayingState(player);
-		const ui = player.getPlugin(DesktopUiPlugin)!;
+    fakePlayingState(player);
+    const ui = player.getPlugin(DesktopUiPlugin)!;
 
-		ui.holdChrome();
-		ui.holdChrome();
+    ui.holdChrome();
+    vi.advanceTimersByTime(4500);
+    expect(player.container.classList.contains('active')).toBe(true);
 
-		ui.releaseChrome();
-		vi.advanceTimersByTime(4500);
-		expect(player.container.classList.contains('active'), 'one hold remains, chrome stays').toBe(true);
+    ui.releaseChrome();
+    vi.advanceTimersByTime(4500);
+    expect(player.container.classList.contains('active')).toBe(false);
+  });
 
-		ui.releaseChrome();
-		vi.advanceTimersByTime(4500);
-		expect(player.container.classList.contains('active'), 'last hold gone, chrome hides').toBe(false);
-	});
+  it('holds until the LAST of several holders releases', async () => {
+    const player = await makePlayer();
 
-	it('floors extra releases at zero so a double-release cannot wedge it hidden', async () => {
-		const player = await makePlayer();
-		fakePlayingState(player);
-		const ui = player.getPlugin(DesktopUiPlugin)!;
+    fakePlayingState(player);
+    const ui = player.getPlugin(DesktopUiPlugin)!;
 
-		// Two releases against one hold must not drive the count negative.
-		ui.holdChrome();
-		ui.releaseChrome();
-		ui.releaseChrome();
+    ui.holdChrome();
+    ui.holdChrome();
 
-		// A fresh hold must still pin the chrome — proof the count didn't go to -1.
-		ui.holdChrome();
-		vi.advanceTimersByTime(4500);
-		expect(player.container.classList.contains('active')).toBe(true);
-	});
+    ui.releaseChrome();
+    vi.advanceTimersByTime(4500);
+    expect(player.container.classList.contains('active'), 'one hold remains, chrome stays').toBe(true);
+
+    ui.releaseChrome();
+    vi.advanceTimersByTime(4500);
+    expect(player.container.classList.contains('active'), 'last hold gone, chrome hides').toBe(false);
+  });
+
+  it('floors extra releases at zero so a double-release cannot wedge it hidden', async () => {
+    const player = await makePlayer();
+
+    fakePlayingState(player);
+    const ui = player.getPlugin(DesktopUiPlugin)!;
+
+    // Two releases against one hold must not drive the count negative.
+    ui.holdChrome();
+    ui.releaseChrome();
+    ui.releaseChrome();
+
+    // A fresh hold must still pin the chrome — proof the count didn't go to -1.
+    ui.holdChrome();
+    vi.advanceTimersByTime(4500);
+    expect(player.container.classList.contains('active')).toBe(true);
+  });
 });

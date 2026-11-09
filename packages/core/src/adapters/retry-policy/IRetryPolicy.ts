@@ -18,11 +18,11 @@
  * scheduling any delay, so `baseMs` / `maxMs` are irrelevant when `attempts` is 0.
  */
 export interface RetryConfig {
-	attempts: number;
-	backoff?: 'linear' | 'exponential';
-	baseMs?: number;
-	maxMs?: number;
-	refreshFirst?: boolean;
+  attempts: number;
+  backoff?: 'linear' | 'exponential';
+  baseMs?: number;
+  maxMs?: number;
+  refreshFirst?: boolean;
 }
 
 /**

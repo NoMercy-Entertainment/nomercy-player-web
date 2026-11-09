@@ -27,317 +27,348 @@ import type { BackendShape } from '../core/mixins/player-state';
 import type { BaseEventMap } from '../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	AudioTrackState,
-	BufferState,
-	composeMixins,
-	NetworkState,
-	playerCoreMethods,
-	QualityState,
-	VisibilityState,
+  AudioTrackState,
+  BufferState,
+  composeMixins,
+  NetworkState,
+  playerCoreMethods,
+  QualityState,
+  VisibilityState,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare options: Record<string, unknown>;
-	declare setup: (config: Record<string, unknown>) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare qualityMode: { (): QualityState; (target: number | 'auto'): void };
-	declare audioTrackMode: { (): AudioTrackState; (idx: number): void };
-	declare networkState: () => NetworkState;
-	declare bufferState: () => BufferState;
+  declare options: Record<string, unknown>;
+  declare setup: (config: Record<string, unknown>) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare qualityMode: { (): QualityState; (target: number | 'auto'): void };
+  declare audioTrackMode: { (): AudioTrackState; (idx: number): void };
+  declare networkState: () => NetworkState;
+  declare bufferState: () => BufferState;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
-function wireBackend(player: MockPlayer, backend: Partial<BackendShape> & { setQuality?: (idx: number | 'auto') => void; setAudioTrack?: (idx: number) => void; state?: () => string }): void {
-	(player as unknown as { backend: () => unknown }).backend = (): unknown => backend;
+function wireBackend(player: MockPlayer, backend: Partial<BackendShape> & {
+  setQuality?: (idx: number | 'auto') => void;
+  setAudioTrack?: (idx: number) => void;
+  state?: () => string;
+}): void {
+  (player as unknown as { backend: () => unknown }).backend = (): unknown => backend;
 }
 
 function wirePlatform(player: MockPlayer, platform: Partial<IPlatform>): void {
-	(player as unknown as { _platform: Partial<IPlatform> })._platform = platform;
+  (player as unknown as { _platform: Partial<IPlatform> })._platform = platform;
 }
 
 describe('playerStateMethods — extended (PS-E)', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	describe('qualityMode() getter/setter + emission', () => {
-		it('PS-E1: qualityMode(number) sets MANUAL, emits qualityState, forwards to backend', () => {
-			const player = makePlayer('pse-1');
-			const setQualityCalls: Array<number | 'auto'> = [];
-			wireBackend(player, { setQuality: (idx): void => { setQualityCalls.push(idx); } });
+  describe('qualityMode() getter/setter + emission', () => {
+    it('PS-E1: qualityMode(number) sets MANUAL, emits qualityState, forwards to backend', () => {
+      const player = makePlayer('pse-1');
+      const setQualityCalls: Array<number | 'auto'> = [];
 
-			const emitted: Array<{ state: QualityState }> = [];
-			player.on('qualityState' as keyof BaseEventMap, (data: unknown) => {
-				emitted.push(data as { state: QualityState });
-			});
+      wireBackend(player, { setQuality: (idx): void => { setQualityCalls.push(idx); } });
 
-			player.qualityMode(2);
+      const emitted: Array<{ state: QualityState }> = [];
 
-			expect(player.qualityMode()).toBe(QualityState.MANUAL);
-			expect(emitted).toHaveLength(1);
-			expect(emitted[0]!.state).toBe(QualityState.MANUAL);
-			expect(setQualityCalls).toEqual([2]);
-		});
+      player.on('qualityState' as keyof BaseEventMap, (data: unknown) => {
+        emitted.push(data as { state: QualityState });
+      });
 
-		it('PS-E2: qualityMode() getter returns current state without emitting', () => {
-			const player = makePlayer('pse-2');
+      player.qualityMode(2);
 
-			const emitted: unknown[] = [];
-			player.on('qualityState' as keyof BaseEventMap, (data: unknown) => {
-				emitted.push(data);
-			});
+      expect(player.qualityMode()).toBe(QualityState.MANUAL);
+      expect(emitted).toHaveLength(1);
+      expect(emitted[0]!.state).toBe(QualityState.MANUAL);
+      expect(setQualityCalls).toEqual([2]);
+    });
 
-			const result = player.qualityMode();
+    it('PS-E2: qualityMode() getter returns current state without emitting', () => {
+      const player = makePlayer('pse-2');
 
-			expect(result).toBe(QualityState.AUTO);
-			expect(emitted).toHaveLength(0);
-		});
+      const emitted: unknown[] = [];
 
-		it('PS-E8: qualityMode("auto") emits qualityState with QualityState.AUTO', () => {
-			const player = makePlayer('pse-8');
-			const emitted: Array<{ state: QualityState }> = [];
-			player.on('qualityState' as keyof BaseEventMap, (data: unknown) => {
-				emitted.push(data as { state: QualityState });
-			});
+      player.on('qualityState' as keyof BaseEventMap, (data: unknown) => {
+        emitted.push(data);
+      });
 
-			player.qualityMode(1);
-			player.qualityMode('auto');
+      const result = player.qualityMode();
 
-			expect(player.qualityMode()).toBe(QualityState.AUTO);
-			expect(emitted).toHaveLength(2);
-			expect(emitted[1]!.state).toBe(QualityState.AUTO);
-		});
-	});
+      expect(result).toBe(QualityState.AUTO);
+      expect(emitted).toHaveLength(0);
+    });
 
-	describe('audioTrackMode() getter/setter', () => {
-		it('PS-E3: audioTrackMode(idx) stores MANUAL, emits audioTrackState, forwards to backend', () => {
-			const player = makePlayer('pse-3');
-			const setAudioTrackCalls: number[] = [];
-			wireBackend(player, { setAudioTrack: (idx): void => { setAudioTrackCalls.push(idx); } });
+    it('PS-E8: qualityMode("auto") emits qualityState with QualityState.AUTO', () => {
+      const player = makePlayer('pse-8');
+      const emitted: Array<{ state: QualityState }> = [];
 
-			const emitted: Array<{ state: AudioTrackState }> = [];
-			player.on('audioTrackState' as keyof BaseEventMap, (data: unknown) => {
-				emitted.push(data as { state: AudioTrackState });
-			});
+      player.on('qualityState' as keyof BaseEventMap, (data: unknown) => {
+        emitted.push(data as { state: QualityState });
+      });
 
-			player.audioTrackMode(1);
+      player.qualityMode(1);
+      player.qualityMode('auto');
 
-			expect(player.audioTrackMode()).toBe(AudioTrackState.MANUAL);
-			expect(emitted).toHaveLength(1);
-			expect(emitted[0]!.state).toBe(AudioTrackState.MANUAL);
-			expect(setAudioTrackCalls).toEqual([1]);
-		});
+      expect(player.qualityMode()).toBe(QualityState.AUTO);
+      expect(emitted).toHaveLength(2);
+      expect(emitted[1]!.state).toBe(QualityState.AUTO);
+    });
+  });
 
-		it('PS-E4: audioTrackMode() getter returns current AudioTrackState without emitting', () => {
-			const player = makePlayer('pse-4');
+  describe('audioTrackMode() getter/setter', () => {
+    it('PS-E3: audioTrackMode(idx) stores MANUAL, emits audioTrackState, forwards to backend', () => {
+      const player = makePlayer('pse-3');
+      const setAudioTrackCalls: number[] = [];
 
-			const emitted: unknown[] = [];
-			player.on('audioTrackState' as keyof BaseEventMap, (data: unknown) => {
-				emitted.push(data);
-			});
+      wireBackend(player, { setAudioTrack: (idx): void => { setAudioTrackCalls.push(idx); } });
 
-			const result = player.audioTrackMode();
+      const emitted: Array<{ state: AudioTrackState }> = [];
 
-			expect(result).toBe(AudioTrackState.DEFAULT);
-			expect(emitted).toHaveLength(0);
-		});
-	});
+      player.on('audioTrackState' as keyof BaseEventMap, (data: unknown) => {
+        emitted.push(data as { state: AudioTrackState });
+      });
 
-	describe('_transitionPhase no-op when same phase', () => {
-		it('does not emit phase event when transitioning to current phase', () => {
-			const player = makePlayer('pse-noop');
-			(player as unknown as { _transitionPhase: (phase: string) => void })._transitionPhase('idle');
+      player.audioTrackMode(1);
 
-			const phases: unknown[] = [];
-			player.on('phase' as keyof BaseEventMap, (data: unknown) => { phases.push(data); });
+      expect(player.audioTrackMode()).toBe(AudioTrackState.MANUAL);
+      expect(emitted).toHaveLength(1);
+      expect(emitted[0]!.state).toBe(AudioTrackState.MANUAL);
+      expect(setAudioTrackCalls).toEqual([1]);
+    });
 
-			(player as unknown as { _transitionPhase: (phase: string) => void })._transitionPhase('idle');
+    it('PS-E4: audioTrackMode() getter returns current AudioTrackState without emitting', () => {
+      const player = makePlayer('pse-4');
 
-			expect(phases).toHaveLength(0);
-		});
-	});
+      const emitted: unknown[] = [];
 
-	describe('_peekBackend() error swallowing', () => {
-		it('returns undefined when backend() throws', () => {
-			const player = makePlayer('pse-peek');
-			(player as unknown as { backend: () => unknown }).backend = (): never => {
-				throw new Error('backend-threw');
-			};
+      player.on('audioTrackState' as keyof BaseEventMap, (data: unknown) => {
+        emitted.push(data);
+      });
 
-			const result = (player as unknown as { _peekBackend: () => unknown })._peekBackend();
+      const result = player.audioTrackMode();
 
-			expect(result).toBeUndefined();
-		});
-	});
+      expect(result).toBe(AudioTrackState.DEFAULT);
+      expect(emitted).toHaveLength(0);
+    });
+  });
 
-	describe('bufferState() switch branches', () => {
-		it('returns LOADING when backend state is "loading"', () => {
-			const player = makePlayer('pse-buf-load');
-			wireBackend(player, { state: (): string => 'loading' });
+  describe('_transitionPhase no-op when same phase', () => {
+    it('does not emit phase event when transitioning to current phase', () => {
+      const player = makePlayer('pse-noop');
 
-			expect(player.bufferState()).toBe(BufferState.LOADING);
-		});
+      (player as unknown as { _transitionPhase: (phase: string) => void })._transitionPhase('idle');
 
-		it('returns SEEKING when backend state is "seeking"', () => {
-			const player = makePlayer('pse-buf-seek');
-			wireBackend(player, { state: (): string => 'seeking' });
+      const phases: unknown[] = [];
 
-			expect(player.bufferState()).toBe(BufferState.SEEKING);
-		});
+      player.on('phase' as keyof BaseEventMap, (data: unknown) => { phases.push(data); });
 
-		it('returns STALLED when backend state is "stalled"', () => {
-			const player = makePlayer('pse-buf-stall');
-			wireBackend(player, { state: (): string => 'stalled' });
+      (player as unknown as { _transitionPhase: (phase: string) => void })._transitionPhase('idle');
 
-			expect(player.bufferState()).toBe(BufferState.STALLED);
-		});
-	});
+      expect(phases).toHaveLength(0);
+    });
+  });
 
-	describe('_assertReady() guard branches', () => {
-		it('throws core:player/disposed when phase is "disposed"', () => {
-			const player = makePlayer('pse-disposed');
-			const setup = player.setup as unknown as ((config: Record<string, unknown>) => MockPlayer);
-			setup.call(player, {});
-			(player as unknown as { _phase: string })._phase = 'disposed';
+  describe('_peekBackend() error swallowing', () => {
+    it('returns undefined when backend() throws', () => {
+      const player = makePlayer('pse-peek');
 
-			const assertReady = (player as unknown as { _assertReady: () => void })._assertReady.bind(player);
-			expect(assertReady).toThrow();
-		});
-	});
+      (player as unknown as { backend: () => unknown }).backend = (): never => {
+        throw new Error('backend-threw');
+      };
 
-	describe('streamState()', () => {
-		it('returns "idle" when no backend is wired', () => {
-			const player = makePlayer('pse-stream-1');
+      const result = (player as unknown as { _peekBackend: () => unknown })._peekBackend();
 
-			const result = (player as unknown as { streamState: () => string }).streamState();
+      expect(result).toBeUndefined();
+    });
+  });
 
-			expect(result).toBe('idle');
-		});
+  describe('bufferState() switch branches', () => {
+    it('returns LOADING when backend state is "loading"', () => {
+      const player = makePlayer('pse-buf-load');
 
-		it('returns backend state string when backend is wired', () => {
-			const player = makePlayer('pse-stream-2');
-			wireBackend(player, { state: (): string => 'playing' });
+      wireBackend(player, { state: (): string => 'loading' });
 
-			const result = (player as unknown as { streamState: () => string }).streamState();
+      expect(player.bufferState()).toBe(BufferState.LOADING);
+    });
 
-			expect(result).toBe('playing');
-		});
+    it('returns SEEKING when backend state is "seeking"', () => {
+      const player = makePlayer('pse-buf-seek');
 
-		it('returns "idle" when backend has no state() method', () => {
-			const player = makePlayer('pse-stream-3');
-			wireBackend(player, {});
+      wireBackend(player, { state: (): string => 'seeking' });
 
-			const result = (player as unknown as { streamState: () => string }).streamState();
+      expect(player.bufferState()).toBe(BufferState.SEEKING);
+    });
 
-			expect(result).toBe('idle');
-		});
-	});
+    it('returns STALLED when backend state is "stalled"', () => {
+      const player = makePlayer('pse-buf-stall');
 
-	describe('visibilityState()', () => {
-		it('returns HIDDEN when platform visibility.isVisible() returns false', () => {
-			const player = makePlayer('pse-vis-1');
-			wirePlatform(player, {
-				visibility: {
-					isVisible: (): boolean => false,
-					subscribe: vi.fn() as unknown as IPlatform['visibility']['subscribe'],
-				},
-			} as Partial<IPlatform>);
+      wireBackend(player, { state: (): string => 'stalled' });
 
-			const result = (player as unknown as { visibilityState: () => unknown }).visibilityState();
-			expect(result).toBe(VisibilityState.HIDDEN);
-		});
+      expect(player.bufferState()).toBe(BufferState.STALLED);
+    });
+  });
 
-		it('returns VISIBLE when no platform monitor is attached', () => {
-			const player = makePlayer('pse-vis-2');
-			(player as unknown as { _platform: undefined })._platform = undefined;
+  describe('_assertReady() guard branches', () => {
+    it('throws core:player/disposed when phase is "disposed"', () => {
+      const player = makePlayer('pse-disposed');
+      const setup = player.setup as unknown as ((config: Record<string, unknown>) => MockPlayer);
 
-			const result = (player as unknown as { visibilityState: () => unknown }).visibilityState();
-			expect(result).toBe(VisibilityState.VISIBLE);
-		});
-	});
+      setup.call(player, {});
+      (player as unknown as { _phase: string })._phase = 'disposed';
 
-	describe('networkState() — platform monitor mock', () => {
-		it('PS-E5: returns SLOW when downlinkMbps() < 1.5 and isOnline() is true', () => {
-			const player = makePlayer('pse-5');
-			wirePlatform(player, {
-				network: {
-					isOnline: (): boolean => true,
-					downlinkMbps: (): number => 0.8,
-					type: vi.fn() as unknown as () => ReturnType<IPlatform['network']['type']>,
-					rttMs: vi.fn() as unknown as () => number | undefined,
-					subscribe: vi.fn() as unknown as IPlatform['network']['subscribe'],
-				},
-			} as Partial<IPlatform>);
+      const assertReady = (player as unknown as { _assertReady: () => void })._assertReady.bind(player);
 
-			expect(player.networkState()).toBe(NetworkState.SLOW);
-		});
+      expect(assertReady).toThrow();
+    });
+  });
 
-		it('PS-E6: returns OFFLINE when monitor.isOnline() is false', () => {
-			const player = makePlayer('pse-6');
-			wirePlatform(player, {
-				network: {
-					isOnline: (): boolean => false,
-					downlinkMbps: (): number | undefined => undefined,
-					type: vi.fn() as unknown as () => ReturnType<IPlatform['network']['type']>,
-					rttMs: vi.fn() as unknown as () => number | undefined,
-					subscribe: vi.fn() as unknown as IPlatform['network']['subscribe'],
-				},
-			} as Partial<IPlatform>);
+  describe('streamState()', () => {
+    it('returns "idle" when no backend is wired', () => {
+      const player = makePlayer('pse-stream-1');
 
-			expect(player.networkState()).toBe(NetworkState.OFFLINE);
-		});
+      const result = (player as unknown as { streamState: () => string }).streamState();
 
-		it('PS-E7: returns ONLINE when no platform monitor is attached', () => {
-			const player = makePlayer('pse-7');
+      expect(result).toBe('idle');
+    });
 
-			(player as unknown as { _platform: undefined })._platform = undefined;
+    it('returns backend state string when backend is wired', () => {
+      const player = makePlayer('pse-stream-2');
 
-			expect(player.networkState()).toBe(NetworkState.ONLINE);
-		});
+      wireBackend(player, { state: (): string => 'playing' });
 
-		it('returns ONLINE when downlinkMbps returns exactly 1.5 (boundary — not below threshold)', () => {
-			const player = makePlayer('pse-boundary');
-			wirePlatform(player, {
-				network: {
-					isOnline: (): boolean => true,
-					downlinkMbps: (): number => 1.5,
-					type: vi.fn() as unknown as () => ReturnType<IPlatform['network']['type']>,
-					rttMs: vi.fn() as unknown as () => number | undefined,
-					subscribe: vi.fn() as unknown as IPlatform['network']['subscribe'],
-				},
-			} as Partial<IPlatform>);
+      const result = (player as unknown as { streamState: () => string }).streamState();
 
-			expect(player.networkState()).toBe(NetworkState.ONLINE);
-		});
+      expect(result).toBe('playing');
+    });
 
-		it('returns ONLINE when downlinkMbps returns undefined (API absent)', () => {
-			const player = makePlayer('pse-undef');
-			wirePlatform(player, {
-				network: {
-					isOnline: (): boolean => true,
-					downlinkMbps: (): undefined => undefined,
-					type: vi.fn() as unknown as () => ReturnType<IPlatform['network']['type']>,
-					rttMs: vi.fn() as unknown as () => number | undefined,
-					subscribe: vi.fn() as unknown as IPlatform['network']['subscribe'],
-				},
-			} as Partial<IPlatform>);
+    it('returns "idle" when backend has no state() method', () => {
+      const player = makePlayer('pse-stream-3');
 
-			expect(player.networkState()).toBe(NetworkState.ONLINE);
-		});
-	});
+      wireBackend(player, {});
+
+      const result = (player as unknown as { streamState: () => string }).streamState();
+
+      expect(result).toBe('idle');
+    });
+  });
+
+  describe('visibilityState()', () => {
+    it('returns HIDDEN when platform visibility.isVisible() returns false', () => {
+      const player = makePlayer('pse-vis-1');
+
+      wirePlatform(player, {
+        visibility: {
+          isVisible: (): boolean => false,
+          subscribe: vi.fn() as unknown as IPlatform['visibility']['subscribe'],
+        },
+      } as Partial<IPlatform>);
+
+      const result = (player as unknown as { visibilityState: () => unknown }).visibilityState();
+
+      expect(result).toBe(VisibilityState.HIDDEN);
+    });
+
+    it('returns VISIBLE when no platform monitor is attached', () => {
+      const player = makePlayer('pse-vis-2');
+
+      (player as unknown as { _platform: undefined })._platform = undefined;
+
+      const result = (player as unknown as { visibilityState: () => unknown }).visibilityState();
+
+      expect(result).toBe(VisibilityState.VISIBLE);
+    });
+  });
+
+  describe('networkState() — platform monitor mock', () => {
+    it('PS-E5: returns SLOW when downlinkMbps() < 1.5 and isOnline() is true', () => {
+      const player = makePlayer('pse-5');
+
+      wirePlatform(player, {
+        network: {
+          isOnline: (): boolean => true,
+          downlinkMbps: (): number => 0.8,
+          type: vi.fn() as unknown as () => ReturnType<IPlatform['network']['type']>,
+          rttMs: vi.fn() as unknown as () => number | undefined,
+          subscribe: vi.fn() as unknown as IPlatform['network']['subscribe'],
+        },
+      } as Partial<IPlatform>);
+
+      expect(player.networkState()).toBe(NetworkState.SLOW);
+    });
+
+    it('PS-E6: returns OFFLINE when monitor.isOnline() is false', () => {
+      const player = makePlayer('pse-6');
+
+      wirePlatform(player, {
+        network: {
+          isOnline: (): boolean => false,
+          downlinkMbps: (): number | undefined => undefined,
+          type: vi.fn() as unknown as () => ReturnType<IPlatform['network']['type']>,
+          rttMs: vi.fn() as unknown as () => number | undefined,
+          subscribe: vi.fn() as unknown as IPlatform['network']['subscribe'],
+        },
+      } as Partial<IPlatform>);
+
+      expect(player.networkState()).toBe(NetworkState.OFFLINE);
+    });
+
+    it('PS-E7: returns ONLINE when no platform monitor is attached', () => {
+      const player = makePlayer('pse-7');
+
+      (player as unknown as { _platform: undefined })._platform = undefined;
+
+      expect(player.networkState()).toBe(NetworkState.ONLINE);
+    });
+
+    it('returns ONLINE when downlinkMbps returns exactly 1.5 (boundary — not below threshold)', () => {
+      const player = makePlayer('pse-boundary');
+
+      wirePlatform(player, {
+        network: {
+          isOnline: (): boolean => true,
+          downlinkMbps: (): number => 1.5,
+          type: vi.fn() as unknown as () => ReturnType<IPlatform['network']['type']>,
+          rttMs: vi.fn() as unknown as () => number | undefined,
+          subscribe: vi.fn() as unknown as IPlatform['network']['subscribe'],
+        },
+      } as Partial<IPlatform>);
+
+      expect(player.networkState()).toBe(NetworkState.ONLINE);
+    });
+
+    it('returns ONLINE when downlinkMbps returns undefined (API absent)', () => {
+      const player = makePlayer('pse-undef');
+
+      wirePlatform(player, {
+        network: {
+          isOnline: (): boolean => true,
+          downlinkMbps: (): undefined => undefined,
+          type: vi.fn() as unknown as () => ReturnType<IPlatform['network']['type']>,
+          rttMs: vi.fn() as unknown as () => number | undefined,
+          subscribe: vi.fn() as unknown as IPlatform['network']['subscribe'],
+        },
+      } as Partial<IPlatform>);
+
+      expect(player.networkState()).toBe(NetworkState.ONLINE);
+    });
+  });
 });

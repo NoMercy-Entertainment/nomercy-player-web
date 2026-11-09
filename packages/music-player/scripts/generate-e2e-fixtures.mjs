@@ -32,47 +32,48 @@ const here = dirname(fileURLToPath(import.meta.url));
 const mediaDir = join(here, '..', 'e2e', 'media');
 
 const TONES = [
-	{
-		file: 'trackA.mp3',
-		frequency: 440,
-		duration: 3,
-	},
-	{
-		file: 'trackB.mp3',
-		frequency: 880,
-		duration: 3,
-	},
-	{
-		file: 'short.mp3',
-		frequency: 660,
-		duration: 1,
-	},
+  {
+    file: 'trackA.mp3',
+    frequency: 440,
+    duration: 3,
+  },
+  {
+    file: 'trackB.mp3',
+    frequency: 880,
+    duration: 3,
+  },
+  {
+    file: 'short.mp3',
+    frequency: 660,
+    duration: 1,
+  },
 ];
 
 const run = (ffmpeg, args) => runFfmpeg(ffmpeg, args, mediaDir);
 
 async function main() {
-	const ffmpeg = await ensureFfmpeg();
-	mkdirSync(mediaDir, { recursive: true });
+  const ffmpeg = await ensureFfmpeg();
 
-	for (const tone of TONES) {
-		run(ffmpeg, [
-			'-f',
-			'lavfi',
-			'-i',
-			`sine=frequency=${tone.frequency}:duration=${tone.duration}`,
-			'-c:a',
-			'libmp3lame',
-			'-q:a',
-			'9',
-			tone.file,
-		]);
-	}
+  mkdirSync(mediaDir, { recursive: true });
 
-	console.log(`e2e fixtures generated in ${mediaDir} using ${ffmpeg}`);
+  for (const tone of TONES) {
+    run(ffmpeg, [
+      '-f',
+      'lavfi',
+      '-i',
+      `sine=frequency=${tone.frequency}:duration=${tone.duration}`,
+      '-c:a',
+      'libmp3lame',
+      '-q:a',
+      '9',
+      tone.file,
+    ]);
+  }
+
+  console.log(`e2e fixtures generated in ${mediaDir} using ${ffmpeg}`);
 }
 
 main().catch((error) => {
-	console.error(error.message);
-	process.exit(1);
+  console.error(error.message);
+  process.exit(1);
 });

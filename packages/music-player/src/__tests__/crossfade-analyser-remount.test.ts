@@ -34,140 +34,152 @@ import { WebAudioBackend } from '../adapters/audio-backend/web-audio';
 // ── Web Audio stubs ───────────────────────────────────────────────────────────
 
 class MockGainNode {
-	gain = {
-		value: 1,
-		setTargetAtTime: vi.fn((level: number) => { this.gain.value = level; }),
-		setValueAtTime: vi.fn((level: number) => { this.gain.value = level; }),
-		linearRampToValueAtTime: vi.fn((level: number) => { this.gain.value = level; }),
-		cancelScheduledValues: vi.fn(),
-	};
+  gain = {
+    value: 1,
+    setTargetAtTime: vi.fn((level: number) => { this.gain.value = level; }),
+    setValueAtTime: vi.fn((level: number) => { this.gain.value = level; }),
+    linearRampToValueAtTime: vi.fn((level: number) => { this.gain.value = level; }),
+    cancelScheduledValues: vi.fn(),
+  };
 
-	connect = vi.fn();
-	disconnect = vi.fn();
+  connect = vi.fn();
+  disconnect = vi.fn();
 }
 
 class MockAudioContext {
-	static lastInstance: MockAudioContext | null = null;
+  static lastInstance: MockAudioContext | null = null;
 
-	state: AudioContextState = 'running';
-	currentTime = 0;
-	destination = {} as AudioDestinationNode;
+  state: AudioContextState = 'running';
+  currentTime = 0;
+  destination = {} as AudioDestinationNode;
 
-	createGain = vi.fn(() => new MockGainNode());
-	createAnalyser = vi.fn(() => new MockAnalyserNode());
-	createMediaElementSource = vi.fn(() => new MockSourceNode());
-	resume = vi.fn(() => Promise.resolve());
+  createGain = vi.fn(() => new MockGainNode());
+  createAnalyser = vi.fn(() => new MockAnalyserNode());
+  createMediaElementSource = vi.fn(() => new MockSourceNode());
+  resume = vi.fn(() => Promise.resolve());
 
-	constructor() {
-		MockAudioContext.lastInstance = this;
-	}
+  constructor() {
+    MockAudioContext.lastInstance = this;
+  }
 }
 
 function installAudioContext(): void {
-	(globalThis as unknown as { AudioContext: typeof MockAudioContext }).AudioContext = MockAudioContext;
-	MockAudioContext.lastInstance = null;
+  (globalThis as unknown as { AudioContext: typeof MockAudioContext }).AudioContext = MockAudioContext;
+  MockAudioContext.lastInstance = null;
 }
 
 function removeAudioContext(): void {
-	delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
-	MockAudioContext.lastInstance = null;
+  delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
+  MockAudioContext.lastInstance = null;
 }
 
 // ── Shared DOM helpers ────────────────────────────────────────────────────────
 
 function makeContainer(): HTMLDivElement {
-	const div = document.createElement('div');
-	document.body.appendChild(div);
-	return div;
+  const div = document.createElement('div');
+
+  document.body.appendChild(div);
+
+  return div;
 }
 
 function fireMetadata(container: HTMLElement): void {
-	const audios = container.querySelectorAll('audio');
-	const last = audios[audios.length - 1];
-	if (last)
-		last.dispatchEvent(new Event('loadedmetadata'));
+  const audios = container.querySelectorAll('audio');
+  const last = audios[audios.length - 1];
+
+  if (last) {
+    last.dispatchEvent(new Event('loadedmetadata'));
+  }
 }
 
 function fireCanPlay(container: HTMLElement): void {
-	const audios = container.querySelectorAll('audio');
-	const last = audios[audios.length - 1];
-	if (last)
-		last.dispatchEvent(new Event('canplay'));
+  const audios = container.querySelectorAll('audio');
+  const last = audios[audios.length - 1];
+
+  if (last) {
+    last.dispatchEvent(new Event('canplay'));
+  }
 }
 
 function stubPlay(container: HTMLElement): void {
-	container.querySelectorAll('audio').forEach((el) => {
-		Object.defineProperty(el, 'play', {
-			value: vi.fn(() => Promise.resolve()),
-			writable: true,
-			configurable: true,
-		});
-	});
+  container.querySelectorAll('audio').forEach((el) => {
+    Object.defineProperty(el, 'play', {
+      value: vi.fn(() => Promise.resolve()),
+      writable: true,
+      configurable: true,
+    });
+  });
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 describe('WebAudioBackend — analyser survives crossfade (Bug 2)', () => {
-	let container: HTMLDivElement;
-	let backend: WebAudioBackend;
+  let container: HTMLDivElement;
+  let backend: WebAudioBackend;
 
-	beforeEach(() => {
-		installAudioContext();
-		container = makeContainer();
-		backend = new WebAudioBackend(container);
-	});
+  beforeEach(() => {
+    installAudioContext();
+    container = makeContainer();
+    backend = new WebAudioBackend(container);
+  });
 
-	afterEach(() => {
-		backend.dispose();
-		removeAudioContext();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    backend.dispose();
+    removeAudioContext();
+    document.body.innerHTML = '';
+  });
 
-	it('loadSecondary() builds a secondary analyser wired gain → analyser → destination', async () => {
-		const loadPromise = backend.loadSecondary('http://test/next.mp3');
-		fireMetadata(container);
-		await loadPromise;
+  it('loadSecondary() builds a secondary analyser wired gain → analyser → destination', async () => {
+    const loadPromise = backend.loadSecondary('http://test/next.mp3');
 
-		const raw = backend as unknown as {
-			_secondaryGain?: MockGainNode;
-			_secondaryAnalyser?: MockAnalyserNode;
-		};
+    fireMetadata(container);
+    await loadPromise;
 
-		expect(raw._secondaryAnalyser).toBeDefined();
-		expect(raw._secondaryGain!.connect).toHaveBeenCalledWith(raw._secondaryAnalyser);
+    const raw = backend as unknown as {
+      _secondaryGain?: MockGainNode;
+      _secondaryAnalyser?: MockAnalyserNode;
+    };
 
-		const ctx = MockAudioContext.lastInstance!;
-		expect(raw._secondaryAnalyser!.connect).toHaveBeenCalledWith(ctx.destination);
-	});
+    expect(raw._secondaryAnalyser).toBeDefined();
+    expect(raw._secondaryGain!.connect).toHaveBeenCalledWith(raw._secondaryAnalyser);
 
-	it('reassigns analyserNode to the promoted node after crossfade(0), and disconnects the old one', async () => {
-		const ctx = MockAudioContext.lastInstance! as unknown as AudioContext;
+    const ctx = MockAudioContext.lastInstance!;
 
-		// Force baseline graph creation so there is an old analyser to disconnect.
-		backend.outputNode(ctx);
-		const analyserBefore = backend.analyserSource(ctx) as unknown as MockAnalyserNode;
+    expect(raw._secondaryAnalyser!.connect).toHaveBeenCalledWith(ctx.destination);
+  });
 
-		const loadPromise = backend.loadSecondary('http://test/next.mp3');
-		fireMetadata(container);
-		await loadPromise;
+  it('reassigns analyserNode to the promoted node after crossfade(0), and disconnects the old one', async () => {
+    const ctx = MockAudioContext.lastInstance! as unknown as AudioContext;
 
-		const primePromise = backend.primeSecondary();
-		fireCanPlay(container);
-		await primePromise;
+    // Force baseline graph creation so there is an old analyser to disconnect.
+    backend.outputNode(ctx);
+    const analyserBefore = backend.analyserSource(ctx) as unknown as MockAnalyserNode;
 
-		const raw = backend as unknown as { _secondaryAnalyser?: MockAnalyserNode };
-		const secondaryAnalyser = raw._secondaryAnalyser!;
-		expect(secondaryAnalyser).toBeDefined();
+    const loadPromise = backend.loadSecondary('http://test/next.mp3');
 
-		stubPlay(container);
-		await backend.crossfade(0);
+    fireMetadata(container);
+    await loadPromise;
 
-		// The old (pre-crossfade) analyser must be disconnected — no dangling tap.
-		expect(analyserBefore.disconnect).toHaveBeenCalled();
+    const primePromise = backend.primeSecondary();
 
-		// analyserSource() must now return the promoted (fresh) node, not the dead one.
-		const analyserAfter = backend.analyserSource(ctx);
-		expect(analyserAfter).toBe(secondaryAnalyser);
-		expect(analyserAfter).not.toBe(analyserBefore);
-	});
+    fireCanPlay(container);
+    await primePromise;
+
+    const raw = backend as unknown as { _secondaryAnalyser?: MockAnalyserNode };
+    const secondaryAnalyser = raw._secondaryAnalyser!;
+
+    expect(secondaryAnalyser).toBeDefined();
+
+    stubPlay(container);
+    await backend.crossfade(0);
+
+    // The old (pre-crossfade) analyser must be disconnected — no dangling tap.
+    expect(analyserBefore.disconnect).toHaveBeenCalled();
+
+    // analyserSource() must now return the promoted (fresh) node, not the dead one.
+    const analyserAfter = backend.analyserSource(ctx);
+
+    expect(analyserAfter).toBe(secondaryAnalyser);
+    expect(analyserAfter).not.toBe(analyserBefore);
+  });
 });

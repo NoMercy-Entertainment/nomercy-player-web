@@ -32,16 +32,16 @@
  */
 
 import {
-	readdirSync,
-	readFileSync,
-	statSync,
-	writeFileSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
 } from 'node:fs';
 import {
-	dirname,
-	join,
-	relative,
-	resolve,
+  dirname,
+  join,
+  relative,
+  resolve,
 } from 'node:path';
 
 const HELPER_NAME = 'translationsFromGlob';
@@ -56,18 +56,20 @@ const LITERAL_CALL_RE = /translationsFromGlob\s*\(\s*(['"`])([^'"`]+)\1\s*\)/g;
  * @returns {string[]} Absolute paths of every .js file found under `dir`.
  */
 function walkJs(dir) {
-	const results = [];
-	for (const entry of readdirSync(dir)) {
-		const full = join(dir, entry);
-		const stat = statSync(full);
-		if (stat.isDirectory()) {
-			results.push(...walkJs(full));
-		}
-		else if (entry.endsWith('.js')) {
-			results.push(full);
-		}
-	}
-	return results;
+  const results = [];
+
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    const stat = statSync(full);
+
+    if (stat.isDirectory()) {
+      results.push(...walkJs(full));
+    } else if (entry.endsWith('.js')) {
+      results.push(full);
+    }
+  }
+
+  return results;
 }
 
 /**
@@ -82,27 +84,29 @@ function walkJs(dir) {
  * @returns {string[]}  sorted relative paths (e.g. ['./i18n/en.js', './i18n/nl.js'])
  */
 function resolveGlob(pattern, callerFile) {
-	const callerDir = dirname(callerFile);
+  const callerDir = dirname(callerFile);
 
-	// Extract the directory part and the extension of the glob.
-	// './i18n/*.ts'  → dir = './i18n', ext search = '.js'
-	const lastSlash = pattern.lastIndexOf('/');
-	const globDir = lastSlash >= 0 ? pattern.slice(0, lastSlash) : '.';
+  // Extract the directory part and the extension of the glob.
+  // './i18n/*.ts'  → dir = './i18n', ext search = '.js'
+  const lastSlash = pattern.lastIndexOf('/');
+  const globDir = lastSlash >= 0
+    ? pattern.slice(0, lastSlash)
+    : '.';
 
-	const targetDir = resolve(callerDir, globDir);
+  const targetDir = resolve(callerDir, globDir);
 
-	let entries;
-	try {
-		entries = readdirSync(targetDir);
-	}
-	catch {
-		return [];
-	}
+  let entries;
 
-	return entries
-		.filter(entry => entry.endsWith('.js') && entry !== 'index.js')
-		.map(entry => `${globDir}/${entry}`)
-		.sort();
+  try {
+    entries = readdirSync(targetDir);
+  } catch {
+    return [];
+  }
+
+  return entries
+    .filter((entry) => entry.endsWith('.js') && entry !== 'index.js')
+    .map((entry) => `${globDir}/${entry}`)
+    .sort();
 }
 
 /**
@@ -113,22 +117,23 @@ function resolveGlob(pattern, callerFile) {
  * @returns {string}          the replacement source text
  */
 function buildReplacement(pattern, callerFile) {
-	const files = resolveGlob(pattern, callerFile);
+  const files = resolveGlob(pattern, callerFile);
 
-	if (files.length === 0) {
-		const rel = relative(process.cwd(), callerFile);
-		throw new Error(
-			`[resolve-translation-globs] Zero i18n files matched for pattern '${pattern}' in ${rel}.\n`
-			+ `  Looked in: ${resolve(dirname(callerFile), pattern.slice(0, pattern.lastIndexOf('/')))}\n`
-			+ `  Build will not produce working translations. Fix the plugin's i18n directory or the glob pattern.`,
-		);
-	}
+  if (files.length === 0) {
+    const rel = relative(process.cwd(), callerFile);
 
-	const entries = files
-		.map(file => `    '${file}': () => import('${file}')`)
-		.join(',\n');
+    throw new Error(
+      `[resolve-translation-globs] Zero i18n files matched for pattern '${pattern}' in ${rel}.\n` +
+      `  Looked in: ${resolve(dirname(callerFile), pattern.slice(0, pattern.lastIndexOf('/')))}\n` +
+      `  Build will not produce working translations. Fix the plugin's i18n directory or the glob pattern.`,
+    );
+  }
 
-	return `${HELPER_NAME}({\n${entries},\n  })`;
+  const entries = files
+    .map((file) => `    '${file}': () => import('${file}')`)
+    .join(',\n');
+
+  return `${HELPER_NAME}({\n${entries},\n  })`;
 }
 
 /**
@@ -145,55 +150,59 @@ function buildReplacement(pattern, callerFile) {
  * @returns {boolean} True when the file was rewritten, false when left unchanged.
  */
 function processFile(filePath) {
-	const original = readFileSync(filePath, 'utf8');
+  const original = readFileSync(filePath, 'utf8');
 
-	// Fast pre-check — avoid regex work on files without the helper.
-	if (!original.includes(`${HELPER_NAME}(`))
-		return false;
+  // Fast pre-check — avoid regex work on files without the helper.
+  if (!original.includes(`${HELPER_NAME}(`))
+    return false;
 
-	LITERAL_CALL_RE.lastIndex = 0;
-	let rewritten = original;
-	const matches = [];
+  LITERAL_CALL_RE.lastIndex = 0;
+  let rewritten = original;
+  const matches = [];
 
-	for (let match = LITERAL_CALL_RE.exec(original); match !== null; match = LITERAL_CALL_RE.exec(original)) {
-		// Skip occurrences inside string literals (error messages, template literals).
-		// A real static field initialiser is preceded by `=` or whitespace.
-		// An embedded occurrence inside a string is preceded by a quote character.
-		const charBefore = original[match.index - 1] ?? '';
-		if (charBefore === '\'' || charBefore === '"' || charBefore === '`' || charBefore === '$') {
-			continue;
-		}
+  for (let match = LITERAL_CALL_RE.exec(original); match !== null; match = LITERAL_CALL_RE.exec(original)) {
+    // Skip occurrences inside string literals (error messages, template literals).
+    // A real static field initialiser is preceded by `=` or whitespace.
+    // An embedded occurrence inside a string is preceded by a quote character.
+    const charBefore = original[match.index - 1] ?? '';
 
-		// Skip occurrences inside JSDoc / block comments.
-		// JSDoc lines look like " *   translationsFromGlob(..." — detect by
-		// finding the start of the current line and checking for a leading " *".
-		const lineStart = original.lastIndexOf('\n', match.index) + 1;
-		const linePrefix = original.slice(lineStart, match.index).trimStart();
-		if (linePrefix.startsWith('*') || linePrefix.startsWith('//')) {
-			continue;
-		}
+    if (charBefore === '\'' || charBefore === '"' || charBefore === '`' || charBefore === '$') {
+      continue;
+    }
 
-		matches.push({
-			full: match[0],
-			pattern: match[2],
-			index: match.index,
-		});
-	}
+    // Skip occurrences inside JSDoc / block comments.
+    // JSDoc lines look like " *   translationsFromGlob(..." — detect by
+    // finding the start of the current line and checking for a leading " *".
+    const lineStart = original.lastIndexOf('\n', match.index) + 1;
+    const linePrefix = original.slice(lineStart, match.index).trimStart();
 
-	if (matches.length === 0)
-		return false;
+    if (linePrefix.startsWith('*') || linePrefix.startsWith('//')) {
+      continue;
+    }
 
-	// Last to first, so earlier match indexes stay valid after each splice.
-	for (const { full, pattern, index } of matches.toReversed()) {
-		const replacement = buildReplacement(pattern, filePath);
-		rewritten = rewritten.slice(0, index) + replacement + rewritten.slice(index + full.length);
-	}
+    matches.push({
+      full: match[0],
+      pattern: match[2],
+      index: match.index,
+    });
+  }
 
-	if (rewritten === original)
-		return false;
+  if (matches.length === 0)
+    return false;
 
-	writeFileSync(filePath, rewritten, 'utf8');
-	return true;
+  // Last to first, so earlier match indexes stay valid after each splice.
+  for (const { full, pattern, index } of matches.toReversed()) {
+    const replacement = buildReplacement(pattern, filePath);
+
+    rewritten = rewritten.slice(0, index) + replacement + rewritten.slice(index + full.length);
+  }
+
+  if (rewritten === original)
+    return false;
+
+  writeFileSync(filePath, rewritten, 'utf8');
+
+  return true;
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -207,19 +216,20 @@ const jsFiles = walkJs(distDir);
 let changedCount = 0;
 
 for (const file of jsFiles) {
-	try {
-		const changed = processFile(file);
-		if (changed) {
-			const rel = relative(process.cwd(), file);
-			console.log(`  rewritten: ${rel}`);
-			changedCount++;
-		}
-	}
-	catch (err) {
-		// Re-throw — zero-match is a hard build failure.
-		console.error(err.message);
-		process.exit(1);
-	}
+  try {
+    const changed = processFile(file);
+
+    if (changed) {
+      const rel = relative(process.cwd(), file);
+
+      console.log(`  rewritten: ${rel}`);
+      changedCount++;
+    }
+  } catch (err) {
+    // Re-throw — zero-match is a hard build failure.
+    console.error(err.message);
+    process.exit(1);
+  }
 }
 
 console.log(`[resolve-translation-globs] Done. ${changedCount} file(s) rewritten.`);

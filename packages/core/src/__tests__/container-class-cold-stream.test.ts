@@ -30,138 +30,146 @@ import { containerClassEmitMethods } from '../core/mixins/container-class-emit';
 // ── Test harness with stateful _playState ────────────────────────────────────
 
 class StatefulContainerEmitter extends EventEmitter<Record<string, unknown>> {
-	public readonly container: HTMLElement;
-	public _playState: string;
+  public readonly container: HTMLElement;
+  public _playState: string;
 
-	constructor(container: HTMLElement, initialPlayState: string = 'idle') {
-		super();
-		this.container = container;
-		this._playState = initialPlayState;
-	}
+  constructor(container: HTMLElement, initialPlayState: string = 'idle') {
+    super();
+    this.container = container;
+    this._playState = initialPlayState;
+  }
 
-	override emit = containerClassEmitMethods.emit as unknown as (event: string, data?: unknown) => void;
+  override emit = containerClassEmitMethods.emit as unknown as (event: string, data?: unknown) => void;
 }
 
 const PLAY_STATE_CLASSES = ['playing', 'paused', 'stopped', 'ended', 'loading', 'buffering'];
 
 function presentClasses(container: HTMLElement): string[] {
-	return PLAY_STATE_CLASSES.filter(cls => container.classList.contains(cls));
+  return PLAY_STATE_CLASSES.filter((cls) => container.classList.contains(cls));
 }
 
 afterEach(() => {
-	document.body.innerHTML = '';
+  document.body.innerHTML = '';
 });
 
 describe('container-class cold-stream regression', () => {
-	it('cold-stream sequence ends with .playing not .paused', () => {
-		const container = document.createElement('div');
-		document.body.appendChild(container);
-		const player = new StatefulContainerEmitter(container, 'idle');
+  it('cold-stream sequence ends with .playing not .paused', () => {
+    const container = document.createElement('div');
 
-		// Step 1 — bootstrap
-		player.emit('phase', { from: 'idle', to: 'loading' });
-		expect(container.classList.contains('loading')).toBe(true);
+    document.body.appendChild(container);
+    const player = new StatefulContainerEmitter(container, 'idle');
 
-		// Step 2 — user presses play; _playState transitions to playing
-		player._playState = 'playing';
-		player.emit('play');
-		expect(container.classList.contains('playing')).toBe(true);
+    // Step 1 — bootstrap
+    player.emit('phase', { from: 'idle', to: 'loading' });
+    expect(container.classList.contains('loading')).toBe(true);
 
-		// Step 3 — cold HLS stall
-		player.emit('waiting');
-		expect(container.classList.contains('buffering')).toBe(true);
-		expect(container.classList.contains('playing')).toBe(false);
+    // Step 2 — user presses play; _playState transitions to playing
+    player._playState = 'playing';
+    player.emit('play');
+    expect(container.classList.contains('playing')).toBe(true);
 
-		// Step 4 — phase:ready fires mid-playback (buffering recovery on cold stream)
-		// Regression guard: phase:ready must not force .paused when _playState is 'playing'.
-		player.emit('phase', { from: 'loading', to: 'ready' });
-		expect(container.classList.contains('playing')).toBe(true);
-		expect(container.classList.contains('paused')).toBe(false);
+    // Step 3 — cold HLS stall
+    player.emit('waiting');
+    expect(container.classList.contains('buffering')).toBe(true);
+    expect(container.classList.contains('playing')).toBe(false);
 
-		// Step 5 — canplay removes buffering
-		player.emit('canplay');
-		expect(container.classList.contains('buffering')).toBe(false);
+    // Step 4 — phase:ready fires mid-playback (buffering recovery on cold stream)
+    // Regression guard: phase:ready must not force .paused when _playState is 'playing'.
+    player.emit('phase', { from: 'loading', to: 'ready' });
+    expect(container.classList.contains('playing')).toBe(true);
+    expect(container.classList.contains('paused')).toBe(false);
 
-		// Step 6 — playing event fires when backend actually starts decoding
-		// Regression guard: the `playing` event must have a rule to restore the class.
-		player.emit('playing');
-		expect(container.classList.contains('playing')).toBe(true);
-		expect(container.classList.contains('paused')).toBe(false);
-		expect(container.classList.contains('buffering')).toBe(false);
+    // Step 5 — canplay removes buffering
+    player.emit('canplay');
+    expect(container.classList.contains('buffering')).toBe(false);
 
-		// Invariant: exactly one play-state class
-		const present = presentClasses(container);
-		expect(present).toHaveLength(1);
-		expect(present[0]).toBe('playing');
-	});
+    // Step 6 — playing event fires when backend actually starts decoding
+    // Regression guard: the `playing` event must have a rule to restore the class.
+    player.emit('playing');
+    expect(container.classList.contains('playing')).toBe(true);
+    expect(container.classList.contains('paused')).toBe(false);
+    expect(container.classList.contains('buffering')).toBe(false);
 
-	it('phase:ready while playState is paused/idle still sets .paused', () => {
-		const container = document.createElement('div');
-		document.body.appendChild(container);
-		const player = new StatefulContainerEmitter(container, 'idle');
+    // Invariant: exactly one play-state class
+    const present = presentClasses(container);
 
-		player.emit('phase', { from: 'idle', to: 'loading' });
-		player.emit('phase', { from: 'loading', to: 'ready' });
+    expect(present).toHaveLength(1);
+    expect(present[0]).toBe('playing');
+  });
 
-		expect(container.classList.contains('paused')).toBe(true);
-		expect(container.classList.contains('playing')).toBe(false);
+  it('phase:ready while playState is paused/idle still sets .paused', () => {
+    const container = document.createElement('div');
 
-		const present = presentClasses(container);
-		expect(present).toHaveLength(1);
-		expect(present[0]).toBe('paused');
-	});
+    document.body.appendChild(container);
+    const player = new StatefulContainerEmitter(container, 'idle');
 
-	it('phase:ready while playState is paused (not idle) still sets .paused', () => {
-		const container = document.createElement('div');
-		document.body.appendChild(container);
-		const player = new StatefulContainerEmitter(container, 'paused');
+    player.emit('phase', { from: 'idle', to: 'loading' });
+    player.emit('phase', { from: 'loading', to: 'ready' });
 
-		player.emit('phase', { from: 'idle', to: 'loading' });
-		player.emit('phase', { from: 'loading', to: 'ready' });
+    expect(container.classList.contains('paused')).toBe(true);
+    expect(container.classList.contains('playing')).toBe(false);
 
-		expect(container.classList.contains('paused')).toBe(true);
-		expect(container.classList.contains('playing')).toBe(false);
-	});
+    const present = presentClasses(container);
 
-	it('playing event after buffering removes buffering and restores playing', () => {
-		const container = document.createElement('div');
-		document.body.appendChild(container);
-		const player = new StatefulContainerEmitter(container, 'idle');
+    expect(present).toHaveLength(1);
+    expect(present[0]).toBe('paused');
+  });
 
-		player.emit('phase', { from: 'idle', to: 'loading' });
-		player.emit('phase', { from: 'loading', to: 'ready' });
+  it('phase:ready while playState is paused (not idle) still sets .paused', () => {
+    const container = document.createElement('div');
 
-		player._playState = 'playing';
-		player.emit('play');
-		expect(container.classList.contains('playing')).toBe(true);
+    document.body.appendChild(container);
+    const player = new StatefulContainerEmitter(container, 'paused');
 
-		player.emit('waiting');
-		expect(container.classList.contains('buffering')).toBe(true);
+    player.emit('phase', { from: 'idle', to: 'loading' });
+    player.emit('phase', { from: 'loading', to: 'ready' });
 
-		player.emit('playing');
-		expect(container.classList.contains('playing')).toBe(true);
-		expect(container.classList.contains('buffering')).toBe(false);
-		expect(container.classList.contains('paused')).toBe(false);
+    expect(container.classList.contains('paused')).toBe(true);
+    expect(container.classList.contains('playing')).toBe(false);
+  });
 
-		const present = presentClasses(container);
-		expect(present).toHaveLength(1);
-		expect(present[0]).toBe('playing');
-	});
+  it('playing event after buffering removes buffering and restores playing', () => {
+    const container = document.createElement('div');
 
-	it('WeakMap guard: post-ready phase:loading still does not clobber playing class', () => {
-		const container = document.createElement('div');
-		document.body.appendChild(container);
-		const player = new StatefulContainerEmitter(container, 'idle');
+    document.body.appendChild(container);
+    const player = new StatefulContainerEmitter(container, 'idle');
 
-		player.emit('phase', { from: 'idle', to: 'loading' });
-		player.emit('phase', { from: 'loading', to: 'ready' });
+    player.emit('phase', { from: 'idle', to: 'loading' });
+    player.emit('phase', { from: 'loading', to: 'ready' });
 
-		player._playState = 'playing';
-		player.emit('play');
-		expect(container.classList.contains('playing')).toBe(true);
+    player._playState = 'playing';
+    player.emit('play');
+    expect(container.classList.contains('playing')).toBe(true);
 
-		player.emit('phase', { from: 'playing', to: 'loading' });
-		expect(container.classList.contains('playing')).toBe(true);
-		expect(container.classList.contains('loading')).toBe(false);
-	});
+    player.emit('waiting');
+    expect(container.classList.contains('buffering')).toBe(true);
+
+    player.emit('playing');
+    expect(container.classList.contains('playing')).toBe(true);
+    expect(container.classList.contains('buffering')).toBe(false);
+    expect(container.classList.contains('paused')).toBe(false);
+
+    const present = presentClasses(container);
+
+    expect(present).toHaveLength(1);
+    expect(present[0]).toBe('playing');
+  });
+
+  it('WeakMap guard: post-ready phase:loading still does not clobber playing class', () => {
+    const container = document.createElement('div');
+
+    document.body.appendChild(container);
+    const player = new StatefulContainerEmitter(container, 'idle');
+
+    player.emit('phase', { from: 'idle', to: 'loading' });
+    player.emit('phase', { from: 'loading', to: 'ready' });
+
+    player._playState = 'playing';
+    player.emit('play');
+    expect(container.classList.contains('playing')).toBe(true);
+
+    player.emit('phase', { from: 'playing', to: 'loading' });
+    expect(container.classList.contains('playing')).toBe(true);
+    expect(container.classList.contains('loading')).toBe(false);
+  });
 });

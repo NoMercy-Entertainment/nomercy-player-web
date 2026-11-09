@@ -7,16 +7,16 @@
 // -----------------------------------------------------------------------------
 
 import type {
-	ActionOptions,
-	BaseEventMap,
-	BasePlayerConfig,
-	BasePlaylistItem,
-	BeforeEvent,
-	CrossfadeCurve,
-	IPlayer,
-	ITransitionStrategy,
-	LoadOptions,
-	PreventedReason,
+  ActionOptions,
+  BaseEventMap,
+  BasePlayerConfig,
+  BasePlaylistItem,
+  BeforeEvent,
+  CrossfadeCurve,
+  IPlayer,
+  ITransitionStrategy,
+  LoadOptions,
+  PreventedReason,
 } from '@nomercy-entertainment/nomercy-player-core';
 import type { AudioBackendKind, IAudioBackend } from './adapters/audio-backend/IAudioBackend';
 
@@ -25,41 +25,41 @@ import type { AudioBackendKind, IAudioBackend } from './adapters/audio-backend/I
  * fields via the generic on `nmplayer<T>('id')`.
  */
 export interface MusicPlaylistItem extends BasePlaylistItem {
-	name: string;
-	/**
-	 * Legacy cover-art field, superseded by the inherited `image` field — the
-	 * cross-library canonical cover art / poster URL declared on
-	 * `BasePlaylistItem`. Music reads `image` first and falls back to `cover`
-	 * when `image` is absent, so existing consumers keep working; new code
-	 * should populate `image`. `null` is accepted as a sentinel for "no art
-	 * available" so that consumers that store `cover: string | null` (common
-	 * with database nullable columns) compile without changes.
-	 */
-	cover?: string | null;
-	/** Plain artist name string. Consumers with linked-entity data join or pick the primary. */
-	artist?: string;
-	/** Plain album name string. Consumers with linked-entity data join or pick the primary. */
-	album?: string;
-	url?: string;
-	lyricsUrl?: string;
-	/**
-	 * Track duration in seconds. Also accepts a human-readable string
-	 * (e.g. `'3:42'`) so consumer item types that declare `duration: string`
-	 * satisfy this constraint without source changes.
-	 */
-	duration?: number | string;
+  name: string;
+  /**
+   * Legacy cover-art field, superseded by the inherited `image` field — the
+   * cross-library canonical cover art / poster URL declared on
+   * `BasePlaylistItem`. Music reads `image` first and falls back to `cover`
+   * when `image` is absent, so existing consumers keep working; new code
+   * should populate `image`. `null` is accepted as a sentinel for "no art
+   * available" so that consumers that store `cover: string | null` (common
+   * with database nullable columns) compile without changes.
+   */
+  cover?: string | null;
+  /** Plain artist name string. Consumers with linked-entity data join or pick the primary. */
+  artist?: string;
+  /** Plain album name string. Consumers with linked-entity data join or pick the primary. */
+  album?: string;
+  url?: string;
+  lyricsUrl?: string;
+  /**
+   * Track duration in seconds. Also accepts a human-readable string
+   * (e.g. `'3:42'`) so consumer item types that declare `duration: string`
+   * satisfy this constraint without source changes.
+   */
+  duration?: number | string;
 }
 
 export type { AudioBackendKind } from './adapters/audio-backend/IAudioBackend';
 
 /** Re-exported from kit — canonical definition lives in nomercy-player-core. */
 export {
-	AudioTrackState,
-	PlayState,
-	QualityState,
-	RepeatState,
-	ShuffleState,
-	VolumeState,
+  AudioTrackState,
+  PlayState,
+  QualityState,
+  RepeatState,
+  ShuffleState,
+  VolumeState,
 } from '@nomercy-entertainment/nomercy-player-core';
 
 /** Aggregated time state — re-exported from the kit. */
@@ -79,30 +79,38 @@ export type { TimeState } from '@nomercy-entertainment/nomercy-player-core';
  * `MusicEventMap` without a type argument is unchanged.
  */
 export interface MusicEventMap<T extends MusicPlaylistItem = MusicPlaylistItem> extends BaseEventMap<T> {
-	'backend:changed': { kind: AudioBackendKind };
+  'backend:changed': { kind: AudioBackendKind };
 
-	/**
-	 * Fires before `crossfadeTo(item, opts)` starts the dual-buffer fade.
-	 * `data` mirrors `crossfadeStart`'s payload (`from` is the outgoing item,
-	 * `duration` is already resolved from `opts.duration` /
-	 * `options.crossfadeDefaults.duration` / the 5s fallback). A listener may
-	 * `preventDefault()` to cancel — no buffers are touched, `from` keeps
-	 * playing, and `crossfadePrevented` fires instead of `crossfadeStart`.
-	 */
-	'beforeCrossfade': BeforeEvent<{ from: T | null; to: T; duration: number }>;
-	'crossfadePrevented': { reason: PreventedReason; cause?: unknown };
+  /**
+   * Fires before `crossfadeTo(item, opts)` starts the dual-buffer fade.
+   * `data` mirrors `crossfadeStart`'s payload (`from` is the outgoing item,
+   * `duration` is already resolved from `opts.duration` /
+   * `options.crossfadeDefaults.duration` / the 5s fallback). A listener may
+   * `preventDefault()` to cancel — no buffers are touched, `from` keeps
+   * playing, and `crossfadePrevented` fires instead of `crossfadeStart`.
+   */
+  beforeCrossfade: BeforeEvent<{
+    from: T | null;
+    to: T;
+    duration: number;
+  }>;
+  crossfadePrevented: { reason: PreventedReason; cause?: unknown };
 
-	'crossfadeStart': { from: T | null; to: T; duration: number };
-	'crossfadeComplete': { item: T };
+  crossfadeStart: {
+    from: T | null;
+    to: T;
+    duration: number;
+  };
+  crossfadeComplete: { item: T };
 }
 
 export type { CrossfadeCurve };
 
 export interface CrossfadeOptions {
-	duration: number;
-	curve?: CrossfadeCurve;
-	/** Start position of the incoming item in milliseconds (default 0). */
-	startAt?: number;
+  duration: number;
+  curve?: CrossfadeCurve;
+  /** Start position of the incoming item in milliseconds (default 0). */
+  startAt?: number;
 }
 
 /**
@@ -112,8 +120,8 @@ export interface CrossfadeOptions {
  * subclassing the player.
  */
 export type AudioBackendFactory = (
-	kind: AudioBackendKind,
-	config: MusicPlayerConfig<BasePlaylistItem>,
+  kind: AudioBackendKind,
+  config: MusicPlayerConfig<BasePlaylistItem>,
 ) => IAudioBackend;
 
 /**
@@ -122,47 +130,47 @@ export type AudioBackendFactory = (
  * their parameter as `IMusicPlayer` rather than `IPlayer<MusicEventMap>`.
  */
 export interface IMusicPlayer<T extends MusicPlaylistItem = MusicPlaylistItem>
-	extends IPlayer<MusicEventMap<T>> {
-	backend(): IAudioBackend;
-	backend(kind: AudioBackendKind): Promise<void>;
-	crossfadeTo(item: T, opts?: CrossfadeOptions & ActionOptions): Promise<void>;
-	isTransitioning(): boolean;
+  extends IPlayer<MusicEventMap<T>> {
+  backend(): IAudioBackend;
+  backend(kind: AudioBackendKind): Promise<void>;
+  crossfadeTo(item: T, opts?: CrossfadeOptions & ActionOptions): Promise<void>;
+  isTransitioning(): boolean;
 
-	/** Swap the transition strategy (crossfade / gapless / cut) at runtime. */
-	setTransitionStrategy(strategy: ITransitionStrategy): void;
+  /** Swap the transition strategy (crossfade / gapless / cut) at runtime. */
+  setTransitionStrategy(strategy: ITransitionStrategy): void;
 
-	// ── Item cursor & queue (T-typed; `IPlayer` is item-type-agnostic, so the
-	// concrete item shape is declared here, mirroring `IVideoPlayer`) ──
+  // ── Item cursor & queue (T-typed; `IPlayer` is item-type-agnostic, so the
+  // concrete item shape is declared here, mirroring `IVideoPlayer`) ──
 
-	item(): T | undefined;
-	item(target: T | string | number, opts?: LoadOptions): void;
+  item(): T | undefined;
+  item(target: T | string | number, opts?: LoadOptions): void;
 
-	/**
-	 * Read or replace the queue.
-	 * `queue()` — current items as a readonly array.
-	 * `queue(items)` — replace queue contents.
-	 */
-	queue(): ReadonlyArray<T>;
-	queue(items: T[], opts?: ActionOptions): void;
+  /**
+   * Read or replace the queue.
+   * `queue()` — current items as a readonly array.
+   * `queue(items)` — replace queue contents.
+   */
+  queue(): ReadonlyArray<T>;
+  queue(items: T[], opts?: ActionOptions): void;
 
-	/** What `next()` would load, without moving the cursor. */
-	peekNext(): T | undefined;
+  /** What `next()` would load, without moving the cursor. */
+  peekNext(): T | undefined;
 
-	/** What `previous()` would load, without moving the cursor. */
-	peekPrevious(): T | undefined;
+  /** What `previous()` would load, without moving the cursor. */
+  peekPrevious(): T | undefined;
 }
 
 /** Music player configuration. */
 export interface MusicPlayerConfig<T extends BasePlaylistItem = MusicPlaylistItem> extends BasePlayerConfig {
-	backend?: AudioBackendKind;
-	/**
-	 * Custom backend factory. When supplied, overrides the kit's default
-	 * `audio-element` / `webaudio` resolution. Receives the resolved kind so
-	 * factories can branch on it (or ignore it and return a single impl).
-	 */
-	backendFactory?: AudioBackendFactory;
-	/** Default crossfade applied to every `crossfadeTo` unless overridden per-call. */
-	crossfadeDefaults?: { duration: number; curve?: CrossfadeCurve };
-	/** Initial playlist — items inline, or a URL fetched and parsed at setup. */
-	playlist?: T[] | string;
+  backend?: AudioBackendKind;
+  /**
+   * Custom backend factory. When supplied, overrides the kit's default
+   * `audio-element` / `webaudio` resolution. Receives the resolved kind so
+   * factories can branch on it (or ignore it and return a single impl).
+   */
+  backendFactory?: AudioBackendFactory;
+  /** Default crossfade applied to every `crossfadeTo` unless overridden per-call. */
+  crossfadeDefaults?: { duration: number; curve?: CrossfadeCurve };
+  /** Initial playlist — items inline, or a URL fetched and parsed at setup. */
+  playlist?: T[] | string;
 }

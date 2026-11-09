@@ -24,8 +24,8 @@ import type { EqPreset } from '../../plugins/equalizer/index';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { BrowserPolicyError, PluginError } from '../../errors';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../../index';
 import { AudioGraphPlugin } from '../../plugins/audio-graph';
 import { EqualizerPlugin } from '../../plugins/equalizer/index';
@@ -33,22 +33,24 @@ import { BUILTIN_PRESETS, DEFAULT_BANDS } from '../../plugins/equalizer/presets'
 import { MockPlayerBase } from '../helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare addPlugin: (PluginClass: any, opts?: any) => this;
-	declare getPlugin: (PluginClass: any) => any;
-	declare getPluginById: (id: string) => any;
-	declare removePlugin: (PluginClass: any) => void;
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare addPlugin: (PluginClass: any, opts?: any) => this;
+  declare getPlugin: (PluginClass: any) => any;
+  declare getPluginById: (id: string) => any;
+  declare removePlugin: (PluginClass: any) => void;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 /**
@@ -57,260 +59,321 @@ function makePlayer(divId: string): MockPlayer {
  * exercise data + helper-method behaviour in happy-dom.
  */
 function bareInstance(): EqualizerPlugin {
-	const inst = new EqualizerPlugin();
-	(inst as any)._bands = DEFAULT_BANDS.map(eqBand => ({ ...eqBand }));
-	(inst as any).sliderValues = {
-		pre: { min: -1, max: 3, step: 0.01, default: 0, totalSteps: 4 },
-		band: { min: -12, max: 12, step: 0.01, default: 0, totalSteps: 24 },
-	};
-	(inst as any).customPresets = new Map();
-	(inst as any).opts = {};
-	return inst;
+  const inst = new EqualizerPlugin();
+
+  (inst as any)._bands = DEFAULT_BANDS.map((eqBand) => ({ ...eqBand }));
+
+  (inst as any).sliderValues = {
+    pre: {
+      min: -1,
+      max: 3,
+      step: 0.01,
+      default: 0,
+      totalSteps: 4,
+    },
+    band: {
+      min: -12,
+      max: 12,
+      step: 0.01,
+      default: 0,
+      totalSteps: 24,
+    },
+  };
+
+  (inst as any).customPresets = new Map();
+  (inst as any).opts = {};
+
+  return inst;
 }
 
 describe('EqualizerPlugin', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => MockPlayer._resetRegistry());
 
-	describe('plugin metadata', () => {
-		it('advertises id "equalizer", a 2.x version, and a non-empty description', () => {
-			expect(EqualizerPlugin.id).toBe('equalizer');
-			expect(EqualizerPlugin.version.startsWith('2.')).toBe(true);
-			expect(typeof EqualizerPlugin.description).toBe('string');
-			expect(EqualizerPlugin.description.length).toBeGreaterThan(0);
-		});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		it('lists AudioGraphPlugin as a static dependency', () => {
-			const requires = EqualizerPlugin.requires;
-			expect(requires).toBeDefined();
-			expect(requires).toContain(AudioGraphPlugin);
-		});
-	});
+  describe('plugin metadata', () => {
+    it('advertises id "equalizer", a 2.x version, and a non-empty description', () => {
+      expect(EqualizerPlugin.id).toBe('equalizer');
+      expect(EqualizerPlugin.version.startsWith('2.')).toBe(true);
+      expect(typeof EqualizerPlugin.description).toBe('string');
+      expect(EqualizerPlugin.description.length).toBeGreaterThan(0);
+    });
 
-	describe('default band layout (Pre + 10 frequencies, hand-tuned)', () => {
-		it('starts with `Pre` at index 0 then 10 peaking-filter centres', () => {
-			expect(DEFAULT_BANDS).toHaveLength(11);
-			expect(DEFAULT_BANDS[0]?.frequency).toBe('Pre');
-			const freqs = DEFAULT_BANDS.slice(1).map(eqBand => eqBand.frequency);
-			expect(freqs).toEqual([70, 180, 320, 600, 1000, 3000, 6000, 12000, 14000, 16000]);
-		});
-	});
+    it('lists AudioGraphPlugin as a static dependency', () => {
+      const requires = EqualizerPlugin.requires;
 
-	describe('preset catalogue (no AudioContext required)', () => {
-		it('exposes the 19 hand-tuned built-in presets including Custom + Rock', () => {
-			const inst = bareInstance();
-			const presets = inst.presets();
-			const names = presets.map(eqPreset => eqPreset.name);
-			expect(names).toEqual(
-				expect.arrayContaining([
-					'Custom',
-					'Classical',
-					'Club',
-					'Dance',
-					'Flat',
-					'Laptop speakers/headphones',
-					'Large hall',
-					'Party',
-					'Pop',
-					'Reggae',
-					'Rock',
-					'Soft',
-					'Ska',
-					'Full Bass',
-					'Soft Rock',
-					'Full Treble',
-					'Full Bass & Treble',
-					'Live',
-					'Techno',
-				]),
-			);
-			// 19 built-ins. Custom presets are added on top.
-			expect(BUILTIN_PRESETS.length).toBe(19);
-		});
+      expect(requires).toBeDefined();
+      expect(requires).toContain(AudioGraphPlugin);
+    });
+  });
 
-		it('every built-in preset targets the canonical 10 frequencies', () => {
-			const expectedFreqs = [70, 180, 320, 600, 1000, 3000, 6000, 12000, 14000, 16000];
-			for (const eqPreset of BUILTIN_PRESETS) {
-				const freqs = eqPreset.values.map(eqBand => eqBand.frequency);
-				expect(freqs).toEqual(expectedFreqs);
-			}
-		});
+  describe('default band layout (Pre + 10 frequencies, hand-tuned)', () => {
+    it('starts with `Pre` at index 0 then 10 peaking-filter centres', () => {
+      expect(DEFAULT_BANDS).toHaveLength(11);
+      expect(DEFAULT_BANDS[0]?.frequency).toBe('Pre');
+      const freqs = DEFAULT_BANDS.slice(1).map((eqBand) => eqBand.frequency);
 
-		it('treats Rock\'s ported gains as the canonical reference', () => {
-			const rock = BUILTIN_PRESETS.find(eqPreset => eqPreset.name === 'Rock')!;
-			expect(rock.values.map(eqBand => eqBand.gain)).toEqual(
-				[4.875, 3, -3.375, -4.875, -2.25, 2.625, 5.625, 6.75, 6.75, 6.75],
-			);
-		});
+      expect(freqs).toEqual([70, 180, 320, 600, 1000, 3000, 6000, 12000, 14000, 16000]);
+    });
+  });
 
-		it('Custom is all zeros — canonical "no preset selected" sentinel', () => {
-			const custom = BUILTIN_PRESETS.find(eqPreset => eqPreset.name === 'Custom')!;
-			expect(custom.values.every(eqBand => eqBand.gain === 0)).toBe(true);
-		});
+  describe('preset catalogue (no AudioContext required)', () => {
+    it('exposes the 19 hand-tuned built-in presets including Custom + Rock', () => {
+      const inst = bareInstance();
+      const presets = inst.presets();
+      const names = presets.map((eqPreset) => eqPreset.name);
 
-		it('exposes consumer-supplied opts.presets alongside built-ins, deduped by name', () => {
-			const inst = new EqualizerPlugin();
-			(inst as any).bands = DEFAULT_BANDS.map(eqBand => ({ ...eqBand }));
-			(inst as any).sliderValues = {
-				pre: { min: -1, max: 3, step: 0.01, default: 0, totalSteps: 4 },
-				band: { min: -12, max: 12, step: 0.01, default: 0, totalSteps: 24 },
-			};
-			(inst as any).customPresets = new Map();
-			(inst as any).opts = {
-				presets: [
-					{ name: 'CustomA', values: [{ frequency: 1000, gain: 5 }] },
-					{ name: 'Rock', values: [{ frequency: 70, gain: 99 }] }, // same name as a built-in — overrides it
-				] satisfies EqPreset[],
-			};
-			const names = inst.presets().map(eqPreset => eqPreset.name);
-			expect(names).toContain('CustomA');
-			const rock = inst.presets().find(eqPreset => eqPreset.name === 'Rock')!;
-			expect(rock.values[0]?.gain).toBe(99);
-		});
-	});
+      expect(names).toEqual(
+        expect.arrayContaining([
+          'Custom',
+          'Classical',
+          'Club',
+          'Dance',
+          'Flat',
+          'Laptop speakers/headphones',
+          'Large hall',
+          'Party',
+          'Pop',
+          'Reggae',
+          'Rock',
+          'Soft',
+          'Ska',
+          'Full Bass',
+          'Soft Rock',
+          'Full Treble',
+          'Full Bass & Treble',
+          'Live',
+          'Techno',
+        ]),
+      );
 
-	describe('custom-preset registration (reference shape: { name, values: EqBand[] })', () => {
-		it('addCustomPreset stores a preset that presets() returns', () => {
-			const inst = bareInstance();
-			inst.addCustomPreset({
-				name: 'MyMix',
-				values: [{ frequency: 1000, gain: 6 }, { frequency: 6000, gain: -3 }],
-			});
-			const my = inst.presets().find(eqPreset => eqPreset.name === 'MyMix')!;
-			expect(my).toBeDefined();
-			expect(my.values).toHaveLength(2);
-			expect(my.values.find(eqBand => eqBand.frequency === 1000)?.gain).toBe(6);
-		});
+      // 19 built-ins. Custom presets are added on top.
+      expect(BUILTIN_PRESETS.length).toBe(19);
+    });
 
-		it('removePreset deletes custom presets but never built-ins', () => {
-			const inst = bareInstance();
-			inst.addCustomPreset({ name: 'Temp', values: [{ frequency: 1000, gain: 1 }] });
-			expect(inst.presets().some(eqPreset => eqPreset.name === 'Temp')).toBe(true);
-			inst.removePreset('Temp');
-			expect(inst.presets().some(eqPreset => eqPreset.name === 'Temp')).toBe(false);
+    it('every built-in preset targets the canonical 10 frequencies', () => {
+      const expectedFreqs = [70, 180, 320, 600, 1000, 3000, 6000, 12000, 14000, 16000];
 
-			// Built-ins are protected.
-			inst.removePreset('Rock');
-			expect(inst.presets().some(eqPreset => eqPreset.name === 'Rock')).toBe(true);
-		});
-	});
+      for (const eqPreset of BUILTIN_PRESETS) {
+        const freqs = eqPreset.values.map((eqBand) => eqBand.frequency);
 
-	describe('slider helpers (0-100 normalization, range lookups)', () => {
-		it('maps a 0 dB band gain to the 50% slider midpoint', () => {
-			const inst = bareInstance();
-			expect(inst.bandSliderValue(1000)).toBe(50);
-		});
+        expect(freqs).toEqual(expectedFreqs);
+      }
+    });
 
-		it('maps the 0 pre-gain default to 25% on the asymmetric pre slider', () => {
-			// Pre slider: min=-1, max=3, totalSteps=4, default=0.
-			// offset = floor(max/2) = 1 → (0 + 1) / 4 * 100 = 25.
-			const inst = bareInstance();
-			expect(inst.bandSliderValue('Pre')).toBe(25);
-		});
+    it('treats Rock\'s ported gains as the canonical reference', () => {
+      const rock = BUILTIN_PRESETS.find((eqPreset) => eqPreset.name === 'Rock')!;
 
-		it('exposes the configured min/max/step per band', () => {
-			const inst = bareInstance();
-			expect(inst.bandSliderMin(1000)).toBe(-12);
-			expect(inst.bandSliderMax(1000)).toBe(12);
-			expect(inst.bandSliderStep(1000)).toBe(0.01);
-			expect(inst.bandSliderMin('Pre')).toBe(-1);
-			expect(inst.bandSliderMax('Pre')).toBe(3);
-		});
-	});
+      expect(rock.values.map((eqBand) => eqBand.gain)).toEqual(
+        [4.875, 3, -3.375, -4.875, -2.25, 2.625, 5.625, 6.75, 6.75, 6.75],
+      );
+    });
 
-	describe('preset resolution (name / object / JSON string)', () => {
-		// `setPreset` walks the audio chain when nodes exist; for the data-only
-		// resolver we drive the same internal helper with no audio attached.
-		it('parses a JSON-string preset matching the reference behavior', () => {
-			const inst = bareInstance();
-			const json = JSON.stringify({
-				name: 'JsonOne',
-				values: [{ frequency: 1000, gain: 7 }],
-			});
-			const resolved = (inst as unknown as { resolvePreset: (presetStr: string) => EqPreset | undefined }).resolvePreset(json);
-			expect(resolved?.name).toBe('JsonOne');
-			expect(resolved?.values[0]?.gain).toBe(7);
-		});
+    it('Custom is all zeros — canonical "no preset selected" sentinel', () => {
+      const custom = BUILTIN_PRESETS.find((eqPreset) => eqPreset.name === 'Custom')!;
 
-		it('returns undefined for an unknown preset name', () => {
-			const inst = bareInstance();
-			const resolved = (inst as unknown as { resolvePreset: (presetStr: string) => EqPreset | undefined }).resolvePreset('NoSuchPreset');
-			expect(resolved).toBeUndefined();
-		});
+      expect(custom.values.every((eqBand) => eqBand.gain === 0)).toBe(true);
+    });
 
-		it('returns undefined for malformed JSON', () => {
-			const inst = bareInstance();
-			const resolved = (inst as unknown as { resolvePreset: (presetStr: string) => EqPreset | undefined }).resolvePreset('{not json');
-			expect(resolved).toBeUndefined();
-		});
-	});
+    it('exposes consumer-supplied opts.presets alongside built-ins, deduped by name', () => {
+      const inst = new EqualizerPlugin();
 
-	describe('pre-gain sticky-zero snap (reference parity, ±0.05 → 0)', () => {
-		it('values within ±0.05 snap to 0', () => {
-			const inst = bareInstance();
-			const snap = (inst as unknown as { snapPreGain: (value: number) => number }).snapPreGain;
-			expect(snap.call(inst, 0.04)).toBe(0);
-			expect(snap.call(inst, -0.05)).toBe(0);
-		});
+      (inst as any).bands = DEFAULT_BANDS.map((eqBand) => ({ ...eqBand }));
 
-		it('values outside the threshold pass through unchanged', () => {
-			const inst = bareInstance();
-			const snap = (inst as unknown as { snapPreGain: (value: number) => number }).snapPreGain;
-			expect(snap.call(inst, 0.5)).toBe(0.5);
-			expect(snap.call(inst, -1.25)).toBe(-1.25);
-		});
-	});
+      (inst as any).sliderValues = {
+        pre: {
+          min: -1,
+          max: 3,
+          step: 0.01,
+          default: 0,
+          totalSteps: 4,
+        },
+        band: {
+          min: -12,
+          max: 12,
+          step: 0.01,
+          default: 0,
+          totalSteps: 24,
+        },
+      };
 
-	describe('graceful degradation in environments without AudioContext', () => {
-		it('addPlugin(AudioGraphPlugin) emits plugin:failed when AudioContext is undefined', async () => {
-			expect(typeof (globalThis as any).AudioContext).toBe('undefined');
-			expect(typeof (globalThis as any).webkitAudioContext).toBe('undefined');
+      (inst as any).customPresets = new Map();
 
-			const mockPlayer = makePlayer('eq-unsupported').setup({});
-			await mockPlayer.ready();
+      (inst as any).opts = {
+        presets: [
+          { name: 'CustomA', values: [{ frequency: 1000, gain: 5 }] },
+          { name: 'Rock', values: [{ frequency: 70, gain: 99 }] }, // same name as a built-in — overrides it
+        ] satisfies EqPreset[],
+      };
 
-			const failures: unknown[] = [];
-			mockPlayer.on('plugin:failed' as any, (data: any) => {
-				failures.push(data?.error);
-			});
+      const names = inst.presets().map((eqPreset) => eqPreset.name);
 
-			mockPlayer.addPlugin(AudioGraphPlugin);
-			await new Promise(resolve => setTimeout(resolve, 0));
+      expect(names).toContain('CustomA');
+      const rock = inst.presets().find((eqPreset) => eqPreset.name === 'Rock')!;
 
-			expect(failures.some(failure => failure instanceof BrowserPolicyError)).toBe(true);
+      expect(rock.values[0]?.gain).toBe(99);
+    });
+  });
 
-			// AudioGraph failed, so it is NOT in _plugins.
-			expect(mockPlayer.getPluginById('audio-graph')).toBeUndefined();
-		});
+  describe('custom-preset registration (reference shape: { name, values: EqBand[] })', () => {
+    it('addCustomPreset stores a preset that presets() returns', () => {
+      const inst = bareInstance();
 
-		it('addPlugin(EqualizerPlugin) throws missing-dep when AudioGraph failed (not in _plugins)', async () => {
-			const mockPlayer = makePlayer('eq-unsupported2').setup({});
-			await mockPlayer.ready();
+      inst.addCustomPreset({
+        name: 'MyMix',
+        values: [{ frequency: 1000, gain: 6 }, { frequency: 6000, gain: -3 }],
+      });
 
-			mockPlayer.addPlugin(AudioGraphPlugin);
-			await new Promise(resolve => setTimeout(resolve, 0));
+      const my = inst.presets().find((eqPreset) => eqPreset.name === 'MyMix')!;
 
-			// AudioGraph is not in _plugins after failing. Adding Equalizer must throw missing-dep.
-			expect(() => mockPlayer.addPlugin(EqualizerPlugin)).toThrow('missing-dep');
-		});
+      expect(my).toBeDefined();
+      expect(my.values).toHaveLength(2);
+      expect(my.values.find((eqBand) => eqBand.frequency === 1000)?.gain).toBe(6);
+    });
 
-		it('refuses to wire up if AudioGraphPlugin is missing from the player', () => {
-			const inst = new EqualizerPlugin();
-			(inst as any).player = {};
-			(inst as any).opts = {};
-			(inst as any).lifecycle = { addCleanup: () => {} };
-			let err: unknown;
-			try {
-				inst.use();
-			}
-			catch (error) {
-				err = error;
-			}
-			expect(err).toBeInstanceOf(PluginError);
-			expect((err as PluginError).code).toBe('core:plugin/missing-dep');
-		});
-	});
+    it('removePreset deletes custom presets but never built-ins', () => {
+      const inst = bareInstance();
+
+      inst.addCustomPreset({ name: 'Temp', values: [{ frequency: 1000, gain: 1 }] });
+      expect(inst.presets().some((eqPreset) => eqPreset.name === 'Temp')).toBe(true);
+      inst.removePreset('Temp');
+      expect(inst.presets().some((eqPreset) => eqPreset.name === 'Temp')).toBe(false);
+
+      // Built-ins are protected.
+      inst.removePreset('Rock');
+      expect(inst.presets().some((eqPreset) => eqPreset.name === 'Rock')).toBe(true);
+    });
+  });
+
+  describe('slider helpers (0-100 normalization, range lookups)', () => {
+    it('maps a 0 dB band gain to the 50% slider midpoint', () => {
+      const inst = bareInstance();
+
+      expect(inst.bandSliderValue(1000)).toBe(50);
+    });
+
+    it('maps the 0 pre-gain default to 25% on the asymmetric pre slider', () => {
+      // Pre slider: min=-1, max=3, totalSteps=4, default=0.
+      // offset = floor(max/2) = 1 → (0 + 1) / 4 * 100 = 25.
+      const inst = bareInstance();
+
+      expect(inst.bandSliderValue('Pre')).toBe(25);
+    });
+
+    it('exposes the configured min/max/step per band', () => {
+      const inst = bareInstance();
+
+      expect(inst.bandSliderMin(1000)).toBe(-12);
+      expect(inst.bandSliderMax(1000)).toBe(12);
+      expect(inst.bandSliderStep(1000)).toBe(0.01);
+      expect(inst.bandSliderMin('Pre')).toBe(-1);
+      expect(inst.bandSliderMax('Pre')).toBe(3);
+    });
+  });
+
+  describe('preset resolution (name / object / JSON string)', () => {
+    // `setPreset` walks the audio chain when nodes exist; for the data-only
+    // resolver we drive the same internal helper with no audio attached.
+    it('parses a JSON-string preset matching the reference behavior', () => {
+      const inst = bareInstance();
+      const json = JSON.stringify({
+        name: 'JsonOne',
+        values: [{ frequency: 1000, gain: 7 }],
+      });
+      const resolved = (inst as unknown as { resolvePreset: (presetStr: string) => EqPreset | undefined }).resolvePreset(json);
+
+      expect(resolved?.name).toBe('JsonOne');
+      expect(resolved?.values[0]?.gain).toBe(7);
+    });
+
+    it('returns undefined for an unknown preset name', () => {
+      const inst = bareInstance();
+      const resolved = (inst as unknown as { resolvePreset: (presetStr: string) => EqPreset | undefined }).resolvePreset('NoSuchPreset');
+
+      expect(resolved).toBeUndefined();
+    });
+
+    it('returns undefined for malformed JSON', () => {
+      const inst = bareInstance();
+      const resolved = (inst as unknown as { resolvePreset: (presetStr: string) => EqPreset | undefined }).resolvePreset('{not json');
+
+      expect(resolved).toBeUndefined();
+    });
+  });
+
+  describe('pre-gain sticky-zero snap (reference parity, ±0.05 → 0)', () => {
+    it('values within ±0.05 snap to 0', () => {
+      const inst = bareInstance();
+      const snap = (inst as unknown as { snapPreGain: (value: number) => number }).snapPreGain;
+
+      expect(snap.call(inst, 0.04)).toBe(0);
+      expect(snap.call(inst, -0.05)).toBe(0);
+    });
+
+    it('values outside the threshold pass through unchanged', () => {
+      const inst = bareInstance();
+      const snap = (inst as unknown as { snapPreGain: (value: number) => number }).snapPreGain;
+
+      expect(snap.call(inst, 0.5)).toBe(0.5);
+      expect(snap.call(inst, -1.25)).toBe(-1.25);
+    });
+  });
+
+  describe('graceful degradation in environments without AudioContext', () => {
+    it('addPlugin(AudioGraphPlugin) emits plugin:failed when AudioContext is undefined', async () => {
+      expect(typeof (globalThis as any).AudioContext).toBe('undefined');
+      expect(typeof (globalThis as any).webkitAudioContext).toBe('undefined');
+
+      const mockPlayer = makePlayer('eq-unsupported').setup({});
+
+      await mockPlayer.ready();
+
+      const failures: unknown[] = [];
+
+      mockPlayer.on('plugin:failed' as any, (data: any) => {
+        failures.push(data?.error);
+      });
+
+      mockPlayer.addPlugin(AudioGraphPlugin);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(failures.some((failure) => failure instanceof BrowserPolicyError)).toBe(true);
+
+      // AudioGraph failed, so it is NOT in _plugins.
+      expect(mockPlayer.getPluginById('audio-graph')).toBeUndefined();
+    });
+
+    it('addPlugin(EqualizerPlugin) throws missing-dep when AudioGraph failed (not in _plugins)', async () => {
+      const mockPlayer = makePlayer('eq-unsupported2').setup({});
+
+      await mockPlayer.ready();
+
+      mockPlayer.addPlugin(AudioGraphPlugin);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // AudioGraph is not in _plugins after failing. Adding Equalizer must throw missing-dep.
+      expect(() => mockPlayer.addPlugin(EqualizerPlugin)).toThrow('missing-dep');
+    });
+
+    it('refuses to wire up if AudioGraphPlugin is missing from the player', () => {
+      const inst = new EqualizerPlugin();
+
+      (inst as any).player = {};
+      (inst as any).opts = {};
+      (inst as any).lifecycle = { addCleanup: () => {} };
+      let err: unknown;
+
+      try {
+        inst.use();
+      } catch (error) {
+        err = error;
+      }
+
+      expect(err).toBeInstanceOf(PluginError);
+      expect((err as PluginError).code).toBe('core:plugin/missing-dep');
+    });
+  });
 });

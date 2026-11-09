@@ -19,25 +19,25 @@ import type { StubPlayer } from '../testing/stub-player';
 import type { PluginCtorWithId } from '../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
-	Plugin,
+  composeMixins,
+  playerCoreMethods,
+  Plugin,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare options: Record<string, unknown>;
-	declare setup: (config: Record<string, unknown>) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => Promise<void>;
-	declare phase: () => string;
-	declare addPlugin: <P extends Plugin<any, any, any>>(
-		PluginClass: PluginCtorWithId & (new () => P),
-		opts?: P['opts'],
-	) => this;
+  declare options: Record<string, unknown>;
+  declare setup: (config: Record<string, unknown>) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => Promise<void>;
+  declare phase: () => string;
+  declare addPlugin: <P extends Plugin<any, any, any>>(
+    PluginClass: PluginCtorWithId & (new () => P),
+    opts?: P['opts'],
+  ) => this;
 
-	declare getPluginById: (id: string) => unknown;
-	declare plugins: () => ReadonlyArray<Plugin>;
+  declare getPluginById: (id: string) => unknown;
+  declare plugins: () => ReadonlyArray<Plugin>;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
@@ -48,109 +48,118 @@ let disposedIds: string[];
 let usedIds: string[];
 
 class QuickPlugin extends Plugin<StubPlayer> {
-	static override readonly id = 'quick';
-	static override readonly version = '1.0.0';
-	static override readonly description = 'Quick';
-	override use(): void { usedIds.push('quick'); }
-	override dispose(): void { disposedIds.push('quick'); }
+  static override readonly id = 'quick';
+  static override readonly version = '1.0.0';
+  static override readonly description = 'Quick';
+  override use(): void { usedIds.push('quick'); }
+  override dispose(): void { disposedIds.push('quick'); }
 }
 
 class SlowPlugin extends Plugin<StubPlayer> {
-	static override readonly id = 'slow';
-	static override readonly version = '1.0.0';
-	static override readonly description = 'Slow';
-	override async use(): Promise<void> {
-		usedIds.push('slow');
-		await gate;
-	}
+  static override readonly id = 'slow';
+  static override readonly version = '1.0.0';
+  static override readonly description = 'Slow';
+  override async use(): Promise<void> {
+    usedIds.push('slow');
+    await gate;
+  }
 
-	override dispose(): void { disposedIds.push('slow'); }
+  override dispose(): void { disposedIds.push('slow'); }
 }
 
 class NeedsSlowPlugin extends Plugin<StubPlayer> {
-	static override readonly id = 'needs-slow';
-	static override readonly version = '1.0.0';
-	static override readonly description = 'NeedsSlow';
-	static override readonly requires = [SlowPlugin];
-	override use(): void {}
-	override dispose(): void {}
+  static override readonly id = 'needs-slow';
+  static override readonly version = '1.0.0';
+  static override readonly description = 'NeedsSlow';
+  static override readonly requires = [SlowPlugin];
+  override use(): void {}
+  override dispose(): void {}
 }
 
 function newPlayer(): MockPlayer {
-	const div = document.createElement('div');
-	div.id = 'spd-mock';
-	document.body.appendChild(div);
-	return new MockPlayer('spd-mock');
+  const div = document.createElement('div');
+
+  div.id = 'spd-mock';
+  document.body.appendChild(div);
+
+  return new MockPlayer('spd-mock');
 }
 
-const flush = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
+const flush = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe('setup pipeline and plugin registration races', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-		disposedIds = [];
-		usedIds = [];
-		gate = new Promise<void>((resolve) => { release = resolve; });
-	});
-	afterEach(() => {
-		release();
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+    disposedIds = [];
+    usedIds = [];
+    gate = new Promise<void>((resolve) => { release = resolve; });
+  });
 
-	it('registers a plugin added from a pluginsRegistered listener before ready()', async () => {
-		const player = newPlayer();
-		player.on('pluginsRegistered' as never, () => { player.addPlugin(QuickPlugin); });
-		player.setup({});
-		await player.ready();
-		expect(player.getPluginById('quick')).toBeDefined();
-	});
+  afterEach(() => {
+    release();
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('keeps the player disposed when dispose() runs during setup', async () => {
-		const player = newPlayer();
-		player.addPlugin(SlowPlugin);
-		player.addPlugin(QuickPlugin);
-		player.setup({});
-		await flush();
-		await player.dispose();
-		release();
-		await flush();
-		expect(player.phase()).toBe('disposed');
-		expect(usedIds).toEqual(['slow']);
-	});
+  it('registers a plugin added from a pluginsRegistered listener before ready()', async () => {
+    const player = newPlayer();
 
-	it('rejects ready() when a setup stage failed before ready() was called', async () => {
-		const player = newPlayer();
-		player.setup({
-			playlist: [{ id: 'a', title: 'A' }],
-			transformPlaylistItem: () => { throw new Error('transform boom'); },
-		});
-		await flush();
-		await expect(player.ready()).rejects.toThrow();
-	});
+    player.on('pluginsRegistered' as never, () => { player.addPlugin(QuickPlugin); });
+    player.setup({});
+    await player.ready();
+    expect(player.getPluginById('quick')).toBeDefined();
+  });
 
-	it('counts an in-flight post-setup registration for requires and duplicate checks', async () => {
-		const player = newPlayer();
-		player.setup({});
-		await player.ready();
-		player.addPlugin(SlowPlugin);
-		expect(() => player.addPlugin(NeedsSlowPlugin)).not.toThrow();
-		expect(() => player.addPlugin(SlowPlugin)).toThrow();
-		release();
-		await player.ready();
-		expect(player.plugins().map(plugin => (plugin.constructor as PluginCtorWithId).id).sort()).toEqual(['needs-slow', 'slow']);
-	});
+  it('keeps the player disposed when dispose() runs during setup', async () => {
+    const player = newPlayer();
 
-	it('tears down a registration that settles after dispose()', async () => {
-		const player = newPlayer();
-		player.setup({});
-		await player.ready();
-		player.addPlugin(SlowPlugin);
-		await flush();
-		await player.dispose();
-		release();
-		await flush();
-		expect(player.plugins()).toHaveLength(0);
-		expect(disposedIds).toEqual(['slow']);
-	});
+    player.addPlugin(SlowPlugin);
+    player.addPlugin(QuickPlugin);
+    player.setup({});
+    await flush();
+    await player.dispose();
+    release();
+    await flush();
+    expect(player.phase()).toBe('disposed');
+    expect(usedIds).toEqual(['slow']);
+  });
+
+  it('rejects ready() when a setup stage failed before ready() was called', async () => {
+    const player = newPlayer();
+
+    player.setup({
+      playlist: [{ id: 'a', title: 'A' }],
+      transformPlaylistItem: () => { throw new Error('transform boom'); },
+    });
+
+    await flush();
+    await expect(player.ready()).rejects.toThrow();
+  });
+
+  it('counts an in-flight post-setup registration for requires and duplicate checks', async () => {
+    const player = newPlayer();
+
+    player.setup({});
+    await player.ready();
+    player.addPlugin(SlowPlugin);
+    expect(() => player.addPlugin(NeedsSlowPlugin)).not.toThrow();
+    expect(() => player.addPlugin(SlowPlugin)).toThrow();
+    release();
+    await player.ready();
+    expect(player.plugins().map((plugin) => (plugin.constructor as PluginCtorWithId).id).sort()).toEqual(['needs-slow', 'slow']);
+  });
+
+  it('tears down a registration that settles after dispose()', async () => {
+    const player = newPlayer();
+
+    player.setup({});
+    await player.ready();
+    player.addPlugin(SlowPlugin);
+    await flush();
+    await player.dispose();
+    release();
+    await flush();
+    expect(player.plugins()).toHaveLength(0);
+    expect(disposedIds).toEqual(['slow']);
+  });
 });

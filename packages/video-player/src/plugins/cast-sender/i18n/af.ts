@@ -9,9 +9,9 @@
 import type { CastSenderTranslationKey } from './en';
 
 export default {
-	'plugin.cast-sender.casting.movie': 'Stuur tans "{title}"',
-	'plugin.cast-sender.casting.episode': 'Stuur tans {show} S{season}E{episode}: {title}',
-	'plugin.cast-sender.casting.live': 'Stuur tans regstreeks: {title}',
-	'plugin.cast-sender.action.cast-from-here': 'Stuur vanaf hierdie punt',
-	'plugin.cast-sender.action.continue-on-tv': 'Gaan voort op TV',
+  'plugin.cast-sender.casting.movie': 'Stuur tans "{title}"',
+  'plugin.cast-sender.casting.episode': 'Stuur tans {show} S{season}E{episode}: {title}',
+  'plugin.cast-sender.casting.live': 'Stuur tans regstreeks: {title}',
+  'plugin.cast-sender.action.cast-from-here': 'Stuur vanaf hierdie punt',
+  'plugin.cast-sender.action.continue-on-tv': 'Gaan voort op TV',
 } satisfies Record<CastSenderTranslationKey, string>;

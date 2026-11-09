@@ -7,15 +7,15 @@
 // -----------------------------------------------------------------------------
 
 import type {
-	ITransitionBackend,
-	ITransitionStrategy,
-	PreloadContext,
-	TransitionContext,
+  ITransitionBackend,
+  ITransitionStrategy,
+  PreloadContext,
+  TransitionContext,
 } from '../../adapters/preload/default';
 import type { BasePlaylistItem } from '../../types';
 
 export interface FakeTransitionStrategy extends ITransitionStrategy {
-	shouldTransitionCalls: number;
+  shouldTransitionCalls: number;
 }
 
 /**
@@ -24,28 +24,29 @@ export interface FakeTransitionStrategy extends ITransitionStrategy {
  * fires (keeps tests synchronous and free of RAF side-effects).
  */
 export function makeFakeTransitionStrategy(): FakeTransitionStrategy {
-	let shouldTransitionCalls = 0;
+  let shouldTransitionCalls = 0;
 
-	const strategy: FakeTransitionStrategy = {
-		get shouldTransitionCalls(): number { return shouldTransitionCalls; },
+  const strategy: FakeTransitionStrategy = {
+    get shouldTransitionCalls(): number { return shouldTransitionCalls; },
 
-		shouldTransition(_context: PreloadContext): boolean {
-			shouldTransitionCalls += 1;
-			return false;
-		},
+    shouldTransition(_context: PreloadContext): boolean {
+      shouldTransitionCalls += 1;
 
-		tick(_context: TransitionContext, _backend: ITransitionBackend | null): void {},
+      return false;
+    },
 
-		start(
-			_outgoing: BasePlaylistItem,
-			_incoming: BasePlaylistItem,
-			_backend: ITransitionBackend | null,
-		): void {},
+    tick(_context: TransitionContext, _backend: ITransitionBackend | null): void {},
 
-		complete(_from: BasePlaylistItem, _to: BasePlaylistItem): void {},
+    start(
+      _outgoing: BasePlaylistItem,
+      _incoming: BasePlaylistItem,
+      _backend: ITransitionBackend | null,
+    ): void {},
 
-		cancel(_reason: string): void {},
-	};
+    complete(_from: BasePlaylistItem, _to: BasePlaylistItem): void {},
 
-	return strategy;
+    cancel(_reason: string): void {},
+  };
+
+  return strategy;
 }

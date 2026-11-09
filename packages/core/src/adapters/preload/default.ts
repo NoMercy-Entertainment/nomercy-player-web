@@ -33,26 +33,26 @@ import type { BasePlaylistItem } from '../../types';
 
 /** Snapshot passed to every `IPreloadStrategy` method. */
 export interface PreloadContext {
-	/** Current playback position in seconds. */
-	readonly currentTime: number;
-	/** Total duration of the outgoing item in seconds. `0` when not yet known. */
-	readonly duration: number;
-	/** The next item in the queue, or `null` when the queue is exhausted. */
-	readonly nextItem: BasePlaylistItem | null;
+  /** Current playback position in seconds. */
+  readonly currentTime: number;
+  /** Total duration of the outgoing item in seconds. `0` when not yet known. */
+  readonly duration: number;
+  /** The next item in the queue, or `null` when the queue is exhausted. */
+  readonly nextItem: BasePlaylistItem | null;
 }
 
 /** Snapshot passed to every `ITransitionStrategy` method. */
 export interface TransitionContext {
-	/** Current playback position of the outgoing item in seconds. */
-	readonly currentTime: number;
-	/** Total duration of the outgoing item in seconds. */
-	readonly duration: number;
-	/** The outgoing playlist item. */
-	readonly outgoingItem: BasePlaylistItem;
-	/** The incoming playlist item. */
-	readonly incomingItem: BasePlaylistItem;
-	/** Fractional progress through the transition window [0, 1]. */
-	readonly fraction: number;
+  /** Current playback position of the outgoing item in seconds. */
+  readonly currentTime: number;
+  /** Total duration of the outgoing item in seconds. */
+  readonly duration: number;
+  /** The outgoing playlist item. */
+  readonly outgoingItem: BasePlaylistItem;
+  /** The incoming playlist item. */
+  readonly incomingItem: BasePlaylistItem;
+  /** Fractional progress through the transition window [0, 1]. */
+  readonly fraction: number;
 }
 
 // ─── Asset descriptor ────────────────────────────────────────────────────────
@@ -65,24 +65,24 @@ export interface TransitionContext {
  * here pass through as-is via the player's default resolver.
  */
 export interface PreloadAsset {
-	/** Resolved URL to fetch. The player's `auth` pipeline is applied automatically. */
-	url: string;
-	/**
-	 * Asset category hint. Drives the `urlResolver` and determines which `Request`
-	 * headers the auth pipeline attaches. Common values:
-	 *  - `'media'`    — main playable URL (HLS manifest or audio source)
-	 *  - `'poster'`   — cover art / thumbnail image
-	 *  - `'subtitle'` — subtitle / caption sidecar
-	 *  - `'sprite'`   — sprite-VTT preview thumbnail strip
-	 *  - `'lyrics'`   — lyrics / LRC sidecar
-	 */
-	category: 'media' | 'poster' | 'subtitle' | 'sprite' | 'lyrics' | (string & {});
-	/**
-	 * Preload mode forwarded to the browser. `'metadata'` fetches only headers
-	 * (suitable for manifests + sidecars); `'auto'` requests the entire resource
-	 * (suitable for small images, short audio intros). Default `'metadata'`.
-	 */
-	mode?: 'metadata' | 'auto';
+  /** Resolved URL to fetch. The player's `auth` pipeline is applied automatically. */
+  url: string;
+  /**
+   * Asset category hint. Drives the `urlResolver` and determines which `Request`
+   * headers the auth pipeline attaches. Common values:
+   *  - `'media'`    — main playable URL (HLS manifest or audio source)
+   *  - `'poster'`   — cover art / thumbnail image
+   *  - `'subtitle'` — subtitle / caption sidecar
+   *  - `'sprite'`   — sprite-VTT preview thumbnail strip
+   *  - `'lyrics'`   — lyrics / LRC sidecar
+   */
+  category: 'media' | 'poster' | 'subtitle' | 'sprite' | 'lyrics' | (string & {});
+  /**
+   * Preload mode forwarded to the browser. `'metadata'` fetches only headers
+   * (suitable for manifests + sidecars); `'auto'` requests the entire resource
+   * (suitable for small images, short audio intros). Default `'metadata'`.
+   */
+  mode?: 'metadata' | 'auto';
 }
 
 // ─── IPreloadStrategy interface ──────────────────────────────────────────────
@@ -97,28 +97,28 @@ export interface PreloadAsset {
  * top by providing their own `assetsToPreload` implementations.
  */
 export interface IPreloadStrategy {
-	/**
-	 * Return `true` when the player should begin prefetching assets for the next
-	 * item. Called on every `time` event while a next item is queued.
-	 *
-	 * Idempotency: the player suppresses repeated calls after the first `true` return
-	 * until the cursor moves to a new item.
-	 */
-	shouldPreload(context: PreloadContext): boolean;
+  /**
+   * Return `true` when the player should begin prefetching assets for the next
+   * item. Called on every `time` event while a next item is queued.
+   *
+   * Idempotency: the player suppresses repeated calls after the first `true` return
+   * until the cursor moves to a new item.
+   */
+  shouldPreload(context: PreloadContext): boolean;
 
-	/**
-	 * Return the ordered list of assets to prefetch for `item`. Called once when
-	 * `shouldPreload` returns `true`. Return an empty array to suppress prefetch
-	 * while still triggering the preload lifecycle events.
-	 */
-	assetsToPreload(item: BasePlaylistItem): PreloadAsset[];
+  /**
+   * Return the ordered list of assets to prefetch for `item`. Called once when
+   * `shouldPreload` returns `true`. Return an empty array to suppress prefetch
+   * while still triggering the preload lifecycle events.
+   */
+  assetsToPreload(item: BasePlaylistItem): PreloadAsset[];
 
-	/**
-	 * Abort any in-flight prefetch initiated by this strategy. The player calls
-	 * this when the cursor jumps (shuffle, manual `current()` call, explicit
-	 * `next()` before the natural end).
-	 */
-	cancel(): void;
+  /**
+   * Abort any in-flight prefetch initiated by this strategy. The player calls
+   * this when the cursor jumps (shuffle, manual `current()` call, explicit
+   * `next()` before the natural end).
+   */
+  cancel(): void;
 }
 
 // ─── ITransitionStrategy interface ───────────────────────────────────────────
@@ -133,29 +133,29 @@ export interface IPreloadStrategy {
  * contract — so the interface stays small and backend-agnostic.
  */
 export interface ITransitionBackend {
-	/** `true` when this backend can host a secondary parallel-playback slot. */
-	supportsCrossfade(): boolean;
+  /** `true` when this backend can host a secondary parallel-playback slot. */
+  supportsCrossfade(): boolean;
 
-	/** Load `url` into the secondary slot without affecting primary playback. */
-	loadSecondary(url: string): Promise<void>;
+  /** Load `url` into the secondary slot without affecting primary playback. */
+  loadSecondary(url: string): Promise<void>;
 
-	/** Prime the secondary (seek + wait for canplay) at `seekMs` (default 0). */
-	primeSecondary(seekMs?: number): Promise<void>;
+  /** Prime the secondary (seek + wait for canplay) at `seekMs` (default 0). */
+  primeSecondary(seekMs?: number): Promise<void>;
 
-	/**
-	 * Execute the transition: ramp primary to silence + secondary to full volume
-	 * over `durationMs`. On completion the secondary becomes primary.
-	 */
-	crossfade(durationMs: number): Promise<void>;
+  /**
+   * Execute the transition: ramp primary to silence + secondary to full volume
+   * over `durationMs`. On completion the secondary becomes primary.
+   */
+  crossfade(durationMs: number): Promise<void>;
 
-	/** Release secondary slot resources. Idempotent. */
-	disposeSecondary(): void;
+  /** Release secondary slot resources. Idempotent. */
+  disposeSecondary(): void;
 
-	/** Read the current gain on the secondary slot [0..1]. */
-	secondaryGain(): number;
+  /** Read the current gain on the secondary slot [0..1]. */
+  secondaryGain(): number;
 
-	/** Write the gain on the secondary slot. Clamped to [0..1]. */
-	secondaryGain(value: number): void;
+  /** Write the gain on the secondary slot. Clamped to [0..1]. */
+  secondaryGain(value: number): void;
 }
 
 /**
@@ -171,44 +171,44 @@ export interface ITransitionBackend {
  *    the incoming item is already preloaded so buffering is minimal.
  */
 export interface ITransitionStrategy {
-	/**
-	 * Return `true` when the player should begin the transition. Called on every
-	 * `time` event after preloading is complete and the incoming backend is ready.
-	 *
-	 * Idempotency: the player suppresses repeated calls after the first `true` return
-	 * until `complete()` or `cancel()` is called.
-	 */
-	shouldTransition(context: PreloadContext): boolean;
+  /**
+   * Return `true` when the player should begin the transition. Called on every
+   * `time` event after preloading is complete and the incoming backend is ready.
+   *
+   * Idempotency: the player suppresses repeated calls after the first `true` return
+   * until `complete()` or `cancel()` is called.
+   */
+  shouldTransition(context: PreloadContext): boolean;
 
-	/**
-	 * Called by the player each animation frame during the transition window.
-	 * Apply volume ramps, crossfade curves, or any per-frame effect here.
-	 *
-	 * The player calls this between `start()` and `complete()` at the rate of
-	 * `requestAnimationFrame` — keep it fast and non-blocking.
-	 */
-	tick(context: TransitionContext, backend: ITransitionBackend | null): void;
+  /**
+   * Called by the player each animation frame during the transition window.
+   * Apply volume ramps, crossfade curves, or any per-frame effect here.
+   *
+   * The player calls this between `start()` and `complete()` at the rate of
+   * `requestAnimationFrame` — keep it fast and non-blocking.
+   */
+  tick(context: TransitionContext, backend: ITransitionBackend | null): void;
 
-	/**
-	 * Invoked once when the transition begins (first `shouldTransition` → `true`).
-	 * Use this to emit plugin events, start the incoming backend, or acquire
-	 * any resources needed during the transition window.
-	 */
-	start(outgoing: BasePlaylistItem, incoming: BasePlaylistItem, backend: ITransitionBackend | null): void;
+  /**
+   * Invoked once when the transition begins (first `shouldTransition` → `true`).
+   * Use this to emit plugin events, start the incoming backend, or acquire
+   * any resources needed during the transition window.
+   */
+  start(outgoing: BasePlaylistItem, incoming: BasePlaylistItem, backend: ITransitionBackend | null): void;
 
-	/**
-	 * Invoked once when the transition is complete (the incoming item is the new
-	 * primary and the outgoing item is fully disposed). Clean up any resources
-	 * acquired in `start()`.
-	 */
-	complete(from: BasePlaylistItem, to: BasePlaylistItem): void;
+  /**
+   * Invoked once when the transition is complete (the incoming item is the new
+   * primary and the outgoing item is fully disposed). Clean up any resources
+   * acquired in `start()`.
+   */
+  complete(from: BasePlaylistItem, to: BasePlaylistItem): void;
 
-	/**
-	 * Invoked when the transition is aborted before it could complete — e.g. the
-	 * user called `next()` manually or the player was disposed. Release resources
-	 * and reset internal state.
-	 */
-	cancel(reason: string): void;
+  /**
+   * Invoked when the transition is aborted before it could complete — e.g. the
+   * user called `next()` manually or the player was disposed. Release resources
+   * and reset internal state.
+   */
+  cancel(reason: string): void;
 }
 
 // ─── Default PreloadStrategy ─────────────────────────────────────────────────
@@ -221,26 +221,27 @@ export interface ITransitionStrategy {
  * Custom strategies extend this class and override `assetsToPreload`.
  */
 export class DefaultPreloadStrategy implements IPreloadStrategy {
-	constructor(private readonly _leadSeconds: number = 10) {}
+  constructor(private readonly _leadSeconds: number = 10) {}
 
-	shouldPreload(context: PreloadContext): boolean {
-		const { currentTime, duration, nextItem } = context;
+  shouldPreload(context: PreloadContext): boolean {
+    const { currentTime, duration, nextItem } = context;
 
-		if (nextItem === null)
-			return false;
-		if (duration <= 0 || this._leadSeconds <= 0)
-			return false;
+    if (nextItem === null)
+      return false;
 
-		return currentTime >= duration - this._leadSeconds;
-	}
+    if (duration <= 0 || this._leadSeconds <= 0)
+      return false;
 
-	assetsToPreload(_item: BasePlaylistItem): PreloadAsset[] {
-		return [];
-	}
+    return currentTime >= duration - this._leadSeconds;
+  }
 
-	cancel(): void {
-		// The player owns the asset fetches and aborts them on a cursor change.
-	}
+  assetsToPreload(_item: BasePlaylistItem): PreloadAsset[] {
+    return [];
+  }
+
+  cancel(): void {
+    // The player owns the asset fetches and aborts them on a cursor change.
+  }
 }
 
 // ─── CrossfadeTransitionStrategy ─────────────────────────────────────────────
@@ -266,60 +267,66 @@ export type CrossfadeCurve = 'linear' | 'equal-power';
  *  - `'equal-power'`  — cosine-based constant-power fade (perceptually smoother).
  */
 export class CrossfadeTransitionStrategy implements ITransitionStrategy {
-	private readonly _leadSeconds: number;
-	private readonly _tailSeconds: number;
-	private readonly _curve: CrossfadeCurve;
+  private readonly _leadSeconds: number;
+  private readonly _tailSeconds: number;
+  private readonly _curve: CrossfadeCurve;
 
-	constructor(opts: { leadSeconds?: number; tailSeconds?: number; curve?: CrossfadeCurve } = {}) {
-		this._leadSeconds = opts.leadSeconds ?? 3;
-		this._tailSeconds = opts.tailSeconds ?? 3;
-		this._curve = opts.curve ?? 'equal-power';
-	}
+  constructor(opts: {
+    leadSeconds?: number;
+    tailSeconds?: number;
+    curve?: CrossfadeCurve;
+  } = {}) {
+    this._leadSeconds = opts.leadSeconds ?? 3;
+    this._tailSeconds = opts.tailSeconds ?? 3;
+    this._curve = opts.curve ?? 'equal-power';
+  }
 
-	shouldTransition(context: PreloadContext): boolean {
-		const { currentTime, duration, nextItem } = context;
+  shouldTransition(context: PreloadContext): boolean {
+    const { currentTime, duration, nextItem } = context;
 
-		if (nextItem === null)
-			return false;
-		if (duration <= 0)
-			return false;
+    if (nextItem === null)
+      return false;
 
-		return currentTime >= duration - this._leadSeconds;
-	}
+    if (duration <= 0)
+      return false;
 
-	tick(context: TransitionContext, backend: ITransitionBackend | null): void {
-		if (backend === null)
-			return;
-		if (!backend.supportsCrossfade())
-			return;
+    return currentTime >= duration - this._leadSeconds;
+  }
 
-		const { fraction } = context;
-		const outGain = this._applyGainCurve(1 - fraction);
-		const inGain = this._applyGainCurve(fraction);
+  tick(context: TransitionContext, backend: ITransitionBackend | null): void {
+    if (backend === null) return;
 
-		backend.secondaryGain(inGain);
+    if (!backend.supportsCrossfade()) return;
 
-		// Primary gain is controlled through the crossfade call, not directly here.
-		// The `tick` is informational — actual ramp is handled by `backend.crossfade()`.
-		void outGain;
-	}
+    const { fraction } = context;
+    const outGain = this._applyGainCurve(1 - fraction);
+    const inGain = this._applyGainCurve(fraction);
 
-	start(outgoing: BasePlaylistItem, incoming: BasePlaylistItem, _backend: ITransitionBackend | null): void {
-		void outgoing;
-		void incoming;
-	}
+    backend.secondaryGain(inGain);
 
-	complete(_from: BasePlaylistItem, _to: BasePlaylistItem): void {}
+    // Primary gain is controlled through the crossfade call, not directly here.
+    // The `tick` is informational — actual ramp is handled by `backend.crossfade()`.
+    void outGain;
+  }
 
-	cancel(_reason: string): void {}
+  start(outgoing: BasePlaylistItem, incoming: BasePlaylistItem, _backend: ITransitionBackend | null): void {
+    void outgoing;
+    void incoming;
+  }
 
-	private _applyGainCurve(linear: number): number {
-		const clamped = Math.max(0, Math.min(1, linear));
-		if (this._curve === 'equal-power') {
-			return Math.cos((1 - clamped) * 0.5 * Math.PI);
-		}
-		return clamped;
-	}
+  complete(_from: BasePlaylistItem, _to: BasePlaylistItem): void {}
+
+  cancel(_reason: string): void {}
+
+  private _applyGainCurve(linear: number): number {
+    const clamped = Math.max(0, Math.min(1, linear));
+
+    if (this._curve === 'equal-power') {
+      return Math.cos((1 - clamped) * 0.5 * Math.PI);
+    }
+
+    return clamped;
+  }
 }
 
 // ─── GaplessTransitionStrategy ───────────────────────────────────────────────
@@ -334,15 +341,15 @@ export class CrossfadeTransitionStrategy implements ITransitionStrategy {
  * explicitly on a video player if you want audio overlap.
  */
 export class GaplessTransitionStrategy implements ITransitionStrategy {
-	shouldTransition(_context: PreloadContext): boolean {
-		return false;
-	}
+  shouldTransition(_context: PreloadContext): boolean {
+    return false;
+  }
 
-	tick(_context: TransitionContext, _backend: ITransitionBackend | null): void {}
+  tick(_context: TransitionContext, _backend: ITransitionBackend | null): void {}
 
-	start(_outgoing: BasePlaylistItem, _incoming: BasePlaylistItem, _backend: ITransitionBackend | null): void {}
+  start(_outgoing: BasePlaylistItem, _incoming: BasePlaylistItem, _backend: ITransitionBackend | null): void {}
 
-	complete(_from: BasePlaylistItem, _to: BasePlaylistItem): void {}
+  complete(_from: BasePlaylistItem, _to: BasePlaylistItem): void {}
 
-	cancel(_reason: string): void {}
+  cancel(_reason: string): void {}
 }

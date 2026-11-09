@@ -17,12 +17,12 @@ import type { Internals } from '../state';
  * `initPlayerCoreState`; this mixin is its sole mutator (register / unregister).
  */
 export interface CueParserState {
-	/**
-	 * Registry of cue-format parsers available to this player instance.
-	 * Starts empty in `initPlayerCoreState`; `setup` adds the built-ins at the
-	 * low-priority end. Register more formats via `player.registerCueParser()`.
-	 */
-	_cueParsers: CueParserRegistry;
+  /**
+   * Registry of cue-format parsers available to this player instance.
+   * Starts empty in `initPlayerCoreState`; `setup` adds the built-ins at the
+   * low-priority end. Register more formats via `player.registerCueParser()`.
+   */
+  _cueParsers: CueParserRegistry;
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -30,20 +30,20 @@ export interface CueParserState {
 // ──────────────────────────────────────────────────────────────────────────
 
 export const cueParserMethods = {
-	/**
-	 * Register a custom cue-format parser. Parsers are tried most-recently-registered first.
-	 * Pass `prepend: true` to push the parser below all existing entries instead.
-	 * Re-registering with the same `id` replaces the existing entry.
-	 */
-	registerCueParser(this: Internals, parser: ICueParser, prepend?: boolean): void {
-		this._cueParsers.register(parser, prepend);
-	},
-	/** Remove a registered cue parser by id. No-op when the id is not found. */
-	unregisterCueParser(this: Internals, id: string): void {
-		this._cueParsers.unregister(id);
-	},
-	/** Return the highest-priority parser that matches `url`, or `undefined` when none match. */
-	resolveCueParser(this: Internals, url: string): ICueParser | undefined {
-		return this._cueParsers.resolve(url);
-	},
+  /**
+   * Register a custom cue-format parser. Parsers are tried most-recently-registered first.
+   * Pass `prepend: true` to push the parser below all existing entries instead.
+   * Re-registering with the same `id` replaces the existing entry.
+   */
+  registerCueParser(this: Internals, parser: ICueParser, prepend?: boolean): void {
+    this._cueParsers.register(parser, prepend);
+  },
+  /** Remove a registered cue parser by id. No-op when the id is not found. */
+  unregisterCueParser(this: Internals, id: string): void {
+    this._cueParsers.unregister(id);
+  },
+  /** Return the highest-priority parser that matches `url`, or `undefined` when none match. */
+  resolveCueParser(this: Internals, url: string): ICueParser | undefined {
+    return this._cueParsers.resolve(url);
+  },
 } as const;

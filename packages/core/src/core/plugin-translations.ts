@@ -13,10 +13,13 @@ import { getLazyTranslationLoader } from '../adapters/translator/loaders/transla
 
 /** BCP-47 chain plus the translator's default fallback `en`, so a language without a plugin file never shows raw keys. */
 export function pluginLanguageChain(lang: string): string[] {
-	const chain = bcp47FallbackChain(lang);
-	if (!chain.includes('en'))
-		chain.push('en');
-	return chain;
+  const chain = bcp47FallbackChain(lang);
+
+  if (!chain.includes('en')) {
+    chain.push('en');
+  }
+
+  return chain;
 }
 
 /**
@@ -45,30 +48,35 @@ export function pluginLanguageChain(lang: string): string[] {
  * that calls `addPlugin()` then immediately asserts a synchronous side effect.
  */
 export function loadPluginStaticTranslations(
-	ctor: PluginCtorWithId,
-	language: string,
-	addTranslations: (bundle: Translations) => void,
-	onLangLoaded?: (tag: string) => void,
+  ctor: PluginCtorWithId,
+  language: string,
+  addTranslations: (bundle: Translations) => void,
+  onLangLoaded?: (tag: string) => void,
 ): void | Promise<void> {
-	const stack: Translations[] = [];
-	let cur: unknown = ctor;
-	while (cur && cur !== Function.prototype) {
-		if (Object.hasOwn(cur, 'translations')) {
-			const withTranslations = cur as { translations?: Translations };
-			if (withTranslations.translations)
-				stack.unshift(withTranslations.translations);
-		}
-		cur = Object.getPrototypeOf(cur);
-	}
+  const stack: Translations[] = [];
+  let cur: unknown = ctor;
 
-	if (stack.every(bundle => !getLazyTranslationLoader(bundle))) {
-		for (const translationBundle of stack) {
-			addTranslations(translationBundle);
-		}
-		return undefined;
-	}
+  while (cur && cur !== Function.prototype) {
+    if (Object.hasOwn(cur, 'translations')) {
+      const withTranslations = cur as { translations?: Translations };
 
-	return _loadSequentially(stack, language, addTranslations, onLangLoaded);
+      if (withTranslations.translations) {
+        stack.unshift(withTranslations.translations);
+      }
+    }
+
+    cur = Object.getPrototypeOf(cur);
+  }
+
+  if (stack.every((bundle) => !getLazyTranslationLoader(bundle))) {
+    for (const translationBundle of stack) {
+      addTranslations(translationBundle);
+    }
+
+    return undefined;
+  }
+
+  return _loadSequentially(stack, language, addTranslations, onLangLoaded);
 }
 
 /**
@@ -79,26 +87,28 @@ export function loadPluginStaticTranslations(
  * same-key collision regardless of which ancestors are lazy.
  */
 async function _loadSequentially(
-	stack: Translations[],
-	language: string,
-	addTranslations: (bundle: Translations) => void,
-	onLangLoaded?: (tag: string) => void,
+  stack: Translations[],
+  language: string,
+  addTranslations: (bundle: Translations) => void,
+  onLangLoaded?: (tag: string) => void,
 ): Promise<void> {
-	const langChain = pluginLanguageChain(language);
+  const langChain = pluginLanguageChain(language);
 
-	for (const translationBundle of stack) {
-		const lazy = getLazyTranslationLoader(translationBundle);
-		if (!lazy) {
-			addTranslations(translationBundle);
-			continue;
-		}
+  for (const translationBundle of stack) {
+    const lazy = getLazyTranslationLoader(translationBundle);
 
-		for (const tag of langChain) {
-			const bundle = await lazy(tag);
-			if (!bundle)
-				continue;
-			addTranslations({ [tag]: bundle });
-			onLangLoaded?.(tag);
-		}
-	}
+    if (!lazy) {
+      addTranslations(translationBundle);
+      continue;
+    }
+
+    for (const tag of langChain) {
+      const bundle = await lazy(tag);
+
+      if (!bundle) continue;
+
+      addTranslations({ [tag]: bundle });
+      onLangLoaded?.(tag);
+    }
+  }
 }

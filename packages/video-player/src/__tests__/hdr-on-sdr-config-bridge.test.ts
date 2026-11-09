@@ -19,32 +19,32 @@ import { Html5VideoBackend } from '../adapters/video-backend/html5';
 import { NMVideoPlayer } from '../index';
 
 describe('hdrOnSdr config → backend bridge', () => {
-	beforeEach(() => {
-		document.body.innerHTML = '<div id="hdr-bridge-test"></div>';
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="hdr-bridge-test"></div>';
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	afterEach(() => {
-		document.body.innerHTML = '';
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		vi.restoreAllMocks();
-	});
+  afterEach(() => {
+    document.body.innerHTML = '';
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    vi.restoreAllMocks();
+  });
 
-	it('setup({ hdrOnSdr: "refuse" }) pushes it into the backend at construction', () => {
-		const spy = vi.spyOn(Html5VideoBackend.prototype, 'setHdrOnSdrFallback');
-		const videoPlayer = new NMVideoPlayer('hdr-bridge-test').setup({ hdrOnSdr: 'refuse' });
+  it('setup({ hdrOnSdr: "refuse" }) pushes it into the backend at construction', () => {
+    const spy = vi.spyOn(Html5VideoBackend.prototype, 'setHdrOnSdrFallback');
+    const videoPlayer = new NMVideoPlayer('hdr-bridge-test').setup({ hdrOnSdr: 'refuse' });
 
-		videoPlayer.backend();
+    videoPlayer.backend();
 
-		expect(spy).toHaveBeenCalledWith('refuse');
-	});
+    expect(spy).toHaveBeenCalledWith('refuse');
+  });
 
-	it('setup({}) without hdrOnSdr pushes the "play" default, not undefined', () => {
-		const spy = vi.spyOn(Html5VideoBackend.prototype, 'setHdrOnSdrFallback');
-		const videoPlayer = new NMVideoPlayer('hdr-bridge-test').setup({});
+  it('setup({}) without hdrOnSdr pushes the "play" default, not undefined', () => {
+    const spy = vi.spyOn(Html5VideoBackend.prototype, 'setHdrOnSdrFallback');
+    const videoPlayer = new NMVideoPlayer('hdr-bridge-test').setup({});
 
-		videoPlayer.backend();
+    videoPlayer.backend();
 
-		expect(spy).toHaveBeenCalledWith('play');
-	});
+    expect(spy).toHaveBeenCalledWith('play');
+  });
 });

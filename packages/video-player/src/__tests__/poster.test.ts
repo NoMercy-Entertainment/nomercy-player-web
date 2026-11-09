@@ -10,152 +10,179 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { NMVideoPlayer } from '../index';
 
 interface ItemShape {
-	id: string;
-	url: string;
-	image?: string;
+  id: string;
+  url: string;
+  image?: string;
 }
 
 const items: ItemShape[] = [
-	{ id: 'a', url: '/a.m3u8', image: 'https://cdn/a.jpg' },
-	{ id: 'b', url: '/b.m3u8', image: 'https://cdn/b.jpg' },
-	{ id: 'c', url: '/c.m3u8' },
+  {
+    id: 'a',
+    url: '/a.m3u8',
+    image: 'https://cdn/a.jpg',
+  },
+  {
+    id: 'b',
+    url: '/b.m3u8',
+    image: 'https://cdn/b.jpg',
+  },
+  { id: 'c', url: '/c.m3u8' },
 ];
 
 /** Flush the microtask queue so async resolveUrl().then() chains settle. */
 async function flushMicrotasks(): Promise<void> {
-	await new Promise<void>(resolve => setTimeout(resolve, 0));
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
 }
 
 describe('NMVideoPlayer poster sync', () => {
-	beforeEach(() => {
-		document.body.innerHTML = '<div id="poster-test"></div>';
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="poster-test"></div>';
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	afterEach(() => {
-		document.body.innerHTML = '';
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  afterEach(() => {
+    document.body.innerHTML = '';
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	it('sets video.poster when current() advances after backend exists', async () => {
-		const videoPlayer = new NMVideoPlayer<ItemShape>('poster-test').setup({ playlist: items });
+  it('sets video.poster when current() advances after backend exists', async () => {
+    const videoPlayer = new NMVideoPlayer<ItemShape>('poster-test').setup({ playlist: items });
 
-		// Force backend allocation.
-		videoPlayer.backend();
+    // Force backend allocation.
+    videoPlayer.backend();
 
-		const videoEl = document.querySelector<HTMLVideoElement>('#poster-test video');
-		expect(videoEl).not.toBeNull();
+    const videoEl = document.querySelector<HTMLVideoElement>('#poster-test video');
 
-		videoPlayer.queue(items);
-		videoPlayer.item('a');
-		await flushMicrotasks();
+    expect(videoEl).not.toBeNull();
 
-		expect(videoEl!.getAttribute('poster')).toBe('https://cdn/a.jpg');
-	});
+    videoPlayer.queue(items);
+    videoPlayer.item('a');
+    await flushMicrotasks();
 
-	it('applies wanted poster when backend allocates AFTER cursor moved', async () => {
-		const videoPlayer = new NMVideoPlayer<ItemShape>('poster-test').setup({ playlist: items });
+    expect(videoEl!.getAttribute('poster')).toBe('https://cdn/a.jpg');
+  });
 
-		// Cursor first — backend not yet explicitly allocated.
-		// current() during setup phase defers the load until ready(); calling
-		// backend() before that deferred load fires still applies the poster.
-		videoPlayer.queue(items);
-		videoPlayer.item('a');
+  it('applies wanted poster when backend allocates AFTER cursor moved', async () => {
+    const videoPlayer = new NMVideoPlayer<ItemShape>('poster-test').setup({ playlist: items });
 
-		// Allocating the backend after cursor move should apply the poster.
-		videoPlayer.backend();
-		await flushMicrotasks();
-		const videoEl = document.querySelector<HTMLVideoElement>('#poster-test video');
-		expect(videoEl).not.toBeNull();
-		expect(videoEl!.getAttribute('poster')).toBe('https://cdn/a.jpg');
-	});
+    // Cursor first — backend not yet explicitly allocated.
+    // current() during setup phase defers the load until ready(); calling
+    // backend() before that deferred load fires still applies the poster.
+    videoPlayer.queue(items);
+    videoPlayer.item('a');
 
-	it('clears poster when advancing to an item without an image', async () => {
-		const videoPlayer = new NMVideoPlayer<ItemShape>('poster-test').setup({ playlist: items });
-		videoPlayer.backend();
-		videoPlayer.queue(items);
+    // Allocating the backend after cursor move should apply the poster.
+    videoPlayer.backend();
+    await flushMicrotasks();
+    const videoEl = document.querySelector<HTMLVideoElement>('#poster-test video');
 
-		videoPlayer.item('a');
-		await flushMicrotasks();
-		const videoEl = document.querySelector<HTMLVideoElement>('#poster-test video')!;
-		expect(videoEl.getAttribute('poster')).toBe('https://cdn/a.jpg');
+    expect(videoEl).not.toBeNull();
+    expect(videoEl!.getAttribute('poster')).toBe('https://cdn/a.jpg');
+  });
 
-		videoPlayer.item('c');
-		await flushMicrotasks();
-		expect(videoEl.hasAttribute('poster')).toBe(false);
-	});
+  it('clears poster when advancing to an item without an image', async () => {
+    const videoPlayer = new NMVideoPlayer<ItemShape>('poster-test').setup({ playlist: items });
 
-	it('updates poster when cursor moves between items', async () => {
-		const videoPlayer = new NMVideoPlayer<ItemShape>('poster-test').setup({ playlist: items });
-		videoPlayer.backend();
-		videoPlayer.queue(items);
+    videoPlayer.backend();
+    videoPlayer.queue(items);
 
-		videoPlayer.item('a');
-		await flushMicrotasks();
-		const videoEl = document.querySelector<HTMLVideoElement>('#poster-test video')!;
-		expect(videoEl.getAttribute('poster')).toBe('https://cdn/a.jpg');
+    videoPlayer.item('a');
+    await flushMicrotasks();
+    const videoEl = document.querySelector<HTMLVideoElement>('#poster-test video')!;
 
-		videoPlayer.item('b');
-		await flushMicrotasks();
-		expect(videoEl.getAttribute('poster')).toBe('https://cdn/b.jpg');
-	});
+    expect(videoEl.getAttribute('poster')).toBe('https://cdn/a.jpg');
 
-	it('applies poster when backend allocates after queue() pre-positioned cursor without current() call', async () => {
-		// Regression: queue() silently positions cursor at index 0 without emitting
-		// 'current'. When load(items[0]) detects alreadyCurrent=true it skips
-		// setCurrent, so 'current' never fires. backend() must fall back to reading
-		// the current item directly instead of relying on _wantedPoster being set.
-		const videoPlayer = new NMVideoPlayer<ItemShape>('poster-test').setup({ playlist: items });
+    videoPlayer.item('c');
+    await flushMicrotasks();
+    expect(videoEl.hasAttribute('poster')).toBe(false);
+  });
 
-		videoPlayer.queue(items);
+  it('updates poster when cursor moves between items', async () => {
+    const videoPlayer = new NMVideoPlayer<ItemShape>('poster-test').setup({ playlist: items });
 
-		// Force backend allocation WITHOUT calling current() — mirrors the
-		// VideoPlayer.vue build() path: queue() then load() (which calls backend()
-		// internally). We call backend() directly here since load() is async and
-		// requires a real HLS endpoint.
-		videoPlayer.backend();
-		await flushMicrotasks();
-		const videoEl = document.querySelector<HTMLVideoElement>('#poster-test video');
-		expect(videoEl).not.toBeNull();
+    videoPlayer.backend();
+    videoPlayer.queue(items);
 
-		// The cursor is at index 0 (item 'a') because queue() pre-positions it.
-		// backend() must have read the image from the current item.
-		expect(videoEl!.getAttribute('poster')).toBe('https://cdn/a.jpg');
-	});
+    videoPlayer.item('a');
+    await flushMicrotasks();
+    const videoEl = document.querySelector<HTMLVideoElement>('#poster-test video')!;
 
-	it('resolves relative image paths against baseImageUrl', async () => {
-		const relItems: ItemShape[] = [
-			{ id: 'r1', url: '/r1.m3u8', image: '/w780/abc.jpg' },
-		];
+    expect(videoEl.getAttribute('poster')).toBe('https://cdn/a.jpg');
 
-		const videoPlayer = new NMVideoPlayer<ItemShape>('poster-test').setup({
-			baseImageUrl: 'https://image.tmdb.org/t/p',
-			playlist: relItems,
-		});
-		videoPlayer.backend();
-		videoPlayer.queue(relItems);
-		videoPlayer.item('r1');
-		await flushMicrotasks();
+    videoPlayer.item('b');
+    await flushMicrotasks();
+    expect(videoEl.getAttribute('poster')).toBe('https://cdn/b.jpg');
+  });
 
-		const videoEl = document.querySelector<HTMLVideoElement>('#poster-test video')!;
-		expect(videoEl.getAttribute('poster')).toBe('https://image.tmdb.org/t/p/w780/abc.jpg');
-	});
+  it('applies poster when backend allocates after queue() pre-positioned cursor without current() call', async () => {
+    // Regression: queue() silently positions cursor at index 0 without emitting
+    // 'current'. When load(items[0]) detects alreadyCurrent=true it skips
+    // setCurrent, so 'current' never fires. backend() must fall back to reading
+    // the current item directly instead of relying on _wantedPoster being set.
+    const videoPlayer = new NMVideoPlayer<ItemShape>('poster-test').setup({ playlist: items });
 
-	it('passes absolute image URLs through unchanged when baseImageUrl is set', async () => {
-		const absItems: ItemShape[] = [
-			{ id: 'abs', url: '/abs.m3u8', image: 'https://other.cdn/img.jpg' },
-		];
+    videoPlayer.queue(items);
 
-		const videoPlayer = new NMVideoPlayer<ItemShape>('poster-test').setup({
-			baseImageUrl: 'https://image.tmdb.org/t/p',
-			playlist: absItems,
-		});
-		videoPlayer.backend();
-		videoPlayer.queue(absItems);
-		videoPlayer.item('abs');
-		await flushMicrotasks();
+    // Force backend allocation WITHOUT calling current() — mirrors the
+    // VideoPlayer.vue build() path: queue() then load() (which calls backend()
+    // internally). We call backend() directly here since load() is async and
+    // requires a real HLS endpoint.
+    videoPlayer.backend();
+    await flushMicrotasks();
+    const videoEl = document.querySelector<HTMLVideoElement>('#poster-test video');
 
-		const videoEl = document.querySelector<HTMLVideoElement>('#poster-test video')!;
-		expect(videoEl.getAttribute('poster')).toBe('https://other.cdn/img.jpg');
-	});
+    expect(videoEl).not.toBeNull();
+
+    // The cursor is at index 0 (item 'a') because queue() pre-positions it.
+    // backend() must have read the image from the current item.
+    expect(videoEl!.getAttribute('poster')).toBe('https://cdn/a.jpg');
+  });
+
+  it('resolves relative image paths against baseImageUrl', async () => {
+    const relItems: ItemShape[] = [
+      {
+        id: 'r1',
+        url: '/r1.m3u8',
+        image: '/w780/abc.jpg',
+      },
+    ];
+
+    const videoPlayer = new NMVideoPlayer<ItemShape>('poster-test').setup({
+      baseImageUrl: 'https://image.tmdb.org/t/p',
+      playlist: relItems,
+    });
+
+    videoPlayer.backend();
+    videoPlayer.queue(relItems);
+    videoPlayer.item('r1');
+    await flushMicrotasks();
+
+    const videoEl = document.querySelector<HTMLVideoElement>('#poster-test video')!;
+
+    expect(videoEl.getAttribute('poster')).toBe('https://image.tmdb.org/t/p/w780/abc.jpg');
+  });
+
+  it('passes absolute image URLs through unchanged when baseImageUrl is set', async () => {
+    const absItems: ItemShape[] = [
+      {
+        id: 'abs',
+        url: '/abs.m3u8',
+        image: 'https://other.cdn/img.jpg',
+      },
+    ];
+
+    const videoPlayer = new NMVideoPlayer<ItemShape>('poster-test').setup({
+      baseImageUrl: 'https://image.tmdb.org/t/p',
+      playlist: absItems,
+    });
+
+    videoPlayer.backend();
+    videoPlayer.queue(absItems);
+    videoPlayer.item('abs');
+    await flushMicrotasks();
+
+    const videoEl = document.querySelector<HTMLVideoElement>('#poster-test video')!;
+
+    expect(videoEl.getAttribute('poster')).toBe('https://other.cdn/img.jpg');
+  });
 });

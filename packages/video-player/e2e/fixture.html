@@ -1,56 +1,56 @@
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>E2E Test Fixture</title>
-		<style>
-			#player {
-				width: 640px;
-				height: 360px;
-				background: #000;
-			}
-		</style>
-	</head>
-	<body>
-		<div id="player"></div>
-		<script type="module">
-			import nmplayer, { V1VideoCompatPlugin } from '/src/index.ts';
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>E2E Test Fixture</title>
+    <style>
+      #player {
+        width: 640px;
+        height: 360px;
+        background: #000;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="player"></div>
+    <script type="module">
+      import nmplayer, { V1VideoCompatPlugin } from '/src/index.ts';
 
-			window.__playerError = null;
-			window.__playerReady = false;
+      window.__playerError = null;
+      window.__playerReady = false;
 
-			try {
-				const player = nmplayer('player');
+      try {
+        const player = nmplayer('player');
 
-				player.addPlugin(V1VideoCompatPlugin);
+        player.addPlugin(V1VideoCompatPlugin);
 
-				// Register the ready listener BEFORE setup() so it fires when
-				// the async pipeline completes.
-				player.on('ready', () => {
-					// Force backend initialisation so videoElement is available.
-					// backend() is lazy; calling it here creates the <video>
-					// element and makes volume/muted/playbackRate tests work
-					// without a source.
-					player.backend();
+        // Register the ready listener BEFORE setup() so it fires when
+        // the async pipeline completes.
+        player.on('ready', () => {
+          // Force backend initialisation so videoElement is available.
+          // backend() is lazy; calling it here creates the <video>
+          // element and makes volume/muted/playbackRate tests work
+          // without a source.
+          player.backend();
 
-					window.player = player;
-					window.__playerReady = true;
-				});
+          window.player = player;
+          window.__playerReady = true;
+        });
 
-				player.on('fatal', (err) => {
-					window.__playerError = err?.error?.message ?? String(err);
-					window.__playerReady = false;
-				});
+        player.on('fatal', (err) => {
+          window.__playerError = err?.error?.message ?? String(err);
+          window.__playerReady = false;
+        });
 
-				// Call setup() so V1VideoCompatPlugin installs and the setup
-				// pipeline runs (nomercyplayer class, i18n, platform, etc.).
-				// No playlist and no autoPlay — we only need the API surface.
-				player.setup({ muted: true });
-			} catch (e) {
-				window.__playerError = (e instanceof Error ? e.message : null) || String(e);
-				window.__playerReady = false;
-			}
-		</script>
-	</body>
+        // Call setup() so V1VideoCompatPlugin installs and the setup
+        // pipeline runs (nomercyplayer class, i18n, platform, etc.).
+        // No playlist and no autoPlay — we only need the API surface.
+        player.setup({ muted: true });
+      } catch (e) {
+        window.__playerError = (e instanceof Error ? e.message : null) || String(e);
+        window.__playerReady = false;
+      }
+    </script>
+  </body>
 </html>

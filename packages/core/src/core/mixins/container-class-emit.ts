@@ -21,12 +21,25 @@ import { PlayState } from '../state';
 /** Mutually exclusive playback-state classes managed as a group by the rules table. */
 const PLAY_STATE_CLASSES: ReadonlyArray<string> = ['playing', 'paused', 'stopped', 'ended', 'loading', 'buffering'] as const;
 
-type ContainerClassRule
-	= | { kind: 'swap'; add: string; remove: readonly string[] }
-		| { kind: 'drop'; remove: readonly string[] }
-		| { kind: 'toggle'; cls: string; payloadKey: string }
-		| { kind: 'binary'; whenTrue: string; whenFalse: string; payloadKey: string }
-		| { kind: 'phase' };
+type ContainerClassRule =
+  | {
+    kind: 'swap';
+    add: string;
+    remove: readonly string[];
+  } |
+  { kind: 'drop'; remove: readonly string[] } |
+  {
+    kind: 'toggle';
+    cls: string;
+    payloadKey: string;
+  } |
+  {
+    kind: 'binary';
+    whenTrue: string;
+    whenFalse: string;
+    payloadKey: string;
+  } |
+  { kind: 'phase' };
 
 /**
  * Tracks whether a given container has ever reached the `ready` phase.
@@ -42,81 +55,81 @@ type ContainerClassRule
 const _containerHasBeenReady = new WeakMap<HTMLElement, boolean>();
 
 const CONTAINER_CLASS_RULES: ReadonlyMap<string, ContainerClassRule> = new Map<string, ContainerClassRule>([
-	['play', {
-		kind: 'swap',
-		add: 'playing',
-		remove: PLAY_STATE_CLASSES.filter(cls => cls !== 'playing'),
-	}],
-	['playing', {
-		kind: 'swap',
-		add: 'playing',
-		remove: PLAY_STATE_CLASSES.filter(cls => cls !== 'playing'),
-	}],
-	['pause', {
-		kind: 'swap',
-		add: 'paused',
-		remove: PLAY_STATE_CLASSES.filter(cls => cls !== 'paused'),
-	}],
-	['stop', {
-		kind: 'swap',
-		add: 'stopped',
-		remove: PLAY_STATE_CLASSES.filter(cls => cls !== 'stopped'),
-	}],
-	['ended', {
-		kind: 'swap',
-		add: 'ended',
-		remove: PLAY_STATE_CLASSES.filter(cls => cls !== 'ended'),
-	}],
-	['waiting', {
-		kind: 'swap',
-		add: 'buffering',
-		remove: ['playing'],
-	}],
-	['stalled', {
-		kind: 'swap',
-		add: 'buffering',
-		remove: ['playing'],
-	}],
-	['canplay', {
-		kind: 'drop',
-		remove: ['buffering'],
-	}],
-	// An advancing clock disproves a stall. `canplay` above is the signal that
-	// ends a load, but it does not fire on every recovery in every engine, and
-	// `buffering` left standing over moving video is the failure that costs the
-	// most trust. This is the cheap self-correcting backstop on the hottest
-	// event — a `drop` of a class that is usually absent is a no-op.
-	['time', {
-		kind: 'drop',
-		remove: ['buffering'],
-	}],
-	['mute', {
-		kind: 'toggle',
-		cls: 'muted',
-		payloadKey: 'muted',
-	}],
-	['fullscreen', {
-		kind: 'toggle',
-		cls: 'fullscreen',
-		payloadKey: 'active',
-	}],
-	['pip', {
-		kind: 'toggle',
-		cls: 'pip',
-		payloadKey: 'active',
-	}],
-	['theater', {
-		kind: 'toggle',
-		cls: 'theater',
-		payloadKey: 'active',
-	}],
-	['phase', { kind: 'phase' }],
-	['activity', {
-		kind: 'binary',
-		whenTrue: 'active',
-		whenFalse: 'inactive',
-		payloadKey: 'active',
-	}],
+  ['play', {
+    kind: 'swap',
+    add: 'playing',
+    remove: PLAY_STATE_CLASSES.filter((cls) => cls !== 'playing'),
+  }],
+  ['playing', {
+    kind: 'swap',
+    add: 'playing',
+    remove: PLAY_STATE_CLASSES.filter((cls) => cls !== 'playing'),
+  }],
+  ['pause', {
+    kind: 'swap',
+    add: 'paused',
+    remove: PLAY_STATE_CLASSES.filter((cls) => cls !== 'paused'),
+  }],
+  ['stop', {
+    kind: 'swap',
+    add: 'stopped',
+    remove: PLAY_STATE_CLASSES.filter((cls) => cls !== 'stopped'),
+  }],
+  ['ended', {
+    kind: 'swap',
+    add: 'ended',
+    remove: PLAY_STATE_CLASSES.filter((cls) => cls !== 'ended'),
+  }],
+  ['waiting', {
+    kind: 'swap',
+    add: 'buffering',
+    remove: ['playing'],
+  }],
+  ['stalled', {
+    kind: 'swap',
+    add: 'buffering',
+    remove: ['playing'],
+  }],
+  ['canplay', {
+    kind: 'drop',
+    remove: ['buffering'],
+  }],
+  // An advancing clock disproves a stall. `canplay` above is the signal that
+  // ends a load, but it does not fire on every recovery in every engine, and
+  // `buffering` left standing over moving video is the failure that costs the
+  // most trust. This is the cheap self-correcting backstop on the hottest
+  // event — a `drop` of a class that is usually absent is a no-op.
+  ['time', {
+    kind: 'drop',
+    remove: ['buffering'],
+  }],
+  ['mute', {
+    kind: 'toggle',
+    cls: 'muted',
+    payloadKey: 'muted',
+  }],
+  ['fullscreen', {
+    kind: 'toggle',
+    cls: 'fullscreen',
+    payloadKey: 'active',
+  }],
+  ['pip', {
+    kind: 'toggle',
+    cls: 'pip',
+    payloadKey: 'active',
+  }],
+  ['theater', {
+    kind: 'toggle',
+    cls: 'theater',
+    payloadKey: 'active',
+  }],
+  ['phase', { kind: 'phase' }],
+  ['activity', {
+    kind: 'binary',
+    whenTrue: 'active',
+    whenFalse: 'inactive',
+    payloadKey: 'active',
+  }],
 ]);
 
 /**
@@ -139,64 +152,92 @@ const CONTAINER_CLASS_RULES: ReadonlyMap<string, ContainerClassRule> = new Map<s
  * No-ops silently when `container` is absent (player not mounted yet).
  */
 function _applyContainerClassRule(container: HTMLElement | undefined, rule: ContainerClassRule, data: unknown, currentPlayState: string): void {
-	if (!container || typeof container.classList === 'undefined')
-		return;
+  if (!container || typeof container.classList === 'undefined') return;
 
-	if (rule.kind === 'swap') {
-		for (const cls of rule.remove) container.classList.remove(cls);
-		container.classList.add(rule.add);
-		return;
-	}
+  if (rule.kind === 'swap') {
+    for (const cls of rule.remove) {
+      container.classList.remove(cls);
+    }
 
-	if (rule.kind === 'drop') {
-		for (const cls of rule.remove) container.classList.remove(cls);
-		return;
-	}
+    container.classList.add(rule.add);
 
-	if (rule.kind === 'toggle') {
-		const payload: Record<string, unknown> = typeof data === 'object' && data !== null ? data as Record<string, unknown> : {};
-		container.classList.toggle(rule.cls, Boolean(payload[rule.payloadKey]));
-		return;
-	}
+    return;
+  }
 
-	if (rule.kind === 'binary') {
-		const payload: Record<string, unknown> = typeof data === 'object' && data !== null ? data as Record<string, unknown> : {};
-		const on = Boolean(payload[rule.payloadKey]);
-		container.classList.add(on ? rule.whenTrue : rule.whenFalse);
-		container.classList.remove(on ? rule.whenFalse : rule.whenTrue);
-		return;
-	}
+  if (rule.kind === 'drop') {
+    for (const cls of rule.remove) {
+      container.classList.remove(cls);
+    }
 
-	if (rule.kind === 'phase') {
-		const phasePayload = typeof data === 'object' && data !== null && 'to' in data
-			? (data as { to: PlayerPhase })
-			: undefined;
-		if (!phasePayload)
-			return;
+    return;
+  }
 
-		if (phasePayload.to === 'ready') {
-			_containerHasBeenReady.set(container, true);
-			for (const cls of PLAY_STATE_CLASSES) container.classList.remove(cls);
-			container.classList.add(currentPlayState === 'playing' ? 'playing' : 'paused');
-			return;
-		}
+  if (rule.kind === 'toggle') {
+    const payload: Record<string, unknown> = typeof data === 'object' && data !== null
+      ? data as Record<string, unknown>
+      : {};
 
-		if (PLAY_STATE_CLASSES.includes(phasePayload.to)) {
-			const hasBeenReady = _containerHasBeenReady.get(container) === true;
+    container.classList.toggle(rule.cls, Boolean(payload[rule.payloadKey]));
 
-			// After the first `ready`, a `phase=loading` transition is a
-			// background item-load on an already-primed, idle player. It must
-			// not touch the container class at all — the resting class (`paused`,
-			// `playing`, etc.) is the correct presentation. Real mid-playback
-			// stalls arrive via `waiting`/`stalled` DOM events (already mapped to
-			// `buffering` above), never via a phase transition.
-			if (phasePayload.to === 'loading' && hasBeenReady)
-				return;
+    return;
+  }
 
-			for (const cls of PLAY_STATE_CLASSES) container.classList.remove(cls);
-			container.classList.add(phasePayload.to);
-		}
-	}
+  if (rule.kind === 'binary') {
+    const payload: Record<string, unknown> = typeof data === 'object' && data !== null
+      ? data as Record<string, unknown>
+      : {};
+    const on = Boolean(payload[rule.payloadKey]);
+
+    container.classList.add(on
+      ? rule.whenTrue
+      : rule.whenFalse);
+
+    container.classList.remove(on
+      ? rule.whenFalse
+      : rule.whenTrue);
+
+    return;
+  }
+
+  if (rule.kind === 'phase') {
+    const phasePayload = typeof data === 'object' && data !== null && 'to' in data
+      ? (data as { to: PlayerPhase })
+      : undefined;
+
+    if (!phasePayload) return;
+
+    if (phasePayload.to === 'ready') {
+      _containerHasBeenReady.set(container, true);
+
+      for (const cls of PLAY_STATE_CLASSES) {
+        container.classList.remove(cls);
+      }
+
+      container.classList.add(currentPlayState === 'playing'
+        ? 'playing'
+        : 'paused');
+
+      return;
+    }
+
+    if (PLAY_STATE_CLASSES.includes(phasePayload.to)) {
+      const hasBeenReady = _containerHasBeenReady.get(container) === true;
+
+      // After the first `ready`, a `phase=loading` transition is a
+      // background item-load on an already-primed, idle player. It must
+      // not touch the container class at all — the resting class (`paused`,
+      // `playing`, etc.) is the correct presentation. Real mid-playback
+      // stalls arrive via `waiting`/`stalled` DOM events (already mapped to
+      // `buffering` above), never via a phase transition.
+      if (phasePayload.to === 'loading' && hasBeenReady) return;
+
+      for (const cls of PLAY_STATE_CLASSES) {
+        container.classList.remove(cls);
+      }
+
+      container.classList.add(phasePayload.to);
+    }
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -209,35 +250,38 @@ function _applyContainerClassRule(container: HTMLElement | undefined, rule: Cont
 // ──────────────────────────────────────────────────────────────────────────
 
 export const containerClassEmitMethods = {
-	/**
-	 * Override of `EventEmitter.emit` that applies event-driven state sync
-	 * before forwarding to the listener chain.
-	 *
-	 * `fatal` — the kit's unrecoverable-failure channel — flips the play
-	 * state to `ERROR` first, so `fatal` listeners already observe the
-	 * settled state (exactly like transport sets `_playState` before
-	 * emitting `play` / `pause` / `stop`). Every `fatal` dispatch funnels
-	 * through this emit regardless of origin (plugin `throw`, consumer
-	 * emit), and running before the listener chain keeps the flip immune to
-	 * `stopImmediatePropagation()`. Non-fatal `error` / `warning` / `info`
-	 * events never touch the play state; a subsequent successful `load()`
-	 * clears `ERROR` (see `loadingMethods.load`).
-	 *
-	 * Container classes: looks up `event` in `CONTAINER_CLASS_RULES`; when a
-	 * rule matches, calls `_applyContainerClassRule` on `this.container`.
-	 * All events — including those with no rule — then propagate normally.
-	 *
-	 * The parameter types mirror the base `EventEmitter` implementation
-	 * signature so this override compiles without a cast.
-	 */
-	emit(this: Internals, event: any, data?: any): void {
-		if (String(event) === 'fatal') {
-			this._playState = PlayState.ERROR;
-		}
-		const rule = CONTAINER_CLASS_RULES.get(String(event));
-		if (rule) {
-			_applyContainerClassRule(this.container, rule, data, this._playState);
-		}
-		EventEmitter.prototype.emit.call(this, event, data);
-	},
+  /**
+   * Override of `EventEmitter.emit` that applies event-driven state sync
+   * before forwarding to the listener chain.
+   *
+   * `fatal` — the kit's unrecoverable-failure channel — flips the play
+   * state to `ERROR` first, so `fatal` listeners already observe the
+   * settled state (exactly like transport sets `_playState` before
+   * emitting `play` / `pause` / `stop`). Every `fatal` dispatch funnels
+   * through this emit regardless of origin (plugin `throw`, consumer
+   * emit), and running before the listener chain keeps the flip immune to
+   * `stopImmediatePropagation()`. Non-fatal `error` / `warning` / `info`
+   * events never touch the play state; a subsequent successful `load()`
+   * clears `ERROR` (see `loadingMethods.load`).
+   *
+   * Container classes: looks up `event` in `CONTAINER_CLASS_RULES`; when a
+   * rule matches, calls `_applyContainerClassRule` on `this.container`.
+   * All events — including those with no rule — then propagate normally.
+   *
+   * The parameter types mirror the base `EventEmitter` implementation
+   * signature so this override compiles without a cast.
+   */
+  emit(this: Internals, event: any, data?: any): void {
+    if (String(event) === 'fatal') {
+      this._playState = PlayState.ERROR;
+    }
+
+    const rule = CONTAINER_CLASS_RULES.get(String(event));
+
+    if (rule) {
+      _applyContainerClassRule(this.container, rule, data, this._playState);
+    }
+
+    EventEmitter.prototype.emit.call(this, event, data);
+  },
 } as const;

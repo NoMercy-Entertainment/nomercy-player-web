@@ -13,25 +13,28 @@ import { Html5VideoBackend } from '../adapters/video-backend/html5';
 import { NMVideoPlayer } from '../index';
 
 describe('NMVideoPlayer subtitles event for late tracks', () => {
-	beforeEach(() => {
-		document.body.innerHTML = '<div id="subtitle-tracks-test"></div>';
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="subtitle-tracks-test"></div>';
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	afterEach(() => {
-		document.body.innerHTML = '';
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  afterEach(() => {
+    document.body.innerHTML = '';
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	it('emits subtitles when the backend reports a changed track list', async () => {
-		const backend = new Html5VideoBackend(document.createElement('div'));
-		const player = new NMVideoPlayer('subtitle-tracks-test').setup({ backendFactory: () => backend });
-		await player.backend('html5');
-		const seen: number[] = [];
-		player.on('subtitles', data => seen.push(data.tracks.length));
+  it('emits subtitles when the backend reports a changed track list', async () => {
+    const backend = new Html5VideoBackend(document.createElement('div'));
+    const player = new NMVideoPlayer('subtitle-tracks-test').setup({ backendFactory: () => backend });
 
-		backend.emit('subtitleTracks', { tracks: [] });
+    await player.backend('html5');
+    const seen: number[] = [];
 
-		expect(seen).toEqual([0]);
-	});
+    player.on('subtitles', (data) =>
+      seen.push(data.tracks.length));
+
+    backend.emit('subtitleTracks', { tracks: [] });
+
+    expect(seen).toEqual([0]);
+  });
 });

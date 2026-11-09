@@ -28,107 +28,122 @@ const MPD = 'https://media.invalid/movie/manifest.mpd';
 const MP4 = 'https://media.invalid/movie/movie.mp4';
 
 function fakeSource(): IStreamSource & { attach: ReturnType<typeof vi.fn> } {
-	return {
-		kind: 'dash',
-		attach: vi.fn(async () => {}),
-		detach: vi.fn(),
-		destroy: vi.fn(),
-		state: () => 'idle',
-	} as unknown as IStreamSource & { attach: ReturnType<typeof vi.fn> };
+  return {
+    kind: 'dash',
+    attach: vi.fn(async () => {}),
+    detach: vi.fn(),
+    destroy: vi.fn(),
+    state: () => 'idle',
+  } as unknown as IStreamSource & { attach: ReturnType<typeof vi.fn> };
 }
 
 function makeBackend(): Html5VideoBackend {
-	const container = document.createElement('div');
-	document.body.appendChild(container);
+  const container = document.createElement('div');
 
-	return new Html5VideoBackend(container);
+  document.body.appendChild(container);
+
+  return new Html5VideoBackend(container);
 }
 
 describe('a consumer-registered stream factory reaching playback', () => {
-	beforeEach(() => {
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
 
-	it('attaches the resolved source instead of setting src on the element', async () => {
-		const backend = makeBackend();
-		const source = fakeSource();
+  it('attaches the resolved source instead of setting src on the element', async () => {
+    const backend = makeBackend();
+    const source = fakeSource();
 
-		backend.setStreamResolver(url => (url.endsWith('.mpd') ? source : undefined));
+    backend.setStreamResolver((url) =>
+      url.endsWith('.mpd')
+        ? source
+        : undefined);
 
-		await backend.load(MPD);
+    await backend.load(MPD);
 
-		expect(source.attach, 'the factory\'s source drives the element').toHaveBeenCalledTimes(1);
-		expect(backend.mediaElement().getAttribute('src'), 'no plain src was set').toBeNull();
-	});
+    expect(source.attach, 'the factory\'s source drives the element').toHaveBeenCalledTimes(1);
+    expect(backend.mediaElement().getAttribute('src'), 'no plain src was set').toBeNull();
+  });
 
-	// The native path awaits metadata the test DOM never emits, so these two
-	// start the load and assert which branch it took rather than waiting for a
-	// completion that only a real media element can deliver.
-	it('leaves a progressive file on the element, so the built-in path is unchanged', async () => {
-		const backend = makeBackend();
-		const source = fakeSource();
+  // The native path awaits metadata the test DOM never emits, so these two
+  // start the load and assert which branch it took rather than waiting for a
+  // completion that only a real media element can deliver.
+  it('leaves a progressive file on the element, so the built-in path is unchanged', async () => {
+    const backend = makeBackend();
+    const source = fakeSource();
 
-		backend.setStreamResolver(url => (url.endsWith('.mpd') ? source : undefined));
+    backend.setStreamResolver((url) =>
+      url.endsWith('.mpd')
+        ? source
+        : undefined);
 
-		void backend.load(MP4);
-		await Promise.resolve();
+    void backend.load(MP4);
+    await Promise.resolve();
 
-		expect(source.attach, 'nothing claimed it').not.toHaveBeenCalled();
-		expect(backend.mediaElement().getAttribute('src')).toContain('movie.mp4');
-	});
+    expect(source.attach, 'nothing claimed it').not.toHaveBeenCalled();
+    expect(backend.mediaElement().getAttribute('src')).toContain('movie.mp4');
+  });
 
-	it('behaves exactly as before when no resolver is wired', async () => {
-		const backend = makeBackend();
+  it('behaves exactly as before when no resolver is wired', async () => {
+    const backend = makeBackend();
 
-		void backend.load(MP4);
-		await Promise.resolve();
+    void backend.load(MP4);
+    await Promise.resolve();
 
-		expect(backend.mediaElement().getAttribute('src')).toContain('movie.mp4');
-	});
+    expect(backend.mediaElement().getAttribute('src')).toContain('movie.mp4');
+  });
 
-	it('reports the duration once a custom source has metadata, so the player duration is not 0', async () => {
-		const backend = makeBackend();
-		const element = backend.mediaElement();
-		Object.defineProperty(element, 'readyState', { value: 1, configurable: true });
-		Object.defineProperty(element, 'duration', { value: 5, configurable: true });
-		const seen: Array<{ duration: number }> = [];
-		backend.on('loadedmetadata', data => seen.push(data!));
-		backend.setStreamResolver(() => fakeSource());
+  it('reports the duration once a custom source has metadata, so the player duration is not 0', async () => {
+    const backend = makeBackend();
+    const element = backend.mediaElement();
 
-		await backend.load(MPD);
+    Object.defineProperty(element, 'readyState', { value: 1, configurable: true });
+    Object.defineProperty(element, 'duration', { value: 5, configurable: true });
+    const seen: Array<{ duration: number }> = [];
 
-		expect(seen.map(data => data.duration)).toEqual([5]);
-	});
+    backend.on('loadedmetadata', (data) =>
+      seen.push(data!));
 
-	it('waits for the element\'s own loadedmetadata when the custom source has none yet', async () => {
-		const backend = makeBackend();
-		const element = backend.mediaElement();
-		Object.defineProperty(element, 'duration', { value: 7, configurable: true });
-		const seen: Array<{ duration: number }> = [];
-		backend.on('loadedmetadata', data => seen.push(data!));
-		backend.setStreamResolver(() => fakeSource());
+    backend.setStreamResolver(() => fakeSource());
 
-		await backend.load(MPD);
-		expect(seen, 'nothing to report before metadata').toEqual([]);
+    await backend.load(MPD);
 
-		element.dispatchEvent(new Event('loadedmetadata'));
+    expect(seen.map((data) => data.duration)).toEqual([5]);
+  });
 
-		expect(seen.map(data => data.duration)).toEqual([7]);
-	});
+  it('waits for the element\'s own loadedmetadata when the custom source has none yet', async () => {
+    const backend = makeBackend();
+    const element = backend.mediaElement();
 
-	it('destroys the previous source before attaching the next one', async () => {
-		const backend = makeBackend();
-		const first = fakeSource();
-		const second = fakeSource();
-		let next = first;
+    Object.defineProperty(element, 'duration', { value: 7, configurable: true });
+    const seen: Array<{ duration: number }> = [];
 
-		backend.setStreamResolver(() => next);
+    backend.on('loadedmetadata', (data) =>
+      seen.push(data!));
 
-		await backend.load(MPD);
-		next = second;
-		await backend.load(MPD);
+    backend.setStreamResolver(() => fakeSource());
 
-		expect(first.destroy, 'the first source is released').toHaveBeenCalledTimes(1);
-		expect(second.attach).toHaveBeenCalledTimes(1);
-	});
+    await backend.load(MPD);
+    expect(seen, 'nothing to report before metadata').toEqual([]);
+
+    element.dispatchEvent(new Event('loadedmetadata'));
+
+    expect(seen.map((data) => data.duration)).toEqual([7]);
+  });
+
+  it('destroys the previous source before attaching the next one', async () => {
+    const backend = makeBackend();
+    const first = fakeSource();
+    const second = fakeSource();
+    let next = first;
+
+    backend.setStreamResolver(() => next);
+
+    await backend.load(MPD);
+    next = second;
+    await backend.load(MPD);
+
+    expect(first.destroy, 'the first source is released').toHaveBeenCalledTimes(1);
+    expect(second.attach).toHaveBeenCalledTimes(1);
+  });
 });

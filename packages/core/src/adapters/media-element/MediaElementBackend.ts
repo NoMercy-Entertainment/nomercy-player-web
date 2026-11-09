@@ -12,12 +12,12 @@ import type { BackendId, DomBridgeHandler, HlsHandle } from './helpers';
 import { perceptualGain } from '../../core/volume-curve';
 import { EventEmitter } from '../event-bus/default';
 import {
-	attachDomBridgesTo,
-	captureStreamFromElement,
-	getMediaKeysFromElement,
-	getSinkIdFromElement,
-	setMediaKeysOnElement,
-	setSinkIdOnElement,
+  attachDomBridgesTo,
+  captureStreamFromElement,
+  getMediaKeysFromElement,
+  getSinkIdFromElement,
+  setMediaKeysOnElement,
+  setSinkIdOnElement,
 } from './helpers';
 
 /**
@@ -27,19 +27,19 @@ import {
  * types satisfy this constraint without needing `[key: string]: unknown`.
  */
 export interface MinimalBackendEventPayload {
-	loadstart: unknown;
-	loadedmetadata: unknown;
-	canplay: unknown;
-	play: unknown;
-	playing: unknown;
-	pause: unknown;
-	ended: unknown;
-	timeupdate: unknown;
-	waiting: unknown;
-	stalled: unknown;
-	ratechange: unknown;
-	encrypted: unknown;
-	error: unknown;
+  loadstart: unknown;
+  loadedmetadata: unknown;
+  canplay: unknown;
+  play: unknown;
+  playing: unknown;
+  pause: unknown;
+  ended: unknown;
+  timeupdate: unknown;
+  waiting: unknown;
+  stalled: unknown;
+  ratechange: unknown;
+  encrypted: unknown;
+  error: unknown;
 }
 
 /**
@@ -94,230 +94,240 @@ export type AuthHeaderProvider = (url: string) => string | undefined;
  *     and the audio/video domain-specific surface).
  */
 export abstract class MediaElementBackend<
-	TEl extends HTMLMediaElement,
-	TPayload extends MinimalBackendEventPayload,
+  TEl extends HTMLMediaElement,
+  TPayload extends MinimalBackendEventPayload,
 > extends EventEmitter<TPayload> {
-	protected readonly backendId: BackendId;
-	protected element: TEl;
-	protected ownsElement: boolean;
+  protected readonly backendId: BackendId;
+  protected element: TEl;
+  protected ownsElement: boolean;
 
-	protected domHandlers: DomBridgeHandler[] = [];
-	protected hlsInstance: HlsHandle | undefined;
-	protected loaderRunning: BackendLoaderState = 'running';
-	protected disposed: boolean = false;
+  protected domHandlers: DomBridgeHandler[] = [];
+  protected hlsInstance: HlsHandle | undefined;
+  protected loaderRunning: BackendLoaderState = 'running';
+  protected disposed: boolean = false;
 
-	protected _authHeaderProvider: AuthHeaderProvider | undefined;
+  protected _authHeaderProvider: AuthHeaderProvider | undefined;
 
-	constructor(element: TEl, ownsElement: boolean, backendId: BackendId) {
-		super();
-		this.element = element;
-		this.ownsElement = ownsElement;
-		this.backendId = backendId;
-	}
+  constructor(element: TEl, ownsElement: boolean, backendId: BackendId) {
+    super();
+    this.element = element;
+    this.ownsElement = ownsElement;
+    this.backendId = backendId;
+  }
 
-	// ── Auth ──────────────────────────────────────────────────────────────────
+  // ── Auth ──────────────────────────────────────────────────────────────────
 
-	/**
-	 * Wire the provider whose return value goes into the `Authorization`
-	 * header of every hls.js manifest/segment request. Called by the player
-	 * at backend init from the `auth` config.
-	 */
-	setAuthHeaderProvider(provider: AuthHeaderProvider): void {
-		this._authHeaderProvider = provider;
-	}
+  /**
+   * Wire the provider whose return value goes into the `Authorization`
+   * header of every hls.js manifest/segment request. Called by the player
+   * at backend init from the `auth` config.
+   */
+  setAuthHeaderProvider(provider: AuthHeaderProvider): void {
+    this._authHeaderProvider = provider;
+  }
 
-	// ── DOM-bridge helpers ────────────────────────────────────────────────────
+  // ── DOM-bridge helpers ────────────────────────────────────────────────────
 
-	/**
-	 * Attach the standard set of DOM → backend event bridges onto
-	 * `this.element`. Populates `this.domHandlers` for clean removal on
-	 * dispose/element-swap.
-	 *
-	 * Subclasses that need additional events beyond the standard 13 (e.g.
-	 * `resize`, `emptied`, custom error-code mapping) call this first, then
-	 * push their extra `DomBridgeHandler` entries onto `this.domHandlers`.
-	 *
-	 * @param onStateChange - Called whenever the bridge maps a DOM event to a
-	 *   backend state transition. Subclass writes the value to its own
-	 *   `currentState` field.
-	 * @param getState - Returns the subclass's current backend state. Used by
-	 *   the pause handler to guard against resetting an already-idle or error
-	 *   state.
-	 */
-	protected attachDomBridges(
-		onStateChange: (state: BackendState) => void,
-		getState: () => BackendState,
-	): void {
-		this.domHandlers = attachDomBridgesTo(
-			this.element,
-			(event: string, data: unknown) =>
-				this.emit(event as keyof TPayload, data as TPayload[keyof TPayload]),
-			onStateChange,
-			getState,
-		);
-	}
+  /**
+   * Attach the standard set of DOM → backend event bridges onto
+   * `this.element`. Populates `this.domHandlers` for clean removal on
+   * dispose/element-swap.
+   *
+   * Subclasses that need additional events beyond the standard 13 (e.g.
+   * `resize`, `emptied`, custom error-code mapping) call this first, then
+   * push their extra `DomBridgeHandler` entries onto `this.domHandlers`.
+   *
+   * @param onStateChange - Called whenever the bridge maps a DOM event to a
+   *   backend state transition. Subclass writes the value to its own
+   *   `currentState` field.
+   * @param getState - Returns the subclass's current backend state. Used by
+   *   the pause handler to guard against resetting an already-idle or error
+   *   state.
+   */
+  protected attachDomBridges(
+    onStateChange: (state: BackendState) => void,
+    getState: () => BackendState,
+  ): void {
+    this.domHandlers = attachDomBridgesTo(
+      this.element,
+      (event: string, data: unknown) =>
+        this.emit(event as keyof TPayload, data as TPayload[keyof TPayload]),
+      onStateChange,
+      getState,
+    );
+  }
 
-	/**
-	 * Remove all tracked DOM listeners from `el` and clear `this.domHandlers`.
-	 * Pass a different element when the backend is swapping its primary element
-	 * (crossfade promotion) — the listeners were attached to the OLD element.
-	 */
-	protected detachDomBridges(el: HTMLMediaElement = this.element): void {
-		for (const { event, handler } of this.domHandlers) {
-			el.removeEventListener(event, handler);
-		}
-		this.domHandlers = [];
-	}
+  /**
+   * Remove all tracked DOM listeners from `el` and clear `this.domHandlers`.
+   * Pass a different element when the backend is swapping its primary element
+   * (crossfade promotion) — the listeners were attached to the OLD element.
+   */
+  protected detachDomBridges(el: HTMLMediaElement = this.element): void {
+    for (const { event, handler } of this.domHandlers) {
+      el.removeEventListener(event, handler);
+    }
 
-	// ── Transport ─────────────────────────────────────────────────────────────
+    this.domHandlers = [];
+  }
 
-	/**
-	 * Call `element.play()` and normalise the return to `Promise<void>`.
-	 *
-	 * Older browsers return `undefined` from `play()` rather than a `Promise`;
-	 * the guard makes callers safe to `await` regardless of engine vintage.
-	 *
-	 * `WebAudioBackend` overrides this to resume its `AudioContext` before
-	 * forwarding to the element — the context resume MUST precede the element
-	 * call to satisfy browser autoplay policy.
-	 */
-	play(): Promise<void> {
-		const result = this.element.play();
-		return result instanceof Promise ? result : Promise.resolve();
-	}
+  // ── Transport ─────────────────────────────────────────────────────────────
 
-	pause(): void {
-		this.element.pause();
-	}
+  /**
+   * Call `element.play()` and normalise the return to `Promise<void>`.
+   *
+   * Older browsers return `undefined` from `play()` rather than a `Promise`;
+   * the guard makes callers safe to `await` regardless of engine vintage.
+   *
+   * `WebAudioBackend` overrides this to resume its `AudioContext` before
+   * forwarding to the element — the context resume MUST precede the element
+   * call to satisfy browser autoplay policy.
+   */
+  play(): Promise<void> {
+    const result = this.element.play();
 
-	stop(): void {
-		this.element.pause();
-		try {
-			this.element.currentTime = 0;
-		}
-		catch {
-			/* element not ready — best effort */
-		}
-	}
+    return result instanceof Promise
+      ? result
+      : Promise.resolve();
+  }
 
-	// ── Time / position ───────────────────────────────────────────────────────
+  pause(): void {
+    this.element.pause();
+  }
 
-	currentTime(): number;
-	currentTime(seconds: number): void;
-	currentTime(seconds?: number): number | void {
-		if (seconds === undefined) {
-			return this.element.currentTime;
-		}
-		try {
-			this.element.currentTime = seconds;
-		}
-		catch {
-			/* element not seekable yet — best effort */
-		}
-	}
+  stop(): void {
+    this.element.pause();
 
-	duration(): number {
-		const raw = this.element.duration;
-		return Number.isFinite(raw) ? raw : 0;
-	}
+    try {
+      this.element.currentTime = 0;
+    } catch {
+      /* element not ready — best effort */
+    }
+  }
 
-	bufferedRanges(): TimeRanges {
-		return this.element.buffered;
-	}
+  // ── Time / position ───────────────────────────────────────────────────────
 
-	seekable(): TimeRanges {
-		return this.element.seekable;
-	}
+  currentTime(): number;
+  currentTime(seconds: number): void;
+  currentTime(seconds?: number): number | void {
+    if (seconds === undefined) {
+      return this.element.currentTime;
+    }
 
-	playbackRate(): number;
-	playbackRate(rate: number): void;
-	playbackRate(rate?: number): number | void {
-		if (rate === undefined) {
-			return this.element.playbackRate;
-		}
-		this.element.playbackRate = rate;
-	}
+    try {
+      this.element.currentTime = seconds;
+    } catch {
+      /* element not seekable yet — best effort */
+    }
+  }
 
-	// ── Volume ────────────────────────────────────────────────────────────────
+  duration(): number {
+    const raw = this.element.duration;
 
-	/**
-	 * Get the current element volume (perceptual-gain curved amplitude, not
-	 * the 0..1 slider position). The player mixin owns the slider position in
-	 * `_internalVolume`. The getter does not invert the curve, so
-	 * `volume(0.5)` reads back `perceptualGain(0.5)`; read the slider position
-	 * from the player's `volume()`.
-	 *
-	 * Setter clamps to [0, 1], applies `perceptualGain`, and writes to
-	 * `element.volume`. Subclasses that need additional tracking (e.g.
-	 * `prevVolume` bookkeeping for crossfade restore, or GainNode ramping)
-	 * override the setter arm.
-	 */
-	volume(): number;
-	volume(value: number): void;
-	volume(value?: number): number | void {
-		if (value === undefined) {
-			return this.element.volume;
-		}
-		const clamped = Math.max(0, Math.min(1, value));
-		this.element.volume = perceptualGain(clamped);
-	}
+    return Number.isFinite(raw)
+      ? raw
+      : 0;
+  }
 
-	/**
-	 * Mute element output. Subclasses that need to save `prevVolume` before
-	 * muting (audio backends, for crossfade / restore) override this.
-	 */
-	mute(): void {
-		this.element.muted = true;
-	}
+  bufferedRanges(): TimeRanges {
+    return this.element.buffered;
+  }
 
-	unmute(): void {
-		this.element.muted = false;
-	}
+  seekable(): TimeRanges {
+    return this.element.seekable;
+  }
 
-	// ── Loader backpressure ───────────────────────────────────────────────────
+  playbackRate(): number;
+  playbackRate(rate: number): void;
+  playbackRate(rate?: number): number | void {
+    if (rate === undefined) {
+      return this.element.playbackRate;
+    }
 
-	/**
-	 * Pause the HLS fetch pipeline. No-op when no HLS instance is active
-	 * (native HLS / progressive MP4 have no public throttle hook). State is
-	 * always updated for symmetry with `loaderState()`.
-	 */
-	pauseLoader(): void {
-		this.hlsInstance?.stopLoad();
-		this.loaderRunning = 'paused';
-	}
+    this.element.playbackRate = rate;
+  }
 
-	resumeLoader(): void {
-		this.hlsInstance?.startLoad();
-		this.loaderRunning = 'running';
-	}
+  // ── Volume ────────────────────────────────────────────────────────────────
 
-	loaderState(): BackendLoaderState {
-		return this.loaderRunning;
-	}
+  /**
+   * Get the current element volume (perceptual-gain curved amplitude, not
+   * the 0..1 slider position). The player mixin owns the slider position in
+   * `_internalVolume`. The getter does not invert the curve, so
+   * `volume(0.5)` reads back `perceptualGain(0.5)`; read the slider position
+   * from the player's `volume()`.
+   *
+   * Setter clamps to [0, 1], applies `perceptualGain`, and writes to
+   * `element.volume`. Subclasses that need additional tracking (e.g.
+   * `prevVolume` bookkeeping for crossfade restore, or GainNode ramping)
+   * override the setter arm.
+   */
+  volume(): number;
+  volume(value: number): void;
+  volume(value?: number): number | void {
+    if (value === undefined) {
+      return this.element.volume;
+    }
 
-	// ── Capability delegates ──────────────────────────────────────────────────
+    const clamped = Math.max(0, Math.min(1, value));
 
-	captureStream(): MediaStream {
-		return captureStreamFromElement(this.element, this.backendId);
-	}
+    this.element.volume = perceptualGain(clamped);
+  }
 
-	async setSinkId(deviceId: string): Promise<void> {
-		await setSinkIdOnElement(this.element, deviceId, this.backendId);
-	}
+  /**
+   * Mute element output. Subclasses that need to save `prevVolume` before
+   * muting (audio backends, for crossfade / restore) override this.
+   */
+  mute(): void {
+    this.element.muted = true;
+  }
 
-	getSinkId(): string {
-		return getSinkIdFromElement(this.element);
-	}
+  unmute(): void {
+    this.element.muted = false;
+  }
 
-	mediaKeys(): MediaKeys | undefined {
-		return getMediaKeysFromElement(this.element);
-	}
+  // ── Loader backpressure ───────────────────────────────────────────────────
 
-	async setMediaKeys(keys: MediaKeys): Promise<void> {
-		await setMediaKeysOnElement(this.element, keys, this.backendId);
-	}
+  /**
+   * Pause the HLS fetch pipeline. No-op when no HLS instance is active
+   * (native HLS / progressive MP4 have no public throttle hook). State is
+   * always updated for symmetry with `loaderState()`.
+   */
+  pauseLoader(): void {
+    this.hlsInstance?.stopLoad();
+    this.loaderRunning = 'paused';
+  }
 
-	mediaElement(): TEl {
-		return this.element;
-	}
+  resumeLoader(): void {
+    this.hlsInstance?.startLoad();
+    this.loaderRunning = 'running';
+  }
+
+  loaderState(): BackendLoaderState {
+    return this.loaderRunning;
+  }
+
+  // ── Capability delegates ──────────────────────────────────────────────────
+
+  captureStream(): MediaStream {
+    return captureStreamFromElement(this.element, this.backendId);
+  }
+
+  async setSinkId(deviceId: string): Promise<void> {
+    await setSinkIdOnElement(this.element, deviceId, this.backendId);
+  }
+
+  getSinkId(): string {
+    return getSinkIdFromElement(this.element);
+  }
+
+  mediaKeys(): MediaKeys | undefined {
+    return getMediaKeysFromElement(this.element);
+  }
+
+  async setMediaKeys(keys: MediaKeys): Promise<void> {
+    await setMediaKeysOnElement(this.element, keys, this.backendId);
+  }
+
+  mediaElement(): TEl {
+    return this.element;
+  }
 }

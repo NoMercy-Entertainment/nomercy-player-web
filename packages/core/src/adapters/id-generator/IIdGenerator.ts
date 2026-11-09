@@ -12,5 +12,5 @@
  * counter so generated IDs are deterministic and assertion-friendly.
  */
 export interface IIdGenerator {
-	next(): string;
+  next(): string;
 }

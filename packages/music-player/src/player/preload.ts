@@ -20,35 +20,36 @@ import { DefaultPreloadStrategy } from '@nomercy-entertainment/nomercy-player-co
  * and override `assetsToPreload`.
  */
 export class MusicPreloadStrategy extends DefaultPreloadStrategy {
-	override assetsToPreload(item: BasePlaylistItem): PreloadAsset[] {
-		const musicItem = item as MusicPlaylistItem;
-		const assets: PreloadAsset[] = [];
+  override assetsToPreload(item: BasePlaylistItem): PreloadAsset[] {
+    const musicItem = item as MusicPlaylistItem;
+    const assets: PreloadAsset[] = [];
 
-		if (musicItem.url) {
-			assets.push({
-				url: musicItem.url,
-				category: 'media',
-				mode: 'metadata',
-			});
-		}
+    if (musicItem.url) {
+      assets.push({
+        url: musicItem.url,
+        category: 'media',
+        mode: 'metadata',
+      });
+    }
 
-		const cover = musicItem.image ?? musicItem.cover;
-		if (cover) {
-			assets.push({
-				url: cover,
-				category: 'poster',
-				mode: 'auto',
-			});
-		}
+    const cover = musicItem.image ?? musicItem.cover;
 
-		if (musicItem.lyricsUrl) {
-			assets.push({
-				url: musicItem.lyricsUrl,
-				category: 'lyrics',
-				mode: 'auto',
-			});
-		}
+    if (cover) {
+      assets.push({
+        url: cover,
+        category: 'poster',
+        mode: 'auto',
+      });
+    }
 
-		return assets;
-	}
+    if (musicItem.lyricsUrl) {
+      assets.push({
+        url: musicItem.lyricsUrl,
+        category: 'lyrics',
+        mode: 'auto',
+      });
+    }
+
+    return assets;
+  }
 }

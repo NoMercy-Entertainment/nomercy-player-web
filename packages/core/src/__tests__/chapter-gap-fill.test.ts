@@ -30,304 +30,333 @@ import { describe, expect, it } from 'vitest';
 import { CHAPTER_GAP_EPSILON_SECONDS, fillChapterGaps } from '../core/chapters/fill-gaps';
 
 function chapter(index: number, start: number, end: number, title: string): Chapter {
-	return {
-		index,
-		start,
-		end,
-		title,
-	};
+  return {
+    index,
+    start,
+    end,
+    title,
+  };
 }
 
 const TITLE = (): string => 'Chapter';
 
 describe('fillChapterGaps()', () => {
-	// ── The boss's exact case ──────────────────────────────────────────────
-
-	it('backfills a single partial chapter to the full duration (trailing gap)', () => {
-		const chapters = [chapter(0, 0, 10, 'Intro')];
-
-		const result = fillChapterGaps(chapters, 30, TITLE);
-
-		expect(result.changed).toBe(true);
-		expect(result.chapters).toHaveLength(2);
-		expect(result.chapters[0]).toEqual(chapter(0, 0, 10, 'Intro'));
-		expect(result.chapters[1]).toMatchObject({
-			index: 1,
-			start: 10,
-			end: 30,
-			title: 'Chapter',
-			synthetic: true,
-		});
-	});
-
-	// ── Leading gap ─────────────────────────────────────────────────────────
-
-	it('fills a leading gap when the first chapter starts after 0', () => {
-		const chapters = [chapter(0, 5, 30, 'Main')];
-
-		const result = fillChapterGaps(chapters, 30, TITLE);
-
-		expect(result.changed).toBe(true);
-		expect(result.chapters).toHaveLength(2);
-		expect(result.chapters[0]).toMatchObject({
-			index: 0,
-			start: 0,
-			end: 5,
-			synthetic: true,
-		});
-		expect(result.chapters[1]).toEqual(chapter(1, 5, 30, 'Main'));
-	});
-
-	// ── Interior gap ────────────────────────────────────────────────────────
-
-	it('fills an interior gap between two chapters', () => {
-		const chapters = [
-			chapter(0, 0, 10, 'Intro'),
-			chapter(1, 20, 30, 'Outro'),
-		];
-
-		const result = fillChapterGaps(chapters, 30, TITLE);
-
-		expect(result.changed).toBe(true);
-		expect(result.chapters).toHaveLength(3);
-		expect(result.chapters[1]).toMatchObject({
-			index: 1,
-			start: 10,
-			end: 20,
-			synthetic: true,
-		});
-		expect(result.chapters[2]).toEqual(chapter(2, 20, 30, 'Outro'));
-	});
-
-	// ── Leading + interior + trailing combined ─────────────────────────────
-
-	it('fills leading, interior, AND trailing gaps in the same pass', () => {
-		const chapters = [
-			chapter(0, 5, 10, 'A'),
-			chapter(1, 15, 20, 'B'),
-		];
-
-		const result = fillChapterGaps(chapters, 30, TITLE);
+  // ── The boss's exact case ──────────────────────────────────────────────
 
-		expect(result.changed).toBe(true);
-		expect(result.chapters.map(entry => [entry.start, entry.end, entry.synthetic ?? false])).toEqual([
-			[0, 5, true],
-			[5, 10, false],
-			[10, 15, true],
-			[15, 20, false],
-			[20, 30, true],
-		]);
-		expect(result.chapters.map(entry => entry.index)).toEqual([0, 1, 2, 3, 4]);
-	});
-
-	// ── Epsilon tolerance ───────────────────────────────────────────────────
+  it('backfills a single partial chapter to the full duration (trailing gap)', () => {
+    const chapters = [chapter(0, 0, 10, 'Intro')];
 
-	describe('epsilon tolerance', () => {
-		it('does not insert a filler for a gap smaller than the epsilon', () => {
-			const chapters = [
-				chapter(0, 0, 10, 'A'),
-				chapter(1, 10 + CHAPTER_GAP_EPSILON_SECONDS / 2, 20, 'B'),
-			];
+    const result = fillChapterGaps(chapters, 30, TITLE);
 
-			const result = fillChapterGaps(chapters, 20, TITLE);
+    expect(result.changed).toBe(true);
+    expect(result.chapters).toHaveLength(2);
+    expect(result.chapters[0]).toEqual(chapter(0, 0, 10, 'Intro'));
 
-			expect(result.changed).toBe(false);
-			expect(result.chapters).toBe(chapters);
-		});
+    expect(result.chapters[1]).toMatchObject({
+      index: 1,
+      start: 10,
+      end: 30,
+      title: 'Chapter',
+      synthetic: true,
+    });
+  });
 
-		it('does not insert a trailing filler when duration drift is within the epsilon', () => {
-			const chapters = [chapter(0, 0, 20, 'A')];
+  // ── Leading gap ─────────────────────────────────────────────────────────
 
-			const result = fillChapterGaps(chapters, 20 + CHAPTER_GAP_EPSILON_SECONDS / 2, TITLE);
+  it('fills a leading gap when the first chapter starts after 0', () => {
+    const chapters = [chapter(0, 5, 30, 'Main')];
 
-			expect(result.changed).toBe(false);
-			expect(result.chapters).toBe(chapters);
-		});
+    const result = fillChapterGaps(chapters, 30, TITLE);
 
-		it('DOES insert a filler once the gap reaches the absorb threshold', () => {
-			const chapters = [
-				chapter(0, 0, 10, 'A'),
-				chapter(1, 12, 20, 'B'),
-			];
+    expect(result.changed).toBe(true);
+    expect(result.chapters).toHaveLength(2);
 
-			const result = fillChapterGaps(chapters, 20, TITLE);
+    expect(result.chapters[0]).toMatchObject({
+      index: 0,
+      start: 0,
+      end: 5,
+      synthetic: true,
+    });
 
-			expect(result.changed).toBe(true);
-			expect(result.chapters).toHaveLength(3);
-		});
-	});
+    expect(result.chapters[1]).toEqual(chapter(1, 5, 30, 'Main'));
+  });
 
-	// ── Short gaps are absorbed ─────────────────────────────────────────────
+  // ── Interior gap ────────────────────────────────────────────────────────
 
-	describe('short gaps are absorbed into the neighbor', () => {
-		it('extends the last chapter over a short tail (Sintel 888 vs 888.889)', () => {
-			const chapters = [chapter(0, 0, 400, 'A'), chapter(1, 400, 888, 'End Credits')];
+  it('fills an interior gap between two chapters', () => {
+    const chapters = [
+      chapter(0, 0, 10, 'Intro'),
+      chapter(1, 20, 30, 'Outro'),
+    ];
 
-			const result = fillChapterGaps(chapters, 888.889, TITLE);
+    const result = fillChapterGaps(chapters, 30, TITLE);
 
-			expect(result.changed).toBe(true);
-			expect(result.chapters).toHaveLength(2);
-			expect(result.chapters[1]).toMatchObject({ start: 400, end: 888.889, title: 'End Credits' });
-			expect(result.chapters[1]!.synthetic).toBeUndefined();
-		});
+    expect(result.changed).toBe(true);
+    expect(result.chapters).toHaveLength(3);
 
-		it('moves the first chapter to 0 over a short lead-in', () => {
-			const chapters = [chapter(0, 1, 10, 'A'), chapter(1, 10, 20, 'B')];
+    expect(result.chapters[1]).toMatchObject({
+      index: 1,
+      start: 10,
+      end: 20,
+      synthetic: true,
+    });
 
-			const result = fillChapterGaps(chapters, 20, TITLE);
+    expect(result.chapters[2]).toEqual(chapter(2, 20, 30, 'Outro'));
+  });
 
-			expect(result.chapters).toHaveLength(2);
-			expect(result.chapters[0]).toMatchObject({ start: 0, end: 10 });
-		});
+  // ── Leading + interior + trailing combined ─────────────────────────────
 
-		it('extends the chapter before a short interior gap', () => {
-			const chapters = [chapter(0, 0, 10, 'A'), chapter(1, 11, 20, 'B')];
+  it('fills leading, interior, AND trailing gaps in the same pass', () => {
+    const chapters = [
+      chapter(0, 5, 10, 'A'),
+      chapter(1, 15, 20, 'B'),
+    ];
 
-			const result = fillChapterGaps(chapters, 20, TITLE);
+    const result = fillChapterGaps(chapters, 30, TITLE);
 
-			expect(result.chapters).toHaveLength(2);
-			expect(result.chapters[0]).toMatchObject({ start: 0, end: 11 });
-			expect(result.chapters[1]).toMatchObject({ start: 11, end: 20 });
-		});
+    expect(result.changed).toBe(true);
 
-		it('still inserts a synthetic filler for a 30 s hole', () => {
-			const chapters = [chapter(0, 0, 10, 'A'), chapter(1, 40, 50, 'B')];
+    expect(result.chapters.map((entry) => [entry.start, entry.end, entry.synthetic ?? false])).toEqual([
+      [0, 5, true],
+      [5, 10, false],
+      [10, 15, true],
+      [15, 20, false],
+      [20, 30, true],
+    ]);
 
-			const result = fillChapterGaps(chapters, 50, TITLE);
+    expect(result.chapters.map((entry) => entry.index)).toEqual([0, 1, 2, 3, 4]);
+  });
 
-			expect(result.chapters).toHaveLength(3);
-			expect(result.chapters[1]).toMatchObject({ start: 10, end: 40, synthetic: true });
-		});
-	});
+  // ── Epsilon tolerance ───────────────────────────────────────────────────
 
-	// ── Empty stays empty ───────────────────────────────────────────────────
+  describe('epsilon tolerance', () => {
+    it('does not insert a filler for a gap smaller than the epsilon', () => {
+      const chapters = [
+        chapter(0, 0, 10, 'A'),
+        chapter(1, 10 + CHAPTER_GAP_EPSILON_SECONDS / 2, 20, 'B'),
+      ];
 
-	it('leaves an empty list empty regardless of duration', () => {
-		const chapters: Chapter[] = [];
+      const result = fillChapterGaps(chapters, 20, TITLE);
 
-		const result = fillChapterGaps(chapters, 120, TITLE);
+      expect(result.changed).toBe(false);
+      expect(result.chapters).toBe(chapters);
+    });
 
-		expect(result.changed).toBe(false);
-		expect(result.chapters).toBe(chapters);
-		expect(result.chapters).toHaveLength(0);
-	});
-
-	// ── Full coverage passes through untouched ─────────────────────────────
+    it('does not insert a trailing filler when duration drift is within the epsilon', () => {
+      const chapters = [chapter(0, 0, 20, 'A')];
 
-	it('returns the identical reference when the list already fully covers the duration', () => {
-		const chapters = [
-			chapter(0, 0, 10, 'A'),
-			chapter(1, 10, 20, 'B'),
-		];
-
-		const result = fillChapterGaps(chapters, 20, TITLE);
+      const result = fillChapterGaps(chapters, 20 + CHAPTER_GAP_EPSILON_SECONDS / 2, TITLE);
 
-		expect(result.changed).toBe(false);
-		expect(result.chapters).toBe(chapters);
-	});
+      expect(result.changed).toBe(false);
+      expect(result.chapters).toBe(chapters);
+    });
 
-	// ── Unknown duration never backfills ────────────────────────────────────
+    it('DOES insert a filler once the gap reaches the absorb threshold', () => {
+      const chapters = [
+        chapter(0, 0, 10, 'A'),
+        chapter(1, 12, 20, 'B'),
+      ];
 
-	describe('unknown duration', () => {
-		const chapters = [chapter(0, 0, 10, 'Intro')];
+      const result = fillChapterGaps(chapters, 20, TITLE);
 
-		it('duration 0 passes through raw', () => {
-			const result = fillChapterGaps(chapters, 0, TITLE);
-			expect(result.changed).toBe(false);
-			expect(result.chapters).toBe(chapters);
-		});
+      expect(result.changed).toBe(true);
+      expect(result.chapters).toHaveLength(3);
+    });
+  });
 
-		it('negative duration passes through raw', () => {
-			const result = fillChapterGaps(chapters, -5, TITLE);
-			expect(result.changed).toBe(false);
-			expect(result.chapters).toBe(chapters);
-		});
+  // ── Short gaps are absorbed ─────────────────────────────────────────────
 
-		it('NaN duration passes through raw', () => {
-			const result = fillChapterGaps(chapters, Number.NaN, TITLE);
-			expect(result.changed).toBe(false);
-			expect(result.chapters).toBe(chapters);
-		});
+  describe('short gaps are absorbed into the neighbor', () => {
+    it('extends the last chapter over a short tail (Sintel 888 vs 888.889)', () => {
+      const chapters = [chapter(0, 0, 400, 'A'), chapter(1, 400, 888, 'End Credits')];
 
-		it('Infinity duration passes through raw', () => {
-			const result = fillChapterGaps(chapters, Number.POSITIVE_INFINITY, TITLE);
-			expect(result.changed).toBe(false);
-			expect(result.chapters).toBe(chapters);
-		});
-	});
+      const result = fillChapterGaps(chapters, 888.889, TITLE);
 
-	// ── Idempotence / re-normalization ──────────────────────────────────────
+      expect(result.changed).toBe(true);
+      expect(result.chapters).toHaveLength(2);
 
-	describe('idempotence across repeated calls', () => {
-		it('re-running with the SAME duration on an already-filled list is a no-op', () => {
-			const chapters = [chapter(0, 0, 10, 'Intro')];
-			const first = fillChapterGaps(chapters, 30, TITLE);
-			expect(first.changed).toBe(true);
+      expect(result.chapters[1]).toMatchObject({
+        start: 400,
+        end: 888.889,
+        title: 'End Credits',
+      });
 
-			const second = fillChapterGaps(first.chapters, 30, TITLE);
+      expect(result.chapters[1]!.synthetic).toBeUndefined();
+    });
 
-			expect(second.changed).toBe(false);
-			expect(second.chapters).toBe(first.chapters);
-		});
+    it('moves the first chapter to 0 over a short lead-in', () => {
+      const chapters = [chapter(0, 1, 10, 'A'), chapter(1, 10, 20, 'B')];
 
-		it('a LATER, larger duration extends the trailing filler instead of stacking a second one', () => {
-			const chapters = [chapter(0, 0, 10, 'Intro')];
-			const first = fillChapterGaps(chapters, 30, TITLE);
+      const result = fillChapterGaps(chapters, 20, TITLE);
 
-			const second = fillChapterGaps(first.chapters, 90, TITLE);
+      expect(result.chapters).toHaveLength(2);
+      expect(result.chapters[0]).toMatchObject({ start: 0, end: 10 });
+    });
 
-			expect(second.changed).toBe(true);
-			expect(second.chapters).toHaveLength(2);
-			expect(second.chapters[1]).toMatchObject({
-				start: 10,
-				end: 90,
-				synthetic: true,
-			});
-		});
+    it('extends the chapter before a short interior gap', () => {
+      const chapters = [chapter(0, 0, 10, 'A'), chapter(1, 11, 20, 'B')];
 
-		it('a duration that shrinks back to exactly the real content drops the now-stale filler', () => {
-			const chapters = [chapter(0, 0, 10, 'Intro')];
-			const first = fillChapterGaps(chapters, 30, TITLE);
-			expect(first.chapters).toHaveLength(2);
+      const result = fillChapterGaps(chapters, 20, TITLE);
 
-			const second = fillChapterGaps(first.chapters, 10, TITLE);
+      expect(result.chapters).toHaveLength(2);
+      expect(result.chapters[0]).toMatchObject({ start: 0, end: 11 });
+      expect(result.chapters[1]).toMatchObject({ start: 11, end: 20 });
+    });
 
-			expect(second.changed).toBe(true);
-			expect(second.chapters).toHaveLength(1);
-			expect(second.chapters[0]).toEqual(chapter(0, 0, 10, 'Intro'));
-		});
-	});
+    it('still inserts a synthetic filler for a 30 s hole', () => {
+      const chapters = [chapter(0, 0, 10, 'A'), chapter(1, 40, 50, 'B')];
 
-	// ── Filler-title resolver ────────────────────────────────────────────────
+      const result = fillChapterGaps(chapters, 50, TITLE);
 
-	it('invokes makeFillerTitle once per inserted filler and uses its return value', () => {
-		const chapters = [
-			chapter(0, 5, 10, 'A'),
-			chapter(1, 20, 25, 'B'),
-		];
-		const calls: number[] = [];
-		let callCount = 0;
-		const makeTitle = (): string => {
-			callCount += 1;
-			calls.push(callCount);
-			return `Filler ${callCount}`;
-		};
+      expect(result.chapters).toHaveLength(3);
 
-		const result = fillChapterGaps(chapters, 25, makeTitle);
+      expect(result.chapters[1]).toMatchObject({
+        start: 10,
+        end: 40,
+        synthetic: true,
+      });
+    });
+  });
 
-		expect(calls).toEqual([1, 2]);
-		const fillers = result.chapters.filter(entry => entry.synthetic);
-		expect(fillers.map(entry => entry.title)).toEqual(['Filler 1', 'Filler 2']);
-	});
+  // ── Empty stays empty ───────────────────────────────────────────────────
 
-	// ── synthetic flag ───────────────────────────────────────────────────────
+  it('leaves an empty list empty regardless of duration', () => {
+    const chapters: Chapter[] = [];
 
-	it('never marks a real (ingest-sourced) chapter as synthetic', () => {
-		const chapters = [chapter(0, 5, 10, 'A')];
+    const result = fillChapterGaps(chapters, 120, TITLE);
 
-		const result = fillChapterGaps(chapters, 30, TITLE);
+    expect(result.changed).toBe(false);
+    expect(result.chapters).toBe(chapters);
+    expect(result.chapters).toHaveLength(0);
+  });
 
-		const real = result.chapters.find(entry => entry.title === 'A');
-		expect(real?.synthetic).toBeUndefined();
-	});
+  // ── Full coverage passes through untouched ─────────────────────────────
+
+  it('returns the identical reference when the list already fully covers the duration', () => {
+    const chapters = [
+      chapter(0, 0, 10, 'A'),
+      chapter(1, 10, 20, 'B'),
+    ];
+
+    const result = fillChapterGaps(chapters, 20, TITLE);
+
+    expect(result.changed).toBe(false);
+    expect(result.chapters).toBe(chapters);
+  });
+
+  // ── Unknown duration never backfills ────────────────────────────────────
+
+  describe('unknown duration', () => {
+    const chapters = [chapter(0, 0, 10, 'Intro')];
+
+    it('duration 0 passes through raw', () => {
+      const result = fillChapterGaps(chapters, 0, TITLE);
+
+      expect(result.changed).toBe(false);
+      expect(result.chapters).toBe(chapters);
+    });
+
+    it('negative duration passes through raw', () => {
+      const result = fillChapterGaps(chapters, -5, TITLE);
+
+      expect(result.changed).toBe(false);
+      expect(result.chapters).toBe(chapters);
+    });
+
+    it('NaN duration passes through raw', () => {
+      const result = fillChapterGaps(chapters, Number.NaN, TITLE);
+
+      expect(result.changed).toBe(false);
+      expect(result.chapters).toBe(chapters);
+    });
+
+    it('Infinity duration passes through raw', () => {
+      const result = fillChapterGaps(chapters, Number.POSITIVE_INFINITY, TITLE);
+
+      expect(result.changed).toBe(false);
+      expect(result.chapters).toBe(chapters);
+    });
+  });
+
+  // ── Idempotence / re-normalization ──────────────────────────────────────
+
+  describe('idempotence across repeated calls', () => {
+    it('re-running with the SAME duration on an already-filled list is a no-op', () => {
+      const chapters = [chapter(0, 0, 10, 'Intro')];
+      const first = fillChapterGaps(chapters, 30, TITLE);
+
+      expect(first.changed).toBe(true);
+
+      const second = fillChapterGaps(first.chapters, 30, TITLE);
+
+      expect(second.changed).toBe(false);
+      expect(second.chapters).toBe(first.chapters);
+    });
+
+    it('a LATER, larger duration extends the trailing filler instead of stacking a second one', () => {
+      const chapters = [chapter(0, 0, 10, 'Intro')];
+      const first = fillChapterGaps(chapters, 30, TITLE);
+
+      const second = fillChapterGaps(first.chapters, 90, TITLE);
+
+      expect(second.changed).toBe(true);
+      expect(second.chapters).toHaveLength(2);
+
+      expect(second.chapters[1]).toMatchObject({
+        start: 10,
+        end: 90,
+        synthetic: true,
+      });
+    });
+
+    it('a duration that shrinks back to exactly the real content drops the now-stale filler', () => {
+      const chapters = [chapter(0, 0, 10, 'Intro')];
+      const first = fillChapterGaps(chapters, 30, TITLE);
+
+      expect(first.chapters).toHaveLength(2);
+
+      const second = fillChapterGaps(first.chapters, 10, TITLE);
+
+      expect(second.changed).toBe(true);
+      expect(second.chapters).toHaveLength(1);
+      expect(second.chapters[0]).toEqual(chapter(0, 0, 10, 'Intro'));
+    });
+  });
+
+  // ── Filler-title resolver ────────────────────────────────────────────────
+
+  it('invokes makeFillerTitle once per inserted filler and uses its return value', () => {
+    const chapters = [
+      chapter(0, 5, 10, 'A'),
+      chapter(1, 20, 25, 'B'),
+    ];
+    const calls: number[] = [];
+    let callCount = 0;
+
+    const makeTitle = (): string => {
+      callCount += 1;
+      calls.push(callCount);
+
+      return `Filler ${callCount}`;
+    };
+
+    const result = fillChapterGaps(chapters, 25, makeTitle);
+
+    expect(calls).toEqual([1, 2]);
+    const fillers = result.chapters.filter((entry) => entry.synthetic);
+
+    expect(fillers.map((entry) => entry.title)).toEqual(['Filler 1', 'Filler 2']);
+  });
+
+  // ── synthetic flag ───────────────────────────────────────────────────────
+
+  it('never marks a real (ingest-sourced) chapter as synthetic', () => {
+    const chapters = [chapter(0, 5, 10, 'A')];
+
+    const result = fillChapterGaps(chapters, 30, TITLE);
+
+    const real = result.chapters.find((entry) => entry.title === 'A');
+
+    expect(real?.synthetic).toBeUndefined();
+  });
 });

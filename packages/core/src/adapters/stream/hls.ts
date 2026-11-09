@@ -8,23 +8,23 @@
 
 import type Hls from 'hls.js';
 import type {
-	ErrorData,
-	HlsConfig,
-	Loader,
-	LoaderCallbacks,
-	LoaderConfiguration,
-	LoaderContext,
-	LoaderResponse,
-	LoaderStats,
+  ErrorData,
+  HlsConfig,
+  Loader,
+  LoaderCallbacks,
+  LoaderConfiguration,
+  LoaderContext,
+  LoaderResponse,
+  LoaderStats,
 } from 'hls.js';
 import type {
-	IStreamFactory,
-	IStreamSource,
-	StreamEvent,
-	StreamEventPayloadMap,
-	StreamFactoryOptions,
-	StreamLevel,
-	StreamSourceState,
+  IStreamFactory,
+  IStreamSource,
+  StreamEvent,
+  StreamEventPayloadMap,
+  StreamFactoryOptions,
+  StreamLevel,
+  StreamSourceState,
 } from './IStreamSource';
 import type { StreamRegistry } from './registry';
 import { MediaFormatError, StreamError } from '../../errors';
@@ -46,253 +46,287 @@ const HLS_MIME_RE = /^(?:application|audio)\/(?:vnd\.apple\.mpegurl|x-mpegurl|mp
  * path because the browser fetches those resources directly.
  */
 export class HlsStreamSource implements IStreamSource {
-	readonly kind = 'hls' as const;
+  readonly kind = 'hls' as const;
 
-	private hls?: Hls;
-	private element?: HTMLMediaElement;
-	private listeners = new Map<StreamEvent, Set<(data: StreamEventPayloadMap[StreamEvent]) => void>>();
-	private boundElementError?: () => void;
-	private _state: StreamSourceState = 'idle';
-	private currentLevelIdx = -1;
+  private hls?: Hls;
+  private element?: HTMLMediaElement;
+  private listeners = new Map<StreamEvent, Set<(data: StreamEventPayloadMap[StreamEvent]) => void>>();
+  private boundElementError?: () => void;
+  private _state: StreamSourceState = 'idle';
+  private currentLevelIdx = -1;
 
-	constructor(private readonly url: string, private readonly registry?: StreamRegistry) {}
+  constructor(private readonly url: string, private readonly registry?: StreamRegistry) {}
 
-	/** @internal */
-	getRegistry(): StreamRegistry | undefined {
-		return this.registry;
-	}
+  /** @internal */
+  getRegistry(): StreamRegistry | undefined {
+    return this.registry;
+  }
 
-	async attach(element: HTMLMediaElement): Promise<void> {
-		this.element = element;
-		this._state = 'loading';
+  async attach(element: HTMLMediaElement): Promise<void> {
+    this.element = element;
+    this._state = 'loading';
 
-		this.boundElementError = () => {
-			if (element.error) {
-				this._state = 'error';
-				this.emit('error', element.error);
-			}
-		};
-		element.addEventListener('error', this.boundElementError);
+    this.boundElementError = () => {
+      if (element.error) {
+        this._state = 'error';
+        this.emit('error', element.error);
+      }
+    };
 
-		const native = canPlayNativeHls(element);
-		if (native) {
-			element.src = this.url;
-			await this.waitForLoadedMetadata(element);
-			this._state = 'ready';
-			this.emit('manifest-loaded', undefined);
-			return;
-		}
+    element.addEventListener('error', this.boundElementError);
 
-		const { default: Hls } = await import('hls.js');
+    const native = canPlayNativeHls(element);
 
-		if (!Hls.isSupported()) {
-			throw new MediaFormatError({
-				code: 'core:media/hls-unsupported',
-				severity: 'error',
-				scope: {
-					kind: 'stream',
-					id: 'hls',
-				},
-				message: 'HLS playback requires either native browser support (Safari) or hls.js. Neither is available in this environment.',
-			});
-		}
+    if (native) {
+      element.src = this.url;
+      await this.waitForLoadedMetadata(element);
+      this._state = 'ready';
+      this.emit('manifest-loaded', undefined);
 
-		const registry = this.registry;
-		this.hls = new Hls({
-			autoStartLoad: true,
-			enableWorker: true,
-			lowLatencyMode: false,
-			...(registry ? { loader: makeInterceptingLoader(Hls, registry) } : {}),
-		});
+      return;
+    }
 
-		this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
-			this._state = 'ready';
-			this.emit('manifest-loaded', undefined);
-		});
-		this.hls.on(Hls.Events.LEVEL_SWITCHED, (_eventName, data) => {
-			if (typeof data?.level === 'number')
-				this.currentLevelIdx = data.level;
-			this.emit('level-switched', data);
-		});
-		this.hls.on(Hls.Events.FRAG_LOADED, (_eventName, data) => this.emit('fragment-loaded', data));
-		this.hls.on(Hls.Events.ERROR, (_eventName, data) => {
-			if (data?.fatal) {
-				this._state = 'error';
-				this.emit('error', data);
-			}
-		});
+    const { default: Hls } = await import('hls.js');
 
-		this.hls.attachMedia(element);
-		await new Promise<void>((resolve, reject) => {
-			const cleanup = () => {
-				this.hls?.off(Hls.Events.MEDIA_ATTACHED, onAttached);
-				this.hls?.off(Hls.Events.ERROR, onErr);
-			};
-			const onAttached = () => {
-				cleanup();
-				resolve();
-			};
-			const onErr = (_eventName: string, data: ErrorData) => {
-				if (data.fatal) {
-					cleanup();
-					reject(new StreamError({
-						code: 'core:stream/hls-attach-failed',
-						severity: 'error',
-						scope: {
-							kind: 'stream',
-							id: 'hls',
-						},
-						message: `hls.js attach error: ${data.details ?? 'unknown'}`,
-						cause: data,
-					}));
-				}
-			};
-			this.hls!.on(Hls.Events.MEDIA_ATTACHED, onAttached);
-			this.hls!.on(Hls.Events.ERROR, onErr);
-		});
+    if (!Hls.isSupported()) {
+      throw new MediaFormatError({
+        code: 'core:media/hls-unsupported',
+        severity: 'error',
+        scope: {
+          kind: 'stream',
+          id: 'hls',
+        },
+        message: 'HLS playback requires either native browser support (Safari) or hls.js. Neither is available in this environment.',
+      });
+    }
 
-		this.hls.loadSource(this.url);
-	}
+    const registry = this.registry;
 
-	detach(): void {
-		if (this.element && this.boundElementError) {
-			this.element.removeEventListener('error', this.boundElementError);
-		}
-		if (this.hls) {
-			try {
-				this.hls.detachMedia();
-			}
-			catch { /* defensive */ }
-			try {
-				this.hls.destroy();
-			}
-			catch { /* defensive */ }
-			this.hls = undefined;
-		}
-		if (this.element) {
-			this.element.removeAttribute('src');
-			try {
-				this.element.load();
-			}
-			catch { /* defensive */ }
-		}
-		this.element = undefined;
-		this.boundElementError = undefined;
-		this._state = 'idle';
-	}
+    this.hls = new Hls({
+      autoStartLoad: true,
+      enableWorker: true,
+      lowLatencyMode: false,
+      ...(registry
+        ? { loader: makeInterceptingLoader(Hls, registry) }
+        : {}),
+    });
 
-	destroy(): void {
-		this.detach();
-		this.listeners.clear();
-	}
+    this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      this._state = 'ready';
+      this.emit('manifest-loaded', undefined);
+    });
 
-	state(): StreamSourceState {
-		return this._state;
-	}
+    this.hls.on(Hls.Events.LEVEL_SWITCHED, (_eventName, data) => {
+      if (typeof data?.level === 'number') {
+        this.currentLevelIdx = data.level;
+      }
 
-	getLevels(): StreamLevel[] {
-		if (!this.hls)
-			return [];
-		return this.hls.levels.map((hlsLevel, index) => ({
-			bitrate: hlsLevel.bitrate,
-			height: hlsLevel.height,
-			width: hlsLevel.width,
-			label: hlsLevel.name ?? `${hlsLevel.bitrate}`,
-			index,
-		}));
-	}
+      this.emit('level-switched', data);
+    });
 
-	setLevel(idx: number): void {
-		if (!this.hls)
-			return;
-		this.hls.currentLevel = idx;
-	}
+    this.hls.on(Hls.Events.FRAG_LOADED, (_eventName, data) =>
+      this.emit('fragment-loaded', data));
 
-	getCurrentLevel(): StreamLevel | undefined {
-		if (!this.hls || this.currentLevelIdx < 0)
-			return undefined;
-		const level = this.hls.levels[this.currentLevelIdx];
-		if (!level)
-			return undefined;
-		return {
-			bitrate: level.bitrate,
-			height: level.height,
-			width: level.width,
-			label: level.name ?? `${level.bitrate}`,
-			index: this.currentLevelIdx,
-		};
-	}
+    this.hls.on(Hls.Events.ERROR, (_eventName, data) => {
+      if (data?.fatal) {
+        this._state = 'error';
+        this.emit('error', data);
+      }
+    });
 
-	on<E extends StreamEvent>(event: E, fn: (data: StreamEventPayloadMap[E]) => void): void {
-		let set = this.listeners.get(event);
-		if (!set) {
-			set = new Set();
-			this.listeners.set(event, set);
-		}
-		(set as Set<(data: StreamEventPayloadMap[E]) => void>).add(fn);
-	}
+    this.hls.attachMedia(element);
 
-	off<E extends StreamEvent>(event: E, fn: (data: StreamEventPayloadMap[E]) => void): void {
-		const set = this.listeners.get(event);
-		if (!set)
-			return;
-		(set as Set<(data: StreamEventPayloadMap[E]) => void>).delete(fn);
-		if (set.size === 0)
-			this.listeners.delete(event);
-	}
+    await new Promise<void>((resolve, reject) => {
+      const cleanup = () => {
+        this.hls?.off(Hls.Events.MEDIA_ATTACHED, onAttached);
+        this.hls?.off(Hls.Events.ERROR, onErr);
+      };
 
-	private emit<E extends StreamEvent>(event: E, data: StreamEventPayloadMap[E]): void {
-		const set = this.listeners.get(event);
-		if (!set)
-			return;
-		for (const fn of [...set]) {
-			try {
-				(fn as (data: StreamEventPayloadMap[E]) => void)(data);
-			}
-			catch (err) { void err; /* swallow per contract */ }
-		}
-	}
+      const onAttached = () => {
+        cleanup();
+        resolve();
+      };
 
-	private async waitForLoadedMetadata(element: HTMLMediaElement): Promise<void> {
-		await new Promise<void>((resolve, reject) => {
-			const cleanup = () => {
-				element.removeEventListener('loadedmetadata', onLoad);
-				element.removeEventListener('error', onError);
-			};
-			const onLoad = () => {
-				cleanup();
-				resolve();
-			};
-			const onError = () => {
-				cleanup();
-				reject(element.error ?? new MediaFormatError({
-					code: 'core:media/load-failed',
-					severity: 'error',
-					scope: {
-						kind: 'stream',
-						id: 'hls',
-					},
-					message: 'media element error',
-					cause: element.error,
-				}));
-			};
-			element.addEventListener('loadedmetadata', onLoad, { once: true });
-			element.addEventListener('error', onError, { once: true });
-		});
-	}
+      const onErr = (_eventName: string, data: ErrorData) => {
+        if (data.fatal) {
+          cleanup();
+
+          reject(new StreamError({
+            code: 'core:stream/hls-attach-failed',
+            severity: 'error',
+            scope: {
+              kind: 'stream',
+              id: 'hls',
+            },
+            message: `hls.js attach error: ${data.details ?? 'unknown'}`,
+            cause: data,
+          }));
+        }
+      };
+
+      this.hls!.on(Hls.Events.MEDIA_ATTACHED, onAttached);
+      this.hls!.on(Hls.Events.ERROR, onErr);
+    });
+
+    this.hls.loadSource(this.url);
+  }
+
+  detach(): void {
+    if (this.element && this.boundElementError) {
+      this.element.removeEventListener('error', this.boundElementError);
+    }
+
+    if (this.hls) {
+      try {
+        this.hls.detachMedia();
+      } catch { /* defensive */ }
+
+      try {
+        this.hls.destroy();
+      } catch { /* defensive */ }
+
+      this.hls = undefined;
+    }
+
+    if (this.element) {
+      this.element.removeAttribute('src');
+
+      try {
+        this.element.load();
+      } catch { /* defensive */ }
+    }
+
+    this.element = undefined;
+    this.boundElementError = undefined;
+    this._state = 'idle';
+  }
+
+  destroy(): void {
+    this.detach();
+    this.listeners.clear();
+  }
+
+  state(): StreamSourceState {
+    return this._state;
+  }
+
+  getLevels(): StreamLevel[] {
+    if (!this.hls)
+      return [];
+
+    return this.hls.levels.map((hlsLevel, index) => ({
+      bitrate: hlsLevel.bitrate,
+      height: hlsLevel.height,
+      width: hlsLevel.width,
+      label: hlsLevel.name ?? `${hlsLevel.bitrate}`,
+      index,
+    }));
+  }
+
+  setLevel(idx: number): void {
+    if (!this.hls) return;
+
+    this.hls.currentLevel = idx;
+  }
+
+  getCurrentLevel(): StreamLevel | undefined {
+    if (!this.hls || this.currentLevelIdx < 0)
+      return undefined;
+
+    const level = this.hls.levels[this.currentLevelIdx];
+
+    if (!level)
+      return undefined;
+
+    return {
+      bitrate: level.bitrate,
+      height: level.height,
+      width: level.width,
+      label: level.name ?? `${level.bitrate}`,
+      index: this.currentLevelIdx,
+    };
+  }
+
+  on<E extends StreamEvent>(event: E, fn: (data: StreamEventPayloadMap[E]) => void): void {
+    let set = this.listeners.get(event);
+
+    if (!set) {
+      set = new Set();
+      this.listeners.set(event, set);
+    }
+
+    (set as Set<(data: StreamEventPayloadMap[E]) => void>).add(fn);
+  }
+
+  off<E extends StreamEvent>(event: E, fn: (data: StreamEventPayloadMap[E]) => void): void {
+    const set = this.listeners.get(event);
+
+    if (!set) return;
+
+    (set as Set<(data: StreamEventPayloadMap[E]) => void>).delete(fn);
+
+    if (set.size === 0) {
+      this.listeners.delete(event);
+    }
+  }
+
+  private emit<E extends StreamEvent>(event: E, data: StreamEventPayloadMap[E]): void {
+    const set = this.listeners.get(event);
+
+    if (!set) return;
+
+    for (const fn of [...set]) {
+      try {
+        (fn as (data: StreamEventPayloadMap[E]) => void)(data);
+      } catch (err) { void err; /* swallow per contract */ }
+    }
+  }
+
+  private async waitForLoadedMetadata(element: HTMLMediaElement): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      const cleanup = () => {
+        element.removeEventListener('loadedmetadata', onLoad);
+        element.removeEventListener('error', onError);
+      };
+
+      const onLoad = () => {
+        cleanup();
+        resolve();
+      };
+
+      const onError = () => {
+        cleanup();
+
+        reject(element.error ?? new MediaFormatError({
+          code: 'core:media/load-failed',
+          severity: 'error',
+          scope: {
+            kind: 'stream',
+            id: 'hls',
+          },
+          message: 'media element error',
+          cause: element.error,
+        }));
+      };
+
+      element.addEventListener('loadedmetadata', onLoad, { once: true });
+      element.addEventListener('error', onError, { once: true });
+    });
+  }
 }
 
 function canPlayNativeHls(element: HTMLMediaElement): boolean {
-	// Chromium answers 'maybe' for HLS but cannot actually demux it. Trust
-	// 'maybe' only where MSE is absent (iOS Safari) — hls.js cannot run there
-	// anyway, so native is the only option.
-	const probe = element.canPlayType('application/vnd.apple.mpegurl');
-	return probe === 'probably' || (probe === 'maybe' && typeof MediaSource === 'undefined');
+  // Chromium answers 'maybe' for HLS but cannot actually demux it. Trust
+  // 'maybe' only where MSE is absent (iOS Safari) — hls.js cannot run there
+  // anyway, so native is the only option.
+  const probe = element.canPlayType('application/vnd.apple.mpegurl');
+
+  return probe === 'probably' || (probe === 'maybe' && typeof MediaSource === 'undefined');
 }
 
 /** Narrow view of hls.js's static `DefaultConfig` — only the loader field we use. */
 interface HlsWithDefaultConfig {
-	DefaultConfig?: { loader?: new (config: HlsConfig) => Loader<LoaderContext> };
+  DefaultConfig?: { loader?: new (config: HlsConfig) => Loader<LoaderContext> };
 }
 
 /**
@@ -308,86 +342,93 @@ interface HlsWithDefaultConfig {
  *   dynamic import resolves — never imported at module top-level).
  */
 function makeInterceptingLoader(HlsCtor: typeof import('hls.js').default, registry: StreamRegistry): (new (config: HlsConfig) => Loader<LoaderContext>) | undefined {
-	// hls.js exposes DefaultConfig on the class but the public TS types omit it — accessed via local interface.
-	const Base = (HlsCtor as unknown as HlsWithDefaultConfig).DefaultConfig?.loader;
-	if (!Base)
-		return undefined;
+  // hls.js exposes DefaultConfig on the class but the public TS types omit it — accessed via local interface.
+  const Base = (HlsCtor as unknown as HlsWithDefaultConfig).DefaultConfig?.loader;
 
-	// TS does not narrow closure captures across deferred class bodies.
-	// Capturing `Base` in a typed local lets the class constructor body compile.
-	const BaseCtor: new (config: HlsConfig) => Loader<LoaderContext> = Base;
+  if (!Base)
+    return undefined;
 
-	return class InterceptingLoader {
-		private inner: Loader<LoaderContext>;
-		public context: LoaderContext | null = null;
-		public stats: LoaderStats;
+  // TS does not narrow closure captures across deferred class bodies.
+  // Capturing `Base` in a typed local lets the class constructor body compile.
+  const BaseCtor: new (config: HlsConfig) => Loader<LoaderContext> = Base;
 
-		constructor(config: HlsConfig) {
-			this.inner = new BaseCtor(config);
-			this.stats = this.inner.stats;
-		}
+  return class InterceptingLoader {
+    private inner: Loader<LoaderContext>;
+    public context: LoaderContext | null = null;
+    public stats: LoaderStats;
 
-		destroy(): void { this.inner.destroy(); }
-		abort(): void { this.inner.abort(); }
-		getCacheAge(): number | null { return this.inner.getCacheAge?.() ?? null; }
-		getResponseHeader(name: string): string | null { return this.inner.getResponseHeader?.(name) ?? null; }
+    constructor(config: HlsConfig) {
+      this.inner = new BaseCtor(config);
+      this.stats = this.inner.stats;
+    }
 
-		load(context: LoaderContext, config: LoaderConfiguration, callbacks: LoaderCallbacks<LoaderContext>): void {
-			this.context = context;
-			const wrapped: LoaderCallbacks<LoaderContext> = {
-				...callbacks,
-				onSuccess: async (response: LoaderResponse, stats: LoaderStats, ctx: LoaderContext, networkDetails: unknown) => {
-					let result: LoaderResponse = response;
-					try {
-						const synthetic = toResponse(response, ctx.url ?? context.url);
-						const intercepted = await registry.runInterceptors(ctx.url ?? context.url, synthetic);
-						result = {
-							...response,
-							data: await readBody(intercepted, response.data),
-						};
-					}
-					catch {
-						// Interceptor failure must not break playback — pass through
-					}
-					callbacks.onSuccess(result, stats, ctx, networkDetails);
-				},
-			};
-			this.inner.load(context, config, wrapped);
-		}
-	};
+    destroy(): void { this.inner.destroy(); }
+    abort(): void { this.inner.abort(); }
+    getCacheAge(): number | null { return this.inner.getCacheAge?.() ?? null; }
+    getResponseHeader(name: string): string | null { return this.inner.getResponseHeader?.(name) ?? null; }
+
+    load(context: LoaderContext, config: LoaderConfiguration, callbacks: LoaderCallbacks<LoaderContext>): void {
+      this.context = context;
+      const wrapped: LoaderCallbacks<LoaderContext> = {
+        ...callbacks,
+        onSuccess: async (response: LoaderResponse, stats: LoaderStats, ctx: LoaderContext, networkDetails: unknown) => {
+          let result: LoaderResponse = response;
+
+          try {
+            const synthetic = toResponse(response, ctx.url ?? context.url);
+            const intercepted = await registry.runInterceptors(ctx.url ?? context.url, synthetic);
+
+            result = {
+              ...response,
+              data: await readBody(intercepted, response.data),
+            };
+          } catch {
+            // Interceptor failure must not break playback — pass through
+          }
+
+          callbacks.onSuccess(result, stats, ctx, networkDetails);
+        },
+      };
+
+      this.inner.load(context, config, wrapped);
+    }
+  };
 }
 
 function toResponse(response: { data?: string | ArrayBuffer | object; code?: number }, url: string): Response {
-	const body = response.data;
-	const init: ResponseInit = {
-		status: response.code ?? 200,
-		headers: { 'x-source-url': url },
-	};
+  const body = response.data;
+  const init: ResponseInit = {
+    status: response.code ?? 200,
+    headers: { 'x-source-url': url },
+  };
 
-	if (body == null)
-		return new Response(null, init);
-	if (typeof body === 'string')
-		return new Response(body, init);
-	if (body instanceof ArrayBuffer)
-		return new Response(body, init);
+  if (body == null)
+    return new Response(null, init);
 
-	// hls.js may hand us an already-parsed manifest object — re-stringify so
-	// interceptors always receive a real Response with a readable body.
-	return new Response(JSON.stringify(body), init);
+  if (typeof body === 'string')
+    return new Response(body, init);
+
+  if (body instanceof ArrayBuffer)
+    return new Response(body, init);
+
+  // hls.js may hand us an already-parsed manifest object — re-stringify so
+  // interceptors always receive a real Response with a readable body.
+  return new Response(JSON.stringify(body), init);
 }
 
 async function readBody(response: Response, original: string | ArrayBuffer | object | undefined): Promise<string | ArrayBuffer | object | undefined> {
-	if (original == null)
-		return undefined;
-	if (typeof original === 'string')
-		return await response.text();
-	if (original instanceof ArrayBuffer)
-		return await response.arrayBuffer();
+  if (original == null)
+    return undefined;
 
-	try {
-		return JSON.parse(await response.text());
-	}
-	catch { return original; }
+  if (typeof original === 'string')
+    return await response.text();
+
+  if (original instanceof ArrayBuffer)
+    return await response.arrayBuffer();
+
+  try {
+    return JSON.parse(await response.text());
+  } catch { return original; }
 }
 
 /**
@@ -408,19 +449,21 @@ async function readBody(response: Response, original: string | ArrayBuffer | obj
  * Register a custom factory with the same `canPlay` signature to override it.
  */
 export const hlsFactory: IStreamFactory = {
-	id: 'hls',
+  id: 'hls',
 
-	canPlay(url: string, contentType?: string): boolean {
-		if (HLS_EXT_RE.test(url))
-			return true;
-		if (contentType && HLS_MIME_RE.test(contentType.split(';')[0]!.trim()))
-			return true;
-		return false;
-	},
+  canPlay(url: string, contentType?: string): boolean {
+    if (HLS_EXT_RE.test(url))
+      return true;
 
-	create(opts: StreamFactoryOptions): IStreamSource {
-		return new HlsStreamSource(opts.url, opts.registry);
-	},
+    if (contentType && HLS_MIME_RE.test(contentType.split(';')[0]!.trim()))
+      return true;
+
+    return false;
+  },
+
+  create(opts: StreamFactoryOptions): IStreamSource {
+    return new HlsStreamSource(opts.url, opts.registry);
+  },
 };
 
 export default hlsFactory;

@@ -18,38 +18,47 @@ import { NMVideoPlayer } from '../../index';
 import { desktopUiPlugin } from '../../plugins/desktop-ui';
 
 const MockResizeObserver = vi.fn(function (this: unknown) {
-	return { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() };
+  return {
+    observe: vi.fn(),
+    disconnect: vi.fn(),
+    unobserve: vi.fn(),
+  };
 });
 
 async function makePlayer(language: string): Promise<NMVideoPlayer> {
-	const player = new NMVideoPlayer('test').setup({ language });
-	await player.addPlugin(desktopUiPlugin, { inactivityMs: 4000 }).ready();
-	return player;
+  const player = new NMVideoPlayer('test').setup({ language });
+
+  await player.addPlugin(desktopUiPlugin, { inactivityMs: 4000 }).ready();
+
+  return player;
 }
 
 describe('DesktopUiPlugin — feedback toast never shows a raw key', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	it.each(['en', 'nl', 'en-US', 'pt-BR', 'zz', 'mt', 'zh-CN', 'be'])(
-		'waiting with language %s shows text, not the key',
-		async (language) => {
-			const player = await makePlayer(language);
-			player.emit('waiting', {});
-			const text = player.container.textContent ?? '';
-			expect(text).not.toContain('plugin.desktop-ui');
-		},
-	);
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
+
+  it.each(['en', 'nl', 'en-US', 'pt-BR', 'zz', 'mt', 'zh-CN', 'be'])(
+    'waiting with language %s shows text, not the key',
+    async (language) => {
+      const player = await makePlayer(language);
+
+      player.emit('waiting', {});
+      const text = player.container.textContent ?? '';
+
+      expect(text).not.toContain('plugin.desktop-ui');
+    },
+  );
 });

@@ -9,13 +9,13 @@
 import type { TvKeyHandlerTranslationKey } from './en';
 
 export default {
-	'plugin.tv-key-handler.info.chapter': 'باب',
-	'plugin.tv-key-handler.info.noTitle': 'کوئی عنوان نہیں',
-	'plugin.tv-key-handler.info.timeRemaining': 'باقی',
-	'plugin.tv-key-handler.seek.red': '+30s',
-	'plugin.tv-key-handler.seek.green': '+60s',
-	'plugin.tv-key-handler.seek.yellow': '+90s',
-	'plugin.tv-key-handler.seek.blue': '+120s',
-	'plugin.tv-key-handler.aspectRatio.cycled': 'پہلو تناسب',
-	'plugin.tv-key-handler.bookmark.added': 'بک مارک شامل کر دیا گیا',
+  'plugin.tv-key-handler.info.chapter': 'باب',
+  'plugin.tv-key-handler.info.noTitle': 'کوئی عنوان نہیں',
+  'plugin.tv-key-handler.info.timeRemaining': 'باقی',
+  'plugin.tv-key-handler.seek.red': '+30s',
+  'plugin.tv-key-handler.seek.green': '+60s',
+  'plugin.tv-key-handler.seek.yellow': '+90s',
+  'plugin.tv-key-handler.seek.blue': '+120s',
+  'plugin.tv-key-handler.aspectRatio.cycled': 'پہلو تناسب',
+  'plugin.tv-key-handler.bookmark.added': 'بک مارک شامل کر دیا گیا',
 } satisfies Record<TvKeyHandlerTranslationKey, string>;

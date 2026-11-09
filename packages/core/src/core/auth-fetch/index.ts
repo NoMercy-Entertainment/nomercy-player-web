@@ -24,10 +24,10 @@ export type { AuthFetchOptions } from './types';
 
 /** Type guard helper exposed for player + plugin code that needs to inspect errors. */
 export function isAuthError(err: unknown): err is AuthError {
-	return err instanceof AuthError;
+  return err instanceof AuthError;
 }
 
 /** Type guard helper exposed for player + plugin code that needs to inspect errors. */
 export function isNetworkError(err: unknown): err is NetworkError {
-	return err instanceof NetworkError;
+  return err instanceof NetworkError;
 }

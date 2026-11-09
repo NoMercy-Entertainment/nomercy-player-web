@@ -11,79 +11,80 @@ import { describe, expect, it } from 'vitest';
 import { appendAuthTokenParam } from '../core/append-auth-token-param';
 
 describe('appendAuthTokenParam', () => {
-	it('appends access_token with raw jwt when headerValue is a Bearer string', () => {
-		const result = appendAuthTokenParam(
-			'https://media.example.com/track.mp3',
-			'Bearer eyJhbGciOiJSUzI1NiJ9.payload.sig',
-		);
+  it('appends access_token with raw jwt when headerValue is a Bearer string', () => {
+    const result = appendAuthTokenParam(
+      'https://media.example.com/track.mp3',
+      'Bearer eyJhbGciOiJSUzI1NiJ9.payload.sig',
+    );
 
-		expect(result).toBe(
-			'https://media.example.com/track.mp3?access_token=eyJhbGciOiJSUzI1NiJ9.payload.sig',
-		);
-		expect(result).not.toContain('Bearer');
-	});
+    expect(result).toBe(
+      'https://media.example.com/track.mp3?access_token=eyJhbGciOiJSUzI1NiJ9.payload.sig',
+    );
 
-	it('strips Bearer prefix case-insensitively', () => {
-		const result = appendAuthTokenParam(
-			'https://media.example.com/track.mp3',
-			'bearer eyJtest.payload.sig',
-		);
+    expect(result).not.toContain('Bearer');
+  });
 
-		expect(result).toContain('access_token=eyJtest.payload.sig');
-		expect(result).not.toContain('bearer');
-	});
+  it('strips Bearer prefix case-insensitively', () => {
+    const result = appendAuthTokenParam(
+      'https://media.example.com/track.mp3',
+      'bearer eyJtest.payload.sig',
+    );
 
-	it('uses & separator when the url already contains a query string', () => {
-		const result = appendAuthTokenParam(
-			'https://media.example.com/track.mp3?quality=high',
-			'Bearer myrawtoken',
-		);
+    expect(result).toContain('access_token=eyJtest.payload.sig');
+    expect(result).not.toContain('bearer');
+  });
 
-		expect(result).toBe(
-			'https://media.example.com/track.mp3?quality=high&access_token=myrawtoken',
-		);
-	});
+  it('uses & separator when the url already contains a query string', () => {
+    const result = appendAuthTokenParam(
+      'https://media.example.com/track.mp3?quality=high',
+      'Bearer myrawtoken',
+    );
 
-	it('url-encodes the token', () => {
-		const result = appendAuthTokenParam(
-			'https://media.example.com/track.mp3',
-			'Bearer tok en+with/specials=',
-		);
+    expect(result).toBe(
+      'https://media.example.com/track.mp3?quality=high&access_token=myrawtoken',
+    );
+  });
 
-		expect(result).toContain('access_token=tok%20en%2Bwith%2Fspecials%3D');
-	});
+  it('url-encodes the token', () => {
+    const result = appendAuthTokenParam(
+      'https://media.example.com/track.mp3',
+      'Bearer tok en+with/specials=',
+    );
 
-	it('returns the original url unchanged when headerValue is undefined', () => {
-		const url = 'https://media.example.com/track.mp3';
+    expect(result).toContain('access_token=tok%20en%2Bwith%2Fspecials%3D');
+  });
 
-		expect(appendAuthTokenParam(url, undefined)).toBe(url);
-	});
+  it('returns the original url unchanged when headerValue is undefined', () => {
+    const url = 'https://media.example.com/track.mp3';
 
-	it('returns the original url unchanged when headerValue is an empty string', () => {
-		const url = 'https://media.example.com/track.mp3';
+    expect(appendAuthTokenParam(url, undefined)).toBe(url);
+  });
 
-		expect(appendAuthTokenParam(url, '')).toBe(url);
-	});
+  it('returns the original url unchanged when headerValue is an empty string', () => {
+    const url = 'https://media.example.com/track.mp3';
 
-	it('BUG5: inserts the token before a #fragment instead of after it', () => {
-		const result = appendAuthTokenParam(
-			'https://media.example.com/track.mp3#frag',
-			'Bearer myrawtoken',
-		);
+    expect(appendAuthTokenParam(url, '')).toBe(url);
+  });
 
-		expect(result).toBe(
-			'https://media.example.com/track.mp3?access_token=myrawtoken#frag',
-		);
-	});
+  it('BUG5: inserts the token before a #fragment instead of after it', () => {
+    const result = appendAuthTokenParam(
+      'https://media.example.com/track.mp3#frag',
+      'Bearer myrawtoken',
+    );
 
-	it('BUG5: inserts the token after an existing query string but still before the #fragment', () => {
-		const result = appendAuthTokenParam(
-			'https://media.example.com/track.mp3?a=1#frag',
-			'Bearer myrawtoken',
-		);
+    expect(result).toBe(
+      'https://media.example.com/track.mp3?access_token=myrawtoken#frag',
+    );
+  });
 
-		expect(result).toBe(
-			'https://media.example.com/track.mp3?a=1&access_token=myrawtoken#frag',
-		);
-	});
+  it('BUG5: inserts the token after an existing query string but still before the #fragment', () => {
+    const result = appendAuthTokenParam(
+      'https://media.example.com/track.mp3?a=1#frag',
+      'Bearer myrawtoken',
+    );
+
+    expect(result).toBe(
+      'https://media.example.com/track.mp3?a=1&access_token=myrawtoken#frag',
+    );
+  });
 });

@@ -9,7 +9,7 @@
 import type { IUrlResolver, ResolvedUrl, UrlResolverContext } from '../../adapters/url-resolver/IUrlResolver';
 
 export interface FakeUrlResolver extends IUrlResolver {
-	resolveCalls: string[];
+  resolveCalls: string[];
 }
 
 /**
@@ -17,29 +17,30 @@ export interface FakeUrlResolver extends IUrlResolver {
  * and returns a fixed `ResolvedUrl` with `href === 'RESOLVED'`.
  */
 export function makeFakeUrlResolver(): FakeUrlResolver {
-	const resolveCalls: string[] = [];
+  const resolveCalls: string[] = [];
 
-	const resolved: ResolvedUrl = {
-		raw: 'RESOLVED',
-		href: 'RESOLVED',
-		scheme: 'https',
-		origin: 'https://fake',
-		pathname: '/resolved',
-		ext: 'mp4',
-		search: '',
-		searchParams: new URLSearchParams(),
-		hash: '',
-		relative: false,
-		toString(): string { return 'RESOLVED'; },
-	};
+  const resolved: ResolvedUrl = {
+    raw: 'RESOLVED',
+    href: 'RESOLVED',
+    scheme: 'https',
+    origin: 'https://fake',
+    pathname: '/resolved',
+    ext: 'mp4',
+    search: '',
+    searchParams: new URLSearchParams(),
+    hash: '',
+    relative: false,
+    toString(): string { return 'RESOLVED'; },
+  };
 
-	const resolver = Object.assign(
-		(url: string, _ctx: UrlResolverContext): ResolvedUrl => {
-			resolveCalls.push(url);
-			return resolved;
-		},
-		{ resolveCalls },
-	) as FakeUrlResolver;
+  const resolver = Object.assign(
+    (url: string, _ctx: UrlResolverContext): ResolvedUrl => {
+      resolveCalls.push(url);
 
-	return resolver;
+      return resolved;
+    },
+    { resolveCalls },
+  ) as FakeUrlResolver;
+
+  return resolver;
 }

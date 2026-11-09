@@ -9,9 +9,9 @@
 import type { CastSenderTranslationKey } from './en';
 
 export default {
-	'plugin.cast-sender.casting.track': 'Prenáša sa „{title}“ od {artist}',
-	'plugin.cast-sender.casting.album': 'Prenáša sa album „{album}“',
-	'plugin.cast-sender.casting.queue': 'Prenáša sa {count} skladieb',
-	'plugin.cast-sender.action.cast-album': 'Preniesť album',
-	'plugin.cast-sender.action.cast-queue': 'Preniesť front',
+  'plugin.cast-sender.casting.track': 'Prenáša sa „{title}“ od {artist}',
+  'plugin.cast-sender.casting.album': 'Prenáša sa album „{album}“',
+  'plugin.cast-sender.casting.queue': 'Prenáša sa {count} skladieb',
+  'plugin.cast-sender.action.cast-album': 'Preniesť album',
+  'plugin.cast-sender.action.cast-queue': 'Preniesť front',
 } satisfies Record<CastSenderTranslationKey, string>;

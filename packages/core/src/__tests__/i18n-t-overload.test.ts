@@ -18,81 +18,90 @@
 import type { PluginCtorWithId, Translations } from '../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
-	Plugin,
+  composeMixins,
+  playerCoreMethods,
+  Plugin,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare options: Record<string, unknown>;
-	declare setup: (config: Record<string, unknown>) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare addTranslations: (bundle: Translations) => void;
-	declare t: {
-		(key: string, vars?: Record<string, string>): string;
-		(PluginClass: PluginCtorWithId, key: string, vars?: Record<string, string>): string;
-	};
+  declare options: Record<string, unknown>;
+  declare setup: (config: Record<string, unknown>) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare addTranslations: (bundle: Translations) => void;
+  declare t: {
+    (key: string, vars?: Record<string, string>): string;
+    (PluginClass: PluginCtorWithId, key: string, vars?: Record<string, string>): string;
+  };
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 class FakePlugin extends Plugin {
-	static override readonly id: string = 'fake-plugin';
-	static override readonly description: string = 'test plugin';
+  static override readonly id: string = 'fake-plugin';
+  static override readonly description: string = 'test plugin';
 }
 
 function makePlayer(): MockPlayer {
-	const div = document.createElement('div');
-	div.id = 'overload-test';
-	document.body.appendChild(div);
-	return new MockPlayer('overload-test').setup({});
+  const div = document.createElement('div');
+
+  div.id = 'overload-test';
+  document.body.appendChild(div);
+
+  return new MockPlayer('overload-test').setup({});
 }
 
 describe('t() overload', () => {
-	beforeEach(() => { MockPlayer._resetRegistry(); });
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => { MockPlayer._resetRegistry(); });
 
-	describe('bare-key form', () => {
-		it('returns the translation value when registered', () => {
-			const player = makePlayer();
-			player.addTranslations({ en: { 'my.key': 'Hello' } });
-			expect(player.t('my.key')).toBe('Hello');
-		});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		it('returns the key itself on miss', () => {
-			const player = makePlayer();
-			expect(player.t('missing.key')).toBe('missing.key');
-		});
+  describe('bare-key form', () => {
+    it('returns the translation value when registered', () => {
+      const player = makePlayer();
 
-		it('interpolates vars', () => {
-			const player = makePlayer();
-			player.addTranslations({ en: { greet: 'Hi {name}' } });
-			expect(player.t('greet', { name: 'Arc' })).toBe('Hi Arc');
-		});
-	});
+      player.addTranslations({ en: { 'my.key': 'Hello' } });
+      expect(player.t('my.key')).toBe('Hello');
+    });
 
-	describe('class-typed form', () => {
-		it('prepends plugin.<id>. and resolves the translation', () => {
-			const player = makePlayer();
-			player.addTranslations({ en: { 'plugin.fake-plugin.hello': 'Hello from plugin' } });
-			expect(player.t(FakePlugin, 'hello')).toBe('Hello from plugin');
-		});
+    it('returns the key itself on miss', () => {
+      const player = makePlayer();
 
-		it('falls back to the fully-qualified key on miss (not raw key)', () => {
-			const player = makePlayer();
-			const result = player.t(FakePlugin, 'not-registered');
-			expect(result).toBe('plugin.fake-plugin.not-registered');
-		});
+      expect(player.t('missing.key')).toBe('missing.key');
+    });
 
-		it('interpolates vars in the class-typed form', () => {
-			const player = makePlayer();
-			player.addTranslations({ en: { 'plugin.fake-plugin.greet': 'Hi {user}' } });
-			expect(player.t(FakePlugin, 'greet', { user: 'Example' })).toBe('Hi Example');
-		});
-	});
+    it('interpolates vars', () => {
+      const player = makePlayer();
+
+      player.addTranslations({ en: { greet: 'Hi {name}' } });
+      expect(player.t('greet', { name: 'Arc' })).toBe('Hi Arc');
+    });
+  });
+
+  describe('class-typed form', () => {
+    it('prepends plugin.<id>. and resolves the translation', () => {
+      const player = makePlayer();
+
+      player.addTranslations({ en: { 'plugin.fake-plugin.hello': 'Hello from plugin' } });
+      expect(player.t(FakePlugin, 'hello')).toBe('Hello from plugin');
+    });
+
+    it('falls back to the fully-qualified key on miss (not raw key)', () => {
+      const player = makePlayer();
+      const result = player.t(FakePlugin, 'not-registered');
+
+      expect(result).toBe('plugin.fake-plugin.not-registered');
+    });
+
+    it('interpolates vars in the class-typed form', () => {
+      const player = makePlayer();
+
+      player.addTranslations({ en: { 'plugin.fake-plugin.greet': 'Hi {user}' } });
+      expect(player.t(FakePlugin, 'greet', { user: 'Example' })).toBe('Hi Example');
+    });
+  });
 });

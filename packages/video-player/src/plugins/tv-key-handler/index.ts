@@ -48,199 +48,201 @@ import { formatSeconds } from '../desktop-ui/helpers/progressBar';
 import { KeyHandlerPlugin } from '../key-handler';
 
 export interface TvKeyHandlerOptions {
-	/**
-	 * Seconds to seek when ArrowLeft / ArrowRight are pressed on TV. Default 5.
-	 * (Color-button seeks are fixed at 30/60/90/120 s — not affected by this.)
-	 */
-	arrowSeekSeconds?: number;
-	/**
-	 * Milliseconds to display the Info OSD before it auto-dismisses. Default 5000.
-	 */
-	infoDisplayMs?: number;
+  /**
+   * Seconds to seek when ArrowLeft / ArrowRight are pressed on TV. Default 5.
+   * (Color-button seeks are fixed at 30/60/90/120 s — not affected by this.)
+   */
+  arrowSeekSeconds?: number;
+  /**
+   * Milliseconds to display the Info OSD before it auto-dismisses. Default 5000.
+   */
+  infoDisplayMs?: number;
 }
 
 export class TvKeyHandlerPlugin<T extends VideoPlaylistItem = VideoPlaylistItem> extends KeyHandlerPlugin<T> {
-	static override readonly id: string = 'tv-key-handler';
-	static override readonly version: string = '2.0.0';
-	static override readonly description: string = 'TV remote control bindings — Color buttons, Info OSD, MediaRecord bookmark, TV-aware Arrow seek and volume';
-	static override readonly translations: Translations = translationsFromGlob('./i18n/*.ts');
+  static override readonly id: string = 'tv-key-handler';
+  static override readonly version: string = '2.0.0';
+  static override readonly description: string = 'TV remote control bindings — Color buttons, Info OSD, MediaRecord bookmark, TV-aware Arrow seek and volume';
+  static override readonly translations: Translations = translationsFromGlob('./i18n/*.ts');
 
-	private get tvOpts(): TvKeyHandlerOptions {
-		return (this.opts as TvKeyHandlerOptions | undefined) ?? {};
-	}
+  private get tvOpts(): TvKeyHandlerOptions {
+    return (this.opts as TvKeyHandlerOptions | undefined) ?? {};
+  }
 
-	/**
-	 * Extends the base default groups with TV-specific bindings.
-	 * All Color-button, BrowserFavorites, universal media-key, modifier-seek,
-	 * chapter, speed, frame-advance, subtitle-size, and stop bindings are
-	 * inherited from super.addDefaults().
-	 */
-	protected override addDefaults(): void {
-		super.addDefaults();
-		this.addInfoKey();
-		this.addMediaRecordKey();
-	}
+  /**
+   * Extends the base default groups with TV-specific bindings.
+   * All Color-button, BrowserFavorites, universal media-key, modifier-seek,
+   * chapter, speed, frame-advance, subtitle-size, and stop bindings are
+   * inherited from super.addDefaults().
+   */
+  protected override addDefaults(): void {
+    super.addDefaults();
+    this.addInfoKey();
+    this.addMediaRecordKey();
+  }
 
-	/**
-	 * On TV, Arrow keys seek directly — they are NOT used for focus navigation
-	 * inside the player element while the player is active.
-	 */
-	protected override addNavigationKeys(): void {
-		const seekSeconds = this.tvOpts.arrowSeekSeconds ?? 5;
+  /**
+   * On TV, Arrow keys seek directly — they are NOT used for focus navigation
+   * inside the player element while the player is active.
+   */
+  protected override addNavigationKeys(): void {
+    const seekSeconds = this.tvOpts.arrowSeekSeconds ?? 5;
 
-		this.bind('ArrowLeft', () => { void this.player.rewind?.(seekSeconds); });
-		this.bind('ArrowRight', () => { void this.player.forward?.(seekSeconds); });
-	}
+    this.bind('ArrowLeft', () => { void this.player.rewind?.(seekSeconds); });
+    this.bind('ArrowRight', () => { void this.player.forward?.(seekSeconds); });
+  }
 
-	/**
-	 * On TV, volume arrows are enabled — the web-based TV shell routes these to
-	 * the system mixer or handles them within the player as appropriate.
-	 */
-	protected override addVolumeKeys(): void {
-		this.bind('ArrowUp', () => { void this.player.volumeUp?.(); });
-		this.bind('ArrowDown', () => { void this.player.volumeDown?.(); });
-		this.bind('m', () => { void this.player.toggleMute?.(); });
-	}
+  /**
+   * On TV, volume arrows are enabled — the web-based TV shell routes these to
+   * the system mixer or handles them within the player as appropriate.
+   */
+  protected override addVolumeKeys(): void {
+    this.bind('ArrowUp', () => { void this.player.volumeUp?.(); });
+    this.bind('ArrowDown', () => { void this.player.volumeDown?.(); });
+    this.bind('m', () => { void this.player.toggleMute?.(); });
+  }
 
-	/**
-	 * Aspect-ratio cycle via BrowserFavorites and 'a' — shows an OSD message
-	 * confirming the change on TV where there is no visible control bar.
-	 */
-	protected override addAspectRatioKeys(): void {
-		const cycle = (): void => {
-			void this.player.cycleAspectRatio?.();
-			this.osdMessage(this.t('aspectRatio.cycled'));
-		};
+  /**
+   * Aspect-ratio cycle via BrowserFavorites and 'a' — shows an OSD message
+   * confirming the change on TV where there is no visible control bar.
+   */
+  protected override addAspectRatioKeys(): void {
+    const cycle = (): void => {
+      void this.player.cycleAspectRatio?.();
+      this.osdMessage(this.t('aspectRatio.cycled'));
+    };
 
-		this.bind('a', cycle);
-		this.bind('BrowserFavorites', cycle);
-	}
+    this.bind('a', cycle);
+    this.bind('BrowserFavorites', cycle);
+  }
 
-	/**
-	 * Info key — shows a brief OSD with title, chapter, current time and
-	 * time remaining. Also emits `plugin:tv-key-handler:info` so a TV shell can
-	 * render its own overlay. The OSD message fires unconditionally as a fallback.
-	 */
-	protected addInfoKey(): void {
-		this.bind('Info', () => { this.showInfoOsd(); });
-	}
+  /**
+   * Info key — shows a brief OSD with title, chapter, current time and
+   * time remaining. Also emits `plugin:tv-key-handler:info` so a TV shell can
+   * render its own overlay. The OSD message fires unconditionally as a fallback.
+   */
+  protected addInfoKey(): void {
+    this.bind('Info', () => { this.showInfoOsd(); });
+  }
 
-	/**
-	 * MediaRecord — emits `plugin:tv-key-handler:bookmark` with the current time
-	 * so the consumer can persist the bookmark. No-ops silently when no listener
-	 * is registered.
-	 */
-	protected addMediaRecordKey(): void {
-		this.bind('MediaRecord', () => {
-			const currentTime = this.player.time?.() ?? 0;
+  /**
+   * MediaRecord — emits `plugin:tv-key-handler:bookmark` with the current time
+   * so the consumer can persist the bookmark. No-ops silently when no listener
+   * is registered.
+   */
+  protected addMediaRecordKey(): void {
+    this.bind('MediaRecord', () => {
+      const currentTime = this.player.time?.() ?? 0;
 
-			try {
-				this.emit('bookmark', { time: currentTime });
-			}
-			catch { /* consumer may not listen — safe no-op */ }
-		});
-	}
+      try {
+        this.emit('bookmark', { time: currentTime });
+      } catch { /* consumer may not listen — safe no-op */ }
+    });
+  }
 
-	/**
-	 * Help key — emits `plugin:tv-key-handler:shortcuts-toggle` so a TV shortcuts
-	 * overlay can be registered independently from the desktop-ui overlay.
-	 */
-	protected override addHelpKey(): void {
-		// `shift+?` for the same reason the desktop handler uses it: pressing `?`
-		// sends `key='?'` with `shiftKey=true`, and the canonicalizer folds modifier
-		// state into the combo, so a bare `'?'` binding is a miss on every press.
-		// This override previously used `'?'` and the help key never fired.
-		this.bind('shift+?', () => {
-			try {
-				this.emit('shortcuts-toggle', undefined);
-			}
-			catch { /* tv-key-handler shortcuts overlay not mounted — no-op */ }
-		});
-	}
+  /**
+   * Help key — emits `plugin:tv-key-handler:shortcuts-toggle` so a TV shortcuts
+   * overlay can be registered independently from the desktop-ui overlay.
+   */
+  protected override addHelpKey(): void {
+    // `shift+?` for the same reason the desktop handler uses it: pressing `?`
+    // sends `key='?'` with `shiftKey=true`, and the canonicalizer folds modifier
+    // state into the combo, so a bare `'?'` binding is a miss on every press.
+    // This override previously used `'?'` and the help key never fired.
+    this.bind('shift+?', () => {
+      try {
+        this.emit('shortcuts-toggle', undefined);
+      } catch { /* tv-key-handler shortcuts overlay not mounted — no-op */ }
+    });
+  }
 
-	/**
-	 * Builds and displays the Info OSD. Fires `plugin:tv-key-handler:info` for an
-	 * external TV shell overlay, then also calls `osdMessage` as the built-in
-	 * fallback.
-	 */
-	private showInfoOsd(): void {
-		const currentTime = this.player.time?.() ?? 0;
-		const duration = this.player.duration?.() ?? 0;
-		const remaining = Math.max(0, duration - currentTime);
-		const title = this.resolveTitle();
-		const chapterLabel = this.resolveChapterLabel(currentTime);
-		const displayMs = this.tvOpts.infoDisplayMs ?? 5000;
+  /**
+   * Builds and displays the Info OSD. Fires `plugin:tv-key-handler:info` for an
+   * external TV shell overlay, then also calls `osdMessage` as the built-in
+   * fallback.
+   */
+  private showInfoOsd(): void {
+    const currentTime = this.player.time?.() ?? 0;
+    const duration = this.player.duration?.() ?? 0;
+    const remaining = Math.max(0, duration - currentTime);
+    const title = this.resolveTitle();
+    const chapterLabel = this.resolveChapterLabel(currentTime);
+    const displayMs = this.tvOpts.infoDisplayMs ?? 5000;
 
-		try {
-			this.emit('info', {
-				title,
-				currentTime,
-				duration,
-				remaining,
-				chapterLabel,
-			});
-		}
-		catch { /* no external listener — fall through to OSD message */ }
+    try {
+      this.emit('info', {
+        title,
+        currentTime,
+        duration,
+        remaining,
+        chapterLabel,
+      });
+    } catch { /* no external listener — fall through to OSD message */ }
 
-		const parts: string[] = [];
+    const parts: string[] = [];
 
-		if (title)
-			parts.push(title);
-		if (chapterLabel)
-			parts.push(chapterLabel);
-		parts.push(`${formatSeconds(currentTime)} / -${formatSeconds(remaining)}`);
+    if (title) {
+      parts.push(title);
+    }
 
-		this.osdMessage(parts.join('  ·  '), displayMs);
-	}
+    if (chapterLabel) {
+      parts.push(chapterLabel);
+    }
 
-	private resolveTitle(): string {
-		const item = this.player.item?.();
+    parts.push(`${formatSeconds(currentTime)} / -${formatSeconds(remaining)}`);
 
-		if (typeof item?.title === 'string' && item.title.length > 0)
-			return item.title;
+    this.osdMessage(parts.join('  ·  '), displayMs);
+  }
 
-		return this.t('info.noTitle');
-	}
+  private resolveTitle(): string {
+    const item = this.player.item?.();
 
-	private resolveChapterLabel(currentTime: number): string {
-		const chapters = this.player.chapters?.() ?? [];
-		if (chapters.length === 0)
-			return '';
+    if (typeof item?.title === 'string' && item.title.length > 0)
+      return item.title;
 
-		const active = [...chapters]
-			.reverse()
-			.find((chapter: Chapter) => currentTime >= chapter.start);
+    return this.t('info.noTitle');
+  }
 
-		if (!active)
-			return '';
+  private resolveChapterLabel(currentTime: number): string {
+    const chapters = this.player.chapters?.() ?? [];
 
-		const chapterNumber = active.index + 1;
+    if (chapters.length === 0)
+      return '';
 
-		return active.title.length > 0
-			? `${this.t('info.chapter')} ${chapterNumber}: ${active.title}`
-			: `${this.t('info.chapter')} ${chapterNumber}`;
-	}
+    const active = [...chapters]
+      .reverse()
+      .find((chapter: Chapter) => currentTime >= chapter.start);
 
-	/**
-	 * Sends a message to the OSD. Routes through `MessagePlugin` when it is
-	 * mounted on the player, then also emits `display-message` for consumers that
-	 * prefer the event surface.
-	 */
-	private osdMessage(text: string, durationMs?: number): void {
-		const ms = durationMs ?? 3000;
-		const msg = this.player.getPlugin(MessagePlugin);
-		if (msg) {
-			msg.show(text, ms);
-		}
+    if (!active)
+      return '';
 
-		try {
-			this.player.emit('display-message', {
-				text,
-				ms,
-			});
-		}
-		catch { /* swallow — consumer may not listen */ }
-	}
+    const chapterNumber = active.index + 1;
+
+    return active.title.length > 0
+      ? `${this.t('info.chapter')} ${chapterNumber}: ${active.title}`
+      : `${this.t('info.chapter')} ${chapterNumber}`;
+  }
+
+  /**
+   * Sends a message to the OSD. Routes through `MessagePlugin` when it is
+   * mounted on the player, then also emits `display-message` for consumers that
+   * prefer the event surface.
+   */
+  private osdMessage(text: string, durationMs?: number): void {
+    const ms = durationMs ?? 3000;
+    const msg = this.player.getPlugin(MessagePlugin);
+
+    if (msg) {
+      msg.show(text, ms);
+    }
+
+    try {
+      this.player.emit('display-message', {
+        text,
+        ms,
+      });
+    } catch { /* swallow — consumer may not listen */ }
+  }
 }
 
 export const tvKeyHandlerPlugin = TvKeyHandlerPlugin;

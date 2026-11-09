@@ -24,7 +24,7 @@
  * surface which methods have been monkey-patched and by whom.
  */
 export interface PlayerExperimental {
-	override<K extends string>(method: K, fn: (...args: unknown[]) => unknown): () => void;
-	restore(method: string): void;
-	overrides(): Array<{ method: string; by: string | 'consumer' }>;
+  override<K extends string>(method: K, fn: (...args: unknown[]) => unknown): () => void;
+  restore(method: string): void;
+  overrides(): Array<{ method: string; by: string | 'consumer' }>;
 }

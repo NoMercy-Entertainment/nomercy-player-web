@@ -39,10 +39,10 @@ import type { BeforeEvent, PreventedReason } from '../types';
  * decide whether to surface an error or silently skip.
  */
 export interface BeforeDispatchOutcome<TData> {
-	data: TData;
-	prevented: boolean;
-	reason?: PreventedReason;
-	cause?: unknown;
+  data: TData;
+  prevented: boolean;
+  reason?: PreventedReason;
+  cause?: unknown;
 }
 
 /**
@@ -53,21 +53,21 @@ export interface BeforeDispatchOutcome<TData> {
  * dispatcher against a plain object in unit tests.
  */
 export interface DispatchTarget {
-	listenersOf?: (event: string) => ReadonlyArray<(data: unknown) => void>;
-	pushDispatch?: (name: string) => void;
-	popDispatch?: () => string | undefined;
+  listenersOf?: (event: string) => ReadonlyArray<(data: unknown) => void>;
+  pushDispatch?: (name: string) => void;
+  popDispatch?: () => string | undefined;
 }
 
 /**
  * Per-call options for `runDispatchBefore`.
  */
 export interface DispatchBeforeOpts {
-	/**
-	 * Maximum milliseconds to wait for all `delay()` promises to settle before
-	 * treating the dispatch as timed out and returning a prevented outcome.
-	 * Defaults to 10 000 ms.
-	 */
-	timeoutMs?: number;
+  /**
+   * Maximum milliseconds to wait for all `delay()` promises to settle before
+   * treating the dispatch as timed out and returning a prevented outcome.
+   * Defaults to 10 000 ms.
+   */
+  timeoutMs?: number;
 }
 
 const DEFAULT_TIMEOUT_MS = 10_000;
@@ -108,107 +108,109 @@ const DEFAULT_TIMEOUT_MS = 10_000;
  * @returns  Outcome containing the (possibly mutated) data and a `prevented` flag.
  */
 export async function runDispatchBefore<TData>(
-	target: DispatchTarget,
-	eventName: string,
-	initialData: TData,
-	opts?: DispatchBeforeOpts,
+  target: DispatchTarget,
+  eventName: string,
+  initialData: TData,
+  opts?: DispatchBeforeOpts,
 ): Promise<BeforeDispatchOutcome<TData>> {
-	const timeoutMs = opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const timeoutMs = opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
-	let data = initialData;
-	let defaultPrevented = false;
-	let propagationStopped = false;
-	const delayedPromises: Promise<unknown>[] = [];
-	let isDelayed = false;
+  let data = initialData;
+  let defaultPrevented = false;
+  let propagationStopped = false;
+  const delayedPromises: Promise<unknown>[] = [];
+  let isDelayed = false;
 
-	const beforeEvent: BeforeEvent<TData> = {
-		get data(): TData { return data; },
-		set data(value: TData) { data = value; },
-		preventDefault(): void { defaultPrevented = true; },
-		isDefaultPrevented(): boolean { return defaultPrevented; },
-		stopImmediatePropagation(): void { propagationStopped = true; },
-		isPropagationStopped(): boolean { return propagationStopped; },
-		delay(promise: Promise<unknown>): void {
-			isDelayed = true;
-			delayedPromises.push(promise);
-		},
-		isDelayed(): boolean { return isDelayed; },
-	};
+  const beforeEvent: BeforeEvent<TData> = {
+    get data(): TData { return data; },
+    set data(value: TData) { data = value; },
+    preventDefault(): void { defaultPrevented = true; },
+    isDefaultPrevented(): boolean { return defaultPrevented; },
+    stopImmediatePropagation(): void { propagationStopped = true; },
+    isPropagationStopped(): boolean { return propagationStopped; },
+    delay(promise: Promise<unknown>): void {
+      isDelayed = true;
+      delayedPromises.push(promise);
+    },
+    isDelayed(): boolean { return isDelayed; },
+  };
 
-	target.pushDispatch?.(eventName);
+  target.pushDispatch?.(eventName);
 
-	try {
-		const listeners = target.listenersOf?.(eventName) ?? [];
+  try {
+    const listeners = target.listenersOf?.(eventName) ?? [];
 
-		for (const fn of listeners) {
-			if (propagationStopped)
-				break;
-			try {
-				fn(beforeEvent);
-			}
-			catch (err) {
-				if (typeof console !== 'undefined' && console.error) {
-					console.error(`[dispatchBefore:${eventName}] listener threw:`, err);
-				}
-			}
-		}
+    for (const fn of listeners) {
+      if (propagationStopped) break;
 
-		if (delayedPromises.length > 0) {
-			let rejectedCause: unknown;
-			let hasRejection = false;
-			let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
-			const settled = await Promise.race([
-				Promise.allSettled(delayedPromises).then((results) => {
-					const first = results.find(result => result.status === 'rejected') as
-						| PromiseRejectedResult
-						| undefined;
-					if (first) {
-						hasRejection = true;
-						rejectedCause = first.reason;
-					}
-					return 'settled' as const;
-				}),
-				new Promise<'timeout'>((resolve) => {
-					timeoutHandle = setTimeout(() => {
-						resolve('timeout');
-					}, timeoutMs);
-				}),
-			]);
+      try {
+        fn(beforeEvent);
+      } catch (err) {
+        if (typeof console !== 'undefined' && console.error) {
+          console.error(`[dispatchBefore:${eventName}] listener threw:`, err);
+        }
+      }
+    }
 
-			if (timeoutHandle)
-				clearTimeout(timeoutHandle);
+    if (delayedPromises.length > 0) {
+      let rejectedCause: unknown;
+      let hasRejection = false;
+      let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+      const settled = await Promise.race([
+        Promise.allSettled(delayedPromises).then((results) => {
+          const first = results.find((result) => result.status === 'rejected') as
+            | PromiseRejectedResult |
+            undefined;
 
-			if (settled === 'timeout') {
-				return {
-					data,
-					prevented: true,
-					reason: 'delay-timeout',
-				};
-			}
-			if (hasRejection) {
-				return {
-					data,
-					prevented: true,
-					reason: 'delay-rejected',
-					cause: rejectedCause,
-				};
-			}
-		}
+          if (first) {
+            hasRejection = true;
+            rejectedCause = first.reason;
+          }
 
-		if (defaultPrevented) {
-			return {
-				data,
-				prevented: true,
-				reason: 'listener-prevented',
-			};
-		}
+          return 'settled' as const;
+        }),
+        new Promise<'timeout'>((resolve) => {
+          timeoutHandle = setTimeout(() => {
+            resolve('timeout');
+          }, timeoutMs);
+        }),
+      ]);
 
-		return {
-			data,
-			prevented: false,
-		};
-	}
-	finally {
-		target.popDispatch?.();
-	}
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle);
+      }
+
+      if (settled === 'timeout') {
+        return {
+          data,
+          prevented: true,
+          reason: 'delay-timeout',
+        };
+      }
+
+      if (hasRejection) {
+        return {
+          data,
+          prevented: true,
+          reason: 'delay-rejected',
+          cause: rejectedCause,
+        };
+      }
+    }
+
+    if (defaultPrevented) {
+      return {
+        data,
+        prevented: true,
+        reason: 'listener-prevented',
+      };
+    }
+
+    return {
+      data,
+      prevented: false,
+    };
+  } finally {
+    target.popDispatch?.();
+  }
 }

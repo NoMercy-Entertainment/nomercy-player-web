@@ -27,14 +27,14 @@
 
 import type { BackendShape } from '../core/mixins/player-state';
 import type {
-	Plugin,
+  Plugin,
 } from '../index';
 import type { BasePlaylistItem, PluginCtorWithId } from '../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
-	RepeatState,
+  composeMixins,
+  playerCoreMethods,
+  RepeatState,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
@@ -43,84 +43,84 @@ import { MockPlayerBase } from './helpers/mock-player-base';
 // ─────────────────────────────────────────────────────────────────────────────
 
 class MockPlayer extends MockPlayerBase {
-	declare options: Record<string, unknown>;
-	declare setup: (config: Record<string, unknown>) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare phase: () => string;
-	declare dispatching: () => ReadonlyArray<string>;
-	declare baseUrl: { (): string | undefined; (url: string): void };
-	declare audioContext: () => AudioContext | undefined;
-	declare experimental: unknown;
-	declare t: {
-		(key: string, vars?: Record<string, string>): string;
-		(PluginClass: PluginCtorWithId, key: string, vars?: Record<string, string>): string;
-	};
+  declare options: Record<string, unknown>;
+  declare setup: (config: Record<string, unknown>) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare phase: () => string;
+  declare dispatching: () => ReadonlyArray<string>;
+  declare baseUrl: { (): string | undefined; (url: string): void };
+  declare audioContext: () => AudioContext | undefined;
+  declare experimental: unknown;
+  declare t: {
+    (key: string, vars?: Record<string, string>): string;
+    (PluginClass: PluginCtorWithId, key: string, vars?: Record<string, string>): string;
+  };
 
-	declare language: { (): string; (lang: string): Promise<void> };
-	declare addTranslations: (bundle: unknown) => void;
-	declare translation: (lang: string, key: string, value: string) => void;
-	declare removeTranslations: (prefix: string, lang?: string) => void;
-	declare registerCueParser: (parser: unknown, prepend?: boolean) => void;
-	declare unregisterCueParser: (id: string) => void;
-	declare play: (opts?: unknown) => Promise<void>;
-	declare pause: (opts?: unknown) => Promise<void>;
-	declare stop: (opts?: unknown) => Promise<void>;
-	declare togglePlayback: (opts?: unknown) => Promise<void>;
-	declare next: (opts?: unknown) => Promise<void>;
-	declare previous: (opts?: unknown) => Promise<void>;
-	declare rewind: (seconds?: number, opts?: unknown) => Promise<void>;
-	declare forward: (seconds?: number, opts?: unknown) => Promise<void>;
-	declare restart: (opts?: unknown) => Promise<void>;
-	declare time: { (): number; (seconds: number, opts?: unknown): Promise<void> };
-	declare duration: () => number;
-	declare buffered: () => number;
-	declare timeData: () => unknown;
-	declare playbackRate: { (): number; (rate: number): void };
-	declare playbackRates: () => number[];
-	declare volume: { (): number; (level: number): void };
-	declare mute: () => void;
-	declare unmute: () => void;
-	declare toggleMute: () => void;
-	declare volumeUp: (step?: number) => void;
-	declare volumeDown: (step?: number) => void;
-	declare playState: () => string;
-	declare volumeState: () => string;
-	declare repeatState: { (): string; (state: unknown): void };
-	declare shuffleState: { (): string; (state: unknown): void };
-	declare queue: { (): ReadonlyArray<unknown>; (items: unknown[], opts?: unknown): void };
-	declare queueAppend: (item: unknown, opts?: unknown) => void;
-	declare queuePrepend: (item: unknown, opts?: unknown) => void;
-	declare queueInsert: (item: unknown, index: number, opts?: unknown) => void;
-	declare queueRemove: (id: unknown, opts?: unknown) => void;
-	declare queueRemoveAt: (index: number, opts?: unknown) => void;
-	declare queueMove: (from: number, to: number, opts?: unknown) => void;
-	declare queueClear: (opts?: unknown) => void;
-	declare queueShuffle: (opts?: unknown) => void;
-	declare queueSort: (compare: unknown, opts?: unknown) => void;
-	declare peekNext: () => unknown;
-	declare peekPrevious: () => unknown;
-	declare queueLength: () => number;
-	declare queueIndexOf: (id: unknown) => number;
-	declare item: { (): unknown; (target: unknown, opts?: unknown): void };
-	declare index: () => number;
-	declare backlog: { (): ReadonlyArray<unknown>; (items: unknown[]): void };
-	declare backlogAppend: (item: unknown) => void;
-	declare backlogRemove: (id: unknown) => void;
-	declare backlogClear: () => void;
-	declare addPlugin: <P extends Plugin<any, any, any>>(
-		PluginClass: PluginCtorWithId & (new () => P),
-		opts?: P['opts'],
-	) => this;
+  declare language: { (): string; (lang: string): Promise<void> };
+  declare addTranslations: (bundle: unknown) => void;
+  declare translation: (lang: string, key: string, value: string) => void;
+  declare removeTranslations: (prefix: string, lang?: string) => void;
+  declare registerCueParser: (parser: unknown, prepend?: boolean) => void;
+  declare unregisterCueParser: (id: string) => void;
+  declare play: (opts?: unknown) => Promise<void>;
+  declare pause: (opts?: unknown) => Promise<void>;
+  declare stop: (opts?: unknown) => Promise<void>;
+  declare togglePlayback: (opts?: unknown) => Promise<void>;
+  declare next: (opts?: unknown) => Promise<void>;
+  declare previous: (opts?: unknown) => Promise<void>;
+  declare rewind: (seconds?: number, opts?: unknown) => Promise<void>;
+  declare forward: (seconds?: number, opts?: unknown) => Promise<void>;
+  declare restart: (opts?: unknown) => Promise<void>;
+  declare time: { (): number; (seconds: number, opts?: unknown): Promise<void> };
+  declare duration: () => number;
+  declare buffered: () => number;
+  declare timeData: () => unknown;
+  declare playbackRate: { (): number; (rate: number): void };
+  declare playbackRates: () => number[];
+  declare volume: { (): number; (level: number): void };
+  declare mute: () => void;
+  declare unmute: () => void;
+  declare toggleMute: () => void;
+  declare volumeUp: (step?: number) => void;
+  declare volumeDown: (step?: number) => void;
+  declare playState: () => string;
+  declare volumeState: () => string;
+  declare repeatState: { (): string; (state: unknown): void };
+  declare shuffleState: { (): string; (state: unknown): void };
+  declare queue: { (): ReadonlyArray<unknown>; (items: unknown[], opts?: unknown): void };
+  declare queueAppend: (item: unknown, opts?: unknown) => void;
+  declare queuePrepend: (item: unknown, opts?: unknown) => void;
+  declare queueInsert: (item: unknown, index: number, opts?: unknown) => void;
+  declare queueRemove: (id: unknown, opts?: unknown) => void;
+  declare queueRemoveAt: (index: number, opts?: unknown) => void;
+  declare queueMove: (from: number, to: number, opts?: unknown) => void;
+  declare queueClear: (opts?: unknown) => void;
+  declare queueShuffle: (opts?: unknown) => void;
+  declare queueSort: (compare: unknown, opts?: unknown) => void;
+  declare peekNext: () => unknown;
+  declare peekPrevious: () => unknown;
+  declare queueLength: () => number;
+  declare queueIndexOf: (id: unknown) => number;
+  declare item: { (): unknown; (target: unknown, opts?: unknown): void };
+  declare index: () => number;
+  declare backlog: { (): ReadonlyArray<unknown>; (items: unknown[]): void };
+  declare backlogAppend: (item: unknown) => void;
+  declare backlogRemove: (id: unknown) => void;
+  declare backlogClear: () => void;
+  declare addPlugin: <P extends Plugin<any, any, any>>(
+    PluginClass: PluginCtorWithId & (new () => P),
+    opts?: P['opts'],
+  ) => this;
 
-	declare getPlugin: (PluginClass: unknown) => unknown;
-	declare getPluginById: (id: string) => unknown;
-	declare removePlugin: (PluginClass: unknown) => void;
-	declare removePluginById: (id: string) => void;
-	declare plugins: () => ReadonlyArray<Plugin>;
-	declare enabledPlugins: () => ReadonlyArray<Plugin>;
+  declare getPlugin: (PluginClass: unknown) => unknown;
+  declare getPluginById: (id: string) => unknown;
+  declare removePlugin: (PluginClass: unknown) => void;
+  declare removePluginById: (id: string) => void;
+  declare plugins: () => ReadonlyArray<Plugin>;
+  declare enabledPlugins: () => ReadonlyArray<Plugin>;
 
-	backend?: () => unknown;
+  backend?: () => unknown;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
@@ -130,28 +130,30 @@ composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 // ─────────────────────────────────────────────────────────────────────────────
 
 function setupPlayer(): MockPlayer {
-	const div = document.createElement('div');
-	div.id = 'te-mock';
-	document.body.appendChild(div);
-	return new MockPlayer('te-mock').setup({});
+  const div = document.createElement('div');
+
+  div.id = 'te-mock';
+  document.body.appendChild(div);
+
+  return new MockPlayer('te-mock').setup({});
 }
 
 function makeSimpleBackend(overrides: Partial<BackendShape> = {}): BackendShape {
-	return {
-		play: vi.fn().mockResolvedValue(undefined),
-		pause: vi.fn(),
-		stop: vi.fn(),
-		currentTime: vi.fn(),
-		...overrides,
-	} as unknown as BackendShape;
+  return {
+    play: vi.fn().mockResolvedValue(undefined),
+    pause: vi.fn(),
+    stop: vi.fn(),
+    currentTime: vi.fn(),
+    ...overrides,
+  } as unknown as BackendShape;
 }
 
 function installBackend(player: MockPlayer, backend: BackendShape): void {
-	(player as unknown as { backend: () => BackendShape }).backend = () => backend;
+  (player as unknown as { backend: () => BackendShape }).backend = () => backend;
 }
 
 function setCurrentTime(player: MockPlayer, time: number): void {
-	(player as unknown as { _internalCurrentTime: number })._internalCurrentTime = time;
+  (player as unknown as { _internalCurrentTime: number })._internalCurrentTime = time;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -159,116 +161,135 @@ function setCurrentTime(player: MockPlayer, time: number): void {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('forward()', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	it('forward() with default 5s advances currentTime by 5', async () => {
-		const player = setupPlayer();
-		setCurrentTime(player, 30);
-		const seekedEvents: Array<{ time: number }> = [];
-		player.on('seeked' as never, (data: { time: number }) => seekedEvents.push(data));
+  it('forward() with default 5s advances currentTime by 5', async () => {
+    const player = setupPlayer();
 
-		await player.forward();
+    setCurrentTime(player, 30);
+    const seekedEvents: Array<{ time: number }> = [];
 
-		expect(seekedEvents[0]!.time).toBe(35);
-	});
+    player.on('seeked' as never, (data: { time: number }) =>
+      seekedEvents.push(data));
 
-	it('forward(10) advances by 10 seconds', async () => {
-		const player = setupPlayer();
-		setCurrentTime(player, 20);
-		const seekedEvents: Array<{ time: number }> = [];
-		player.on('seeked' as never, (data: { time: number }) => seekedEvents.push(data));
+    await player.forward();
 
-		await player.forward(10);
+    expect(seekedEvents[0]!.time).toBe(35);
+  });
 
-		expect(seekedEvents[0]!.time).toBe(30);
-	});
+  it('forward(10) advances by 10 seconds', async () => {
+    const player = setupPlayer();
 
-	it('forward() calls backend.currentTime with target', async () => {
-		const player = setupPlayer();
-		const backend = makeSimpleBackend();
-		installBackend(player, backend);
-		setCurrentTime(player, 15);
+    setCurrentTime(player, 20);
+    const seekedEvents: Array<{ time: number }> = [];
 
-		await player.forward(5);
+    player.on('seeked' as never, (data: { time: number }) =>
+      seekedEvents.push(data));
 
-		expect(backend.currentTime).toHaveBeenCalledWith(20);
-	});
+    await player.forward(10);
 
-	it('forward() beforeSeek preventDefault emits seekPrevented and does not update time', async () => {
-		const player = setupPlayer();
-		setCurrentTime(player, 30);
+    expect(seekedEvents[0]!.time).toBe(30);
+  });
 
-		player.on('beforeSeek' as never, (data: { time: number; preventDefault: () => void }) => {
-			data.preventDefault();
-		});
+  it('forward() calls backend.currentTime with target', async () => {
+    const player = setupPlayer();
+    const backend = makeSimpleBackend();
 
-		const seekPrevented: unknown[] = [];
-		player.on('seekPrevented' as never, (data: unknown) => seekPrevented.push(data));
+    installBackend(player, backend);
+    setCurrentTime(player, 15);
 
-		await player.forward(5);
+    await player.forward(5);
 
-		expect(seekPrevented).toHaveLength(1);
-		expect((player as unknown as { _internalCurrentTime: number })._internalCurrentTime).toBe(30);
-	});
+    expect(backend.currentTime).toHaveBeenCalledWith(20);
+  });
 
-	it('forward() emits beforeSeek with the positive delta (not the absolute target)', async () => {
-		const player = setupPlayer();
-		setCurrentTime(player, 50);
+  it('forward() beforeSeek preventDefault emits seekPrevented and does not update time', async () => {
+    const player = setupPlayer();
 
-		// _dispatchBefore calls listeners with a BeforeEvent object, not the plain data.
-		// Access the value via .data.time.
-		const beforeSeekPayloads: Array<{ data: { time: number } }> = [];
-		player.on('beforeSeek' as never, (data: { data: { time: number } }) => beforeSeekPayloads.push(data));
+    setCurrentTime(player, 30);
 
-		await player.forward(7);
+    player.on('beforeSeek' as never, (data: { time: number; preventDefault: () => void }) => {
+      data.preventDefault();
+    });
 
-		expect(beforeSeekPayloads[0]!.data.time).toBe(7);
-	});
+    const seekPrevented: unknown[] = [];
 
-	it('forward() lands on an absolute time a beforeSeek listener sets in data.time', async () => {
-		const player = setupPlayer();
-		const backend = makeSimpleBackend();
-		installBackend(player, backend);
-		setCurrentTime(player, 30);
-		player.on('beforeSeek' as never, (event: { data: { time: number } }) => {
-			event.data.time = 50;
-		});
+    player.on('seekPrevented' as never, (data: unknown) =>
+      seekPrevented.push(data));
 
-		await player.forward(5);
+    await player.forward(5);
 
-		expect(backend.currentTime).toHaveBeenCalledWith(50);
-		expect((player as unknown as { _internalCurrentTime: number })._internalCurrentTime).toBe(50);
-	});
+    expect(seekPrevented).toHaveLength(1);
+    expect((player as unknown as { _internalCurrentTime: number })._internalCurrentTime).toBe(30);
+  });
 
-	it('rewind() lands on an absolute time a beforeSeek listener sets in data.time', async () => {
-		const player = setupPlayer();
-		const backend = makeSimpleBackend();
-		installBackend(player, backend);
-		setCurrentTime(player, 30);
-		player.on('beforeSeek' as never, (event: { data: { time: number } }) => {
-			event.data.time = 12;
-		});
+  it('forward() emits beforeSeek with the positive delta (not the absolute target)', async () => {
+    const player = setupPlayer();
 
-		await player.rewind(5);
+    setCurrentTime(player, 50);
 
-		expect(backend.currentTime).toHaveBeenCalledWith(12);
-		expect((player as unknown as { _internalCurrentTime: number })._internalCurrentTime).toBe(12);
-	});
+    // _dispatchBefore calls listeners with a BeforeEvent object, not the plain data.
+    // Access the value via .data.time.
+    const beforeSeekPayloads: Array<{ data: { time: number } }> = [];
 
-	it('restart() lands on a time a beforeSeek listener sets in data.time', async () => {
-		const player = setupPlayer();
-		const backend = makeSimpleBackend();
-		installBackend(player, backend);
-		setCurrentTime(player, 30);
-		player.on('beforeSeek' as never, (event: { data: { time: number } }) => {
-			event.data.time = 8;
-		});
+    player.on('beforeSeek' as never, (data: { data: { time: number } }) =>
+      beforeSeekPayloads.push(data));
 
-		await player.restart();
+    await player.forward(7);
 
-		expect(backend.currentTime).toHaveBeenCalledWith(8);
-	});
+    expect(beforeSeekPayloads[0]!.data.time).toBe(7);
+  });
+
+  it('forward() lands on an absolute time a beforeSeek listener sets in data.time', async () => {
+    const player = setupPlayer();
+    const backend = makeSimpleBackend();
+
+    installBackend(player, backend);
+    setCurrentTime(player, 30);
+
+    player.on('beforeSeek' as never, (event: { data: { time: number } }) => {
+      event.data.time = 50;
+    });
+
+    await player.forward(5);
+
+    expect(backend.currentTime).toHaveBeenCalledWith(50);
+    expect((player as unknown as { _internalCurrentTime: number })._internalCurrentTime).toBe(50);
+  });
+
+  it('rewind() lands on an absolute time a beforeSeek listener sets in data.time', async () => {
+    const player = setupPlayer();
+    const backend = makeSimpleBackend();
+
+    installBackend(player, backend);
+    setCurrentTime(player, 30);
+
+    player.on('beforeSeek' as never, (event: { data: { time: number } }) => {
+      event.data.time = 12;
+    });
+
+    await player.rewind(5);
+
+    expect(backend.currentTime).toHaveBeenCalledWith(12);
+    expect((player as unknown as { _internalCurrentTime: number })._internalCurrentTime).toBe(12);
+  });
+
+  it('restart() lands on a time a beforeSeek listener sets in data.time', async () => {
+    const player = setupPlayer();
+    const backend = makeSimpleBackend();
+
+    installBackend(player, backend);
+    setCurrentTime(player, 30);
+
+    player.on('beforeSeek' as never, (event: { data: { time: number } }) => {
+      event.data.time = 8;
+    });
+
+    await player.restart();
+
+    expect(backend.currentTime).toHaveBeenCalledWith(8);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -276,71 +297,84 @@ describe('forward()', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('rewind()', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	it('rewind() with default 5s seeks backwards by 5', async () => {
-		const player = setupPlayer();
-		setCurrentTime(player, 30);
-		const seekedEvents: Array<{ time: number }> = [];
-		player.on('seeked' as never, (data: { time: number }) => seekedEvents.push(data));
+  it('rewind() with default 5s seeks backwards by 5', async () => {
+    const player = setupPlayer();
 
-		await player.rewind();
+    setCurrentTime(player, 30);
+    const seekedEvents: Array<{ time: number }> = [];
 
-		expect(seekedEvents[0]!.time).toBe(25);
-	});
+    player.on('seeked' as never, (data: { time: number }) =>
+      seekedEvents.push(data));
 
-	it('rewind() clamps to 0 when currentTime < rewind seconds', async () => {
-		const player = setupPlayer();
-		setCurrentTime(player, 3);
-		const seekedEvents: Array<{ time: number }> = [];
-		player.on('seeked' as never, (data: { time: number }) => seekedEvents.push(data));
+    await player.rewind();
 
-		await player.rewind(5);
+    expect(seekedEvents[0]!.time).toBe(25);
+  });
 
-		expect(seekedEvents[0]!.time).toBe(0);
-	});
+  it('rewind() clamps to 0 when currentTime < rewind seconds', async () => {
+    const player = setupPlayer();
 
-	it('rewind() emits beforeSeek with the negative delta', async () => {
-		const player = setupPlayer();
-		setCurrentTime(player, 30);
+    setCurrentTime(player, 3);
+    const seekedEvents: Array<{ time: number }> = [];
 
-		// _dispatchBefore calls listeners with a BeforeEvent object, not the plain data.
-		// Access the value via .data.time.
-		const beforeSeekPayloads: Array<{ data: { time: number } }> = [];
-		player.on('beforeSeek' as never, (data: { data: { time: number } }) => beforeSeekPayloads.push(data));
+    player.on('seeked' as never, (data: { time: number }) =>
+      seekedEvents.push(data));
 
-		await player.rewind(5);
+    await player.rewind(5);
 
-		expect(beforeSeekPayloads[0]!.data.time).toBe(-5);
-	});
+    expect(seekedEvents[0]!.time).toBe(0);
+  });
 
-	it('rewind() beforeSeek preventDefault emits seekPrevented', async () => {
-		const player = setupPlayer();
-		setCurrentTime(player, 30);
+  it('rewind() emits beforeSeek with the negative delta', async () => {
+    const player = setupPlayer();
 
-		player.on('beforeSeek' as never, (data: { time: number; preventDefault: () => void }) => {
-			data.preventDefault();
-		});
+    setCurrentTime(player, 30);
 
-		const seekPrevented: unknown[] = [];
-		player.on('seekPrevented' as never, (data: unknown) => seekPrevented.push(data));
+    // _dispatchBefore calls listeners with a BeforeEvent object, not the plain data.
+    // Access the value via .data.time.
+    const beforeSeekPayloads: Array<{ data: { time: number } }> = [];
 
-		await player.rewind(5);
+    player.on('beforeSeek' as never, (data: { data: { time: number } }) =>
+      beforeSeekPayloads.push(data));
 
-		expect(seekPrevented).toHaveLength(1);
-	});
+    await player.rewind(5);
 
-	it('rewind(15) from time 10 clamps to 0 and calls backend', async () => {
-		const player = setupPlayer();
-		const backend = makeSimpleBackend();
-		installBackend(player, backend);
-		setCurrentTime(player, 10);
+    expect(beforeSeekPayloads[0]!.data.time).toBe(-5);
+  });
 
-		await player.rewind(15);
+  it('rewind() beforeSeek preventDefault emits seekPrevented', async () => {
+    const player = setupPlayer();
 
-		expect(backend.currentTime).toHaveBeenCalledWith(0);
-	});
+    setCurrentTime(player, 30);
+
+    player.on('beforeSeek' as never, (data: { time: number; preventDefault: () => void }) => {
+      data.preventDefault();
+    });
+
+    const seekPrevented: unknown[] = [];
+
+    player.on('seekPrevented' as never, (data: unknown) =>
+      seekPrevented.push(data));
+
+    await player.rewind(5);
+
+    expect(seekPrevented).toHaveLength(1);
+  });
+
+  it('rewind(15) from time 10 clamps to 0 and calls backend', async () => {
+    const player = setupPlayer();
+    const backend = makeSimpleBackend();
+
+    installBackend(player, backend);
+    setCurrentTime(player, 10);
+
+    await player.rewind(15);
+
+    expect(backend.currentTime).toHaveBeenCalledWith(0);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -348,57 +382,64 @@ describe('rewind()', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('restart()', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	it('restart() seeks to 0 and calls backend.currentTime(0)', async () => {
-		const player = setupPlayer();
-		const backend = makeSimpleBackend();
-		installBackend(player, backend);
-		setCurrentTime(player, 90);
+  it('restart() seeks to 0 and calls backend.currentTime(0)', async () => {
+    const player = setupPlayer();
+    const backend = makeSimpleBackend();
 
-		await player.restart();
+    installBackend(player, backend);
+    setCurrentTime(player, 90);
 
-		expect(backend.currentTime).toHaveBeenCalledWith(0);
-	});
+    await player.restart();
 
-	it('restart() calls play() after seek proceeds', async () => {
-		const player = setupPlayer();
-		const backend = makeSimpleBackend();
-		installBackend(player, backend);
-		setCurrentTime(player, 60);
+    expect(backend.currentTime).toHaveBeenCalledWith(0);
+  });
 
-		await player.restart();
+  it('restart() calls play() after seek proceeds', async () => {
+    const player = setupPlayer();
+    const backend = makeSimpleBackend();
 
-		expect(backend.play).toHaveBeenCalledOnce();
-	});
+    installBackend(player, backend);
+    setCurrentTime(player, 60);
 
-	it('restart() does NOT call play() when beforeSeek is prevented', async () => {
-		const player = setupPlayer();
-		const backend = makeSimpleBackend();
-		installBackend(player, backend);
+    await player.restart();
 
-		player.on('beforeSeek' as never, (data: { time: number; preventDefault: () => void }) => {
-			data.preventDefault();
-		});
+    expect(backend.play).toHaveBeenCalledOnce();
+  });
 
-		await player.restart();
+  it('restart() does NOT call play() when beforeSeek is prevented', async () => {
+    const player = setupPlayer();
+    const backend = makeSimpleBackend();
 
-		expect(backend.play).not.toHaveBeenCalled();
-	});
+    installBackend(player, backend);
 
-	it('restart() emits seekPrevented when beforeSeek is prevented', async () => {
-		const player = setupPlayer();
-		player.on('beforeSeek' as never, (data: { time: number; preventDefault: () => void }) => {
-			data.preventDefault();
-		});
-		const seekPrevented: unknown[] = [];
-		player.on('seekPrevented' as never, (data: unknown) => seekPrevented.push(data));
+    player.on('beforeSeek' as never, (data: { time: number; preventDefault: () => void }) => {
+      data.preventDefault();
+    });
 
-		await player.restart();
+    await player.restart();
 
-		expect(seekPrevented).toHaveLength(1);
-	});
+    expect(backend.play).not.toHaveBeenCalled();
+  });
+
+  it('restart() emits seekPrevented when beforeSeek is prevented', async () => {
+    const player = setupPlayer();
+
+    player.on('beforeSeek' as never, (data: { time: number; preventDefault: () => void }) => {
+      data.preventDefault();
+    });
+
+    const seekPrevented: unknown[] = [];
+
+    player.on('seekPrevented' as never, (data: unknown) =>
+      seekPrevented.push(data));
+
+    await player.restart();
+
+    expect(seekPrevented).toHaveLength(1);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -406,130 +447,160 @@ describe('restart()', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('play() beforePlay preventDefault', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	it('beforePlay preventDefault emits playPrevented and does not change playState', async () => {
-		const player = setupPlayer();
-		player.on('beforePlay' as never, (data: { preventDefault: () => void }) => {
-			data.preventDefault();
-		});
-		const playPrevented: unknown[] = [];
-		player.on('playPrevented' as never, (data: unknown) => playPrevented.push(data));
+  it('beforePlay preventDefault emits playPrevented and does not change playState', async () => {
+    const player = setupPlayer();
 
-		await player.play();
+    player.on('beforePlay' as never, (data: { preventDefault: () => void }) => {
+      data.preventDefault();
+    });
 
-		expect(playPrevented).toHaveLength(1);
-		expect(player.playState()).not.toBe('playing');
-	});
+    const playPrevented: unknown[] = [];
+
+    player.on('playPrevented' as never, (data: unknown) =>
+      playPrevented.push(data));
+
+    await player.play();
+
+    expect(playPrevented).toHaveLength(1);
+    expect(player.playState()).not.toBe('playing');
+  });
 });
 
 describe('play() when the backend refuses', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	// A browser declining autoplay without a user gesture rejects here. Left
-	// optimistic, playState stays 'playing' over a silent element, so a UI
-	// rendering from state shows Pause and the viewer's first click pauses
-	// what never started.
-	it('reverts playState and emits playPrevented instead of reporting playing', async () => {
-		const player = setupPlayer();
-		const refusal = new Error('NotAllowedError');
-		installBackend(player, makeSimpleBackend({
-			play: vi.fn().mockRejectedValue(refusal),
-		}));
-		const playPrevented: Array<{ reason: string; cause?: unknown }> = [];
-		player.on('playPrevented' as never, (data: never) => playPrevented.push(data));
+  // A browser declining autoplay without a user gesture rejects here. Left
+  // optimistic, playState stays 'playing' over a silent element, so a UI
+  // rendering from state shows Pause and the viewer's first click pauses
+  // what never started.
+  it('reverts playState and emits playPrevented instead of reporting playing', async () => {
+    const player = setupPlayer();
+    const refusal = new Error('NotAllowedError');
 
-		await expect(player.play()).rejects.toBe(refusal);
+    installBackend(player, makeSimpleBackend({
+      play: vi.fn().mockRejectedValue(refusal),
+    }));
 
-		expect(player.playState()).not.toBe('playing');
-		expect(playPrevented).toHaveLength(1);
-		const [prevented] = playPrevented;
-		expect(prevented?.reason).toBe('backend-refused');
-		expect(prevented?.cause).toBe(refusal);
-	});
+    const playPrevented: Array<{ reason: string; cause?: unknown }> = [];
 
-	// `play` already went out, so listeners showing Pause need the matching
-	// `pause` or they stay on Pause over a silent element.
-	it('emits pause to undo the play event the refusal contradicts', async () => {
-		const player = setupPlayer();
-		installBackend(player, makeSimpleBackend({
-			play: vi.fn().mockRejectedValue(new Error('NotAllowedError')),
-		}));
-		const events: string[] = [];
-		player.on('play' as never, () => events.push('play'));
-		player.on('pause' as never, () => events.push('pause'));
+    player.on('playPrevented' as never, (data: never) =>
+      playPrevented.push(data));
 
-		await expect(player.play()).rejects.toThrow('NotAllowedError');
+    await expect(player.play()).rejects.toBe(refusal);
 
-		expect(events).toEqual(['play', 'pause']);
-	});
+    expect(player.playState()).not.toBe('playing');
+    expect(playPrevented).toHaveLength(1);
+    const [prevented] = playPrevented;
 
-	it('stays silent on a refusal when the play was silent', async () => {
-		const player = setupPlayer();
-		installBackend(player, makeSimpleBackend({
-			play: vi.fn().mockRejectedValue(new Error('NotAllowedError')),
-		}));
-		const events: string[] = [];
-		player.on('play' as never, () => events.push('play'));
-		player.on('pause' as never, () => events.push('pause'));
+    expect(prevented?.reason).toBe('backend-refused');
+    expect(prevented?.cause).toBe(refusal);
+  });
 
-		await expect(player.play({ silent: true })).rejects.toThrow('NotAllowedError');
+  // `play` already went out, so listeners showing Pause need the matching
+  // `pause` or they stay on Pause over a silent element.
+  it('emits pause to undo the play event the refusal contradicts', async () => {
+    const player = setupPlayer();
 
-		expect(events).toEqual([]);
-	});
+    installBackend(player, makeSimpleBackend({
+      play: vi.fn().mockRejectedValue(new Error('NotAllowedError')),
+    }));
 
-	it('leaves playState on playing when the backend accepts', async () => {
-		const player = setupPlayer();
-		installBackend(player, makeSimpleBackend());
+    const events: string[] = [];
 
-		await player.play();
+    player.on('play' as never, () =>
+      events.push('play'));
 
-		expect(player.playState()).toBe('playing');
-	});
+    player.on('pause' as never, () =>
+      events.push('pause'));
+
+    await expect(player.play()).rejects.toThrow('NotAllowedError');
+
+    expect(events).toEqual(['play', 'pause']);
+  });
+
+  it('stays silent on a refusal when the play was silent', async () => {
+    const player = setupPlayer();
+
+    installBackend(player, makeSimpleBackend({
+      play: vi.fn().mockRejectedValue(new Error('NotAllowedError')),
+    }));
+
+    const events: string[] = [];
+
+    player.on('play' as never, () =>
+      events.push('play'));
+
+    player.on('pause' as never, () =>
+      events.push('pause'));
+
+    await expect(player.play({ silent: true })).rejects.toThrow('NotAllowedError');
+
+    expect(events).toEqual([]);
+  });
+
+  it('leaves playState on playing when the backend accepts', async () => {
+    const player = setupPlayer();
+
+    installBackend(player, makeSimpleBackend());
+
+    await player.play();
+
+    expect(player.playState()).toBe('playing');
+  });
 });
 
 describe('pause() beforePause preventDefault', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	it('beforePause preventDefault emits pausePrevented', async () => {
-		const player = setupPlayer();
-		await player.play();
+  it('beforePause preventDefault emits pausePrevented', async () => {
+    const player = setupPlayer();
 
-		player.on('beforePause' as never, (data: { preventDefault: () => void }) => {
-			data.preventDefault();
-		});
-		const pausePrevented: unknown[] = [];
-		player.on('pausePrevented' as never, (data: unknown) => pausePrevented.push(data));
+    await player.play();
 
-		await player.pause();
+    player.on('beforePause' as never, (data: { preventDefault: () => void }) => {
+      data.preventDefault();
+    });
 
-		expect(pausePrevented).toHaveLength(1);
-		expect(player.playState()).toBe('playing');
-	});
+    const pausePrevented: unknown[] = [];
+
+    player.on('pausePrevented' as never, (data: unknown) =>
+      pausePrevented.push(data));
+
+    await player.pause();
+
+    expect(pausePrevented).toHaveLength(1);
+    expect(player.playState()).toBe('playing');
+  });
 });
 
 describe('stop() beforeStop preventDefault', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	it('beforeStop preventDefault emits stopPrevented', async () => {
-		const player = setupPlayer();
-		await player.play();
+  it('beforeStop preventDefault emits stopPrevented', async () => {
+    const player = setupPlayer();
 
-		player.on('beforeStop' as never, (data: { preventDefault: () => void }) => {
-			data.preventDefault();
-		});
-		const stopPrevented: unknown[] = [];
-		player.on('stopPrevented' as never, (data: unknown) => stopPrevented.push(data));
+    await player.play();
 
-		await player.stop();
+    player.on('beforeStop' as never, (data: { preventDefault: () => void }) => {
+      data.preventDefault();
+    });
 
-		expect(stopPrevented).toHaveLength(1);
-		expect(player.playState()).not.toBe('stopped');
-	});
+    const stopPrevented: unknown[] = [];
+
+    player.on('stopPrevented' as never, (data: unknown) =>
+      stopPrevented.push(data));
+
+    await player.stop();
+
+    expect(stopPrevented).toHaveLength(1);
+    expect(player.playState()).not.toBe('stopped');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -537,33 +608,39 @@ describe('stop() beforeStop preventDefault', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('togglePlayback()', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	it('togglePlayback() calls play() when playState is not "playing"', async () => {
-		const player = setupPlayer();
-		expect(player.playState()).not.toBe('playing');
+  it('togglePlayback() calls play() when playState is not "playing"', async () => {
+    const player = setupPlayer();
 
-		const playEvents: unknown[] = [];
-		player.on('play' as never, (data: unknown) => playEvents.push(data));
+    expect(player.playState()).not.toBe('playing');
 
-		await player.togglePlayback();
+    const playEvents: unknown[] = [];
 
-		expect(playEvents).toHaveLength(1);
-	});
+    player.on('play' as never, (data: unknown) =>
+      playEvents.push(data));
 
-	it('togglePlayback() calls pause() when playState is "playing"', async () => {
-		const player = setupPlayer();
-		await player.play();
-		expect(player.playState()).toBe('playing');
+    await player.togglePlayback();
 
-		const pauseEvents: unknown[] = [];
-		player.on('pause' as never, (data: unknown) => pauseEvents.push(data));
+    expect(playEvents).toHaveLength(1);
+  });
 
-		await player.togglePlayback();
+  it('togglePlayback() calls pause() when playState is "playing"', async () => {
+    const player = setupPlayer();
 
-		expect(pauseEvents).toHaveLength(1);
-	});
+    await player.play();
+    expect(player.playState()).toBe('playing');
+
+    const pauseEvents: unknown[] = [];
+
+    player.on('pause' as never, (data: unknown) =>
+      pauseEvents.push(data));
+
+    await player.togglePlayback();
+
+    expect(pauseEvents).toHaveLength(1);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -571,174 +648,257 @@ describe('togglePlayback()', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('next() — repeat modes', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	it('next() with repeat:ONE reloads the current item and emits "next"', async () => {
-		const player = setupPlayer();
-		player.repeatState(RepeatState.ONE);
+  it('next() with repeat:ONE reloads the current item and emits "next"', async () => {
+    const player = setupPlayer();
 
-		const items: BasePlaylistItem[] = [
-			{ id: 'i1', title: 'Item 1', url: '/i1.mp3' },
-			{ id: 'i2', title: 'Item 2', url: '/i2.mp3' },
-		];
-		player.queue(items);
-		player.item(items[0]!);
+    player.repeatState(RepeatState.ONE);
 
-		const nextEvents: unknown[] = [];
-		player.on('next' as never, (data: unknown) => nextEvents.push(data));
+    const items: BasePlaylistItem[] = [
+      {
+        id: 'i1',
+        title: 'Item 1',
+        url: '/i1.mp3',
+      },
+      {
+        id: 'i2',
+        title: 'Item 2',
+        url: '/i2.mp3',
+      },
+    ];
 
-		// Mock load to avoid actual backend ops
-		const loadSpy = vi.fn().mockResolvedValue(undefined);
-		(player as unknown as { load: (item: unknown, opts: unknown) => Promise<void> }).load = loadSpy;
+    player.queue(items);
+    player.item(items[0]!);
 
-		await player.next({ source: 'auto-advance' });
+    const nextEvents: unknown[] = [];
 
-		expect(nextEvents).toHaveLength(1);
-	});
+    player.on('next' as never, (data: unknown) =>
+      nextEvents.push(data));
 
-	it('next() from the user with repeat:ONE moves to the next item', async () => {
-		const player = setupPlayer();
-		player.repeatState(RepeatState.ONE);
-		const items: BasePlaylistItem[] = [
-			{ id: 'i1', title: 'Item 1', url: '/i1.mp3' },
-			{ id: 'i2', title: 'Item 2', url: '/i2.mp3' },
-		];
-		player.queue(items);
-		player.item(items[0]!);
-		const loadSpy = vi.fn().mockResolvedValue(undefined);
-		(player as unknown as { load: (item: unknown, opts: unknown) => Promise<void> }).load = loadSpy;
+    // Mock load to avoid actual backend ops
+    const loadSpy = vi.fn().mockResolvedValue(undefined);
 
-		await player.next();
+    (player as unknown as { load: (item: unknown, opts: unknown) => Promise<void> }).load = loadSpy;
 
-		expect(loadSpy.mock.calls.at(-1)![0]).toMatchObject({ id: 'i2' });
-		expect(player.item()).toMatchObject({ id: 'i2' });
-	});
+    await player.next({ source: 'auto-advance' });
 
-	it('next({ source: "auto-advance" }) with repeat:ONE replays the current item', async () => {
-		const player = setupPlayer();
-		player.repeatState(RepeatState.ONE);
-		const items: BasePlaylistItem[] = [
-			{ id: 'i1', title: 'Item 1', url: '/i1.mp3' },
-			{ id: 'i2', title: 'Item 2', url: '/i2.mp3' },
-		];
-		player.queue(items);
-		player.item(items[0]!);
-		const loadSpy = vi.fn().mockResolvedValue(undefined);
-		(player as unknown as { load: (item: unknown, opts: unknown) => Promise<void> }).load = loadSpy;
+    expect(nextEvents).toHaveLength(1);
+  });
 
-		await player.next({ source: 'auto-advance' });
+  it('next() from the user with repeat:ONE moves to the next item', async () => {
+    const player = setupPlayer();
 
-		expect(loadSpy.mock.calls.at(-1)![0]).toMatchObject({ id: 'i1' });
-		expect(player.item()).toMatchObject({ id: 'i1' });
-	});
+    player.repeatState(RepeatState.ONE);
+    const items: BasePlaylistItem[] = [
+      {
+        id: 'i1',
+        title: 'Item 1',
+        url: '/i1.mp3',
+      },
+      {
+        id: 'i2',
+        title: 'Item 2',
+        url: '/i2.mp3',
+      },
+    ];
 
-	it('next() with repeat:ALL wraps to first item when at end', async () => {
-		const player = setupPlayer();
-		player.repeatState(RepeatState.ALL);
+    player.queue(items);
+    player.item(items[0]!);
+    const loadSpy = vi.fn().mockResolvedValue(undefined);
 
-		const items: BasePlaylistItem[] = [
-			{ id: 'i1', title: 'Item 1', url: '/i1.mp3' },
-			{ id: 'i2', title: 'Item 2', url: '/i2.mp3' },
-		];
-		player.queue(items);
-		player.item(items[1]!);
+    (player as unknown as { load: (item: unknown, opts: unknown) => Promise<void> }).load = loadSpy;
 
-		const nextEvents: unknown[] = [];
-		player.on('next' as never, (data: unknown) => nextEvents.push(data));
+    await player.next();
 
-		const loadSpy = vi.fn().mockResolvedValue(undefined);
-		(player as unknown as { load: (item: unknown, opts: unknown) => Promise<void> }).load = loadSpy;
+    expect(loadSpy.mock.calls.at(-1)![0]).toMatchObject({ id: 'i2' });
+    expect(player.item()).toMatchObject({ id: 'i2' });
+  });
 
-		await player.next();
+  it('next({ source: "auto-advance" }) with repeat:ONE replays the current item', async () => {
+    const player = setupPlayer();
 
-		expect(nextEvents).toHaveLength(1);
-	});
+    player.repeatState(RepeatState.ONE);
+    const items: BasePlaylistItem[] = [
+      {
+        id: 'i1',
+        title: 'Item 1',
+        url: '/i1.mp3',
+      },
+      {
+        id: 'i2',
+        title: 'Item 2',
+        url: '/i2.mp3',
+      },
+    ];
 
-	it('next() with repeat:OFF on last item emits queue:exhausted', async () => {
-		const player = setupPlayer();
-		player.repeatState(RepeatState.OFF);
+    player.queue(items);
+    player.item(items[0]!);
+    const loadSpy = vi.fn().mockResolvedValue(undefined);
 
-		const items: BasePlaylistItem[] = [
-			{ id: 'i1', title: 'Item 1', url: '/i1.mp3' },
-		];
-		player.queue(items);
-		player.item(items[0]!);
+    (player as unknown as { load: (item: unknown, opts: unknown) => Promise<void> }).load = loadSpy;
 
-		const exhaustedEvents: unknown[] = [];
-		player.on('queue:exhausted' as never, (data: unknown) => exhaustedEvents.push(data));
+    await player.next({ source: 'auto-advance' });
 
-		await player.next();
+    expect(loadSpy.mock.calls.at(-1)![0]).toMatchObject({ id: 'i1' });
+    expect(player.item()).toMatchObject({ id: 'i1' });
+  });
 
-		expect(exhaustedEvents).toHaveLength(1);
-	});
+  it('next() with repeat:ALL wraps to first item when at end', async () => {
+    const player = setupPlayer();
 
-	it('next() beforeNext preventDefault emits nextPrevented', async () => {
-		const player = setupPlayer();
-		player.on('beforeNext' as never, (data: { preventDefault: () => void }) => {
-			data.preventDefault();
-		});
-		const nextPrevented: unknown[] = [];
-		player.on('nextPrevented' as never, (data: unknown) => nextPrevented.push(data));
+    player.repeatState(RepeatState.ALL);
 
-		await player.next();
+    const items: BasePlaylistItem[] = [
+      {
+        id: 'i1',
+        title: 'Item 1',
+        url: '/i1.mp3',
+      },
+      {
+        id: 'i2',
+        title: 'Item 2',
+        url: '/i2.mp3',
+      },
+    ];
 
-		expect(nextPrevented).toHaveLength(1);
-	});
+    player.queue(items);
+    player.item(items[1]!);
+
+    const nextEvents: unknown[] = [];
+
+    player.on('next' as never, (data: unknown) =>
+      nextEvents.push(data));
+
+    const loadSpy = vi.fn().mockResolvedValue(undefined);
+
+    (player as unknown as { load: (item: unknown, opts: unknown) => Promise<void> }).load = loadSpy;
+
+    await player.next();
+
+    expect(nextEvents).toHaveLength(1);
+  });
+
+  it('next() with repeat:OFF on last item emits queue:exhausted', async () => {
+    const player = setupPlayer();
+
+    player.repeatState(RepeatState.OFF);
+
+    const items: BasePlaylistItem[] = [
+      {
+        id: 'i1',
+        title: 'Item 1',
+        url: '/i1.mp3',
+      },
+    ];
+
+    player.queue(items);
+    player.item(items[0]!);
+
+    const exhaustedEvents: unknown[] = [];
+
+    player.on('queue:exhausted' as never, (data: unknown) =>
+      exhaustedEvents.push(data));
+
+    await player.next();
+
+    expect(exhaustedEvents).toHaveLength(1);
+  });
+
+  it('next() beforeNext preventDefault emits nextPrevented', async () => {
+    const player = setupPlayer();
+
+    player.on('beforeNext' as never, (data: { preventDefault: () => void }) => {
+      data.preventDefault();
+    });
+
+    const nextPrevented: unknown[] = [];
+
+    player.on('nextPrevented' as never, (data: unknown) =>
+      nextPrevented.push(data));
+
+    await player.next();
+
+    expect(nextPrevented).toHaveLength(1);
+  });
 });
 
 describe('previous() — edge cases', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	it('previous() no-ops silently when no previous item exists', async () => {
-		const player = setupPlayer();
-		const items: BasePlaylistItem[] = [
-			{ id: 'i1', title: 'Item 1', url: '/i1.mp3' },
-		];
-		player.queue(items);
-		player.item(items[0]!);
+  it('previous() no-ops silently when no previous item exists', async () => {
+    const player = setupPlayer();
+    const items: BasePlaylistItem[] = [
+      {
+        id: 'i1',
+        title: 'Item 1',
+        url: '/i1.mp3',
+      },
+    ];
 
-		const previousEvents: unknown[] = [];
-		player.on('previous' as never, (data: unknown) => previousEvents.push(data));
+    player.queue(items);
+    player.item(items[0]!);
 
-		await player.previous();
+    const previousEvents: unknown[] = [];
 
-		expect(previousEvents).toHaveLength(0);
-	});
+    player.on('previous' as never, (data: unknown) =>
+      previousEvents.push(data));
 
-	it('previous() beforePrevious preventDefault emits previousPrevented', async () => {
-		const player = setupPlayer();
-		player.on('beforePrevious' as never, (data: { preventDefault: () => void }) => {
-			data.preventDefault();
-		});
-		const previousPrevented: unknown[] = [];
-		player.on('previousPrevented' as never, (data: unknown) => previousPrevented.push(data));
+    await player.previous();
 
-		await player.previous();
+    expect(previousEvents).toHaveLength(0);
+  });
 
-		expect(previousPrevented).toHaveLength(1);
-	});
+  it('previous() beforePrevious preventDefault emits previousPrevented', async () => {
+    const player = setupPlayer();
 
-	it('previous() goes to previous item when one exists', async () => {
-		const player = setupPlayer();
-		const items: BasePlaylistItem[] = [
-			{ id: 'i1', title: 'Item 1', url: '/i1.mp3' },
-			{ id: 'i2', title: 'Item 2', url: '/i2.mp3' },
-		];
-		player.queue(items);
-		player.item(items[1]!);
+    player.on('beforePrevious' as never, (data: { preventDefault: () => void }) => {
+      data.preventDefault();
+    });
 
-		const previousEvents: unknown[] = [];
-		player.on('previous' as never, (data: unknown) => previousEvents.push(data));
+    const previousPrevented: unknown[] = [];
 
-		const loadSpy = vi.fn().mockResolvedValue(undefined);
-		(player as unknown as { load: (item: unknown, opts: unknown) => Promise<void> }).load = loadSpy;
+    player.on('previousPrevented' as never, (data: unknown) =>
+      previousPrevented.push(data));
 
-		await player.previous();
+    await player.previous();
 
-		expect(previousEvents).toHaveLength(1);
-	});
+    expect(previousPrevented).toHaveLength(1);
+  });
+
+  it('previous() goes to previous item when one exists', async () => {
+    const player = setupPlayer();
+    const items: BasePlaylistItem[] = [
+      {
+        id: 'i1',
+        title: 'Item 1',
+        url: '/i1.mp3',
+      },
+      {
+        id: 'i2',
+        title: 'Item 2',
+        url: '/i2.mp3',
+      },
+    ];
+
+    player.queue(items);
+    player.item(items[1]!);
+
+    const previousEvents: unknown[] = [];
+
+    player.on('previous' as never, (data: unknown) =>
+      previousEvents.push(data));
+
+    const loadSpy = vi.fn().mockResolvedValue(undefined);
+
+    (player as unknown as { load: (item: unknown, opts: unknown) => Promise<void> }).load = loadSpy;
+
+    await player.previous();
+
+    expect(previousEvents).toHaveLength(1);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -746,42 +906,48 @@ describe('previous() — edge cases', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('_seekingTransition()', () => {
-	beforeEach(() => MockPlayer._resetRegistry());
-	afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => { MockPlayer._resetRegistry(); document.body.innerHTML = ''; });
 
-	it('does NOT emit seeking phase when prior phase is ready (pre-play)', async () => {
-		const player = setupPlayer();
-		// ready() must be awaited so the async pipeline reaches phase='ready'.
-		await player.ready();
-		expect(player.phase()).toBe('ready');
+  it('does NOT emit seeking phase when prior phase is ready (pre-play)', async () => {
+    const player = setupPlayer();
 
-		// phase event payload is { from, to } — collect .to values.
-		const phaseChanges: string[] = [];
-		player.on('phase' as never, (data: { from: string; to: string }) => phaseChanges.push(data.to));
+    // ready() must be awaited so the async pipeline reaches phase='ready'.
+    await player.ready();
+    expect(player.phase()).toBe('ready');
 
-		// Use time() setter which uses _seekingTransition internally
-		await player.time(5);
+    // phase event payload is { from, to } — collect .to values.
+    const phaseChanges: string[] = [];
 
-		// 'seeking' should not appear when phase is 'ready'
-		expect(phaseChanges).not.toContain('seeking');
-	});
+    player.on('phase' as never, (data: { from: string; to: string }) =>
+      phaseChanges.push(data.to));
 
-	it('round-trips through seeking phase when prior phase is starting', async () => {
-		const player = setupPlayer();
-		// ready() must be awaited before play() so phase is 'ready' and play()
-		// can transition it to 'starting'.
-		await player.ready();
-		await player.play();
-		expect(player.phase()).toBe('starting');
+    // Use time() setter which uses _seekingTransition internally
+    await player.time(5);
 
-		// phase event payload is { from, to } — collect .to values.
-		const phaseChanges: string[] = [];
-		player.on('phase' as never, (data: { from: string; to: string }) => phaseChanges.push(data.to));
+    // 'seeking' should not appear when phase is 'ready'
+    expect(phaseChanges).not.toContain('seeking');
+  });
 
-		await player.time(10);
+  it('round-trips through seeking phase when prior phase is starting', async () => {
+    const player = setupPlayer();
 
-		expect(phaseChanges).toContain('seeking');
-		// _seekingTransition restores to the prior phase ('starting'), not 'playing'
-		expect(phaseChanges[phaseChanges.length - 1]).toBe('starting');
-	});
+    // ready() must be awaited before play() so phase is 'ready' and play()
+    // can transition it to 'starting'.
+    await player.ready();
+    await player.play();
+    expect(player.phase()).toBe('starting');
+
+    // phase event payload is { from, to } — collect .to values.
+    const phaseChanges: string[] = [];
+
+    player.on('phase' as never, (data: { from: string; to: string }) =>
+      phaseChanges.push(data.to));
+
+    await player.time(10);
+
+    expect(phaseChanges).toContain('seeking');
+    // _seekingTransition restores to the prior phase ('starting'), not 'playing'
+    expect(phaseChanges[phaseChanges.length - 1]).toBe('starting');
+  });
 });

@@ -36,195 +36,259 @@ import { NMVideoPlayer } from '../../index';
 import { TvKeyHandlerPlugin, tvKeyHandlerPlugin } from '../../plugins/tv-key-handler';
 
 describe('TvKeyHandlerPlugin — extended coverage', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.restoreAllMocks();
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+  });
 
-	function makePlayer(overrides: Record<string, unknown> = {}): NMVideoPlayer {
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(tvKeyHandlerPlugin, { cooldownMs: 0, arrowSeekSeconds: 5 } as any);
-		Object.assign(player, overrides);
-		return player;
-	}
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.restoreAllMocks();
+  });
 
-	async function ready(videoPlayer: NMVideoPlayer): Promise<NMVideoPlayer> {
-		await videoPlayer.ready();
-		return videoPlayer;
-	}
+  function makePlayer(overrides: Record<string, unknown> = {}): NMVideoPlayer {
+    const player = new NMVideoPlayer('test').setup({});
 
-	function key(k: string, opts: KeyboardEventInit = {}): void {
-		document.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, ...opts }));
-	}
+    player.addPlugin(tvKeyHandlerPlugin, { cooldownMs: 0, arrowSeekSeconds: 5 } as any);
+    Object.assign(player, overrides);
 
-	// ── ArrowUp/Down volume (TV override, no gate) ────────────────────────────
+    return player;
+  }
 
-	it('ArrowUp → volumeUp() on TV (no isTv/isMobile gate)', async () => {
-		const spy = vi.fn().mockResolvedValue(undefined);
-		await ready(makePlayer({ volumeUp: spy }));
-		key('ArrowUp');
-		expect(spy).toHaveBeenCalledTimes(1);
-	});
+  async function ready(videoPlayer: NMVideoPlayer): Promise<NMVideoPlayer> {
+    await videoPlayer.ready();
 
-	it('ArrowDown → volumeDown() on TV', async () => {
-		const spy = vi.fn().mockResolvedValue(undefined);
-		await ready(makePlayer({ volumeDown: spy }));
-		key('ArrowDown');
-		expect(spy).toHaveBeenCalledTimes(1);
-	});
+    return videoPlayer;
+  }
 
-	// ── Info key ─────────────────────────────────────────────────────────────
+  function key(k: string, opts: KeyboardEventInit = {}): void {
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      key: k,
+      bubbles: true,
+      ...opts,
+    }));
+  }
 
-	it('Info key emits plugin:tv-key-handler:info with time and remaining', async () => {
-		const infoEvents: unknown[] = [];
-		const player = await ready(makePlayer({
-			time: () => 60,
-			duration: () => 120,
-			item: () => ({ title: 'My Movie', id: '1' }),
-			chapters: () => [],
-		}));
-		(player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('plugin:tv-key-handler:info', (data: unknown) => infoEvents.push(data));
-		key('Info');
-		expect(infoEvents.length).toBeGreaterThan(0);
-		const info = infoEvents[0] as { currentTime: number; remaining: number; title: string };
-		expect(info.currentTime).toBe(60);
-		expect(info.remaining).toBe(60);
-		expect(info.title).toBe('My Movie');
-	});
+  // ── ArrowUp/Down volume (TV override, no gate) ────────────────────────────
 
-	it('Info key includes chapter label when a chapter is active', async () => {
-		const infoEvents: unknown[] = [];
-		const player = await ready(makePlayer({
-			time: () => 30,
-			duration: () => 120,
-			item: () => ({ title: 'Movie', id: '1' }),
-			chapters: () => [
-				{ index: 0, start: 0, end: 60, title: 'Opening' },
-				{ index: 1, start: 60, end: 120, title: 'Act 2' },
-			],
-		}));
-		(player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('plugin:tv-key-handler:info', (data: unknown) => infoEvents.push(data));
-		key('Info');
-		const info = infoEvents[0] as { chapterLabel: string };
-		expect(info.chapterLabel).toContain('Opening');
-	});
+  it('ArrowUp → volumeUp() on TV (no isTv/isMobile gate)', async () => {
+    const spy = vi.fn().mockResolvedValue(undefined);
 
-	it('Info key emits display-message as OSD fallback', async () => {
-		const messages: unknown[] = [];
-		const player = await ready(makePlayer({
-			time: () => 65,
-			duration: () => 130,
-			item: () => ({ title: 'Test', id: '1' }),
-			chapters: () => [],
-		}));
-		(player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('display-message', (data: unknown) => messages.push(data));
-		key('Info');
-		expect(messages.length).toBeGreaterThan(0);
-		const msg = (messages[0] as { text?: string }).text ?? '';
-		// Should contain both time values
-		expect(msg).toMatch(/1:05/);
-	});
+    await ready(makePlayer({ volumeUp: spy }));
+    key('ArrowUp');
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
 
-	it('Info key OSD includes title in the message', async () => {
-		const messages: unknown[] = [];
-		const player = await ready(makePlayer({
-			time: () => 0,
-			duration: () => 60,
-			item: () => ({ title: 'Episode 1', id: '1' }),
-			chapters: () => [],
-		}));
-		(player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('display-message', (data: unknown) => messages.push(data));
-		key('Info');
-		const msg = (messages[0] as { text?: string }).text ?? '';
-		expect(msg).toContain('Episode 1');
-	});
+  it('ArrowDown → volumeDown() on TV', async () => {
+    const spy = vi.fn().mockResolvedValue(undefined);
 
-	// ── Help key (TV override, different namespace) ───────────────────────────
+    await ready(makePlayer({ volumeDown: spy }));
+    key('ArrowDown');
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
 
-	it('? key emits plugin:tv-key-handler:shortcuts-toggle (not desktop-ui)', async () => {
-		const tvEvents: unknown[] = [];
-		const desktopEvents: unknown[] = [];
-		const player = await ready(makePlayer({}));
-		(player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('plugin:tv-key-handler:shortcuts-toggle', () => tvEvents.push(true));
-		(player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('plugin:desktop-ui:shortcuts-toggle', () => desktopEvents.push(true));
-		// A real `?` press carries shiftKey, because shift is how the character is
-		// typed. Dispatching it without shift describes an event no keyboard sends,
-		// and this assertion passed against a binding that never fired on a remote.
-		key('?', { shiftKey: true });
-		expect(tvEvents.length).toBeGreaterThan(0);
-		expect(desktopEvents.length).toBe(0);
-	});
+  // ── Info key ─────────────────────────────────────────────────────────────
 
-	// ── Aspect ratio (TV override with OSD) ───────────────────────────────────
+  it('Info key emits plugin:tv-key-handler:info with time and remaining', async () => {
+    const infoEvents: unknown[] = [];
+    const player = await ready(makePlayer({
+      time: () => 60,
+      duration: () => 120,
+      item: () => ({ title: 'My Movie', id: '1' }),
+      chapters: () => [],
+    }));
 
-	it('a → cycleAspectRatio() and emits display-message', async () => {
-		const cycleSpy = vi.fn().mockResolvedValue(undefined);
-		const messages: unknown[] = [];
-		const player = await ready(makePlayer({ cycleAspectRatio: cycleSpy }));
-		(player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('display-message', (data: unknown) => messages.push(data));
-		key('a');
-		expect(cycleSpy).toHaveBeenCalledTimes(1);
-		// The OSD message should fire
-		expect(messages.length).toBeGreaterThan(0);
-	});
+    (player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('plugin:tv-key-handler:info', (data: unknown) =>
+      infoEvents.push(data));
 
-	// ── MediaRecord key ───────────────────────────────────────────────────────
+    key('Info');
+    expect(infoEvents.length).toBeGreaterThan(0);
+    const info = infoEvents[0] as {
+      currentTime: number;
+      remaining: number;
+      title: string;
+    };
 
-	it('MediaRecord emits plugin:tv-key-handler:bookmark with current time', async () => {
-		const bookmarks: unknown[] = [];
-		const player = await ready(makePlayer({ time: () => 42 }));
-		(player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('plugin:tv-key-handler:bookmark', (data: unknown) => bookmarks.push(data));
-		key('MediaRecord');
-		expect(bookmarks.length).toBeGreaterThan(0);
-		expect((bookmarks[0] as { time: number }).time).toBe(42);
-	});
+    expect(info.currentTime).toBe(60);
+    expect(info.remaining).toBe(60);
+    expect(info.title).toBe('My Movie');
+  });
 
-	// ── resolveChapterLabel edge cases ────────────────────────────────────────
+  it('Info key includes chapter label when a chapter is active', async () => {
+    const infoEvents: unknown[] = [];
+    const player = await ready(makePlayer({
+      time: () => 30,
+      duration: () => 120,
+      item: () => ({ title: 'Movie', id: '1' }),
+      chapters: () => [
+        {
+          index: 0,
+          start: 0,
+          end: 60,
+          title: 'Opening',
+        },
+        {
+          index: 1,
+          start: 60,
+          end: 120,
+          title: 'Act 2',
+        },
+      ],
+    }));
 
-	it('Info OSD message has no chapter label when no chapters', async () => {
-		const infoEvents: unknown[] = [];
-		const player = await ready(makePlayer({
-			time: () => 10,
-			duration: () => 60,
-			item: () => ({ title: 'No Chapters', id: '1' }),
-			chapters: () => [],
-		}));
-		(player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('plugin:tv-key-handler:info', (data: unknown) => infoEvents.push(data));
-		key('Info');
-		const info = infoEvents[0] as { chapterLabel: string };
-		expect(info.chapterLabel).toBe('');
-	});
+    (player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('plugin:tv-key-handler:info', (data: unknown) =>
+      infoEvents.push(data));
 
-	it('chapter without title shows "Chapter N" format', async () => {
-		const infoEvents: unknown[] = [];
-		const player = await ready(makePlayer({
-			time: () => 10,
-			duration: () => 60,
-			item: () => ({ title: 'Movie', id: '1' }),
-			chapters: () => [{ index: 0, start: 0, end: 60, title: '' }],
-		}));
-		(player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('plugin:tv-key-handler:info', (data: unknown) => infoEvents.push(data));
-		key('Info');
-		const info = infoEvents[0] as { chapterLabel: string };
-		// Should contain chapter number but no title (empty string check in source)
-		expect(info.chapterLabel).toBeTruthy();
-	});
+    key('Info');
+    const info = infoEvents[0] as { chapterLabel: string };
 
-	// ── TvKeyHandlerPlugin registration ──────────────────────────────────────
+    expect(info.chapterLabel).toContain('Opening');
+  });
 
-	it('id is tv-key-handler', () => {
-		expect(TvKeyHandlerPlugin.id).toBe('tv-key-handler');
-	});
+  it('Info key emits display-message as OSD fallback', async () => {
+    const messages: unknown[] = [];
+    const player = await ready(makePlayer({
+      time: () => 65,
+      duration: () => 130,
+      item: () => ({ title: 'Test', id: '1' }),
+      chapters: () => [],
+    }));
 
-	it('overrides base description', () => {
-		expect(TvKeyHandlerPlugin.description).toContain('TV');
-	});
+    (player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('display-message', (data: unknown) =>
+      messages.push(data));
+
+    key('Info');
+    expect(messages.length).toBeGreaterThan(0);
+    const msg = (messages[0] as { text?: string }).text ?? '';
+
+    // Should contain both time values
+    expect(msg).toMatch(/1:05/);
+  });
+
+  it('Info key OSD includes title in the message', async () => {
+    const messages: unknown[] = [];
+    const player = await ready(makePlayer({
+      time: () => 0,
+      duration: () => 60,
+      item: () => ({ title: 'Episode 1', id: '1' }),
+      chapters: () => [],
+    }));
+
+    (player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('display-message', (data: unknown) =>
+      messages.push(data));
+
+    key('Info');
+    const msg = (messages[0] as { text?: string }).text ?? '';
+
+    expect(msg).toContain('Episode 1');
+  });
+
+  // ── Help key (TV override, different namespace) ───────────────────────────
+
+  it('? key emits plugin:tv-key-handler:shortcuts-toggle (not desktop-ui)', async () => {
+    const tvEvents: unknown[] = [];
+    const desktopEvents: unknown[] = [];
+    const player = await ready(makePlayer({}));
+
+    (player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('plugin:tv-key-handler:shortcuts-toggle', () =>
+      tvEvents.push(true));
+
+    (player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('plugin:desktop-ui:shortcuts-toggle', () =>
+      desktopEvents.push(true));
+
+    // A real `?` press carries shiftKey, because shift is how the character is
+    // typed. Dispatching it without shift describes an event no keyboard sends,
+    // and this assertion passed against a binding that never fired on a remote.
+    key('?', { shiftKey: true });
+    expect(tvEvents.length).toBeGreaterThan(0);
+    expect(desktopEvents.length).toBe(0);
+  });
+
+  // ── Aspect ratio (TV override with OSD) ───────────────────────────────────
+
+  it('a → cycleAspectRatio() and emits display-message', async () => {
+    const cycleSpy = vi.fn().mockResolvedValue(undefined);
+    const messages: unknown[] = [];
+    const player = await ready(makePlayer({ cycleAspectRatio: cycleSpy }));
+
+    (player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('display-message', (data: unknown) =>
+      messages.push(data));
+
+    key('a');
+    expect(cycleSpy).toHaveBeenCalledTimes(1);
+    // The OSD message should fire
+    expect(messages.length).toBeGreaterThan(0);
+  });
+
+  // ── MediaRecord key ───────────────────────────────────────────────────────
+
+  it('MediaRecord emits plugin:tv-key-handler:bookmark with current time', async () => {
+    const bookmarks: unknown[] = [];
+    const player = await ready(makePlayer({ time: () => 42 }));
+
+    (player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('plugin:tv-key-handler:bookmark', (data: unknown) =>
+      bookmarks.push(data));
+
+    key('MediaRecord');
+    expect(bookmarks.length).toBeGreaterThan(0);
+    expect((bookmarks[0] as { time: number }).time).toBe(42);
+  });
+
+  // ── resolveChapterLabel edge cases ────────────────────────────────────────
+
+  it('Info OSD message has no chapter label when no chapters', async () => {
+    const infoEvents: unknown[] = [];
+    const player = await ready(makePlayer({
+      time: () => 10,
+      duration: () => 60,
+      item: () => ({ title: 'No Chapters', id: '1' }),
+      chapters: () => [],
+    }));
+
+    (player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('plugin:tv-key-handler:info', (data: unknown) =>
+      infoEvents.push(data));
+
+    key('Info');
+    const info = infoEvents[0] as { chapterLabel: string };
+
+    expect(info.chapterLabel).toBe('');
+  });
+
+  it('chapter without title shows "Chapter N" format', async () => {
+    const infoEvents: unknown[] = [];
+    const player = await ready(makePlayer({
+      time: () => 10,
+      duration: () => 60,
+      item: () => ({ title: 'Movie', id: '1' }),
+      chapters: () => [{
+        index: 0,
+        start: 0,
+        end: 60,
+        title: '',
+      }],
+    }));
+
+    (player as unknown as { on: (event: string, fn: (data: unknown) => void) => void }).on('plugin:tv-key-handler:info', (data: unknown) =>
+      infoEvents.push(data));
+
+    key('Info');
+    const info = infoEvents[0] as { chapterLabel: string };
+
+    // Should contain chapter number but no title (empty string check in source)
+    expect(info.chapterLabel).toBeTruthy();
+  });
+
+  // ── TvKeyHandlerPlugin registration ──────────────────────────────────────
+
+  it('id is tv-key-handler', () => {
+    expect(TvKeyHandlerPlugin.id).toBe('tv-key-handler');
+  });
+
+  it('overrides base description', () => {
+    expect(TvKeyHandlerPlugin.description).toContain('TV');
+  });
 });

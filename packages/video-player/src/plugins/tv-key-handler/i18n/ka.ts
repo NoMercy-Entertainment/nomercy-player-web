@@ -9,13 +9,13 @@
 import type { TvKeyHandlerTranslationKey } from './en';
 
 export default {
-	'plugin.tv-key-handler.info.chapter': 'თავი',
-	'plugin.tv-key-handler.info.noTitle': 'სათაური არ არის',
-	'plugin.tv-key-handler.info.timeRemaining': 'დარჩა',
-	'plugin.tv-key-handler.seek.red': '+30s',
-	'plugin.tv-key-handler.seek.green': '+60s',
-	'plugin.tv-key-handler.seek.yellow': '+90s',
-	'plugin.tv-key-handler.seek.blue': '+120s',
-	'plugin.tv-key-handler.aspectRatio.cycled': 'ასპექტის თანაფარდობა',
-	'plugin.tv-key-handler.bookmark.added': 'სანიშნე დაემატა',
+  'plugin.tv-key-handler.info.chapter': 'თავი',
+  'plugin.tv-key-handler.info.noTitle': 'სათაური არ არის',
+  'plugin.tv-key-handler.info.timeRemaining': 'დარჩა',
+  'plugin.tv-key-handler.seek.red': '+30s',
+  'plugin.tv-key-handler.seek.green': '+60s',
+  'plugin.tv-key-handler.seek.yellow': '+90s',
+  'plugin.tv-key-handler.seek.blue': '+120s',
+  'plugin.tv-key-handler.aspectRatio.cycled': 'ასპექტის თანაფარდობა',
+  'plugin.tv-key-handler.bookmark.added': 'სანიშნე დაემატა',
 } satisfies Record<TvKeyHandlerTranslationKey, string>;

@@ -23,92 +23,100 @@ import type { VideoPlaylistItem } from '@nomercy-entertainment/nomercy-video-pla
 import type { DesktopUiInternals } from '../internals';
 
 import {
-	clampPopOffset,
-	getScrubTime,
-	loadSpriteSet,
-	paintSpriteAt,
-	resolveSpriteUrl,
+  clampPopOffset,
+  getScrubTime,
+  loadSpriteSet,
+  paintSpriteAt,
+  resolveSpriteUrl,
 } from '../helpers/sprite';
 
 export const spriteMethods = {
-	getScrubTime(this: DesktopUiInternals, event: Event): { scrubTime: number; scrubTimePlayer: number } {
-		const win = this._isLive() ? this._liveWindow() : null;
-		const scrub = getScrubTime(event, this.sliderRefs.sliderBar, win ? win.end - win.start : this.resolveDuration());
-		return win
-			? {
-					...scrub,
-					scrubTimePlayer: scrub.scrubTimePlayer + win.start,
-				}
-			: scrub;
-	},
+  getScrubTime(this: DesktopUiInternals, event: Event): { scrubTime: number; scrubTimePlayer: number } {
+    const win = this._isLive()
+      ? this._liveWindow()
+      : null;
+    const scrub = getScrubTime(event, this.sliderRefs.sliderBar, win
+      ? win.end - win.start
+      : this.resolveDuration());
 
-	clampPopOffset(this: DesktopUiInternals, pct: number): number {
-		return clampPopOffset(pct, this.sliderRefs.sliderPop, this.sliderRefs.sliderBar);
-	},
+    return win
+      ? {
+          ...scrub,
+          scrubTimePlayer: scrub.scrubTimePlayer + win.start,
+        }
+      : scrub;
+  },
 
-	paintSpriteAt(this: DesktopUiInternals, time: number): void {
-		paintSpriteAt(time, this.spriteSet, this.sliderRefs.sliderPopImage);
-	},
+  clampPopOffset(this: DesktopUiInternals, pct: number): number {
+    return clampPopOffset(pct, this.sliderRefs.sliderPop, this.sliderRefs.sliderBar);
+  },
 
-	_resolveSpriteUrl(this: DesktopUiInternals, item: VideoPlaylistItem | undefined | null): string | undefined {
-		return resolveSpriteUrl(item);
-	},
+  paintSpriteAt(this: DesktopUiInternals, time: number): void {
+    paintSpriteAt(time, this.spriteSet, this.sliderRefs.sliderPopImage);
+  },
 
-	_revokeSpriteObjectUrl(this: DesktopUiInternals): void {
-		if (this.spriteObjectUrl) {
-			URL.revokeObjectURL(this.spriteObjectUrl);
-			this.spriteObjectUrl = null;
-		}
-	},
+  _resolveSpriteUrl(this: DesktopUiInternals, item: VideoPlaylistItem | undefined | null): string | undefined {
+    return resolveSpriteUrl(item);
+  },
 
-	async loadSpritesForItem(this: DesktopUiInternals, item: VideoPlaylistItem | undefined | null): Promise<void> {
-		const myToken = ++this.spriteLoadId;
-		this.spriteSet = null;
-		this._revokeSpriteObjectUrl();
+  _revokeSpriteObjectUrl(this: DesktopUiInternals): void {
+    if (this.spriteObjectUrl) {
+      URL.revokeObjectURL(this.spriteObjectUrl);
+      this.spriteObjectUrl = null;
+    }
+  },
 
-		this.sliderRefs.sliderPopImage.style.backgroundImage = '';
-		this.sliderRefs.sliderPopImage.style.backgroundPosition = '';
-		this.sliderRefs.sliderPopImage.style.width = '';
-		this.sliderRefs.sliderPopImage.style.height = '';
+  async loadSpritesForItem(this: DesktopUiInternals, item: VideoPlaylistItem | undefined | null): Promise<void> {
+    const myToken = ++this.spriteLoadId;
 
-		const rawSpriteUrl = this._resolveSpriteUrl(item);
-		if (!rawSpriteUrl)
-			return;
+    this.spriteSet = null;
+    this._revokeSpriteObjectUrl();
 
-		const spriteUrl = (await this.resolveUrl(rawSpriteUrl, 'image')).href;
+    this.sliderRefs.sliderPopImage.style.backgroundImage = '';
+    this.sliderRefs.sliderPopImage.style.backgroundPosition = '';
+    this.sliderRefs.sliderPopImage.style.width = '';
+    this.sliderRefs.sliderPopImage.style.height = '';
 
-		const set = await loadSpriteSet(spriteUrl, {
-			fetchText: async (url) => {
-				try {
-					return await this.fetch<string>(url);
-				}
-				catch {
-					return null;
-				}
-			},
-			fetchImageUrl: async (url) => {
-				try {
-					const buffer = await this.fetch<ArrayBuffer>(url, { responseType: 'arrayBuffer' });
-					return URL.createObjectURL(new Blob([buffer]));
-				}
-				catch {
-					return null;
-				}
-			},
-		});
+    const rawSpriteUrl = this._resolveSpriteUrl(item);
 
-		if (myToken !== this.spriteLoadId) {
-			if (set?.spriteUrl.startsWith('blob:'))
-				URL.revokeObjectURL(set.spriteUrl);
-			return;
-		}
-		if (!set)
-			return;
+    if (!rawSpriteUrl) return;
 
-		if (set.spriteUrl.startsWith('blob:'))
-			this.spriteObjectUrl = set.spriteUrl;
+    const spriteUrl = (await this.resolveUrl(rawSpriteUrl, 'image')).href;
 
-		this.spriteSet = set;
-		this.sliderRefs.sliderPopImage.style.backgroundImage = `url('${set.spriteUrl}')`;
-	},
+    const set = await loadSpriteSet(spriteUrl, {
+      fetchText: async (url) => {
+        try {
+          return await this.fetch<string>(url);
+        } catch {
+          return null;
+        }
+      },
+      fetchImageUrl: async (url) => {
+        try {
+          const buffer = await this.fetch<ArrayBuffer>(url, { responseType: 'arrayBuffer' });
+
+          return URL.createObjectURL(new Blob([buffer]));
+        } catch {
+          return null;
+        }
+      },
+    });
+
+    if (myToken !== this.spriteLoadId) {
+      if (set?.spriteUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(set.spriteUrl);
+      }
+
+      return;
+    }
+
+    if (!set) return;
+
+    if (set.spriteUrl.startsWith('blob:')) {
+      this.spriteObjectUrl = set.spriteUrl;
+    }
+
+    this.spriteSet = set;
+    this.sliderRefs.sliderPopImage.style.backgroundImage = `url('${set.spriteUrl}')`;
+  },
 } as const;

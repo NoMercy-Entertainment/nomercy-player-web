@@ -26,7 +26,7 @@ import { nativeFactory } from '../adapters/stream/native';
 // ─────────────────────────────────────────────────────────────────────────────
 
 function makeElement(): HTMLMediaElement {
-	return document.createElement('audio') as unknown as HTMLMediaElement;
+  return document.createElement('audio') as unknown as HTMLMediaElement;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -34,218 +34,245 @@ function makeElement(): HTMLMediaElement {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('NativeStreamSource', () => {
-	afterEach(() => {
-		vi.restoreAllMocks();
-	});
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-	describe('state machine', () => {
-		it('starts in idle state', () => {
-			const source = nativeFactory.create({ url: 'https://x/track.mp3' });
-			expect(source.state()).toBe('idle');
-		});
+  describe('state machine', () => {
+    it('starts in idle state', () => {
+      const source = nativeFactory.create({ url: 'https://x/track.mp3' });
 
-		it('moves to ready and emits manifest-loaded on loadedmetadata', async () => {
-			const source = nativeFactory.create({ url: 'https://x/track.mp3' });
-			const el = makeElement();
+      expect(source.state()).toBe('idle');
+    });
 
-			const manifestEvents: unknown[] = [];
-			source.on('manifest-loaded', data => manifestEvents.push(data));
+    it('moves to ready and emits manifest-loaded on loadedmetadata', async () => {
+      const source = nativeFactory.create({ url: 'https://x/track.mp3' });
+      const el = makeElement();
 
-			const attachP = source.attach(el);
-			el.dispatchEvent(new Event('loadedmetadata'));
-			await attachP;
+      const manifestEvents: unknown[] = [];
 
-			expect(source.state()).toBe('ready');
-			expect(manifestEvents).toHaveLength(1);
-		});
+      source.on('manifest-loaded', (data) =>
+        manifestEvents.push(data));
 
-		it('sets element.src to the provided URL', async () => {
-			const url = 'https://x/track.flac';
-			const source = nativeFactory.create({ url });
-			const el = makeElement();
+      const attachP = source.attach(el);
 
-			const attachP = source.attach(el);
-			el.dispatchEvent(new Event('loadedmetadata'));
-			await attachP;
+      el.dispatchEvent(new Event('loadedmetadata'));
+      await attachP;
 
-			expect(el.src).toContain('track.flac');
-		});
+      expect(source.state()).toBe('ready');
+      expect(manifestEvents).toHaveLength(1);
+    });
 
-		it('moves to error state when element fires error event', async () => {
-			const source = nativeFactory.create({ url: 'https://x/track.mp3' });
-			const el = makeElement();
+    it('sets element.src to the provided URL', async () => {
+      const url = 'https://x/track.flac';
+      const source = nativeFactory.create({ url });
+      const el = makeElement();
 
-			const attachP = source.attach(el);
-			el.dispatchEvent(new Event('error'));
-			await expect(attachP).rejects.toBeDefined();
+      const attachP = source.attach(el);
 
-			expect(source.state()).toBe('error');
-		});
+      el.dispatchEvent(new Event('loadedmetadata'));
+      await attachP;
 
-		it('emits error event on element error after attach', async () => {
-			const source = nativeFactory.create({ url: 'https://x/track.mp3' });
-			const el = makeElement();
+      expect(el.src).toContain('track.flac');
+    });
 
-			const errorEvents: unknown[] = [];
-			source.on('error', data => errorEvents.push(data));
+    it('moves to error state when element fires error event', async () => {
+      const source = nativeFactory.create({ url: 'https://x/track.mp3' });
+      const el = makeElement();
 
-			// happy-dom does not define MediaError — use a plain shape-compatible object
-			Object.defineProperty(el, 'error', {
-				configurable: true,
-				get: () => ({ code: 4, message: 'fake media error' }),
-			});
+      const attachP = source.attach(el);
 
-			const attachP = source.attach(el);
-			el.dispatchEvent(new Event('error'));
+      el.dispatchEvent(new Event('error'));
+      await expect(attachP).rejects.toBeDefined();
 
-			await expect(attachP).rejects.toBeDefined();
-		});
+      expect(source.state()).toBe('error');
+    });
 
-		it('resets to idle after detach()', async () => {
-			const source = nativeFactory.create({ url: 'https://x/track.mp3' });
-			const el = makeElement();
+    it('emits error event on element error after attach', async () => {
+      const source = nativeFactory.create({ url: 'https://x/track.mp3' });
+      const el = makeElement();
 
-			const attachP = source.attach(el);
-			el.dispatchEvent(new Event('loadedmetadata'));
-			await attachP;
+      const errorEvents: unknown[] = [];
 
-			expect(source.state()).toBe('ready');
-			source.detach();
-			expect(source.state()).toBe('idle');
-		});
+      source.on('error', (data) =>
+        errorEvents.push(data));
 
-		it('detach() removes the error listener so further element errors are silent', async () => {
-			const source = nativeFactory.create({ url: 'https://x/track.mp3' });
-			const el = makeElement();
+      // happy-dom does not define MediaError — use a plain shape-compatible object
+      Object.defineProperty(el, 'error', {
+        configurable: true,
+        get: () => ({ code: 4, message: 'fake media error' }),
+      });
 
-			const errorEvents: unknown[] = [];
-			source.on('error', data => errorEvents.push(data));
+      const attachP = source.attach(el);
 
-			const attachP = source.attach(el);
-			el.dispatchEvent(new Event('loadedmetadata'));
-			await attachP;
+      el.dispatchEvent(new Event('error'));
 
-			source.detach();
+      await expect(attachP).rejects.toBeDefined();
+    });
 
-			// Error after detach should not reach the source listener
-			Object.defineProperty(el, 'error', {
-				configurable: true,
-				get: () => ({ code: 4, message: 'fake media error' }),
-			});
-			el.dispatchEvent(new Event('error'));
+    it('resets to idle after detach()', async () => {
+      const source = nativeFactory.create({ url: 'https://x/track.mp3' });
+      const el = makeElement();
 
-			expect(errorEvents).toHaveLength(0);
-		});
+      const attachP = source.attach(el);
 
-		it('detach() clears element.src', async () => {
-			const source = nativeFactory.create({ url: 'https://x/track.mp3' });
-			const el = makeElement();
+      el.dispatchEvent(new Event('loadedmetadata'));
+      await attachP;
 
-			const attachP = source.attach(el);
-			el.dispatchEvent(new Event('loadedmetadata'));
-			await attachP;
+      expect(source.state()).toBe('ready');
+      source.detach();
+      expect(source.state()).toBe('idle');
+    });
 
-			source.detach();
-			expect(el.getAttribute('src')).toBeNull();
-		});
-	});
+    it('detach() removes the error listener so further element errors are silent', async () => {
+      const source = nativeFactory.create({ url: 'https://x/track.mp3' });
+      const el = makeElement();
 
-	describe('on/off listener management', () => {
-		it('on() registers a listener that is called when event fires', async () => {
-			const source = nativeFactory.create({ url: 'https://x/track.mp3' });
-			const el = makeElement();
+      const errorEvents: unknown[] = [];
 
-			const fn = vi.fn();
-			source.on('manifest-loaded', fn);
+      source.on('error', (data) =>
+        errorEvents.push(data));
 
-			const attachP = source.attach(el);
-			el.dispatchEvent(new Event('loadedmetadata'));
-			await attachP;
+      const attachP = source.attach(el);
 
-			expect(fn).toHaveBeenCalledOnce();
-		});
+      el.dispatchEvent(new Event('loadedmetadata'));
+      await attachP;
 
-		it('off() removes a listener so it is not called', async () => {
-			const source = nativeFactory.create({ url: 'https://x/track.mp3' });
-			const el = makeElement();
+      source.detach();
 
-			const fn = vi.fn();
-			source.on('manifest-loaded', fn);
-			source.off('manifest-loaded', fn);
+      // Error after detach should not reach the source listener
+      Object.defineProperty(el, 'error', {
+        configurable: true,
+        get: () => ({ code: 4, message: 'fake media error' }),
+      });
 
-			const attachP = source.attach(el);
-			el.dispatchEvent(new Event('loadedmetadata'));
-			await attachP;
+      el.dispatchEvent(new Event('error'));
 
-			expect(fn).not.toHaveBeenCalled();
-		});
+      expect(errorEvents).toHaveLength(0);
+    });
 
-		it('off() on unregistered event is a no-op', () => {
-			const source = nativeFactory.create({ url: 'https://x/track.mp3' });
-			const fn = vi.fn();
-			expect(() => source.off('manifest-loaded', fn)).not.toThrow();
-		});
+    it('detach() clears element.src', async () => {
+      const source = nativeFactory.create({ url: 'https://x/track.mp3' });
+      const el = makeElement();
 
-		it('multiple listeners on same event all fire', async () => {
-			const source = nativeFactory.create({ url: 'https://x/track.mp3' });
-			const el = makeElement();
+      const attachP = source.attach(el);
 
-			const fn1 = vi.fn();
-			const fn2 = vi.fn();
-			source.on('manifest-loaded', fn1);
-			source.on('manifest-loaded', fn2);
+      el.dispatchEvent(new Event('loadedmetadata'));
+      await attachP;
 
-			const attachP = source.attach(el);
-			el.dispatchEvent(new Event('loadedmetadata'));
-			await attachP;
+      source.detach();
+      expect(el.getAttribute('src')).toBeNull();
+    });
+  });
 
-			expect(fn1).toHaveBeenCalledOnce();
-			expect(fn2).toHaveBeenCalledOnce();
-		});
-	});
+  describe('on/off listener management', () => {
+    it('on() registers a listener that is called when event fires', async () => {
+      const source = nativeFactory.create({ url: 'https://x/track.mp3' });
+      const el = makeElement();
 
-	describe('emit swallows listener exceptions', () => {
-		it('error in first listener does not prevent second listener from running', async () => {
-			const source = nativeFactory.create({ url: 'https://x/track.mp3' });
-			const el = makeElement();
+      const fn = vi.fn();
 
-			const errorFn = vi.fn(() => { throw new Error('listener error'); });
-			const okFn = vi.fn();
-			source.on('manifest-loaded', errorFn);
-			source.on('manifest-loaded', okFn);
+      source.on('manifest-loaded', fn);
 
-			const attachP = source.attach(el);
-			el.dispatchEvent(new Event('loadedmetadata'));
-			await attachP;
+      const attachP = source.attach(el);
 
-			expect(errorFn).toHaveBeenCalledOnce();
-			expect(okFn).toHaveBeenCalledOnce();
-		});
-	});
+      el.dispatchEvent(new Event('loadedmetadata'));
+      await attachP;
 
-	describe('destroy()', () => {
-		it('destroy() clears all registered listeners', async () => {
-			const source = nativeFactory.create({ url: 'https://x/track.mp3' });
-			const el = makeElement();
+      expect(fn).toHaveBeenCalledOnce();
+    });
 
-			const fn = vi.fn();
-			source.on('manifest-loaded', fn);
+    it('off() removes a listener so it is not called', async () => {
+      const source = nativeFactory.create({ url: 'https://x/track.mp3' });
+      const el = makeElement();
 
-			source.destroy();
+      const fn = vi.fn();
 
-			// After destroy, attaching should still work but listener won't fire
-			const attachP = source.attach(el);
-			el.dispatchEvent(new Event('loadedmetadata'));
-			await attachP;
+      source.on('manifest-loaded', fn);
+      source.off('manifest-loaded', fn);
 
-			expect(fn).not.toHaveBeenCalled();
-		});
-	});
+      const attachP = source.attach(el);
 
-	describe('nativeFactory.create()', () => {
-		it('create() returns a source with kind "native"', () => {
-			const source = nativeFactory.create({ url: 'https://x/track.mp3' });
-			expect(source.kind).toBe('native');
-		});
-	});
+      el.dispatchEvent(new Event('loadedmetadata'));
+      await attachP;
+
+      expect(fn).not.toHaveBeenCalled();
+    });
+
+    it('off() on unregistered event is a no-op', () => {
+      const source = nativeFactory.create({ url: 'https://x/track.mp3' });
+      const fn = vi.fn();
+
+      expect(() => source.off('manifest-loaded', fn)).not.toThrow();
+    });
+
+    it('multiple listeners on same event all fire', async () => {
+      const source = nativeFactory.create({ url: 'https://x/track.mp3' });
+      const el = makeElement();
+
+      const fn1 = vi.fn();
+      const fn2 = vi.fn();
+
+      source.on('manifest-loaded', fn1);
+      source.on('manifest-loaded', fn2);
+
+      const attachP = source.attach(el);
+
+      el.dispatchEvent(new Event('loadedmetadata'));
+      await attachP;
+
+      expect(fn1).toHaveBeenCalledOnce();
+      expect(fn2).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('emit swallows listener exceptions', () => {
+    it('error in first listener does not prevent second listener from running', async () => {
+      const source = nativeFactory.create({ url: 'https://x/track.mp3' });
+      const el = makeElement();
+
+      const errorFn = vi.fn(() => { throw new Error('listener error'); });
+      const okFn = vi.fn();
+
+      source.on('manifest-loaded', errorFn);
+      source.on('manifest-loaded', okFn);
+
+      const attachP = source.attach(el);
+
+      el.dispatchEvent(new Event('loadedmetadata'));
+      await attachP;
+
+      expect(errorFn).toHaveBeenCalledOnce();
+      expect(okFn).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('destroy()', () => {
+    it('destroy() clears all registered listeners', async () => {
+      const source = nativeFactory.create({ url: 'https://x/track.mp3' });
+      const el = makeElement();
+
+      const fn = vi.fn();
+
+      source.on('manifest-loaded', fn);
+
+      source.destroy();
+
+      // After destroy, attaching should still work but listener won't fire
+      const attachP = source.attach(el);
+
+      el.dispatchEvent(new Event('loadedmetadata'));
+      await attachP;
+
+      expect(fn).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('nativeFactory.create()', () => {
+    it('create() returns a source with kind "native"', () => {
+      const source = nativeFactory.create({ url: 'https://x/track.mp3' });
+
+      expect(source.kind).toBe('native');
+    });
+  });
 });

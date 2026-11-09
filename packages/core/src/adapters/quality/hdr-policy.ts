@@ -32,9 +32,9 @@ import type { QualityLevel } from '../../types/tracks';
  */
 export type HdrOnSdrFallback = 'play' | 'refuse';
 
-export type HdrDecision
+export type HdrDecision =
 /** Nothing to do: an HDR screen, or an item with no HDR in it. */
-	= | { kind: 'as-is' }
+  | { kind: 'as-is' } |
 	/**
 	 * Ask the backend to convert HDR to SDR as it decodes.
 	 *
@@ -42,21 +42,21 @@ export type HdrDecision
 	 * no second rendition on the server and no bandwidth decision, and the picture is
 	 * right rather than merely watchable. It costs work per frame, deliberately.
 	 */
-		| { kind: 'tone-map' }
+  { kind: 'tone-map' } |
 	/**
 	 * Pin adaptation to the best SDR rung the ladder has.
 	 *
 	 * Ahead of tone-mapping when a rung exists, because a natively-SDR stream is
 	 * correct without spending anything per frame.
 	 */
-		| { kind: 'cap-to'; level: QualityLevel }
+  { kind: 'cap-to'; level: QualityLevel } |
 	/** No SDR rung, no converter, and the consumer chose to show it anyway. */
-		| { kind: 'play-unconverted' }
+  { kind: 'play-unconverted' } |
 	/** No SDR rung, no converter, and the consumer chose not to. */
-		| { kind: 'refuse' };
+  { kind: 'refuse' };
 
 function isHdr(level: QualityLevel): boolean {
-	return level.dynamicRange === 'hdr';
+  return level.dynamicRange === 'hdr';
 }
 
 /**
@@ -71,33 +71,40 @@ function isHdr(level: QualityLevel): boolean {
  * show, which is the opposite mistake.
  */
 export function hdrAbrCeiling(levels: ReadonlyArray<QualityLevel>, displayHdr: boolean): QualityLevel | null {
-	if (displayHdr)
-		return null;
-	if (!levels.some(isHdr))
-		return null;
+  if (displayHdr)
+    return null;
 
-	const sdr = levels.filter(level => !isHdr(level));
-	if (sdr.length === 0)
-		return null;
+  if (!levels.some(isHdr))
+    return null;
 
-	// `height` is optional on the web's QualityLevel — an audio-only rendition has
-	// none, and so does a ladder a backend has only half described. Nought sorts it
-	// below every real rung rather than above them, which is what an unknown height
-	// deserves when the question is "the best picture this screen can show".
-	return sdr.reduce((best, level) => {
-		const height = level.height ?? 0;
-		const bestHeight = best.height ?? 0;
+  const sdr = levels.filter((level) => !isHdr(level));
 
-		if (height !== bestHeight)
-			return height > bestHeight ? level : best;
+  if (sdr.length === 0)
+    return null;
 
-		return (level.bitrate ?? 0) > (best.bitrate ?? 0) ? level : best;
-	});
+  // `height` is optional on the web's QualityLevel — an audio-only rendition has
+  // none, and so does a ladder a backend has only half described. Nought sorts it
+  // below every real rung rather than above them, which is what an unknown height
+  // deserves when the question is "the best picture this screen can show".
+  return sdr.reduce((best, level) => {
+    const height = level.height ?? 0;
+    const bestHeight = best.height ?? 0;
+
+    if (height !== bestHeight) {
+      return height > bestHeight
+        ? level
+        : best;
+    }
+
+    return (level.bitrate ?? 0) > (best.bitrate ?? 0)
+      ? level
+      : best;
+  });
 }
 
 /** Every rung is HDR and the display is not: there is nothing to cap to. */
 export function isHdrUnplayable(levels: ReadonlyArray<QualityLevel>, displayHdr: boolean): boolean {
-	return !displayHdr && levels.length > 0 && levels.every(isHdr);
+  return !displayHdr && levels.length > 0 && levels.every(isHdr);
 }
 
 /**
@@ -111,30 +118,33 @@ export function isHdrUnplayable(levels: ReadonlyArray<QualityLevel>, displayHdr:
  * differently by codec, by decoder, and by whether hardware decoding is in use.
  */
 export function hdrDecision(
-	levels: ReadonlyArray<QualityLevel>,
-	displayHdr: boolean,
-	backendCanToneMap: boolean,
-	fallback: HdrOnSdrFallback = 'play',
+  levels: ReadonlyArray<QualityLevel>,
+  displayHdr: boolean,
+  backendCanToneMap: boolean,
+  fallback: HdrOnSdrFallback = 'play',
 ): HdrDecision {
-	if (displayHdr)
-		return { kind: 'as-is' };
+  if (displayHdr)
+    return { kind: 'as-is' };
 
-	const ceiling = hdrAbrCeiling(levels, displayHdr);
-	if (ceiling !== null) {
-		return {
-			kind: 'cap-to',
-			level: ceiling,
-		};
-	}
+  const ceiling = hdrAbrCeiling(levels, displayHdr);
 
-	// An ordinary SDR item on an SDR screen. An empty ladder lands here too, which
-	// is right — a backend that has not enumerated its rungs yet, or a progressive
-	// file with no ladder, must not be refused.
-	if (!isHdrUnplayable(levels, displayHdr))
-		return { kind: 'as-is' };
+  if (ceiling !== null) {
+    return {
+      kind: 'cap-to',
+      level: ceiling,
+    };
+  }
 
-	if (backendCanToneMap)
-		return { kind: 'tone-map' };
+  // An ordinary SDR item on an SDR screen. An empty ladder lands here too, which
+  // is right — a backend that has not enumerated its rungs yet, or a progressive
+  // file with no ladder, must not be refused.
+  if (!isHdrUnplayable(levels, displayHdr))
+    return { kind: 'as-is' };
 
-	return fallback === 'play' ? { kind: 'play-unconverted' } : { kind: 'refuse' };
+  if (backendCanToneMap)
+    return { kind: 'tone-map' };
+
+  return fallback === 'play'
+    ? { kind: 'play-unconverted' }
+    : { kind: 'refuse' };
 }

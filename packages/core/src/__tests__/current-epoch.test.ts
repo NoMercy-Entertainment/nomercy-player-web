@@ -20,11 +20,11 @@
 import type { BaseEventMap, BasePlaylistItem } from '../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
-	playerCoreMethods,
-	resolvePlayerConstructor,
+  composeMixins,
+  EventEmitter,
+  initPlayerCoreState,
+  playerCoreMethods,
+  resolvePlayerConstructor,
 } from '../index';
 
 // ── Minimal player with a controllable fake backend ───────────────────────────
@@ -32,48 +32,50 @@ import {
 const _instances = new Map<string, EpochPlayer>();
 
 class EpochPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = document.createElement('div');
+  readonly playerId: string = '';
+  container: HTMLElement = document.createElement('div');
 
-	get id(): string {
-		return this.playerId;
-	}
+  get id(): string {
+    return this.playerId;
+  }
 
-	declare options: Record<string, unknown>;
-	declare setup: (config: Record<string, unknown>) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare phase: () => string;
-	declare play: (opts?: { source?: string }) => Promise<void>;
-	declare pause: (opts?: { source?: string }) => Promise<void>;
-	declare queue: {
-		(): ReadonlyArray<BasePlaylistItem>;
-		(items: BasePlaylistItem[]): void;
-	};
+  declare options: Record<string, unknown>;
+  declare setup: (config: Record<string, unknown>) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare phase: () => string;
+  declare play: (opts?: { source?: string }) => Promise<void>;
+  declare pause: (opts?: { source?: string }) => Promise<void>;
+  declare queue: {
+    (): ReadonlyArray<BasePlaylistItem>;
+    (items: BasePlaylistItem[]): void;
+  };
 
-	declare item: {
-		(): BasePlaylistItem | undefined;
-		(target: string | number | BasePlaylistItem, opts?: { source?: string; autoplay?: boolean }): void;
-	};
+  declare item: {
+    (): BasePlaylistItem | undefined;
+    (target: string | number | BasePlaylistItem, opts?: { source?: string; autoplay?: boolean }): void;
+  };
 
-	declare index: () => number;
-	declare load: (item: BasePlaylistItem, opts?: Record<string, unknown>) => Promise<void>;
+  declare index: () => number;
+  declare load: (item: BasePlaylistItem, opts?: Record<string, unknown>) => Promise<void>;
 
-	constructor(id?: string | number) {
-		super();
-		initPlayerCoreState(this, { className: 'EpochPlayer' });
-		const resolved = resolvePlayerConstructor(id, _instances, 'EpochPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this;
-		}
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_instances.set(resolved.id, this);
-	}
+  constructor(id?: string | number) {
+    super();
+    initPlayerCoreState(this, { className: 'EpochPlayer' });
+    const resolved = resolvePlayerConstructor(id, _instances, 'EpochPlayer');
 
-	static _resetRegistry(): void {
-		_instances.clear();
-	}
+    if (resolved.kind === 'existing') {
+      return resolved.instance as unknown as this;
+    }
+
+    (this as { playerId: string }).playerId = resolved.id;
+    this.container = resolved.div;
+    _instances.set(resolved.id, this);
+  }
+
+  static _resetRegistry(): void {
+    _instances.clear();
+  }
 }
 
 composeMixins(EpochPlayer.prototype, ...playerCoreMethods);
@@ -81,168 +83,182 @@ composeMixins(EpochPlayer.prototype, ...playerCoreMethods);
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makePlayer(divId: string): EpochPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new EpochPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new EpochPlayer(divId);
 }
 
 /** Flush every pending microtask in the queue. */
 async function drainMicrotasks(): Promise<void> {
-	for (let tick = 0; tick < 20; tick++) {
-		await Promise.resolve();
-	}
+  for (let tick = 0; tick < 20; tick++) {
+    await Promise.resolve();
+  }
 }
 
 interface Deferred {
-	promise: Promise<void>;
-	resolve: () => void;
+  promise: Promise<void>;
+  resolve: () => void;
 }
 
 function deferred(): Deferred {
-	let resolve!: () => void;
-	const promise = new Promise<void>((res) => { resolve = res; });
-	return { promise, resolve };
+  let resolve!: () => void;
+  const promise = new Promise<void>((res) => { resolve = res; });
+
+  return { promise, resolve };
 }
 
 const items: Array<BasePlaylistItem & { url: string }> = [
-	{ id: 'ep1', url: '/ep1.m3u8' },
-	{ id: 'ep2', url: '/ep2.m3u8' },
-	{ id: 'ep3', url: '/ep3.m3u8' },
+  { id: 'ep1', url: '/ep1.m3u8' },
+  { id: 'ep2', url: '/ep2.m3u8' },
+  { id: 'ep3', url: '/ep3.m3u8' },
 ];
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('current() — _currentEpoch autoplay race guard', () => {
-	beforeEach(() => {
-		EpochPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    EpochPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		EpochPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    EpochPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('rapid current(B) then current(C) — only C fires play()', async () => {
-		const player = makePlayer('epoch-test');
-		await player.setup({}).ready();
-		player.queue(items);
+  it('rapid current(B) then current(C) — only C fires play()', async () => {
+    const player = makePlayer('epoch-test');
 
-		// Deferred loads let us control resolution order.
-		const loadEp2 = deferred();
-		const loadEp3 = deferred();
+    await player.setup({}).ready();
+    player.queue(items);
 
-		// load() is called via queue.ts current(). Intercept it here so we can
-		// return a deferred promise per URL without needing a real backend.
-		vi.spyOn(player, 'load').mockImplementation((item) => {
-			if (item.id === 'ep2')
-				return loadEp2.promise;
-			if (item.id === 'ep3')
-				return loadEp3.promise;
-			return Promise.resolve();
-		});
+    // Deferred loads let us control resolution order.
+    const loadEp2 = deferred();
+    const loadEp3 = deferred();
 
-		// play() is called from the autoplay continuation. Spy on it.
-		const playSpy = vi.spyOn(player, 'play').mockResolvedValue(undefined);
+    // load() is called via queue.ts current(). Intercept it here so we can
+    // return a deferred promise per URL without needing a real backend.
+    vi.spyOn(player, 'load').mockImplementation((item) => {
+      if (item.id === 'ep2')
+        return loadEp2.promise;
 
-		// Advance phase so current() considers the player ready to load.
-		(player as unknown as { _phase: string })._phase = 'playing';
+      if (item.id === 'ep3')
+        return loadEp3.promise;
 
-		// Rapid navigation — ep2 then ep3 before either load resolves.
-		player.item('ep2', { autoplay: true });
-		player.item('ep3', { autoplay: true });
+      return Promise.resolve();
+    });
 
-		// Resolve ep2 first (stale navigation) then ep3 (winner).
-		loadEp2.resolve();
-		await drainMicrotasks();
+    // play() is called from the autoplay continuation. Spy on it.
+    const playSpy = vi.spyOn(player, 'play').mockResolvedValue(undefined);
 
-		loadEp3.resolve();
-		await drainMicrotasks();
+    // Advance phase so current() considers the player ready to load.
+    (player as unknown as { _phase: string })._phase = 'playing';
 
-		// Only ep3's autoplay continuation should have fired play().
-		expect(playSpy).toHaveBeenCalledTimes(1);
-	});
+    // Rapid navigation — ep2 then ep3 before either load resolves.
+    player.item('ep2', { autoplay: true });
+    player.item('ep3', { autoplay: true });
 
-	it('single current() with autoplay fires play() exactly once', async () => {
-		const player = makePlayer('epoch-single');
-		await player.setup({}).ready();
-		player.queue(items);
+    // Resolve ep2 first (stale navigation) then ep3 (winner).
+    loadEp2.resolve();
+    await drainMicrotasks();
 
-		const loadDone = deferred();
+    loadEp3.resolve();
+    await drainMicrotasks();
 
-		vi.spyOn(player, 'load').mockImplementation(() => loadDone.promise);
-		const playSpy = vi.spyOn(player, 'play').mockResolvedValue(undefined);
+    // Only ep3's autoplay continuation should have fired play().
+    expect(playSpy).toHaveBeenCalledTimes(1);
+  });
 
-		(player as unknown as { _phase: string })._phase = 'playing';
+  it('single current() with autoplay fires play() exactly once', async () => {
+    const player = makePlayer('epoch-single');
 
-		player.item('ep1', { autoplay: true });
+    await player.setup({}).ready();
+    player.queue(items);
 
-		loadDone.resolve();
-		await drainMicrotasks();
+    const loadDone = deferred();
 
-		expect(playSpy).toHaveBeenCalledTimes(1);
-	});
+    vi.spyOn(player, 'load').mockImplementation(() => loadDone.promise);
+    const playSpy = vi.spyOn(player, 'play').mockResolvedValue(undefined);
 
-	it('item() plays by default — picking an item is a decision to watch it', async () => {
-		const player = makePlayer('epoch-noplay');
-		await player.setup({}).ready();
-		player.queue(items);
+    (player as unknown as { _phase: string })._phase = 'playing';
 
-		const loadDone = deferred();
+    player.item('ep1', { autoplay: true });
 
-		vi.spyOn(player, 'load').mockImplementation(() => loadDone.promise);
-		const playSpy = vi.spyOn(player, 'play').mockResolvedValue(undefined);
+    loadDone.resolve();
+    await drainMicrotasks();
 
-		(player as unknown as { _phase: string })._phase = 'playing';
+    expect(playSpy).toHaveBeenCalledTimes(1);
+  });
 
-		player.item('ep1');
+  it('item() plays by default — picking an item is a decision to watch it', async () => {
+    const player = makePlayer('epoch-noplay');
 
-		loadDone.resolve();
-		await drainMicrotasks();
+    await player.setup({}).ready();
+    player.queue(items);
 
-		expect(playSpy).toHaveBeenCalled();
-	});
+    const loadDone = deferred();
 
-	it('item() with autoplay: false still only loads', async () => {
-		const player = makePlayer('epoch-noplay-explicit');
-		await player.setup({}).ready();
-		player.queue(items);
+    vi.spyOn(player, 'load').mockImplementation(() => loadDone.promise);
+    const playSpy = vi.spyOn(player, 'play').mockResolvedValue(undefined);
 
-		const loadDone = deferred();
+    (player as unknown as { _phase: string })._phase = 'playing';
 
-		vi.spyOn(player, 'load').mockImplementation(() => loadDone.promise);
-		const playSpy = vi.spyOn(player, 'play').mockResolvedValue(undefined);
+    player.item('ep1');
 
-		(player as unknown as { _phase: string })._phase = 'playing';
+    loadDone.resolve();
+    await drainMicrotasks();
 
-		player.item('ep1', { autoplay: false });
+    expect(playSpy).toHaveBeenCalled();
+  });
 
-		loadDone.resolve();
-		await drainMicrotasks();
+  it('item() with autoplay: false still only loads', async () => {
+    const player = makePlayer('epoch-noplay-explicit');
 
-		expect(playSpy).not.toHaveBeenCalled();
-	});
+    await player.setup({}).ready();
+    player.queue(items);
 
-	it('_currentEpoch is bumped on each current() write and not on read', () => {
-		const player = makePlayer('epoch-counter');
-		player.setup({});
+    const loadDone = deferred();
 
-		const epoch0 = (player as unknown as { _currentEpoch?: number })._currentEpoch;
-		expect(epoch0).toBeUndefined();
+    vi.spyOn(player, 'load').mockImplementation(() => loadDone.promise);
+    const playSpy = vi.spyOn(player, 'play').mockResolvedValue(undefined);
 
-		// Read call — must not bump epoch.
-		player.queue(items);
-		player.item();
-		const afterRead = (player as unknown as { _currentEpoch?: number })._currentEpoch;
-		expect(afterRead).toBeUndefined();
+    (player as unknown as { _phase: string })._phase = 'playing';
 
-		// Write call — must bump epoch.
-		player.item('ep1');
-		const afterFirst = (player as unknown as { _currentEpoch?: number })._currentEpoch;
-		expect(afterFirst).toBe(1);
+    player.item('ep1', { autoplay: false });
 
-		player.item('ep2');
-		const afterSecond = (player as unknown as { _currentEpoch?: number })._currentEpoch;
-		expect(afterSecond).toBe(2);
-	});
+    loadDone.resolve();
+    await drainMicrotasks();
+
+    expect(playSpy).not.toHaveBeenCalled();
+  });
+
+  it('_currentEpoch is bumped on each current() write and not on read', () => {
+    const player = makePlayer('epoch-counter');
+
+    player.setup({});
+
+    const epoch0 = (player as unknown as { _currentEpoch?: number })._currentEpoch;
+
+    expect(epoch0).toBeUndefined();
+
+    // Read call — must not bump epoch.
+    player.queue(items);
+    player.item();
+    const afterRead = (player as unknown as { _currentEpoch?: number })._currentEpoch;
+
+    expect(afterRead).toBeUndefined();
+
+    // Write call — must bump epoch.
+    player.item('ep1');
+    const afterFirst = (player as unknown as { _currentEpoch?: number })._currentEpoch;
+
+    expect(afterFirst).toBe(1);
+
+    player.item('ep2');
+    const afterSecond = (player as unknown as { _currentEpoch?: number })._currentEpoch;
+
+    expect(afterSecond).toBe(2);
+  });
 });

@@ -16,133 +16,144 @@ import { DesktopUiPlugin, desktopUiPlugin } from '../../plugins/desktop-ui';
 import enBundle from '../../plugins/desktop-ui/i18n/en';
 
 const MockResizeObserver = vi.fn(function (this: unknown) {
-	return { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() };
+  return {
+    observe: vi.fn(),
+    disconnect: vi.fn(),
+    unobserve: vi.fn(),
+  };
 });
 
 class LiveBackend extends Html5VideoBackend {
-	liveNow = false;
+  liveNow = false;
 
-	override isLive(): boolean {
-		return this.liveNow;
-	}
+  override isLive(): boolean {
+    return this.liveNow;
+  }
 
-	goLive(live: boolean): void {
-		this.liveNow = live;
-		this.emit('live', { live });
-	}
+  goLive(live: boolean): void {
+    this.liveNow = live;
+    this.emit('live', { live });
+  }
 }
 
 function windowOf(start: number, end: number): TimeRanges {
-	return { length: 1, start: () => start, end: () => end } as TimeRanges;
+  return {
+    length: 1,
+    start: () => start,
+    end: () => end,
+  } as TimeRanges;
 }
 
 describe('DesktopUiPlugin — live', () => {
-	let player: IVideoPlayer;
-	let backend: LiveBackend;
+  let player: IVideoPlayer;
+  let backend: LiveBackend;
 
-	beforeEach(async () => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-		backend = new LiveBackend(document.createElement('div'));
-		player = new NMVideoPlayer('test').setup({ backendFactory: () => backend }) as unknown as IVideoPlayer;
-		await player.addPlugin(desktopUiPlugin).ready();
-		await player.backend('html5');
-	});
+  beforeEach(async () => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+    backend = new LiveBackend(document.createElement('div'));
+    player = new NMVideoPlayer('test').setup({ backendFactory: () => backend }) as unknown as IVideoPlayer;
+    await player.addPlugin(desktopUiPlugin).ready();
+    await player.backend('html5');
+  });
 
-	const timeSlot = (): string => document.querySelector('.remaining-time')?.textContent ?? '';
-	const fillWidth = (): string => document.querySelector<HTMLElement>('.slider-progress')?.style.width ?? '';
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-	it('shows the LIVE label for a live source even when the duration is a finite number', () => {
-		backend.goLive(true);
-		player.emit('duration', { duration: 6 });
+  const timeSlot = (): string => document.querySelector('.remaining-time')?.textContent ?? '';
+  const fillWidth = (): string => document.querySelector<HTMLElement>('.slider-progress')?.style.width ?? '';
 
-		expect(timeSlot()).toBe(enBundle['plugin.desktop-ui.time.live']);
-	});
+  it('shows the LIVE label for a live source even when the duration is a finite number', () => {
+    backend.goLive(true);
+    player.emit('duration', { duration: 6 });
 
-	it('shows the LIVE label for an Infinity duration, as before', () => {
-		player.emit('duration', { duration: Number.POSITIVE_INFINITY });
+    expect(timeSlot()).toBe(enBundle['plugin.desktop-ui.time.live']);
+  });
 
-		expect(timeSlot()).toBe(enBundle['plugin.desktop-ui.time.live']);
-	});
+  it('shows the LIVE label for an Infinity duration, as before', () => {
+    player.emit('duration', { duration: Number.POSITIVE_INFINITY });
 
-	it('keeps the remaining time for a recorded source', () => {
-		player.emit('duration', { duration: 125 });
+    expect(timeSlot()).toBe(enBundle['plugin.desktop-ui.time.live']);
+  });
 
-		expect(timeSlot()).toBe('-2:05');
-	});
+  it('keeps the remaining time for a recorded source', () => {
+    player.emit('duration', { duration: 125 });
 
-	it('draws the bar over the live window, not over the moving duration', () => {
-		vi.spyOn(player, 'seekable').mockReturnValue(windowOf(100, 200));
-		backend.goLive(true);
-		player.emit('duration', { duration: 6 });
+    expect(timeSlot()).toBe('-2:05');
+  });
 
-		player.emit('time', { time: 150 } as never);
+  it('draws the bar over the live window, not over the moving duration', () => {
+    vi.spyOn(player, 'seekable').mockReturnValue(windowOf(100, 200));
+    backend.goLive(true);
+    player.emit('duration', { duration: 6 });
 
-		expect(fillWidth()).toBe('50%');
-	});
+    player.emit('time', { time: 150 } as never);
 
-	it('puts a viewer at the live edge on the label click', () => {
-		vi.spyOn(player, 'seekable').mockReturnValue(windowOf(100, 200));
-		const seek = vi.spyOn(player, 'time').mockResolvedValue(undefined as never);
-		backend.goLive(true);
-		player.emit('duration', { duration: 6 });
+    expect(fillWidth()).toBe('50%');
+  });
 
-		document.querySelector<HTMLElement>('.remaining-time')!.click();
+  it('puts a viewer at the live edge on the label click', () => {
+    vi.spyOn(player, 'seekable').mockReturnValue(windowOf(100, 200));
+    const seek = vi.spyOn(player, 'time').mockResolvedValue(undefined as never);
 
-		expect(seek).toHaveBeenCalledWith(200);
-	});
+    backend.goLive(true);
+    player.emit('duration', { duration: 6 });
 
-	it('maps a scrub position onto the live window', () => {
-		vi.spyOn(player, 'seekable').mockReturnValue(windowOf(100, 200));
-		backend.goLive(true);
-		const bar = document.querySelector<HTMLElement>('.slider-bar')!;
-		vi.spyOn(bar, 'getBoundingClientRect').mockReturnValue({ left: 0, width: 200 } as DOMRect);
-		const plugin = player.getPlugin(DesktopUiPlugin) as unknown as { getScrubTime: (event: Event) => { scrubTimePlayer: number } };
+    document.querySelector<HTMLElement>('.remaining-time')!.click();
 
-		const scrub = plugin.getScrubTime(new MouseEvent('mousemove', { clientX: 50 }));
+    expect(seek).toHaveBeenCalledWith(200);
+  });
 
-		expect(scrub.scrubTimePlayer).toBe(125);
-	});
+  it('maps a scrub position onto the live window', () => {
+    vi.spyOn(player, 'seekable').mockReturnValue(windowOf(100, 200));
+    backend.goLive(true);
+    const bar = document.querySelector<HTMLElement>('.slider-bar')!;
 
-	it('does not toggle remaining/total for a live source', () => {
-		vi.spyOn(player, 'seekable').mockReturnValue(windowOf(100, 200));
-		vi.spyOn(player, 'time').mockResolvedValue(undefined as never);
-		backend.goLive(true);
-		player.emit('duration', { duration: 6 });
+    vi.spyOn(bar, 'getBoundingClientRect').mockReturnValue({ left: 0, width: 200 } as DOMRect);
+    const plugin = player.getPlugin(DesktopUiPlugin) as unknown as { getScrubTime: (event: Event) => { scrubTimePlayer: number } };
 
-		document.querySelector<HTMLElement>('.remaining-time')!.click();
+    const scrub = plugin.getScrubTime(new MouseEvent('mousemove', { clientX: 50 }));
 
-		expect(timeSlot()).toBe(enBundle['plugin.desktop-ui.time.live']);
-	});
+    expect(scrub.scrubTimePlayer).toBe(125);
+  });
 
-	it('marks the label as behind the edge once the viewer falls back', () => {
-		vi.spyOn(player, 'seekable').mockReturnValue(windowOf(100, 200));
-		backend.goLive(true);
-		player.emit('duration', { duration: 6 });
+  it('does not toggle remaining/total for a live source', () => {
+    vi.spyOn(player, 'seekable').mockReturnValue(windowOf(100, 200));
+    vi.spyOn(player, 'time').mockResolvedValue(undefined as never);
+    backend.goLive(true);
+    player.emit('duration', { duration: 6 });
 
-		player.emit('time', { time: 120 } as never);
-		expect(document.querySelector('.remaining-time')!.classList.contains('behind-live')).toBe(true);
+    document.querySelector<HTMLElement>('.remaining-time')!.click();
 
-		player.emit('time', { time: 199 } as never);
-		expect(document.querySelector('.remaining-time')!.classList.contains('behind-live')).toBe(false);
-	});
+    expect(timeSlot()).toBe(enBundle['plugin.desktop-ui.time.live']);
+  });
 
-	it('goes back to the remaining time when the source stops being live', () => {
-		backend.goLive(true);
-		player.emit('duration', { duration: 125 });
-		expect(timeSlot()).toBe(enBundle['plugin.desktop-ui.time.live']);
+  it('marks the label as behind the edge once the viewer falls back', () => {
+    vi.spyOn(player, 'seekable').mockReturnValue(windowOf(100, 200));
+    backend.goLive(true);
+    player.emit('duration', { duration: 6 });
 
-		backend.goLive(false);
+    player.emit('time', { time: 120 } as never);
+    expect(document.querySelector('.remaining-time')!.classList.contains('behind-live')).toBe(true);
 
-		expect(timeSlot()).toBe('-2:05');
-	});
+    player.emit('time', { time: 199 } as never);
+    expect(document.querySelector('.remaining-time')!.classList.contains('behind-live')).toBe(false);
+  });
+
+  it('goes back to the remaining time when the source stops being live', () => {
+    backend.goLive(true);
+    player.emit('duration', { duration: 125 });
+    expect(timeSlot()).toBe(enBundle['plugin.desktop-ui.time.live']);
+
+    backend.goLive(false);
+
+    expect(timeSlot()).toBe('-2:05');
+  });
 });

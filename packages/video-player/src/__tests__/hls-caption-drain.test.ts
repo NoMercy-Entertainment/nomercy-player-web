@@ -16,59 +16,66 @@ import { drainCaptionCache } from '../adapters/video-backend/hls-caption-drain';
 
 interface FakeCue { id: string; text: string }
 
-function fakeTrack(mode: TextTrackMode): { mode: TextTrackMode; added: FakeCue[]; cues: { getCueById: (id: string) => FakeCue | null }; addCue: (cue: FakeCue) => void } {
-	const added: FakeCue[] = [];
-	return {
-		mode,
-		added,
-		cues: { getCueById: id => added.find(cue => cue.id === id) ?? null },
-		addCue: (cue) => { added.push(cue); },
-	};
+function fakeTrack(mode: TextTrackMode): {
+  mode: TextTrackMode;
+  added: FakeCue[];
+  cues: { getCueById: (id: string) => FakeCue | null };
+  addCue: (cue: FakeCue) => void;
+} {
+  const added: FakeCue[] = [];
+
+  return {
+    mode,
+    added,
+    cues: { getCueById: (id) => added.find((cue) => cue.id === id) ?? null },
+    addCue: (cue) => { added.push(cue); },
+  };
 }
 
 function hlsWith(timeline: unknown): object {
-	return { coreComponents: [{ unrelated: true }, timeline] };
+  return { coreComponents: [{ unrelated: true }, timeline] };
 }
 
 describe('drainCaptionCache', () => {
-	it('moves cached cues onto their caption track and empties the cache', () => {
-		const track = fakeTrack('hidden');
-		const cueCache = { textTrack1: [{ id: 'a', text: 'Hello' }, { id: 'b', text: 'world' }] };
+  it('moves cached cues onto their caption track and empties the cache', () => {
+    const track = fakeTrack('hidden');
+    const cueCache = { textTrack1: [{ id: 'a', text: 'Hello' }, { id: 'b', text: 'world' }] };
 
-		drainCaptionCache(hlsWith({ cueCache, captionsTracks: { textTrack1: { track } } }));
+    drainCaptionCache(hlsWith({ cueCache, captionsTracks: { textTrack1: { track } } }));
 
-		expect(track.added.map(cue => cue.text)).toEqual(['Hello', 'world']);
-		expect(cueCache).toEqual({});
-	});
+    expect(track.added.map((cue) => cue.text)).toEqual(['Hello', 'world']);
+    expect(cueCache).toEqual({});
+  });
 
-	it('restores a disabled track to disabled after adding', () => {
-		const track = fakeTrack('disabled');
+  it('restores a disabled track to disabled after adding', () => {
+    const track = fakeTrack('disabled');
 
-		drainCaptionCache(hlsWith({ cueCache: { textTrack1: [{ id: 'a', text: 'Hi' }] }, captionsTracks: { textTrack1: { track } } }));
+    drainCaptionCache(hlsWith({ cueCache: { textTrack1: [{ id: 'a', text: 'Hi' }] }, captionsTracks: { textTrack1: { track } } }));
 
-		expect(track.added).toHaveLength(1);
-		expect(track.mode).toBe('disabled');
-	});
+    expect(track.added).toHaveLength(1);
+    expect(track.mode).toBe('disabled');
+  });
 
-	it('skips a cue the track already holds', () => {
-		const track = fakeTrack('hidden');
-		track.addCue({ id: 'a', text: 'Hi' });
+  it('skips a cue the track already holds', () => {
+    const track = fakeTrack('hidden');
 
-		drainCaptionCache(hlsWith({ cueCache: { textTrack1: [{ id: 'a', text: 'Hi' }] }, captionsTracks: { textTrack1: { track } } }));
+    track.addCue({ id: 'a', text: 'Hi' });
 
-		expect(track.added).toHaveLength(1);
-	});
+    drainCaptionCache(hlsWith({ cueCache: { textTrack1: [{ id: 'a', text: 'Hi' }] }, captionsTracks: { textTrack1: { track } } }));
 
-	it('drops the cache of a channel that has no track, like hls.js does', () => {
-		const cueCache = { textTrack2: [{ id: 'a', text: 'Hi' }] };
+    expect(track.added).toHaveLength(1);
+  });
 
-		drainCaptionCache(hlsWith({ cueCache, captionsTracks: {} }));
+  it('drops the cache of a channel that has no track, like hls.js does', () => {
+    const cueCache = { textTrack2: [{ id: 'a', text: 'Hi' }] };
 
-		expect(cueCache).toEqual({});
-	});
+    drainCaptionCache(hlsWith({ cueCache, captionsTracks: {} }));
 
-	it('does nothing, and does not throw, when hls.js has no timeline controller', () => {
-		expect(() => drainCaptionCache({ coreComponents: [{ unrelated: true }] })).not.toThrow();
-		expect(() => drainCaptionCache({})).not.toThrow();
-	});
+    expect(cueCache).toEqual({});
+  });
+
+  it('does nothing, and does not throw, when hls.js has no timeline controller', () => {
+    expect(() => drainCaptionCache({ coreComponents: [{ unrelated: true }] })).not.toThrow();
+    expect(() => drainCaptionCache({})).not.toThrow();
+  });
 });

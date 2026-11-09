@@ -9,6 +9,6 @@
 import type { TouchZonesTranslationKey } from './en';
 
 export default {
-	'plugin.touch-zones.seek.back': '-{seconds}s',
-	'plugin.touch-zones.seek.forward': '+{seconds}s',
+  'plugin.touch-zones.seek.back': '-{seconds}s',
+  'plugin.touch-zones.seek.forward': '+{seconds}s',
 } satisfies Record<TouchZonesTranslationKey, string>;

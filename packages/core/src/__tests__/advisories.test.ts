@@ -18,195 +18,252 @@ import type { PlayerTestInternals } from '../testing/player-test-internals';
 import type { PluginAdvisory } from '../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-	composeMixins,
-	playerCoreMethods,
-	Plugin,
+  composeMixins,
+  playerCoreMethods,
+  Plugin,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare phase: () => string;
-	declare play: (opts?: any) => Promise<void>;
-	declare addPlugin: (PluginClass: any) => this;
-	declare queue: {
-		(): ReadonlyArray<any>;
-		(items: any[]): void;
-	};
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare phase: () => string;
+  declare play: (opts?: any) => Promise<void>;
+  declare addPlugin: (PluginClass: any) => this;
+  declare queue: {
+    (): ReadonlyArray<any>;
+    (items: any[]): void;
+  };
 
-	declare current: (target: any) => void;
-	declare item: {
-		(): any;
-		(target: any, opts?: any): void;
-	};
+  declare current: (target: any) => void;
+  declare item: {
+    (): any;
+    (target: any, opts?: any): void;
+  };
 
-	declare getPluginById: (id: string) => { disable(): void; enable(): void } | undefined;
+  declare getPluginById: (id: string) => { disable(): void; enable(): void } | undefined;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 describe('static advisories — declarative phase-aware advisories', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('fires matching advisory on `current` when method matches and no constraints set', async () => {
-		class AdvisorPlugin extends Plugin {
-			static override readonly id = 'advisor';
-			static override readonly description = 'test';
-			static override readonly advisories: ReadonlyArray<PluginAdvisory> = [
-				{ method: 'current', severity: 'warning', reason: 'cursor-mutation', message: 'Be careful' },
-			];
-		}
+  it('fires matching advisory on `current` when method matches and no constraints set', async () => {
+    class AdvisorPlugin extends Plugin {
+      static override readonly id = 'advisor';
+      static override readonly description = 'test';
+      static override readonly advisories: ReadonlyArray<PluginAdvisory> = [
+        {
+          method: 'current',
+          severity: 'warning',
+          reason: 'cursor-mutation',
+          message: 'Be careful',
+        },
+      ];
+    }
 
-		const mockPlayer = makePlayer('a1');
-		mockPlayer.addPlugin(AdvisorPlugin);
-		mockPlayer.setup({});
-		await mockPlayer.ready();
+    const mockPlayer = makePlayer('a1');
 
-		mockPlayer.queue([{ id: 'x' }, { id: 'y' }]);
-		const warnings: unknown[] = [];
-		mockPlayer.on('warning', (data: unknown) => warnings.push(data));
+    mockPlayer.addPlugin(AdvisorPlugin);
+    mockPlayer.setup({});
+    await mockPlayer.ready();
 
-		mockPlayer.item(0);
+    mockPlayer.queue([{ id: 'x' }, { id: 'y' }]);
+    const warnings: unknown[] = [];
 
-		interface Advisory { error: { code: string; message: string; severity: string } }
-		expect(warnings.length).toBe(1);
-		expect((warnings[0] as Advisory).error.code).toBe('plugin:advisor/cursor-mutation');
-		expect((warnings[0] as Advisory).error.message).toBe('plugin:advisor/cursor-mutation: Be careful');
-		expect((warnings[0] as Advisory).error.severity).toBe('warning');
-	});
+    mockPlayer.on('warning', (data: unknown) =>
+      warnings.push(data));
 
-	it('skips advisory when `duringPhase` does not include current phase', async () => {
-		class PlayingOnlyAdvisor extends Plugin {
-			static override readonly id = 'playing-only';
-			static override readonly description = 'test';
-			static override readonly advisories: ReadonlyArray<PluginAdvisory> = [
-				{ method: 'current', duringPhase: 'playing', severity: 'warning', reason: 'risky', message: 'risky' },
-			];
-		}
+    mockPlayer.item(0);
 
-		const mockPlayer = makePlayer('a2');
-		mockPlayer.addPlugin(PlayingOnlyAdvisor);
-		mockPlayer.setup({});
-		await mockPlayer.ready();
+    interface Advisory { error: {
+      code: string;
+      message: string;
+      severity: string;
+    }; }
+    expect(warnings.length).toBe(1);
+    expect((warnings[0] as Advisory).error.code).toBe('plugin:advisor/cursor-mutation');
+    expect((warnings[0] as Advisory).error.message).toBe('plugin:advisor/cursor-mutation: Be careful');
+    expect((warnings[0] as Advisory).error.severity).toBe('warning');
+  });
 
-		mockPlayer.queue([{ id: 'x' }]);
-		const warnings: unknown[] = [];
-		mockPlayer.on('warning', (data: unknown) => warnings.push(data));
+  it('skips advisory when `duringPhase` does not include current phase', async () => {
+    class PlayingOnlyAdvisor extends Plugin {
+      static override readonly id = 'playing-only';
+      static override readonly description = 'test';
+      static override readonly advisories: ReadonlyArray<PluginAdvisory> = [
+        {
+          method: 'current',
+          duringPhase: 'playing',
+          severity: 'warning',
+          reason: 'risky',
+          message: 'risky',
+        },
+      ];
+    }
 
-		// Phase is 'ready', not 'playing' — advisory should NOT fire.
-		mockPlayer.item(0);
-		expect(warnings.length).toBe(0);
+    const mockPlayer = makePlayer('a2');
 
-		// Force phase to 'playing' to prove the constraint.
-		(mockPlayer as unknown as PlayerTestInternals)._phase = 'playing';
-		mockPlayer.item(0);
-		expect(warnings.length).toBe(1);
-	});
+    mockPlayer.addPlugin(PlayingOnlyAdvisor);
+    mockPlayer.setup({});
+    await mockPlayer.ready();
 
-	it('routes advisory severity to matching channel (info / warning / error)', async () => {
-		class MultiSevAdvisor extends Plugin {
-			static override readonly id = 'multi-sev';
-			static override readonly description = 'test';
-			static override readonly advisories: ReadonlyArray<PluginAdvisory> = [
-				{ method: 'current', severity: 'info', reason: 'info-reason', message: 'just fyi' },
-				{ method: 'current', severity: 'error', reason: 'error-reason', message: 'oh no' },
-			];
-		}
+    mockPlayer.queue([{ id: 'x' }]);
+    const warnings: unknown[] = [];
 
-		const mockPlayer = makePlayer('a3');
-		mockPlayer.addPlugin(MultiSevAdvisor);
-		mockPlayer.setup({});
-		await mockPlayer.ready();
+    mockPlayer.on('warning', (data: unknown) =>
+      warnings.push(data));
 
-		mockPlayer.queue([{ id: 'x' }]);
-		const infos: unknown[] = [];
-		const errors: unknown[] = [];
-		mockPlayer.on('info', (data: unknown) => infos.push(data));
-		mockPlayer.on('error', (data: unknown) => errors.push(data));
+    // Phase is 'ready', not 'playing' — advisory should NOT fire.
+    mockPlayer.item(0);
+    expect(warnings.length).toBe(0);
 
-		mockPlayer.item(0);
+    // Force phase to 'playing' to prove the constraint.
+    (mockPlayer as unknown as PlayerTestInternals)._phase = 'playing';
+    mockPlayer.item(0);
+    expect(warnings.length).toBe(1);
+  });
 
-		interface Advisory { error: { code: string } }
-		expect(infos.length).toBe(1);
-		expect((infos[0] as Advisory).error.code).toBe('plugin:multi-sev/info-reason');
-		expect(errors.length).toBe(1);
-		expect((errors[0] as Advisory).error.code).toBe('plugin:multi-sev/error-reason');
-	});
+  it('routes advisory severity to matching channel (info / warning / error)', async () => {
+    class MultiSevAdvisor extends Plugin {
+      static override readonly id = 'multi-sev';
+      static override readonly description = 'test';
+      static override readonly advisories: ReadonlyArray<PluginAdvisory> = [
+        {
+          method: 'current',
+          severity: 'info',
+          reason: 'info-reason',
+          message: 'just fyi',
+        },
+        {
+          method: 'current',
+          severity: 'error',
+          reason: 'error-reason',
+          message: 'oh no',
+        },
+      ];
+    }
 
-	it('skips advisories when the plugin is disabled', async () => {
-		class DisabledAdvisor extends Plugin {
-			static override readonly id = 'disabled-advisor';
-			static override readonly description = 'test';
-			static override readonly advisories: ReadonlyArray<PluginAdvisory> = [
-				{ method: 'current', severity: 'warning', reason: 'r', message: 'm' },
-			];
-		}
+    const mockPlayer = makePlayer('a3');
 
-		const mockPlayer = makePlayer('a4');
-		mockPlayer.addPlugin(DisabledAdvisor);
-		mockPlayer.setup({});
-		await mockPlayer.ready();
+    mockPlayer.addPlugin(MultiSevAdvisor);
+    mockPlayer.setup({});
+    await mockPlayer.ready();
 
-		mockPlayer.queue([{ id: 'x' }]);
-		const warnings: unknown[] = [];
-		mockPlayer.on('warning', (data: unknown) => warnings.push(data));
+    mockPlayer.queue([{ id: 'x' }]);
+    const infos: unknown[] = [];
+    const errors: unknown[] = [];
 
-		// Disable, then mutate — advisory should NOT fire.
-		mockPlayer.getPluginById('disabled-advisor')?.disable();
-		mockPlayer.item(0);
-		expect(warnings.length).toBe(0);
-	});
+    mockPlayer.on('info', (data: unknown) =>
+      infos.push(data));
 
-	it('matches `duringEvent` when the named event is currently dispatching', async () => {
-		// duringEvent matching uses the player's _dispatchStack. We can't
-		// directly trigger a `before*` from the kit without backend, but we
-		// CAN push onto the stack to simulate.
-		class DuringPlayAdvisor extends Plugin {
-			static override readonly id = 'during-play';
-			static override readonly description = 'test';
-			static override readonly advisories: ReadonlyArray<PluginAdvisory> = [
-				{ method: 'current', duringEvent: 'beforePlay', severity: 'warning', reason: 'r', message: 'm' },
-			];
-		}
+    mockPlayer.on('error', (data: unknown) =>
+      errors.push(data));
 
-		const mockPlayer = makePlayer('a5');
-		mockPlayer.addPlugin(DuringPlayAdvisor);
-		mockPlayer.setup({});
-		await mockPlayer.ready();
+    mockPlayer.item(0);
 
-		mockPlayer.queue([{ id: 'x' }]);
-		const warnings: unknown[] = [];
-		mockPlayer.on('warning', (data: unknown) => warnings.push(data));
+    interface Advisory { error: { code: string } }
+    expect(infos.length).toBe(1);
+    expect((infos[0] as Advisory).error.code).toBe('plugin:multi-sev/info-reason');
+    expect(errors.length).toBe(1);
+    expect((errors[0] as Advisory).error.code).toBe('plugin:multi-sev/error-reason');
+  });
 
-		// No event in flight — advisory does NOT fire.
-		mockPlayer.item(0);
-		expect(warnings.length).toBe(0);
+  it('skips advisories when the plugin is disabled', async () => {
+    class DisabledAdvisor extends Plugin {
+      static override readonly id = 'disabled-advisor';
+      static override readonly description = 'test';
+      static override readonly advisories: ReadonlyArray<PluginAdvisory> = [
+        {
+          method: 'current',
+          severity: 'warning',
+          reason: 'r',
+          message: 'm',
+        },
+      ];
+    }
 
-		// Simulate `beforePlay` in flight via push/pop instance methods.
-		const pInternals = mockPlayer as unknown as PlayerTestInternals;
-		pInternals.pushDispatch('beforePlay');
-		try {
-			mockPlayer.item(0);
-		}
-		finally {
-			pInternals.popDispatch();
-		}
-		expect(warnings.length).toBe(1);
-	});
+    const mockPlayer = makePlayer('a4');
+
+    mockPlayer.addPlugin(DisabledAdvisor);
+    mockPlayer.setup({});
+    await mockPlayer.ready();
+
+    mockPlayer.queue([{ id: 'x' }]);
+    const warnings: unknown[] = [];
+
+    mockPlayer.on('warning', (data: unknown) =>
+      warnings.push(data));
+
+    // Disable, then mutate — advisory should NOT fire.
+    mockPlayer.getPluginById('disabled-advisor')?.disable();
+    mockPlayer.item(0);
+    expect(warnings.length).toBe(0);
+  });
+
+  it('matches `duringEvent` when the named event is currently dispatching', async () => {
+    // duringEvent matching uses the player's _dispatchStack. We can't
+    // directly trigger a `before*` from the kit without backend, but we
+    // CAN push onto the stack to simulate.
+    class DuringPlayAdvisor extends Plugin {
+      static override readonly id = 'during-play';
+      static override readonly description = 'test';
+      static override readonly advisories: ReadonlyArray<PluginAdvisory> = [
+        {
+          method: 'current',
+          duringEvent: 'beforePlay',
+          severity: 'warning',
+          reason: 'r',
+          message: 'm',
+        },
+      ];
+    }
+
+    const mockPlayer = makePlayer('a5');
+
+    mockPlayer.addPlugin(DuringPlayAdvisor);
+    mockPlayer.setup({});
+    await mockPlayer.ready();
+
+    mockPlayer.queue([{ id: 'x' }]);
+    const warnings: unknown[] = [];
+
+    mockPlayer.on('warning', (data: unknown) =>
+      warnings.push(data));
+
+    // No event in flight — advisory does NOT fire.
+    mockPlayer.item(0);
+    expect(warnings.length).toBe(0);
+
+    // Simulate `beforePlay` in flight via push/pop instance methods.
+    const pInternals = mockPlayer as unknown as PlayerTestInternals;
+
+    pInternals.pushDispatch('beforePlay');
+
+    try {
+      mockPlayer.item(0);
+    } finally {
+      pInternals.popDispatch();
+    }
+
+    expect(warnings.length).toBe(1);
+  });
 });

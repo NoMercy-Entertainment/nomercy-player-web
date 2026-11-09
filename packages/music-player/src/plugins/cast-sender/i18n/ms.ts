@@ -9,9 +9,9 @@
 import type { CastSenderTranslationKey } from './en';
 
 export default {
-	'plugin.cast-sender.casting.track': 'Menyiarkan "{title}" oleh {artist}',
-	'plugin.cast-sender.casting.album': 'Menyiarkan album "{album}"',
-	'plugin.cast-sender.casting.queue': 'Menyiarkan {count} lagu',
-	'plugin.cast-sender.action.cast-album': 'Cast album',
-	'plugin.cast-sender.action.cast-queue': 'Cast baris gilir',
+  'plugin.cast-sender.casting.track': 'Menyiarkan "{title}" oleh {artist}',
+  'plugin.cast-sender.casting.album': 'Menyiarkan album "{album}"',
+  'plugin.cast-sender.casting.queue': 'Menyiarkan {count} lagu',
+  'plugin.cast-sender.action.cast-album': 'Cast album',
+  'plugin.cast-sender.action.cast-queue': 'Cast baris gilir',
 } satisfies Record<CastSenderTranslationKey, string>;

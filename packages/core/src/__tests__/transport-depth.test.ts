@@ -26,318 +26,327 @@
 
 import type { BackendShape } from '../core/mixins/player-state';
 import type {
-	Plugin,
+  Plugin,
 } from '../index';
 import type { PluginCtorWithId } from '../types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { makePlayerErrorEvent, stateError } from '../errors';
 import {
-	composeMixins,
-	playerCoreMethods,
-	RepeatState,
-	StateError,
+  composeMixins,
+  playerCoreMethods,
+  RepeatState,
+  StateError,
 } from '../index';
 import { MockPlayerBase } from './helpers/mock-player-base';
 
 // ── Local MockPlayer (same shape as base-player.test.ts) ──────────────────────
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => Promise<void>;
-	declare phase: () => string;
-	declare dispatching: () => ReadonlyArray<string>;
-	declare baseUrl: { (): string | undefined; (url: string): void };
-	declare audioContext: () => AudioContext | undefined;
-	declare experimental: any;
-	declare t: {
-		(key: string, vars?: Record<string, string>): string;
-		(PluginClass: PluginCtorWithId, key: string, vars?: Record<string, string>): string;
-	};
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => Promise<void>;
+  declare phase: () => string;
+  declare dispatching: () => ReadonlyArray<string>;
+  declare baseUrl: { (): string | undefined; (url: string): void };
+  declare audioContext: () => AudioContext | undefined;
+  declare experimental: any;
+  declare t: {
+    (key: string, vars?: Record<string, string>): string;
+    (PluginClass: PluginCtorWithId, key: string, vars?: Record<string, string>): string;
+  };
 
-	declare language: { (): string; (lang: string): Promise<void> };
-	declare addTranslations: (bundle: any) => void;
-	declare translation: (lang: string, key: string, value: string) => void;
-	declare removeTranslations: (prefix: string, lang?: string) => void;
-	declare registerCueParser: (parser: any, prepend?: boolean) => void;
-	declare unregisterCueParser: (id: string) => void;
-	declare play: (opts?: any) => Promise<void>;
-	declare pause: (opts?: any) => Promise<void>;
-	declare stop: (opts?: any) => Promise<void>;
-	declare togglePlayback: (opts?: any) => Promise<void>;
-	declare next: (opts?: any) => Promise<void>;
-	declare previous: (opts?: any) => Promise<void>;
-	declare rewind: (seconds?: number, opts?: any) => Promise<void>;
-	declare forward: (seconds?: number, opts?: any) => Promise<void>;
-	declare restart: (opts?: any) => Promise<void>;
-	declare time: { (): number; (seconds: number, opts?: any): Promise<void> };
-	declare duration: () => number;
-	declare buffered: () => number;
-	declare timeData: () => any;
-	declare playbackRate: { (): number; (rate: number): Promise<void> };
-	declare playbackRates: () => number[];
-	declare volume: { (): number; (level: number): Promise<void> };
-	declare mute: () => Promise<void>;
-	declare unmute: () => Promise<void>;
-	declare toggleMute: () => void;
-	declare volumeUp: (step?: number) => void;
-	declare volumeDown: (step?: number) => void;
-	declare playState: () => string;
-	declare volumeState: () => string;
-	declare repeatState: { (): string; (state: any): Promise<void> };
-	declare shuffleState: { (): string; (state: any): Promise<void> };
-	declare queue: { (): ReadonlyArray<any>; (items: any[], opts?: any): void };
-	declare queueAppend: (item: any, opts?: any) => void;
-	declare queuePrepend: (item: any, opts?: any) => void;
-	declare queueInsert: (item: any, index: number, opts?: any) => void;
-	declare queueRemove: (id: any, opts?: any) => void;
-	declare queueRemoveAt: (index: number, opts?: any) => void;
-	declare queueMove: (from: number, to: number, opts?: any) => void;
-	declare queueClear: (opts?: any) => void;
-	declare queueShuffle: (opts?: any) => void;
-	declare queueSort: (compare: any, opts?: any) => void;
-	declare peekNext: () => any;
-	declare peekPrevious: () => any;
-	declare queueLength: () => number;
-	declare queueIndexOf: (id: any) => number;
-	declare item: { (): any; (target: any, opts?: any): void };
-	declare index: () => number;
-	declare backlog: { (): ReadonlyArray<any>; (items: any[]): void };
-	declare backlogAppend: (item: any) => void;
-	declare backlogRemove: (id: any) => void;
-	declare backlogClear: () => void;
-	declare addPlugin: <P extends Plugin>(PluginClass: new () => P, opts?: P['opts']) => this;
-	declare getPlugin: (PluginClass: any) => any;
-	declare getPluginById: (id: string) => any;
-	declare removePlugin: (PluginClass: any) => void;
-	declare removePluginById: (id: string) => void;
-	declare plugins: () => ReadonlyArray<any>;
-	declare enabledPlugins: () => ReadonlyArray<any>;
+  declare language: { (): string; (lang: string): Promise<void> };
+  declare addTranslations: (bundle: any) => void;
+  declare translation: (lang: string, key: string, value: string) => void;
+  declare removeTranslations: (prefix: string, lang?: string) => void;
+  declare registerCueParser: (parser: any, prepend?: boolean) => void;
+  declare unregisterCueParser: (id: string) => void;
+  declare play: (opts?: any) => Promise<void>;
+  declare pause: (opts?: any) => Promise<void>;
+  declare stop: (opts?: any) => Promise<void>;
+  declare togglePlayback: (opts?: any) => Promise<void>;
+  declare next: (opts?: any) => Promise<void>;
+  declare previous: (opts?: any) => Promise<void>;
+  declare rewind: (seconds?: number, opts?: any) => Promise<void>;
+  declare forward: (seconds?: number, opts?: any) => Promise<void>;
+  declare restart: (opts?: any) => Promise<void>;
+  declare time: { (): number; (seconds: number, opts?: any): Promise<void> };
+  declare duration: () => number;
+  declare buffered: () => number;
+  declare timeData: () => any;
+  declare playbackRate: { (): number; (rate: number): Promise<void> };
+  declare playbackRates: () => number[];
+  declare volume: { (): number; (level: number): Promise<void> };
+  declare mute: () => Promise<void>;
+  declare unmute: () => Promise<void>;
+  declare toggleMute: () => void;
+  declare volumeUp: (step?: number) => void;
+  declare volumeDown: (step?: number) => void;
+  declare playState: () => string;
+  declare volumeState: () => string;
+  declare repeatState: { (): string; (state: any): Promise<void> };
+  declare shuffleState: { (): string; (state: any): Promise<void> };
+  declare queue: { (): ReadonlyArray<any>; (items: any[], opts?: any): void };
+  declare queueAppend: (item: any, opts?: any) => void;
+  declare queuePrepend: (item: any, opts?: any) => void;
+  declare queueInsert: (item: any, index: number, opts?: any) => void;
+  declare queueRemove: (id: any, opts?: any) => void;
+  declare queueRemoveAt: (index: number, opts?: any) => void;
+  declare queueMove: (from: number, to: number, opts?: any) => void;
+  declare queueClear: (opts?: any) => void;
+  declare queueShuffle: (opts?: any) => void;
+  declare queueSort: (compare: any, opts?: any) => void;
+  declare peekNext: () => any;
+  declare peekPrevious: () => any;
+  declare queueLength: () => number;
+  declare queueIndexOf: (id: any) => number;
+  declare item: { (): any; (target: any, opts?: any): void };
+  declare index: () => number;
+  declare backlog: { (): ReadonlyArray<any>; (items: any[]): void };
+  declare backlogAppend: (item: any) => void;
+  declare backlogRemove: (id: any) => void;
+  declare backlogClear: () => void;
+  declare addPlugin: <P extends Plugin>(PluginClass: new () => P, opts?: P['opts']) => this;
+  declare getPlugin: (PluginClass: any) => any;
+  declare getPluginById: (id: string) => any;
+  declare removePlugin: (PluginClass: any) => void;
+  declare removePluginById: (id: string) => void;
+  declare plugins: () => ReadonlyArray<any>;
+  declare enabledPlugins: () => ReadonlyArray<any>;
 
-	backend?: () => unknown;
+  backend?: () => unknown;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function setupPlayer(): MockPlayer {
-	const div = document.createElement('div');
-	div.id = 'mock-depth';
-	document.body.appendChild(div);
-	return new MockPlayer('mock-depth').setup({});
+  const div = document.createElement('div');
+
+  div.id = 'mock-depth';
+  document.body.appendChild(div);
+
+  return new MockPlayer('mock-depth').setup({});
 }
 
 describe('transport-depth (slice 02)', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	// ── Test 1: stop() drives playState to 'stopped' AND calls backend.stop ──
+  // ── Test 1: stop() drives playState to 'stopped' AND calls backend.stop ──
 
-	it('stop() sets playState to "stopped" and calls backend.stop()', async () => {
-		const player = setupPlayer();
+  it('stop() sets playState to "stopped" and calls backend.stop()', async () => {
+    const player = setupPlayer();
 
-		let stopCallCount = 0;
-		const mockBackend: BackendShape = {
-			play: async (): Promise<void> => {},
-			stop: (): void => {
-				stopCallCount += 1;
-			},
-		};
-		(player as unknown as { backend: () => BackendShape }).backend = (): BackendShape => mockBackend;
+    let stopCallCount = 0;
+    const mockBackend: BackendShape = {
+      play: async (): Promise<void> => {},
+      stop: (): void => {
+        stopCallCount += 1;
+      },
+    };
 
-		await player.play();
-		expect(player.playState()).toBe('playing');
+    (player as unknown as { backend: () => BackendShape }).backend = (): BackendShape => mockBackend;
 
-		await player.stop();
+    await player.play();
+    expect(player.playState()).toBe('playing');
 
-		expect(player.playState()).toBe('stopped');
-		expect(stopCallCount).toBe(1);
-	});
+    await player.stop();
 
-	// ── Test 2: time(t) before setup throws core:player/not-ready ────────────
-	// GREEN fix: _assertReady() added to time() setter path in time.ts.
+    expect(player.playState()).toBe('stopped');
+    expect(stopCallCount).toBe(1);
+  });
 
-	it('time(t) before setup throws StateError with code core:player/not-ready', async () => {
-		const div = document.createElement('div');
-		div.id = 'time-presetup';
-		document.body.appendChild(div);
-		const player = new MockPlayer('time-presetup');
+  // ── Test 2: time(t) before setup throws core:player/not-ready ────────────
+  // GREEN fix: _assertReady() added to time() setter path in time.ts.
 
-		let thrown: unknown;
-		try {
-			await player.time(10);
-		}
-		catch (error) {
-			thrown = error;
-		}
+  it('time(t) before setup throws StateError with code core:player/not-ready', async () => {
+    const div = document.createElement('div');
 
-		expect(thrown).toBeInstanceOf(StateError);
-		expect((thrown as { code: string }).code).toBe('core:player/not-ready');
-	});
+    div.id = 'time-presetup';
+    document.body.appendChild(div);
+    const player = new MockPlayer('time-presetup');
 
-	// ── Test 3: phase() during dispose listener sees 'disposing' then 'disposed' ──
+    let thrown: unknown;
 
-	it('phase() inside dispose listener is "disposing"; after dispose() returns it is "disposed"', async () => {
-		const player = setupPlayer();
-		let phaseInsideListener = '';
+    try {
+      await player.time(10);
+    } catch (error) {
+      thrown = error;
+    }
 
-		player.on('dispose' as any, () => {
-			phaseInsideListener = player.phase();
-		});
+    expect(thrown).toBeInstanceOf(StateError);
+    expect((thrown as { code: string }).code).toBe('core:player/not-ready');
+  });
 
-		await player.dispose();
+  // ── Test 3: phase() during dispose listener sees 'disposing' then 'disposed' ──
 
-		expect(phaseInsideListener).toBe('disposing');
-		expect(player.phase()).toBe('disposed');
-	});
+  it('phase() inside dispose listener is "disposing"; after dispose() returns it is "disposed"', async () => {
+    const player = setupPlayer();
+    let phaseInsideListener = '';
 
-	// ── Test 4: next() on empty queue resolves without throwing and emits no 'item' ──
+    player.on('dispose' as any, () => {
+      phaseInsideListener = player.phase();
+    });
 
-	it('next() on an empty queue resolves without throwing and fires no "item" event', async () => {
-		const player = setupPlayer();
-		let itemFired = false;
+    await player.dispose();
 
-		player.on('item' as any, () => {
-			itemFired = true;
-		});
+    expect(phaseInsideListener).toBe('disposing');
+    expect(player.phase()).toBe('disposed');
+  });
 
-		await player.next();
+  // ── Test 4: next() on empty queue resolves without throwing and emits no 'item' ──
 
-		expect(itemFired).toBe(false);
-	});
+  it('next() on an empty queue resolves without throwing and fires no "item" event', async () => {
+    const player = setupPlayer();
+    let itemFired = false;
 
-	// ── Test 5: volume(v) emits 'volume' event with { level: newValue } ──────
+    player.on('item' as any, () => {
+      itemFired = true;
+    });
 
-	it('volume(v) emits "volume" event with the new level and volume() returns it', async () => {
-		const player = setupPlayer();
-		let emittedLevel: number | undefined;
+    await player.next();
 
-		player.on('volume' as any, (data: { level: number }) => {
-			emittedLevel = data.level;
-		});
+    expect(itemFired).toBe(false);
+  });
 
-		await player.volume(42);
+  // ── Test 5: volume(v) emits 'volume' event with { level: newValue } ──────
 
-		expect(emittedLevel).toBe(42);
-		expect(player.volume()).toBe(42);
-	});
+  it('volume(v) emits "volume" event with the new level and volume() returns it', async () => {
+    const player = setupPlayer();
+    let emittedLevel: number | undefined;
 
-	// ── Test 6: mute() emits 'mute' with { muted: true }; unmute() emits 'mute' with { muted: false } ──
-	//
-	// NOTE: The spec description named a separate 'unmute' event. The event map has no
-	// 'unmute' key — the design uses a single 'mute' event with { muted: boolean }.
-	// This test pins the REAL contract. See Findings: MEDIUM — spec description was
-	// misleading but the implementation is intentional (matches the event map).
+    player.on('volume' as any, (data: { level: number }) => {
+      emittedLevel = data.level;
+    });
 
-	it('mute() emits "mute" with { muted: true }; unmute() emits "mute" with { muted: false }', async () => {
-		const player = setupPlayer();
-		const mutePayloads: Array<{ muted: boolean }> = [];
+    await player.volume(42);
 
-		player.on('mute' as any, (data: { muted: boolean }) => {
-			mutePayloads.push({ muted: data.muted });
-		});
+    expect(emittedLevel).toBe(42);
+    expect(player.volume()).toBe(42);
+  });
 
-		await player.mute();
-		await player.unmute();
+  // ── Test 6: mute() emits 'mute' with { muted: true }; unmute() emits 'mute' with { muted: false } ──
+  //
+  // NOTE: The spec description named a separate 'unmute' event. The event map has no
+  // 'unmute' key — the design uses a single 'mute' event with { muted: boolean }.
+  // This test pins the REAL contract. See Findings: MEDIUM — spec description was
+  // misleading but the implementation is intentional (matches the event map).
 
-		expect(mutePayloads).toHaveLength(2);
-		expect(mutePayloads[0]).toEqual({ muted: true });
-		expect(mutePayloads[1]).toEqual({ muted: false });
-	});
+  it('mute() emits "mute" with { muted: true }; unmute() emits "mute" with { muted: false }', async () => {
+    const player = setupPlayer();
+    const mutePayloads: Array<{ muted: boolean }> = [];
 
-	// ── Test 7: playbackRate(0) is clamped to 0.25 (v1 oracle: clamp [0.25, 2]) ──
-	// GREEN fix: clamp applied in time.ts playbackRate setter.
+    player.on('mute' as any, (data: { muted: boolean }) => {
+      mutePayloads.push({ muted: data.muted });
+    });
 
-	it('playbackRate(0) is clamped to 0.25 and backend:ratechange carries the clamped value', async () => {
-		const player = setupPlayer();
-		let emittedRate: number | undefined;
+    await player.mute();
+    await player.unmute();
 
-		player.on('backend:ratechange' as any, (data: { rate: number }) => {
-			emittedRate = data.rate;
-		});
+    expect(mutePayloads).toHaveLength(2);
+    expect(mutePayloads[0]).toEqual({ muted: true });
+    expect(mutePayloads[1]).toEqual({ muted: false });
+  });
 
-		await player.playbackRate(0);
+  // ── Test 7: playbackRate(0) is clamped to 0.25 (v1 oracle: clamp [0.25, 2]) ──
+  // GREEN fix: clamp applied in time.ts playbackRate setter.
 
-		expect(player.playbackRate()).toBeGreaterThan(0);
-		expect(player.playbackRate()).toBe(0.25);
-		expect(emittedRate).toBe(0.25);
-	});
+  it('playbackRate(0) is clamped to 0.25 and backend:ratechange carries the clamped value', async () => {
+    const player = setupPlayer();
+    let emittedRate: number | undefined;
 
-	it('playbackRate(3) is clamped to 2', async () => {
-		const player = setupPlayer();
-		await player.playbackRate(3);
-		expect(player.playbackRate()).toBe(2);
-	});
+    player.on('backend:ratechange' as any, (data: { rate: number }) => {
+      emittedRate = data.rate;
+    });
 
-	// ── Test 8: 'repeat' event carries the new state in its payload ───────────
+    await player.playbackRate(0);
 
-	it('"repeat" event payload contains the new repeatState value', async () => {
-		const player = setupPlayer();
-		let repeatPayload: { state: string } | undefined;
+    expect(player.playbackRate()).toBeGreaterThan(0);
+    expect(player.playbackRate()).toBe(0.25);
+    expect(emittedRate).toBe(0.25);
+  });
 
-		player.on('repeat' as any, (data: { state: string }) => {
-			repeatPayload = data;
-		});
+  it('playbackRate(3) is clamped to 2', async () => {
+    const player = setupPlayer();
 
-		await player.repeatState(RepeatState.ALL);
+    await player.playbackRate(3);
+    expect(player.playbackRate()).toBe(2);
+  });
 
-		expect(repeatPayload).toBeDefined();
-		expect(repeatPayload?.state).toBe(RepeatState.ALL);
-	});
+  // ── Test 8: 'repeat' event carries the new state in its payload ───────────
 
-	// ── Test 9: 'fatal' flips playState to ERROR; non-fatal tiers never touch it ──
+  it('"repeat" event payload contains the new repeatState value', async () => {
+    const player = setupPlayer();
+    let repeatPayload: { state: string } | undefined;
 
-	it('emitting "fatal" sets playState to "error", and fatal listeners already observe the settled state', async () => {
-		const player = setupPlayer();
+    player.on('repeat' as any, (data: { state: string }) => {
+      repeatPayload = data;
+    });
 
-		await player.play();
-		expect(player.playState()).toBe('playing');
+    await player.repeatState(RepeatState.ALL);
 
-		let stateInsideFatalListener: string | undefined;
-		player.on('fatal' as any, () => {
-			stateInsideFatalListener = player.playState();
-		});
+    expect(repeatPayload).toBeDefined();
+    expect(repeatPayload?.state).toBe(RepeatState.ALL);
+  });
 
-		player.emit('fatal' as any, makePlayerErrorEvent(
-			stateError('core:test/unrecoverable', 'decoder gave up'),
-			'fatal',
-			{ kind: 'core' },
-		));
+  // ── Test 9: 'fatal' flips playState to ERROR; non-fatal tiers never touch it ──
 
-		expect(player.playState()).toBe('error');
-		expect(stateInsideFatalListener).toBe('error');
-	});
+  it('emitting "fatal" sets playState to "error", and fatal listeners already observe the settled state', async () => {
+    const player = setupPlayer();
 
-	it('non-fatal "error" / "warning" / "info" events leave playState untouched', async () => {
-		const player = setupPlayer();
+    await player.play();
+    expect(player.playState()).toBe('playing');
 
-		await player.play();
-		expect(player.playState()).toBe('playing');
+    let stateInsideFatalListener: string | undefined;
 
-		player.emit('error' as any, makePlayerErrorEvent(
-			stateError('core:test/recoverable', 'sidecar failed'),
-			'error',
-			{ kind: 'core' },
-		));
-		expect(player.playState()).toBe('playing');
+    player.on('fatal' as any, () => {
+      stateInsideFatalListener = player.playState();
+    });
 
-		player.emit('warning' as any, makePlayerErrorEvent(
-			stateError('core:test/warning', 'level dropped'),
-			'warning',
-			{ kind: 'core' },
-		));
-		expect(player.playState()).toBe('playing');
+    player.emit('fatal' as any, makePlayerErrorEvent(
+      stateError('core:test/unrecoverable', 'decoder gave up'),
+      'fatal',
+      { kind: 'core' },
+    ));
 
-		player.emit('info' as any, makePlayerErrorEvent(
-			stateError('core:test/info', 'observability only'),
-			'info',
-			{ kind: 'core' },
-		));
-		expect(player.playState()).toBe('playing');
-	});
+    expect(player.playState()).toBe('error');
+    expect(stateInsideFatalListener).toBe('error');
+  });
+
+  it('non-fatal "error" / "warning" / "info" events leave playState untouched', async () => {
+    const player = setupPlayer();
+
+    await player.play();
+    expect(player.playState()).toBe('playing');
+
+    player.emit('error' as any, makePlayerErrorEvent(
+      stateError('core:test/recoverable', 'sidecar failed'),
+      'error',
+      { kind: 'core' },
+    ));
+
+    expect(player.playState()).toBe('playing');
+
+    player.emit('warning' as any, makePlayerErrorEvent(
+      stateError('core:test/warning', 'level dropped'),
+      'warning',
+      { kind: 'core' },
+    ));
+
+    expect(player.playState()).toBe('playing');
+
+    player.emit('info' as any, makePlayerErrorEvent(
+      stateError('core:test/info', 'observability only'),
+      'info',
+      { kind: 'core' },
+    ));
+
+    expect(player.playState()).toBe('playing');
+  });
 });

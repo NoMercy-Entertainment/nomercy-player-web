@@ -1,9 +1,9 @@
 {
-	"compilerOptions": {
-		"stripInternal": true
-	},
-	"tsc-alias": {
-		"resolveFullPaths": true
-	},
-	"exclude": ["${configDir}/dist", "${configDir}/node_modules", "${configDir}/**/__tests__/**"]
+  "compilerOptions": {
+    "stripInternal": true
+  },
+  "tsc-alias": {
+    "resolveFullPaths": true
+  },
+  "exclude": ["${configDir}/dist", "${configDir}/node_modules", "${configDir}/**/__tests__/**"]
 }

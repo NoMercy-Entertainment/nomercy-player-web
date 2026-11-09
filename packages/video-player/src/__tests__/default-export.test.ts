@@ -17,35 +17,36 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import DefaultExport, { nmplayer, NMVideoPlayer } from '../index';
 
 describe('video default export — symmetric factory contract (S00-R1)', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	afterEach(() => {
-		document.body.innerHTML = '';
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  afterEach(() => {
+    document.body.innerHTML = '';
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	it('default export is a function (not a class requiring new)', () => {
-		expect(typeof DefaultExport).toBe('function');
-	});
+  it('default export is a function (not a class requiring new)', () => {
+    expect(typeof DefaultExport).toBe('function');
+  });
 
-	it('calling DefaultExport(id) without new returns an NMVideoPlayer instance', () => {
-		const div = document.createElement('div');
-		div.id = 'default-export-video-test';
-		document.body.appendChild(div);
+  it('calling DefaultExport(id) without new returns an NMVideoPlayer instance', () => {
+    const div = document.createElement('div');
 
-		const player = DefaultExport('default-export-video-test');
+    div.id = 'default-export-video-test';
+    document.body.appendChild(div);
 
-		expect(player).toBeInstanceOf(NMVideoPlayer);
-		expect(player.id).toBe('default-export-video-test');
-	});
+    const player = DefaultExport('default-export-video-test');
 
-	it('DefaultExport is the same reference as the named nmplayer export', () => {
-		expect(DefaultExport).toBe(nmplayer);
-	});
+    expect(player).toBeInstanceOf(NMVideoPlayer);
+    expect(player.id).toBe('default-export-video-test');
+  });
 
-	it('named export nmplayer is still reachable and is a function', () => {
-		expect(typeof nmplayer).toBe('function');
-	});
+  it('DefaultExport is the same reference as the named nmplayer export', () => {
+    expect(DefaultExport).toBe(nmplayer);
+  });
+
+  it('named export nmplayer is still reachable and is a function', () => {
+    expect(typeof nmplayer).toBe('function');
+  });
 });

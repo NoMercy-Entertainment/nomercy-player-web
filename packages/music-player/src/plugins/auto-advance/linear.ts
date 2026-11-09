@@ -21,15 +21,21 @@ import type { IPlaylistGenerator } from './IPlaylistGenerator';
  */
 export class LinearPlaylistGenerator<T extends BasePlaylistItem = BasePlaylistItem>
 implements IPlaylistGenerator<T> {
-	readonly id = 'linear';
+  readonly id = 'linear';
 
-	next(items: ReadonlyArray<T>, currentIndex: number): number | undefined {
-		const nextIndex = currentIndex + 1;
-		return nextIndex < items.length ? nextIndex : undefined;
-	}
+  next(items: ReadonlyArray<T>, currentIndex: number): number | undefined {
+    const nextIndex = currentIndex + 1;
 
-	previous(items: ReadonlyArray<T>, currentIndex: number): number | undefined {
-		const prevIndex = currentIndex - 1;
-		return prevIndex >= 0 ? prevIndex : undefined;
-	}
+    return nextIndex < items.length
+      ? nextIndex
+      : undefined;
+  }
+
+  previous(items: ReadonlyArray<T>, currentIndex: number): number | undefined {
+    const prevIndex = currentIndex - 1;
+
+    return prevIndex >= 0
+      ? prevIndex
+      : undefined;
+  }
 }

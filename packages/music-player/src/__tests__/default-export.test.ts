@@ -17,35 +17,36 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import DefaultExport, { NMMusicPlayer, nmplayer } from '../index';
 
 describe('music default export — symmetric factory contract (S00-R1)', () => {
-	beforeEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  beforeEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	afterEach(() => {
-		document.body.innerHTML = '';
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	});
+  afterEach(() => {
+    document.body.innerHTML = '';
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  });
 
-	it('default export is a function (not a class requiring new)', () => {
-		expect(typeof DefaultExport).toBe('function');
-	});
+  it('default export is a function (not a class requiring new)', () => {
+    expect(typeof DefaultExport).toBe('function');
+  });
 
-	it('calling DefaultExport(id) without new returns an NMMusicPlayer instance', () => {
-		const div = document.createElement('div');
-		div.id = 'default-export-test';
-		document.body.appendChild(div);
+  it('calling DefaultExport(id) without new returns an NMMusicPlayer instance', () => {
+    const div = document.createElement('div');
 
-		const player = DefaultExport('default-export-test');
+    div.id = 'default-export-test';
+    document.body.appendChild(div);
 
-		expect(player).toBeInstanceOf(NMMusicPlayer);
-		expect(player.id).toBe('default-export-test');
-	});
+    const player = DefaultExport('default-export-test');
 
-	it('DefaultExport is the same reference as the named nmplayer export', () => {
-		expect(DefaultExport).toBe(nmplayer);
-	});
+    expect(player).toBeInstanceOf(NMMusicPlayer);
+    expect(player.id).toBe('default-export-test');
+  });
 
-	it('named export nmplayer is reachable and is a function', () => {
-		expect(typeof nmplayer).toBe('function');
-	});
+  it('DefaultExport is the same reference as the named nmplayer export', () => {
+    expect(DefaultExport).toBe(nmplayer);
+  });
+
+  it('named export nmplayer is reachable and is a function', () => {
+    expect(typeof nmplayer).toBe('function');
+  });
 });

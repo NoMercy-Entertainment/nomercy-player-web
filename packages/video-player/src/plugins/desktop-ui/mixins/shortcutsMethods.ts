@@ -18,22 +18,21 @@
 import type { DesktopUiInternals } from '../internals';
 
 export const shortcutsMethods = {
-	toggleShortcuts(this: DesktopUiInternals): void {
-		if (this._shortcutsVisible) {
-			this.hideShortcuts();
-		}
-		else {
-			this.showShortcuts();
-		}
-	},
+  toggleShortcuts(this: DesktopUiInternals): void {
+    if (this._shortcutsVisible) {
+      this.hideShortcuts();
+    } else {
+      this.showShortcuts();
+    }
+  },
 
-	showShortcuts(this: DesktopUiInternals): void {
-		this._shortcutsVisible = true;
-		this.shortcutsOverlay?.classList.add('keybinds-dialog-visible');
-	},
+  showShortcuts(this: DesktopUiInternals): void {
+    this._shortcutsVisible = true;
+    this.shortcutsOverlay?.classList.add('keybinds-dialog-visible');
+  },
 
-	hideShortcuts(this: DesktopUiInternals): void {
-		this._shortcutsVisible = false;
-		this.shortcutsOverlay?.classList.remove('keybinds-dialog-visible');
-	},
+  hideShortcuts(this: DesktopUiInternals): void {
+    this._shortcutsVisible = false;
+    this.shortcutsOverlay?.classList.remove('keybinds-dialog-visible');
+  },
 } as const;

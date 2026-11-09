@@ -32,10 +32,11 @@ export { describePluginAgainst } from './describe-plugin-against';
 export type { DescribePluginAgainstOptions, PluginAgainstTestContext } from './describe-plugin-against';
 
 export {
-	assertNoListenerLeak,
-	assertNoListenerLeakOverCycles,
-	countAllListeners,
+  assertNoListenerLeak,
+  assertNoListenerLeakOverCycles,
+  countAllListeners,
 } from './leak-harness';
+
 export type { LeakAssertionResult } from './leak-harness';
 
 export { mockFetch } from './mock-fetch';

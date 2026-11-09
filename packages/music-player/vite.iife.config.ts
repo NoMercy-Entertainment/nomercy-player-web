@@ -9,7 +9,7 @@
 import { playerIifeConfig } from '../../config/vite';
 
 export default playerIifeConfig({
-	configUrl: import.meta.url,
-	globalName: 'nmMPlayer',
-	fileName: 'nomercy-music-player.iife.js',
+  configUrl: import.meta.url,
+  globalName: 'nmMPlayer',
+  fileName: 'nomercy-music-player.iife.js',
 });

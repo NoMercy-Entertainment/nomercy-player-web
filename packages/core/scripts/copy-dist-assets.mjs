@@ -23,22 +23,22 @@
  */
 
 import {
-	copyFileSync,
-	mkdirSync,
-	readdirSync,
-	statSync,
+  copyFileSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
 } from 'node:fs';
 import {
-	dirname,
-	join,
-	relative,
-	resolve,
+  dirname,
+  join,
+  relative,
+  resolve,
 } from 'node:path';
 
 const ASSET_EXTENSIONS = [
-	'.css',
-	'.svg',
-	'.woff2',
+  '.css',
+  '.svg',
+  '.woff2',
 ];
 
 /**
@@ -47,28 +47,32 @@ const ASSET_EXTENSIONS = [
  * @returns {string[]} Absolute paths of every asset file found under `dir`.
  */
 function walkAssets(dir) {
-	const results = [];
-	for (const entry of readdirSync(dir)) {
-		const full = join(dir, entry);
-		const stat = statSync(full);
-		if (stat.isDirectory()) {
-			results.push(...walkAssets(full));
-		}
-		else if (ASSET_EXTENSIONS.some(extension => entry.endsWith(extension))) {
-			results.push(full);
-		}
-	}
-	return results;
+  const results = [];
+
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    const stat = statSync(full);
+
+    if (stat.isDirectory()) {
+      results.push(...walkAssets(full));
+    } else if (ASSET_EXTENSIONS.some((extension) => entry.endsWith(extension))) {
+      results.push(full);
+    }
+  }
+
+  return results;
 }
 
 const srcDir = resolve(process.cwd(), process.argv[2] ?? 'src');
 const distDir = resolve(process.cwd(), process.argv[3] ?? 'dist');
 
 const assets = walkAssets(srcDir);
+
 for (const asset of assets) {
-	const target = join(distDir, relative(srcDir, asset));
-	mkdirSync(dirname(target), { recursive: true });
-	copyFileSync(asset, target);
+  const target = join(distDir, relative(srcDir, asset));
+
+  mkdirSync(dirname(target), { recursive: true });
+  copyFileSync(asset, target);
 }
 
 console.log(`[copy-dist-assets] copied ${assets.length} asset(s) into ${relative(process.cwd(), distDir)}`);

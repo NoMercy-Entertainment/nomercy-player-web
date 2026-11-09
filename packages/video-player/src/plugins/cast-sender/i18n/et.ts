@@ -9,9 +9,9 @@
 import type { CastSenderTranslationKey } from './en';
 
 export default {
-	'plugin.cast-sender.casting.movie': '"{title}" ülekandmine',
-	'plugin.cast-sender.casting.episode': '{show} S{season}E{episode}: {title} ülekandmine',
-	'plugin.cast-sender.casting.live': 'Otseülekanne: {title}',
-	'plugin.cast-sender.action.cast-from-here': 'Edasta sellest kohast',
-	'plugin.cast-sender.action.continue-on-tv': 'Jätka teleris',
+  'plugin.cast-sender.casting.movie': '"{title}" ülekandmine',
+  'plugin.cast-sender.casting.episode': '{show} S{season}E{episode}: {title} ülekandmine',
+  'plugin.cast-sender.casting.live': 'Otseülekanne: {title}',
+  'plugin.cast-sender.action.cast-from-here': 'Edasta sellest kohast',
+  'plugin.cast-sender.action.continue-on-tv': 'Jätka teleris',
 } satisfies Record<CastSenderTranslationKey, string>;

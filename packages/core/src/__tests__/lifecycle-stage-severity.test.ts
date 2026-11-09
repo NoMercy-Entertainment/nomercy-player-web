@@ -25,33 +25,33 @@ import { stageErrorTier } from '../core/mixins/lifecycle';
 import { StateError } from '../errors';
 
 describe('the channel a failed setup stage reports on', () => {
-	it('sends an error that declares itself fatal to the fatal channel', () => {
-		const error = new StateError({
-			code: 'core:test/fatal',
-			severity: 'fatal',
-			scope: { kind: 'core' },
-			message: 'unrecoverable',
-		});
+  it('sends an error that declares itself fatal to the fatal channel', () => {
+    const error = new StateError({
+      code: 'core:test/fatal',
+      severity: 'fatal',
+      scope: { kind: 'core' },
+      message: 'unrecoverable',
+    });
 
-		expect(stageErrorTier(error)).toBe('fatal');
-	});
+    expect(stageErrorTier(error)).toBe('fatal');
+  });
 
-	it('leaves a recoverable error on the error channel', () => {
-		const error = new StateError({
-			code: 'core:test/recoverable',
-			severity: 'error',
-			scope: { kind: 'core' },
-			message: 'recoverable',
-		});
+  it('leaves a recoverable error on the error channel', () => {
+    const error = new StateError({
+      code: 'core:test/recoverable',
+      severity: 'error',
+      scope: { kind: 'core' },
+      message: 'recoverable',
+    });
 
-		expect(stageErrorTier(error)).toBe('error');
-	});
+    expect(stageErrorTier(error)).toBe('error');
+  });
 
-	it('treats an error with no severity as recoverable, which is what a plain throw becomes', () => {
-		expect(stageErrorTier({})).toBe('error');
-	});
+  it('treats an error with no severity as recoverable, which is what a plain throw becomes', () => {
+    expect(stageErrorTier({})).toBe('error');
+  });
 
-	it('treats a warning as recoverable rather than promoting it', () => {
-		expect(stageErrorTier({ severity: 'warning' })).toBe('error');
-	});
+  it('treats a warning as recoverable rather than promoting it', () => {
+    expect(stageErrorTier({ severity: 'warning' })).toBe('error');
+  });
 });

@@ -24,296 +24,325 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Logger } from '../adapters/logger/default';
 
 describe('Logger', () => {
-	let consoleSpies: {
-		error: ReturnType<typeof vi.spyOn>;
-		warn: ReturnType<typeof vi.spyOn>;
-		info: ReturnType<typeof vi.spyOn>;
-		debug: ReturnType<typeof vi.spyOn>;
-		log: ReturnType<typeof vi.spyOn>;
-		trace: ReturnType<typeof vi.spyOn>;
-	};
+  let consoleSpies: {
+    error: ReturnType<typeof vi.spyOn>;
+    warn: ReturnType<typeof vi.spyOn>;
+    info: ReturnType<typeof vi.spyOn>;
+    debug: ReturnType<typeof vi.spyOn>;
+    log: ReturnType<typeof vi.spyOn>;
+    trace: ReturnType<typeof vi.spyOn>;
+  };
 
-	beforeEach(() => {
-		consoleSpies = {
-			error: vi.spyOn(console, 'error').mockImplementation(() => {}),
-			warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
-			info: vi.spyOn(console, 'info').mockImplementation(() => {}),
-			debug: vi.spyOn(console, 'debug').mockImplementation(() => {}),
-			log: vi.spyOn(console, 'log').mockImplementation(() => {}),
-			trace: vi.spyOn(console, 'trace').mockImplementation(() => {}),
-		};
-	});
+  beforeEach(() => {
+    consoleSpies = {
+      error: vi.spyOn(console, 'error').mockImplementation(() => {}),
+      warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
+      info: vi.spyOn(console, 'info').mockImplementation(() => {}),
+      debug: vi.spyOn(console, 'debug').mockImplementation(() => {}),
+      log: vi.spyOn(console, 'log').mockImplementation(() => {}),
+      trace: vi.spyOn(console, 'trace').mockImplementation(() => {}),
+    };
+  });
 
-	afterEach(() => {
-		Object.values(consoleSpies).forEach(spy => spy.mockRestore());
-	});
+  afterEach(() => {
+    Object.values(consoleSpies).forEach((spy) => spy.mockRestore());
+  });
 
-	// ─────────────────────────────────────────────────────────────────────
-	// Construction
-	// ─────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────
+  // Construction
+  // ─────────────────────────────────────────────────────────────────────
 
-	describe('construction', () => {
-		it('defaults to level "info" with prefix [nmplayer]', () => {
-			const logger = new Logger();
-			logger.info('hello');
-			expect(consoleSpies.info).toHaveBeenCalledWith('[nmplayer]', 'hello');
-		});
+  describe('construction', () => {
+    it('defaults to level "info" with prefix [nmplayer]', () => {
+      const logger = new Logger();
 
-		it('honors explicit level option', () => {
-			const logger = new Logger({ level: 'debug' });
-			logger.debug('hello');
-			expect(consoleSpies.debug).toHaveBeenCalled();
-		});
+      logger.info('hello');
+      expect(consoleSpies.info).toHaveBeenCalledWith('[nmplayer]', 'hello');
+    });
 
-		it('level "silent" suppresses error output', () => {
-			const logger = new Logger({ level: 'silent' });
-			logger.error('hello');
-			expect(consoleSpies.error).not.toHaveBeenCalled();
-		});
+    it('honors explicit level option', () => {
+      const logger = new Logger({ level: 'debug' });
 
-		it('honors explicit prefix option', () => {
-			const logger = new Logger({ prefix: 'custom' });
-			logger.info('hello');
-			expect(consoleSpies.info).toHaveBeenCalledWith('[custom]', 'hello');
-		});
+      logger.debug('hello');
+      expect(consoleSpies.debug).toHaveBeenCalled();
+    });
 
-		it('Logger satisfies the ILogger interface', () => {
-			const logger: ILogger = new Logger();
-			expect(typeof logger.trace).toBe('function');
-			expect(typeof logger.debug).toBe('function');
-			expect(typeof logger.info).toBe('function');
-			expect(typeof logger.warn).toBe('function');
-			expect(typeof logger.error).toBe('function');
-			expect(typeof logger.level).toBe('function');
-			expect(typeof logger.addSink).toBe('function');
-			expect(typeof logger.child).toBe('function');
-		});
-	});
+    it('level "silent" suppresses error output', () => {
+      const logger = new Logger({ level: 'silent' });
 
-	// ─────────────────────────────────────────────────────────────────────
-	// Level gating
-	// ─────────────────────────────────────────────────────────────────────
+      logger.error('hello');
+      expect(consoleSpies.error).not.toHaveBeenCalled();
+    });
 
-	describe('level gating', () => {
-		it('silent suppresses every level', () => {
-			const logger = new Logger({ level: 'silent' });
-			logger.error('e');
-			logger.warn('w');
-			logger.info('i');
-			logger.debug('d');
-			logger.trace('t');
-			expect(consoleSpies.error).not.toHaveBeenCalled();
-			expect(consoleSpies.warn).not.toHaveBeenCalled();
-			expect(consoleSpies.info).not.toHaveBeenCalled();
-			expect(consoleSpies.debug).not.toHaveBeenCalled();
-			expect(consoleSpies.trace).not.toHaveBeenCalled();
-		});
+    it('honors explicit prefix option', () => {
+      const logger = new Logger({ prefix: 'custom' });
 
-		it('error allows only error', () => {
-			const logger = new Logger({ level: 'error' });
-			logger.error('e');
-			logger.warn('w');
-			logger.info('i');
-			logger.debug('d');
-			expect(consoleSpies.error).toHaveBeenCalled();
-			expect(consoleSpies.warn).not.toHaveBeenCalled();
-			expect(consoleSpies.info).not.toHaveBeenCalled();
-			expect(consoleSpies.debug).not.toHaveBeenCalled();
-		});
+      logger.info('hello');
+      expect(consoleSpies.info).toHaveBeenCalledWith('[custom]', 'hello');
+    });
 
-		it('warn allows error + warn', () => {
-			const logger = new Logger({ level: 'warn' });
-			logger.error('e');
-			logger.warn('w');
-			logger.info('i');
-			expect(consoleSpies.error).toHaveBeenCalled();
-			expect(consoleSpies.warn).toHaveBeenCalled();
-			expect(consoleSpies.info).not.toHaveBeenCalled();
-		});
+    it('Logger satisfies the ILogger interface', () => {
+      const logger: ILogger = new Logger();
 
-		it('info allows error + warn + info', () => {
-			const logger = new Logger({ level: 'info' });
-			logger.error('e');
-			logger.warn('w');
-			logger.info('i');
-			logger.debug('d');
-			expect(consoleSpies.info).toHaveBeenCalled();
-			expect(consoleSpies.debug).not.toHaveBeenCalled();
-		});
+      expect(typeof logger.trace).toBe('function');
+      expect(typeof logger.debug).toBe('function');
+      expect(typeof logger.info).toBe('function');
+      expect(typeof logger.warn).toBe('function');
+      expect(typeof logger.error).toBe('function');
+      expect(typeof logger.level).toBe('function');
+      expect(typeof logger.addSink).toBe('function');
+      expect(typeof logger.child).toBe('function');
+    });
+  });
 
-		it('debug allows error + warn + info + debug', () => {
-			const logger = new Logger({ level: 'debug' });
-			logger.debug('d');
-			logger.trace('t');
-			expect(consoleSpies.debug).toHaveBeenCalled();
-			expect(consoleSpies.trace).not.toHaveBeenCalled();
-		});
+  // ─────────────────────────────────────────────────────────────────────
+  // Level gating
+  // ─────────────────────────────────────────────────────────────────────
 
-		it('trace allows everything', () => {
-			const logger = new Logger({ level: 'trace' });
-			logger.trace('t');
-			expect(consoleSpies.trace).toHaveBeenCalled();
-		});
+  describe('level gating', () => {
+    it('silent suppresses every level', () => {
+      const logger = new Logger({ level: 'silent' });
 
-		it('level() switches level at runtime', () => {
-			const logger = new Logger({ level: 'silent' });
-			logger.error('first');
-			expect(consoleSpies.error).not.toHaveBeenCalled();
-			logger.level('error');
-			logger.error('second');
-			expect(consoleSpies.error).toHaveBeenCalled();
-		});
+      logger.error('e');
+      logger.warn('w');
+      logger.info('i');
+      logger.debug('d');
+      logger.trace('t');
+      expect(consoleSpies.error).not.toHaveBeenCalled();
+      expect(consoleSpies.warn).not.toHaveBeenCalled();
+      expect(consoleSpies.info).not.toHaveBeenCalled();
+      expect(consoleSpies.debug).not.toHaveBeenCalled();
+      expect(consoleSpies.trace).not.toHaveBeenCalled();
+    });
 
-		it('level("debug") enables debug output', () => {
-			const logger = new Logger({ level: 'silent' });
-			logger.level('debug');
-			logger.debug('hello');
-			expect(consoleSpies.debug).toHaveBeenCalled();
-		});
+    it('error allows only error', () => {
+      const logger = new Logger({ level: 'error' });
 
-		it('level("info") suppresses debug output', () => {
-			const logger = new Logger({ level: 'debug' });
-			logger.level('info');
-			logger.debug('hello');
-			expect(consoleSpies.debug).not.toHaveBeenCalled();
-		});
-	});
+      logger.error('e');
+      logger.warn('w');
+      logger.info('i');
+      logger.debug('d');
+      expect(consoleSpies.error).toHaveBeenCalled();
+      expect(consoleSpies.warn).not.toHaveBeenCalled();
+      expect(consoleSpies.info).not.toHaveBeenCalled();
+      expect(consoleSpies.debug).not.toHaveBeenCalled();
+    });
 
-	// ─────────────────────────────────────────────────────────────────────
-	// addSink()
-	// ─────────────────────────────────────────────────────────────────────
+    it('warn allows error + warn', () => {
+      const logger = new Logger({ level: 'warn' });
 
-	describe('addSink()', () => {
-		it('routes log lines to the sink', () => {
-			const logger = new Logger();
-			const sink = vi.fn();
-			logger.addSink(sink);
-			logger.info('hello', 'world');
-			expect(sink).toHaveBeenCalledWith('info', '[nmplayer]', ['hello', 'world']);
-		});
+      logger.error('e');
+      logger.warn('w');
+      logger.info('i');
+      expect(consoleSpies.error).toHaveBeenCalled();
+      expect(consoleSpies.warn).toHaveBeenCalled();
+      expect(consoleSpies.info).not.toHaveBeenCalled();
+    });
 
-		it('returns an unsubscribe function', () => {
-			const logger = new Logger();
-			const sink = vi.fn();
-			const unsubscribe = logger.addSink(sink);
-			expect(typeof unsubscribe).toBe('function');
-			unsubscribe();
-			logger.info('hello');
-			expect(sink).not.toHaveBeenCalled();
-		});
+    it('info allows error + warn + info', () => {
+      const logger = new Logger({ level: 'info' });
 
-		it('multiple sinks all receive each log line', () => {
-			const logger = new Logger();
-			const sinkA = vi.fn();
-			const sinkB = vi.fn();
-			logger.addSink(sinkA);
-			logger.addSink(sinkB);
-			logger.info('hello');
-			expect(sinkA).toHaveBeenCalledTimes(1);
-			expect(sinkB).toHaveBeenCalledTimes(1);
-		});
+      logger.error('e');
+      logger.warn('w');
+      logger.info('i');
+      logger.debug('d');
+      expect(consoleSpies.info).toHaveBeenCalled();
+      expect(consoleSpies.debug).not.toHaveBeenCalled();
+    });
 
-		it('console fallback is suppressed when at least one sink is registered', () => {
-			const logger = new Logger();
-			const sink = vi.fn();
-			logger.addSink(sink);
-			logger.info('hello');
-			expect(consoleSpies.info).not.toHaveBeenCalled();
-			expect(sink).toHaveBeenCalled();
-		});
+    it('debug allows error + warn + info + debug', () => {
+      const logger = new Logger({ level: 'debug' });
 
-		it('sinks receive even level-gated calls — wait, they do NOT — gated calls return before sink dispatch', () => {
-			const logger = new Logger({ level: 'silent' });
-			const sink = vi.fn();
-			logger.addSink(sink);
-			logger.error('hello');
-			expect(sink).not.toHaveBeenCalled();
-		});
+      logger.debug('d');
+      logger.trace('t');
+      expect(consoleSpies.debug).toHaveBeenCalled();
+      expect(consoleSpies.trace).not.toHaveBeenCalled();
+    });
 
-		it('throwing sink does not kill the dispatch chain', () => {
-			const logger = new Logger();
-			const throwingSink = vi.fn(() => {
-				throw new Error('boom');
-			});
-			const normalSink = vi.fn();
-			logger.addSink(throwingSink);
-			logger.addSink(normalSink);
-			expect(() => logger.info('hello')).not.toThrow();
-			expect(normalSink).toHaveBeenCalled();
-		});
-	});
+    it('trace allows everything', () => {
+      const logger = new Logger({ level: 'trace' });
 
-	// ─────────────────────────────────────────────────────────────────────
-	// child()
-	// ─────────────────────────────────────────────────────────────────────
+      logger.trace('t');
+      expect(consoleSpies.trace).toHaveBeenCalled();
+    });
 
-	describe('child()', () => {
-		it('returns a new Logger with the prefix appended', () => {
-			const parent = new Logger({ prefix: 'parent' });
-			const child = parent.child('child');
-			child.info('hello');
-			expect(consoleSpies.info).toHaveBeenCalledWith('[parent][child]', 'hello');
-		});
+    it('level() switches level at runtime', () => {
+      const logger = new Logger({ level: 'silent' });
 
-		it('child inherits the parent level', () => {
-			const parent = new Logger({ level: 'silent' });
-			const child = parent.child('child');
-			child.error('hello');
-			expect(consoleSpies.error).not.toHaveBeenCalled();
-		});
+      logger.error('first');
+      expect(consoleSpies.error).not.toHaveBeenCalled();
+      logger.level('error');
+      logger.error('second');
+      expect(consoleSpies.error).toHaveBeenCalled();
+    });
 
-		it('child shares the parent sinks at creation time', () => {
-			const parent = new Logger();
-			const sink = vi.fn();
-			parent.addSink(sink);
-			const child = parent.child('child');
-			child.info('hello');
-			expect(sink).toHaveBeenCalled();
-		});
+    it('level("debug") enables debug output', () => {
+      const logger = new Logger({ level: 'silent' });
 
-		it('a sink added to the parent after the child was made reaches the child', () => {
-			const parent = new Logger();
-			const child = parent.child('child');
-			const sink = vi.fn();
-			parent.addSink(sink);
-			child.info('hello');
-			expect(sink).toHaveBeenCalledWith('info', '[nmplayer][child]', ['hello']);
-		});
+      logger.level('debug');
+      logger.debug('hello');
+      expect(consoleSpies.debug).toHaveBeenCalled();
+    });
 
-		it('a sink removed from the parent stops receiving child output', () => {
-			const parent = new Logger();
-			const sink = vi.fn();
-			const off = parent.addSink(sink);
-			const child = parent.child('child');
-			off();
-			child.info('hello');
-			expect(sink).not.toHaveBeenCalled();
-		});
+    it('level("info") suppresses debug output', () => {
+      const logger = new Logger({ level: 'debug' });
 
-		it('a parent level change after the child was made reaches the child', () => {
-			const parent = new Logger({ level: 'info' });
-			const child = parent.child('child');
-			parent.level('debug');
-			child.debug('hello');
-			expect(consoleSpies.debug).toHaveBeenCalledWith('[nmplayer][child]', 'hello');
-			expect(child.level()).toBe('debug');
-		});
+      logger.level('info');
+      logger.debug('hello');
+      expect(consoleSpies.debug).not.toHaveBeenCalled();
+    });
+  });
 
-		it('a level set on the child wins over the parent', () => {
-			const parent = new Logger({ level: 'info' });
-			const child = parent.child('child');
-			child.level('error');
-			parent.level('trace');
-			child.info('hello');
-			expect(consoleSpies.info).not.toHaveBeenCalled();
-		});
+  // ─────────────────────────────────────────────────────────────────────
+  // addSink()
+  // ─────────────────────────────────────────────────────────────────────
 
-		it('child satisfies ILogger', () => {
-			const parent = new Logger();
-			const child: ILogger = parent.child('child');
-			expect(typeof child.error).toBe('function');
-			expect(typeof child.addSink).toBe('function');
-			expect(typeof child.child).toBe('function');
-		});
-	});
+  describe('addSink()', () => {
+    it('routes log lines to the sink', () => {
+      const logger = new Logger();
+      const sink = vi.fn();
+
+      logger.addSink(sink);
+      logger.info('hello', 'world');
+      expect(sink).toHaveBeenCalledWith('info', '[nmplayer]', ['hello', 'world']);
+    });
+
+    it('returns an unsubscribe function', () => {
+      const logger = new Logger();
+      const sink = vi.fn();
+      const unsubscribe = logger.addSink(sink);
+
+      expect(typeof unsubscribe).toBe('function');
+      unsubscribe();
+      logger.info('hello');
+      expect(sink).not.toHaveBeenCalled();
+    });
+
+    it('multiple sinks all receive each log line', () => {
+      const logger = new Logger();
+      const sinkA = vi.fn();
+      const sinkB = vi.fn();
+
+      logger.addSink(sinkA);
+      logger.addSink(sinkB);
+      logger.info('hello');
+      expect(sinkA).toHaveBeenCalledTimes(1);
+      expect(sinkB).toHaveBeenCalledTimes(1);
+    });
+
+    it('console fallback is suppressed when at least one sink is registered', () => {
+      const logger = new Logger();
+      const sink = vi.fn();
+
+      logger.addSink(sink);
+      logger.info('hello');
+      expect(consoleSpies.info).not.toHaveBeenCalled();
+      expect(sink).toHaveBeenCalled();
+    });
+
+    it('sinks receive even level-gated calls — wait, they do NOT — gated calls return before sink dispatch', () => {
+      const logger = new Logger({ level: 'silent' });
+      const sink = vi.fn();
+
+      logger.addSink(sink);
+      logger.error('hello');
+      expect(sink).not.toHaveBeenCalled();
+    });
+
+    it('throwing sink does not kill the dispatch chain', () => {
+      const logger = new Logger();
+      const throwingSink = vi.fn(() => {
+        throw new Error('boom');
+      });
+      const normalSink = vi.fn();
+
+      logger.addSink(throwingSink);
+      logger.addSink(normalSink);
+      expect(() => logger.info('hello')).not.toThrow();
+      expect(normalSink).toHaveBeenCalled();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // child()
+  // ─────────────────────────────────────────────────────────────────────
+
+  describe('child()', () => {
+    it('returns a new Logger with the prefix appended', () => {
+      const parent = new Logger({ prefix: 'parent' });
+      const child = parent.child('child');
+
+      child.info('hello');
+      expect(consoleSpies.info).toHaveBeenCalledWith('[parent][child]', 'hello');
+    });
+
+    it('child inherits the parent level', () => {
+      const parent = new Logger({ level: 'silent' });
+      const child = parent.child('child');
+
+      child.error('hello');
+      expect(consoleSpies.error).not.toHaveBeenCalled();
+    });
+
+    it('child shares the parent sinks at creation time', () => {
+      const parent = new Logger();
+      const sink = vi.fn();
+
+      parent.addSink(sink);
+      const child = parent.child('child');
+
+      child.info('hello');
+      expect(sink).toHaveBeenCalled();
+    });
+
+    it('a sink added to the parent after the child was made reaches the child', () => {
+      const parent = new Logger();
+      const child = parent.child('child');
+      const sink = vi.fn();
+
+      parent.addSink(sink);
+      child.info('hello');
+      expect(sink).toHaveBeenCalledWith('info', '[nmplayer][child]', ['hello']);
+    });
+
+    it('a sink removed from the parent stops receiving child output', () => {
+      const parent = new Logger();
+      const sink = vi.fn();
+      const off = parent.addSink(sink);
+      const child = parent.child('child');
+
+      off();
+      child.info('hello');
+      expect(sink).not.toHaveBeenCalled();
+    });
+
+    it('a parent level change after the child was made reaches the child', () => {
+      const parent = new Logger({ level: 'info' });
+      const child = parent.child('child');
+
+      parent.level('debug');
+      child.debug('hello');
+      expect(consoleSpies.debug).toHaveBeenCalledWith('[nmplayer][child]', 'hello');
+      expect(child.level()).toBe('debug');
+    });
+
+    it('a level set on the child wins over the parent', () => {
+      const parent = new Logger({ level: 'info' });
+      const child = parent.child('child');
+
+      child.level('error');
+      parent.level('trace');
+      child.info('hello');
+      expect(consoleSpies.info).not.toHaveBeenCalled();
+    });
+
+    it('child satisfies ILogger', () => {
+      const parent = new Logger();
+      const child: ILogger = parent.child('child');
+
+      expect(typeof child.error).toBe('function');
+      expect(typeof child.addSink).toBe('function');
+      expect(typeof child.child).toBe('function');
+    });
+  });
 });

@@ -7,9 +7,9 @@
 // -----------------------------------------------------------------------------
 
 import type {
-	ErrorData,
-	FragLoadedData,
-	LevelSwitchedData,
+  ErrorData,
+  FragLoadedData,
+  LevelSwitchedData,
 } from 'hls.js';
 
 import type { StreamRegistry } from './registry';
@@ -24,28 +24,28 @@ import type { StreamRegistry } from './registry';
  * - `encrypted` — an encrypted segment was encountered; DRM key exchange is pending.
  * - `error` — a fatal or non-fatal error occurred; data carries the raw error.
  */
-export type StreamEvent
-	= | 'manifest-loaded'
-		| 'level-switched'
-		| 'level-considered'
-		| 'fragment-loaded'
-		| 'encrypted'
-		| 'error';
+export type StreamEvent =
+  | 'manifest-loaded' |
+  'level-switched' |
+  'level-considered' |
+  'fragment-loaded' |
+  'encrypted' |
+  'error';
 
 /** Payload for `level-considered` — ABR evaluated but did not switch. */
 export interface StreamLevelConsideredPayload {
-	/** Index of the candidate level. */
-	level: number;
-	/** Reason the switch was not made. */
-	reason: string;
+  /** Index of the candidate level. */
+  level: number;
+  /** Reason the switch was not made. */
+  reason: string;
 }
 
 /** Payload for `encrypted` — an encrypted segment was encountered. */
 export interface StreamEncryptedPayload {
-	/** Key URI from the manifest. */
-	keyUri: string;
-	/** Key format identifier (e.g. `'identity'`, `'com.apple.streamingkeydelivery'`). */
-	keyFormat?: string;
+  /** Key URI from the manifest. */
+  keyUri: string;
+  /** Key format identifier (e.g. `'identity'`, `'com.apple.streamingkeydelivery'`). */
+  keyFormat?: string;
 }
 
 /**
@@ -60,35 +60,35 @@ export type StreamErrorPayload = MediaError | ErrorData;
  * or casts needed at the call site.
  */
 export interface StreamEventPayloadMap {
-	/** Manifest or metadata parsed; quality levels are now available. */
-	'manifest-loaded': undefined;
-	/** ABR or explicit call switched to a new quality rendition. */
-	'level-switched': LevelSwitchedData;
-	/** ABR evaluated a candidate level but did not switch (informational). */
-	'level-considered': StreamLevelConsideredPayload;
-	/** A media segment finished downloading. */
-	'fragment-loaded': FragLoadedData;
-	/** An encrypted segment was encountered; DRM key exchange is pending. */
-	'encrypted': StreamEncryptedPayload;
-	/** A fatal or non-fatal error occurred. */
-	'error': StreamErrorPayload;
+  /** Manifest or metadata parsed; quality levels are now available. */
+  'manifest-loaded': undefined;
+  /** ABR or explicit call switched to a new quality rendition. */
+  'level-switched': LevelSwitchedData;
+  /** ABR evaluated a candidate level but did not switch (informational). */
+  'level-considered': StreamLevelConsideredPayload;
+  /** A media segment finished downloading. */
+  'fragment-loaded': FragLoadedData;
+  /** An encrypted segment was encountered; DRM key exchange is pending. */
+  encrypted: StreamEncryptedPayload;
+  /** A fatal or non-fatal error occurred. */
+  error: StreamErrorPayload;
 }
 
 /** One quality rendition from an adaptive playlist, or a description of a fixed-bitrate source. */
 export interface StreamLevel {
-	bitrate: number;
-	height?: number;
-	width?: number;
-	label: string;
-	index?: number;
+  bitrate: number;
+  height?: number;
+  width?: number;
+  label: string;
+  index?: number;
 }
 
 export const STREAM_SOURCE_STATE = {
-	IDLE: 'idle',
-	LOADING: 'loading',
-	READY: 'ready',
-	PLAYING: 'playing',
-	ERROR: 'error',
+  IDLE: 'idle',
+  LOADING: 'loading',
+  READY: 'ready',
+  PLAYING: 'playing',
+  ERROR: 'error',
 } as const;
 
 /** Lifecycle state reported by `IStreamSource.state()`. */
@@ -100,11 +100,11 @@ export type StreamSourceState = typeof STREAM_SOURCE_STATE[keyof typeof STREAM_S
  * Populated from `navigator.mediaCapabilities` and the player's config.
  */
 export interface StreamCapabilities {
-	width?: number;
-	height?: number;
-	bitrate?: number;
-	framerate?: number;
-	preferred?: 'smooth' | 'powerEfficient';
+  width?: number;
+  height?: number;
+  bitrate?: number;
+  framerate?: number;
+  preferred?: 'smooth' | 'powerEfficient';
 }
 
 /**
@@ -117,37 +117,37 @@ export interface StreamCapabilities {
  * backend code does not need to branch on protocol.
  */
 export interface IStreamSource {
-	readonly kind: 'native' | 'hls' | 'dash';
+  readonly kind: 'native' | 'hls' | 'dash';
 
-	/** Wire this source to a media element. Resolves once metadata is available. */
-	attach(element: HTMLMediaElement): Promise<void>;
+  /** Wire this source to a media element. Resolves once metadata is available. */
+  attach(element: HTMLMediaElement): Promise<void>;
 
-	/** Remove this source from the element without releasing internal state. */
-	detach(): void;
+  /** Remove this source from the element without releasing internal state. */
+  detach(): void;
 
-	/** Detach and release all internal state. The instance is unusable after this. */
-	destroy(): void;
+  /** Detach and release all internal state. The instance is unusable after this. */
+  destroy(): void;
 
-	/** Current lifecycle state. */
-	state(): StreamSourceState;
+  /** Current lifecycle state. */
+  state(): StreamSourceState;
 
-	/** All renditions reported by the manifest. Empty for fixed-bitrate sources. */
-	getLevels?(): StreamLevel[];
+  /** All renditions reported by the manifest. Empty for fixed-bitrate sources. */
+  getLevels?(): StreamLevel[];
 
-	/** Force a specific rendition index. Pass `-1` to return to ABR. */
-	setLevel?(idx: number): void;
+  /** Force a specific rendition index. Pass `-1` to return to ABR. */
+  setLevel?(idx: number): void;
 
-	/** Rendition currently driving playback, or `undefined` before the first switch. */
-	getCurrentLevel?(): StreamLevel | undefined;
+  /** Rendition currently driving playback, or `undefined` before the first switch. */
+  getCurrentLevel?(): StreamLevel | undefined;
 
-	/**
-	 * Replace the default ABR selector with a custom function. Called before each
-	 * level switch with the full level list and current network context.
-	 */
-	setLevelStrategy?(fn: (levels: StreamLevel[], ctx: { bandwidth: number; bufferedSeconds: number }) => number): void;
+  /**
+   * Replace the default ABR selector with a custom function. Called before each
+   * level switch with the full level list and current network context.
+   */
+  setLevelStrategy?(fn: (levels: StreamLevel[], ctx: { bandwidth: number; bufferedSeconds: number }) => number): void;
 
-	on<E extends StreamEvent>(event: E, fn: (data: StreamEventPayloadMap[E]) => void): void;
-	off<E extends StreamEvent>(event: E, fn: (data: StreamEventPayloadMap[E]) => void): void;
+  on<E extends StreamEvent>(event: E, fn: (data: StreamEventPayloadMap[E]) => void): void;
+  off<E extends StreamEvent>(event: E, fn: (data: StreamEventPayloadMap[E]) => void): void;
 }
 
 /**
@@ -157,14 +157,14 @@ export interface IStreamSource {
  * `runInterceptors()`; callers do not set it directly.
  */
 export interface StreamFactoryOptions {
-	url: string;
-	contentType?: string;
-	accessToken?: string | (() => string);
-	/** Per-stream headers — merged over any global auth headers for this item only. */
-	headers?: Record<string, string>;
-	/** Capability hints from the device. */
-	capabilities?: StreamCapabilities;
-	registry?: StreamRegistry;
+  url: string;
+  contentType?: string;
+  accessToken?: string | (() => string);
+  /** Per-stream headers — merged over any global auth headers for this item only. */
+  headers?: Record<string, string>;
+  /** Capability hints from the device. */
+  capabilities?: StreamCapabilities;
+  registry?: StreamRegistry;
 }
 
 /**
@@ -175,17 +175,17 @@ export interface StreamFactoryOptions {
  * your factory can handle it. `create` is called at most once per resolution.
  */
 export interface IStreamFactory {
-	readonly id: string;
+  readonly id: string;
 
-	/**
-	 * Return `true` if this factory can handle the given URL and content-type.
-	 * The optional `capabilities` argument lets the factory decline when the
-	 * device cannot decode what the URL points to.
-	 */
-	canPlay(url: string, contentType?: string, capabilities?: StreamCapabilities): boolean;
+  /**
+   * Return `true` if this factory can handle the given URL and content-type.
+   * The optional `capabilities` argument lets the factory decline when the
+   * device cannot decode what the URL points to.
+   */
+  canPlay(url: string, contentType?: string, capabilities?: StreamCapabilities): boolean;
 
-	/** Instantiate an `IStreamSource` for the given options. */
-	create(opts: StreamFactoryOptions): IStreamSource;
+  /** Instantiate an `IStreamSource` for the given options. */
+  create(opts: StreamFactoryOptions): IStreamSource;
 }
 
 /**

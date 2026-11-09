@@ -36,50 +36,59 @@ import type { QualityLevel } from '../../types/tracks';
  * returns null on a ladder with no HDR in it.
  */
 export function sizeAbrCeiling(
-	levels: ReadonlyArray<QualityLevel>,
-	paneWidthPx: number,
-	paneHeightPx: number,
+  levels: ReadonlyArray<QualityLevel>,
+  paneWidthPx: number,
+  paneHeightPx: number,
 ): QualityLevel | null {
-	// A pane measured before layout reports zero. Capping on that answer pins the
-	// stream to its lowest rung for the whole session, so an unmeasured pane must
-	// never cap at all.
-	if (paneWidthPx <= 0 || paneHeightPx <= 0)
-		return null;
-	if (levels.length === 0)
-		return null;
+  // A pane measured before layout reports zero. Capping on that answer pins the
+  // stream to its lowest rung for the whole session, so an unmeasured pane must
+  // never cap at all.
+  if (paneWidthPx <= 0 || paneHeightPx <= 0)
+    return null;
 
-	// An undeclared width is not a narrow width. The native ladder carries no
-	// widths whatsoever, so testing a missing one against the pane would drop
-	// every rung there and land the port on a taller rendition than the web —
-	// the divergence the port exists to remove. Height is the mandatory signal;
-	// width only narrows the field when a rung actually states it.
-	const covering = levels.filter((level) => {
-		const heightCovers = (level.height ?? 0) >= paneHeightPx;
-		const widthCovers = level.width == null || level.width >= paneWidthPx;
-		return heightCovers && widthCovers;
-	});
-	if (covering.length === 0)
-		return null;
+  if (levels.length === 0)
+    return null;
 
-	// `height` is optional on the web's QualityLevel — an audio-only rendition has
-	// none, and so does a ladder a backend has only half described. Nought sorts it
-	// below every real rung, which is what an unknown height deserves when the
-	// question is "the least this pane can be fed without going soft".
-	const ceiling = covering.reduce((best, level) => {
-		const height = level.height ?? 0;
-		const bestHeight = best.height ?? 0;
+  // An undeclared width is not a narrow width. The native ladder carries no
+  // widths whatsoever, so testing a missing one against the pane would drop
+  // every rung there and land the port on a taller rendition than the web —
+  // the divergence the port exists to remove. Height is the mandatory signal;
+  // width only narrows the field when a rung actually states it.
+  const covering = levels.filter((level) => {
+    const heightCovers = (level.height ?? 0) >= paneHeightPx;
+    const widthCovers = level.width == null || level.width >= paneWidthPx;
 
-		if (height !== bestHeight)
-			return height < bestHeight ? level : best;
+    return heightCovers && widthCovers;
+  });
 
-		return (level.bitrate ?? 0) < (best.bitrate ?? 0) ? level : best;
-	});
+  if (covering.length === 0)
+    return null;
 
-	const tallest = levels.reduce((max, level) => Math.max(max, level.height ?? 0), 0);
-	if ((ceiling.height ?? 0) >= tallest)
-		return null;
+  // `height` is optional on the web's QualityLevel — an audio-only rendition has
+  // none, and so does a ladder a backend has only half described. Nought sorts it
+  // below every real rung, which is what an unknown height deserves when the
+  // question is "the least this pane can be fed without going soft".
+  const ceiling = covering.reduce((best, level) => {
+    const height = level.height ?? 0;
+    const bestHeight = best.height ?? 0;
 
-	return ceiling;
+    if (height !== bestHeight) {
+      return height < bestHeight
+        ? level
+        : best;
+    }
+
+    return (level.bitrate ?? 0) < (best.bitrate ?? 0)
+      ? level
+      : best;
+  });
+
+  const tallest = levels.reduce((max, level) => Math.max(max, level.height ?? 0), 0);
+
+  if ((ceiling.height ?? 0) >= tallest)
+    return null;
+
+  return ceiling;
 }
 
 /**
@@ -94,23 +103,27 @@ export function sizeAbrCeiling(
  * rung too high.
  */
 export function panePixels(
-	element: { getBoundingClientRect(): { width: number; height: number } } | null | undefined,
+  element: { getBoundingClientRect(): { width: number; height: number } } | null | undefined,
 ): { widthPx: number; heightPx: number } {
-	if (!element) {
-		return {
-			widthPx: 0,
-			heightPx: 0,
-		};
-	}
+  if (!element) {
+    return {
+      widthPx: 0,
+      heightPx: 0,
+    };
+  }
 
-	const rect = element.getBoundingClientRect();
-	const reported = typeof window === 'undefined' ? undefined : window.devicePixelRatio;
-	const scale = typeof reported === 'number' && Number.isFinite(reported) && reported > 0 ? reported : 1;
+  const rect = element.getBoundingClientRect();
+  const reported = typeof window === 'undefined'
+    ? undefined
+    : window.devicePixelRatio;
+  const scale = typeof reported === 'number' && Number.isFinite(reported) && reported > 0
+    ? reported
+    : 1;
 
-	return {
-		widthPx: Math.round(rect.width * scale),
-		heightPx: Math.round(rect.height * scale),
-	};
+  return {
+    widthPx: Math.round(rect.width * scale),
+    heightPx: Math.round(rect.height * scale),
+  };
 }
 
 /**
@@ -121,16 +134,22 @@ export function panePixels(
  * whichever constraint it clears.
  */
 export function abrCeiling(hdr: QualityLevel | null, size: QualityLevel | null): QualityLevel | null {
-	if (hdr === null)
-		return size;
-	if (size === null)
-		return hdr;
+  if (hdr === null)
+    return size;
 
-	const hdrHeight = hdr.height ?? 0;
-	const sizeHeight = size.height ?? 0;
+  if (size === null)
+    return hdr;
 
-	if (hdrHeight !== sizeHeight)
-		return hdrHeight < sizeHeight ? hdr : size;
+  const hdrHeight = hdr.height ?? 0;
+  const sizeHeight = size.height ?? 0;
 
-	return (hdr.bitrate ?? 0) <= (size.bitrate ?? 0) ? hdr : size;
+  if (hdrHeight !== sizeHeight) {
+    return hdrHeight < sizeHeight
+      ? hdr
+      : size;
+  }
+
+  return (hdr.bitrate ?? 0) <= (size.bitrate ?? 0)
+    ? hdr
+    : size;
 }

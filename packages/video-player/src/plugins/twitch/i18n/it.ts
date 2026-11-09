@@ -7,11 +7,11 @@
 // -----------------------------------------------------------------------------
 
 const translations = {
-	'plugin.twitch.error.clip-unavailable': 'Twitch non ha alcun file riproducibile per la clip {slug}',
-	'plugin.twitch.channel.offline': '{channel} è offline',
-	'plugin.twitch.channel.ended': 'Lo stream di {channel} è terminato',
-	'plugin.twitch.setting.use-twitch-player': 'Usa il player di Twitch',
-	'plugin.twitch.subtitle.enabled': 'Attivati',
+  'plugin.twitch.error.clip-unavailable': 'Twitch non ha alcun file riproducibile per la clip {slug}',
+  'plugin.twitch.channel.offline': '{channel} è offline',
+  'plugin.twitch.channel.ended': 'Lo stream di {channel} è terminato',
+  'plugin.twitch.setting.use-twitch-player': 'Usa il player di Twitch',
+  'plugin.twitch.subtitle.enabled': 'Attivati',
 };
 
 export default translations;

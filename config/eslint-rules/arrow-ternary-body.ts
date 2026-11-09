@@ -6,7 +6,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
-import { AST_NODE_TYPES, ESLintUtils, type TSESLint } from '@typescript-eslint/utils';
+import type { TSESLint } from '@typescript-eslint/utils';
+import { AST_NODE_TYPES, ESLintUtils } from '@typescript-eslint/utils';
 
 // Owner 2026-10-13 called `(id) => (te(key) ? t(key) : id)` messy. So an arrow whose body is a
 // ternary starts that ternary on the next line, one level in, without the wrapping brackets;

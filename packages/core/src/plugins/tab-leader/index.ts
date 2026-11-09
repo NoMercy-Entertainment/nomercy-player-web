@@ -11,54 +11,54 @@ import { Plugin } from '../../core/plugin';
 
 /** Options for {@link TabLeaderPlugin}. */
 export interface TabLeaderOptions {
-	/**
-	 * What to do when this tab loses leadership (another tab takes over).
-	 *
-	 * - `'pause'` — calls `player.pause()`. Default.
-	 * - `'mute'` — calls `player.mute()` so audio is silenced but playback
-	 *   continues (useful for background tabs that should keep buffering).
-	 */
-	onLost?: 'pause' | 'mute';
+  /**
+   * What to do when this tab loses leadership (another tab takes over).
+   *
+   * - `'pause'` — calls `player.pause()`. Default.
+   * - `'mute'` — calls `player.mute()` so audio is silenced but playback
+   *   continues (useful for background tabs that should keep buffering).
+   */
+  onLost?: 'pause' | 'mute';
 
-	/**
-	 * When `true`, the tab attempts to reclaim leadership whenever it becomes
-	 * visible (via `document.visibilitychange`). Default `true`.
-	 */
-	handoffOnVisible?: boolean;
+  /**
+   * When `true`, the tab attempts to reclaim leadership whenever it becomes
+   * visible (via `document.visibilitychange`). Default `true`.
+   */
+  handoffOnVisible?: boolean;
 
-	/**
-	 * Override the lock key used for the Web Locks API election. The default
-	 * key (`'nomercy-player-leader'`) is shared across all instances on the
-	 * same origin — one tab plays at a time globally.
-	 *
-	 * Provide a function that returns a per-player or per-session key to scope
-	 * leadership to a specific player or content item.
-	 */
-	getLockKey?: () => string;
+  /**
+   * Override the lock key used for the Web Locks API election. The default
+   * key (`'nomercy-player-leader'`) is shared across all instances on the
+   * same origin — one tab plays at a time globally.
+   *
+   * Provide a function that returns a per-player or per-session key to scope
+   * leadership to a specific player or content item.
+   */
+  getLockKey?: () => string;
 }
 
 /** Events emitted by {@link TabLeaderPlugin}. */
 export interface TabLeaderEvents {
-	/**
-	 * Fired when this tab successfully acquires the leader lock and is now the
-	 * only tab allowed to play.
-	 */
-	'leader-acquired': void;
+  /**
+   * Fired when this tab successfully acquires the leader lock and is now the
+   * only tab allowed to play.
+   */
+  'leader-acquired': void;
 
-	/**
-	 * Fired when this tab releases the lock — either via `releaseLock()` / `dispose()`,
-	 * or via the `visibilitychange` handoff path.
-	 */
-	'leader-released': void;
+  /**
+   * Fired when this tab releases the lock — either via `releaseLock()` / `dispose()`,
+   * or via the `visibilitychange` handoff path.
+   */
+  'leader-released': void;
 
-	/**
-	 * Fired when the Web Locks API is not available in the current environment.
-	 * The plugin is a no-op in those environments — it does not enforce
-	 * single-tab playback.
-	 */
-	'unsupported': void;
+  /**
+   * Fired when the Web Locks API is not available in the current environment.
+   * The plugin is a no-op in those environments — it does not enforce
+   * single-tab playback.
+   */
+  unsupported: void;
 
-	[key: string]: unknown;
+  [key: string]: unknown;
 }
 
 const DEFAULT_LOCK_KEY = 'nomercy-player-leader';
@@ -98,198 +98,212 @@ const DEFAULT_LOCK_KEY = 'nomercy-player-leader';
  * ```
  */
 export class TabLeaderPlugin<P extends IPlayer<BaseEventMap> = IPlayer> extends Plugin<P, TabLeaderOptions, TabLeaderEvents> {
-	static override readonly id: string = 'tab-leader';
-	static override readonly version: string = '2.0.0';
-	static override readonly description: string = 'Web Locks-based cross-tab leader election so only one tab plays at a time';
+  static override readonly id: string = 'tab-leader';
+  static override readonly version: string = '2.0.0';
+  static override readonly description: string = 'Web Locks-based cross-tab leader election so only one tab plays at a time';
 
-	private _isLeader: boolean = false;
-	/** Resolves the held-lock callback so the lock auto-releases when called. */
-	private _release: (() => void) | null = null;
-	/** Outstanding acquire promise — guards against duplicate election calls. */
-	private _pending: Promise<void> | null = null;
-	/** Aborts a still-queued (not yet granted) lock request on release/dispose. */
-	private _abortController: AbortController | null = null;
+  private _isLeader: boolean = false;
+  /** Resolves the held-lock callback so the lock auto-releases when called. */
+  private _release: (() => void) | null = null;
+  /** Outstanding acquire promise — guards against duplicate election calls. */
+  private _pending: Promise<void> | null = null;
+  /** Aborts a still-queued (not yet granted) lock request on release/dispose. */
+  private _abortController: AbortController | null = null;
 
-	/**
-	 * Checks for Web Locks support and initiates the leader-lock request.
-	 * Emits `plugin:tab-leader:unsupported` and returns silently in environments
-	 * that do not support `navigator.locks`.
-	 */
-	override use(): void {
-		if (!this._supported()) {
-			this.emit('unsupported' as keyof TabLeaderEvents);
-			return;
-		}
+  /**
+   * Checks for Web Locks support and initiates the leader-lock request.
+   * Emits `plugin:tab-leader:unsupported` and returns silently in environments
+   * that do not support `navigator.locks`.
+   */
+  override use(): void {
+    if (!this._supported()) {
+      this.emit('unsupported' as keyof TabLeaderEvents);
 
-		if (typeof document !== 'undefined') {
-			this.listen(document, 'visibilitychange', () => {
-				if (document.visibilityState === 'visible' && (this.opts?.handoffOnVisible !== false)) {
-					void this._takeOver();
-				}
-			});
-		}
+      return;
+    }
 
-		this.on('play' as keyof BaseEventMap, (() => {
-			if (!this._isLeader)
-				this._applyLost();
-		}) as never);
+    if (typeof document !== 'undefined') {
+      this.listen(document, 'visibilitychange', () => {
+        if (document.visibilityState === 'visible' && (this.opts?.handoffOnVisible !== false)) {
+          void this._takeOver();
+        }
+      });
+    }
 
-		void this.requestLock();
-	}
+    this.on('play' as keyof BaseEventMap, (() => {
+      if (!this._isLeader) {
+        this._applyLost();
+      }
+    }) as never);
 
-	/**
-	 * Voluntarily releases the leader lock so another waiting tab can take over.
-	 * Web Locks auto-release on page close, so this is a courtesy call — useful
-	 * when you want to hand off immediately (e.g. the user navigates away within
-	 * a SPA without unloading the page).
-	 */
-	override dispose(): void {
-		this.releaseLock();
-	}
+    void this.requestLock();
+  }
 
-	/** Returns `true` when this tab currently holds the leader lock. */
-	isLeader(): boolean {
-		return this._isLeader;
-	}
+  /**
+   * Voluntarily releases the leader lock so another waiting tab can take over.
+   * Web Locks auto-release on page close, so this is a courtesy call — useful
+   * when you want to hand off immediately (e.g. the user navigates away within
+   * a SPA without unloading the page).
+   */
+  override dispose(): void {
+    this.releaseLock();
+  }
 
-	/**
-	 * Request the leader lock. The returned promise stays pending while this
-	 * tab holds the lock and resolves only once the lock is released, not when
-	 * leadership is first acquired. Listen for `plugin:tab-leader:leader-acquired`
-	 * to know when the grant happens.
-	 *
-	 * Calling `requestLock()` while an election is already in progress returns
-	 * the existing pending promise rather than starting a second election.
-	 *
-	 * Emits `plugin:tab-leader:leader-acquired` when the lock is granted.
-	 * No-ops and resolves immediately in environments without Web Locks support.
-	 */
-	requestLock(): Promise<void> {
-		if (!this._supported()) {
-			this.emit('unsupported' as keyof TabLeaderEvents);
-			return Promise.resolve();
-		}
-		if (this._pending)
-			return this._pending;
+  /** Returns `true` when this tab currently holds the leader lock. */
+  isLeader(): boolean {
+    return this._isLeader;
+  }
 
-		return this._acquire(false);
-	}
+  /**
+   * Request the leader lock. The returned promise stays pending while this
+   * tab holds the lock and resolves only once the lock is released, not when
+   * leadership is first acquired. Listen for `plugin:tab-leader:leader-acquired`
+   * to know when the grant happens.
+   *
+   * Calling `requestLock()` while an election is already in progress returns
+   * the existing pending promise rather than starting a second election.
+   *
+   * Emits `plugin:tab-leader:leader-acquired` when the lock is granted.
+   * No-ops and resolves immediately in environments without Web Locks support.
+   */
+  requestLock(): Promise<void> {
+    if (!this._supported()) {
+      this.emit('unsupported' as keyof TabLeaderEvents);
 
-	/** Queue for the lock, or with `steal` take it from the current holder. */
-	private _acquire(steal: boolean): Promise<void> {
-		const key = this.getLockKey();
-		const locks = navigator.locks!;
-		const controller = new AbortController();
-		this._abortController = controller;
-		let granted = false;
+      return Promise.resolve();
+    }
 
-		const pending: Promise<void> = locks.request(key, steal ? { steal: true } : { signal: controller.signal }, () => {
-			granted = true;
-			this._abortController = null;
-			this._isLeader = true;
-			this.emit('leader-acquired' as keyof TabLeaderEvents);
-			return new Promise<void>((resolve) => {
-				this._release = resolve;
-			});
-		}).then(
-			() => {
-				if (this._pending === pending)
-					this._pending = null;
-			},
-			(_err) => {
-				if (this._pending === pending) {
-					this._pending = null;
-					this._abortController = null;
-				}
-				// A granted lock that rejects was stolen by another tab.
-				if (granted && this._isLeader) {
-					this._isLeader = false;
-					this._release = null;
-					this.emit('leader-released' as keyof TabLeaderEvents);
-					this._applyLost();
-				}
-			},
-		);
+    if (this._pending)
+      return this._pending;
 
-		this._pending = pending;
-		return pending;
-	}
+    return this._acquire(false);
+  }
 
-	/** Steal the lock for a visible tab that is not the leader. */
-	private _takeOver(): Promise<void> {
-		if (this._isLeader)
-			return Promise.resolve();
-		this._abortController?.abort();
-		this._abortController = null;
-		this._pending = null;
-		return this._acquire(true);
-	}
+  /** Queue for the lock, or with `steal` take it from the current holder. */
+  private _acquire(steal: boolean): Promise<void> {
+    const key = this.getLockKey();
+    const locks = navigator.locks!;
+    const controller = new AbortController();
 
-	private _applyLost(): void {
-		if ((this.opts?.onLost ?? 'pause') === 'mute') {
-			this.player.mute?.();
-		}
-		else {
-			void this.player.pause?.();
-		}
-	}
+    this._abortController = controller;
+    let granted = false;
 
-	/**
-	 * Voluntarily release the leader lock. Any tab waiting in the queue will
-	 * receive the lock next.
-	 *
-	 * Emits `plugin:tab-leader:leader-released` when this tab was the leader.
-	 * No-ops if this tab is not currently the leader.
-	 */
-	releaseLock(): void {
-		if (this._abortController) {
-			this._abortController.abort();
-			this._abortController = null;
-		}
+    const pending: Promise<void> = locks.request(key, steal
+      ? { steal: true }
+      : { signal: controller.signal }, () => {
+      granted = true;
+      this._abortController = null;
+      this._isLeader = true;
+      this.emit('leader-acquired' as keyof TabLeaderEvents);
 
-		if (!this._isLeader && !this._release)
-			return;
+      return new Promise<void>((resolve) => {
+        this._release = resolve;
+      });
+    }).then(
+      () => {
+        if (this._pending === pending) {
+          this._pending = null;
+        }
+      },
+      (_err) => {
+        if (this._pending === pending) {
+          this._pending = null;
+          this._abortController = null;
+        }
 
-		const wasLeader = this._isLeader;
-		this._isLeader = false;
-		const release = this._release;
-		this._release = null;
+        // A granted lock that rejects was stolen by another tab.
+        if (granted && this._isLeader) {
+          this._isLeader = false;
+          this._release = null;
+          this.emit('leader-released' as keyof TabLeaderEvents);
+          this._applyLost();
+        }
+      },
+    );
 
-		if (release) {
-			try {
-				release();
-			}
-			catch {
-				// Resolver throws are harmless — swallow.
-			}
-		}
+    this._pending = pending;
 
-		if (wasLeader) {
-			this.emit('leader-released' as keyof TabLeaderEvents);
-			this._applyLost();
-		}
-	}
+    return pending;
+  }
 
-	/**
-	 * Returns the lock key to use for the election. Calls `opts.getLockKey()`
-	 * when provided; otherwise returns the default shared key
-	 * `'nomercy-player-leader'`.
-	 *
-	 * Override in a subclass to derive the key from player configuration without
-	 * requiring callers to pass a function.
-	 */
-	protected getLockKey(): string {
-		const optHook = this.opts?.getLockKey;
-		if (typeof optHook === 'function')
-			return optHook();
-		return DEFAULT_LOCK_KEY;
-	}
+  /** Steal the lock for a visible tab that is not the leader. */
+  private _takeOver(): Promise<void> {
+    if (this._isLeader)
+      return Promise.resolve();
 
-	private _supported(): boolean {
-		return typeof navigator !== 'undefined'
-			&& 'locks' in navigator
-			&& typeof navigator.locks?.request === 'function';
-	}
+    this._abortController?.abort();
+    this._abortController = null;
+    this._pending = null;
+
+    return this._acquire(true);
+  }
+
+  private _applyLost(): void {
+    if ((this.opts?.onLost ?? 'pause') === 'mute') {
+      this.player.mute?.();
+    } else {
+      void this.player.pause?.();
+    }
+  }
+
+  /**
+   * Voluntarily release the leader lock. Any tab waiting in the queue will
+   * receive the lock next.
+   *
+   * Emits `plugin:tab-leader:leader-released` when this tab was the leader.
+   * No-ops if this tab is not currently the leader.
+   */
+  releaseLock(): void {
+    if (this._abortController) {
+      this._abortController.abort();
+      this._abortController = null;
+    }
+
+    if (!this._isLeader && !this._release) return;
+
+    const wasLeader = this._isLeader;
+
+    this._isLeader = false;
+    const release = this._release;
+
+    this._release = null;
+
+    if (release) {
+      try {
+        release();
+      } catch {
+        // Resolver throws are harmless — swallow.
+      }
+    }
+
+    if (wasLeader) {
+      this.emit('leader-released' as keyof TabLeaderEvents);
+      this._applyLost();
+    }
+  }
+
+  /**
+   * Returns the lock key to use for the election. Calls `opts.getLockKey()`
+   * when provided; otherwise returns the default shared key
+   * `'nomercy-player-leader'`.
+   *
+   * Override in a subclass to derive the key from player configuration without
+   * requiring callers to pass a function.
+   */
+  protected getLockKey(): string {
+    const optHook = this.opts?.getLockKey;
+
+    if (typeof optHook === 'function')
+      return optHook();
+
+    return DEFAULT_LOCK_KEY;
+  }
+
+  private _supported(): boolean {
+    return typeof navigator !== 'undefined' &&
+      'locks' in navigator &&
+      typeof navigator.locks?.request === 'function';
+  }
 }
 
 /** Plugin alias for {@link TabLeaderPlugin}. Pass to `addPlugin(tabLeaderPlugin)`. */

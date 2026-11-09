@@ -7,11 +7,11 @@
 // -----------------------------------------------------------------------------
 
 const translations = {
-	'plugin.twitch.error.clip-unavailable': 'Twitch nie ma odtwarzalnego pliku dla klipu {slug}',
-	'plugin.twitch.channel.offline': '{channel} jest offline',
-	'plugin.twitch.channel.ended': 'Transmisja kanału {channel} została zakończona',
-	'plugin.twitch.setting.use-twitch-player': 'Użyj własnego odtwarzacza Twitch',
-	'plugin.twitch.subtitle.enabled': 'Włączone',
+  'plugin.twitch.error.clip-unavailable': 'Twitch nie ma odtwarzalnego pliku dla klipu {slug}',
+  'plugin.twitch.channel.offline': '{channel} jest offline',
+  'plugin.twitch.channel.ended': 'Transmisja kanału {channel} została zakończona',
+  'plugin.twitch.setting.use-twitch-player': 'Użyj własnego odtwarzacza Twitch',
+  'plugin.twitch.subtitle.enabled': 'Włączone',
 };
 
 export default translations;

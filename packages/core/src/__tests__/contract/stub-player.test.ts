@@ -14,6 +14,6 @@ import { runIPlayerContract, StubPlayer } from '../../testing';
  * drifts from the contract, this test surfaces it before any plugin tests do.
  */
 runIPlayerContract({
-	create: () => new StubPlayer(),
-	label: 'StubPlayer',
+  create: () => new StubPlayer(),
+  label: 'StubPlayer',
 });

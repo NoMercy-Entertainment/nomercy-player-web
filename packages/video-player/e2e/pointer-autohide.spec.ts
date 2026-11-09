@@ -29,132 +29,144 @@ import { expect, test } from '@playwright/test';
 // ── fixture ────────────────────────────────────────────────────────────────────
 
 async function loadFixture(page: import('@playwright/test').Page): Promise<void> {
-	await page.goto('/e2e/fixture-full.html');
-	await page.waitForFunction(
-		() => (window as any).__playerReady === true,
-		{ timeout: 10_000 },
-	);
-	const error = await page.evaluate(() => (window as any).__playerError);
-	if (error) {
-		throw new Error(`Player init failed: ${error}`);
-	}
+  await page.goto('/e2e/fixture-full.html');
 
-	// setup() flushes the plugin queue: DesktopUiPlugin.use() mounts the overlay
-	// DOM and wires mousemove/mouseleave → bumpActivity(). autoPlay:true triggers
-	// backend.load() → play() so the inactivity timer arms.
-	await page.evaluate(() => {
-		(window as any).player.setup({
-			playlist: [{
-				id: 'autohide-src',
-				file: '/e2e/media/sample.mp4',
-			}],
-			muted: true,
-			autoPlay: true,
-		});
+  await page.waitForFunction(
+    () => (window as any).__playerReady === true,
+    { timeout: 10_000 },
+  );
 
-		// Override inactivityMs to 800 ms. The plugin reads opts.inactivityMs
-		// dynamically in bumpActivity() so this takes effect from the first
-		// interaction after setup.
-		const { DesktopUiPlugin: Plugin } = window as any;
-		const plugin = (window as any).player.getPlugin(Plugin);
-		if (plugin) {
-			plugin.opts = Object.assign(plugin.opts ?? {}, { inactivityMs: 800 });
-		}
-	});
+  const error = await page.evaluate(() => (window as any).__playerError);
 
-	// Wait for DesktopUiPlugin overlay DOM.
-	await page.waitForSelector('.overlay', { timeout: 5_000 });
+  if (error) {
+    throw new Error(`Player init failed: ${error}`);
+  }
 
-	// Wait for MP4 metadata so the player is in a ready-to-play state.
-	await page.waitForFunction(
-		() => {
-			const el = (window as any).player.videoElement;
-			return el && typeof el.duration === 'number' && Number.isFinite(el.duration) && el.duration > 0;
-		},
-		{ timeout: 20_000 },
-	);
+  // setup() flushes the plugin queue: DesktopUiPlugin.use() mounts the overlay
+  // DOM and wires mousemove/mouseleave → bumpActivity(). autoPlay:true triggers
+  // backend.load() → play() so the inactivity timer arms.
+  await page.evaluate(() => {
+    (window as any).player.setup({
+      playlist: [{
+        id: 'autohide-src',
+        file: '/e2e/media/sample.mp4',
+      }],
+      muted: true,
+      autoPlay: true,
+    });
+
+    // Override inactivityMs to 800 ms. The plugin reads opts.inactivityMs
+    // dynamically in bumpActivity() so this takes effect from the first
+    // interaction after setup.
+    const { DesktopUiPlugin: Plugin } = window as any;
+    const plugin = (window as any).player.getPlugin(Plugin);
+
+    if (plugin) {
+      plugin.opts = Object.assign(plugin.opts ?? {}, { inactivityMs: 800 });
+    }
+  });
+
+  // Wait for DesktopUiPlugin overlay DOM.
+  await page.waitForSelector('.overlay', { timeout: 5_000 });
+
+  // Wait for MP4 metadata so the player is in a ready-to-play state.
+  await page.waitForFunction(
+    () => {
+      const el = (window as any).player.videoElement;
+
+      return el && typeof el.duration === 'number' && Number.isFinite(el.duration) && el.duration > 0;
+    },
+    { timeout: 20_000 },
+  );
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 
 function isActive(page: import('@playwright/test').Page): Promise<boolean> {
-	return page.evaluate(() =>
-		(window as any).player.container.classList.contains('active'));
+  return page.evaluate(() =>
+    (window as any).player.container.classList.contains('active'));
 }
 
 // ── tests ──────────────────────────────────────────────────────────────────────
 
 test.describe('Pointer autohide — real browser events', () => {
-	test('mouse move over container shows controls (.active class)', async ({ page }) => {
-		await loadFixture(page);
+  test('mouse move over container shows controls (.active class)', async ({ page }) => {
+    await loadFixture(page);
 
-		const box = await page.locator('#player').boundingBox();
-		expect(box).not.toBeNull();
+    const box = await page.locator('#player').boundingBox();
 
-		await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+    expect(box).not.toBeNull();
 
-		// DesktopUiPlugin wires mousemove → bumpActivity() → emits activity:{active:true}
-		// → applies .active to player.container.
-		await page.waitForFunction(
-			() => (window as any).player.container.classList.contains('active'),
-			{ timeout: 3_000 },
-		);
+    await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
 
-		expect(await isActive(page)).toBe(true);
-	});
+    // DesktopUiPlugin wires mousemove → bumpActivity() → emits activity:{active:true}
+    // → applies .active to player.container.
+    await page.waitForFunction(
+      () => (window as any).player.container.classList.contains('active'),
+      { timeout: 3_000 },
+    );
 
-	test('controls hide after inactivity timeout', async ({ page }) => {
-		await loadFixture(page);
+    expect(await isActive(page)).toBe(true);
+  });
 
-		const box = await page.locator('#player').boundingBox();
+  test('controls hide after inactivity timeout', async ({ page }) => {
+    await loadFixture(page);
 
-		// Wake controls.
-		await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
-		await page.waitForFunction(
-			() => (window as any).player.container.classList.contains('active'),
-			{ timeout: 3_000 },
-		);
+    const box = await page.locator('#player').boundingBox();
 
-		// Move off the container so mouseleave fires → maybeHide() is triggered.
-		await page.mouse.move(box!.x - 30, box!.y - 30);
+    // Wake controls.
+    await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
 
-		// Wait for the inactivity timer to fire (800 ms + buffer).
-		await page.waitForFunction(
-			() => !(window as any).player.container.classList.contains('active'),
-			{ timeout: 3_500 },
-		);
+    await page.waitForFunction(
+      () => (window as any).player.container.classList.contains('active'),
+      { timeout: 3_000 },
+    );
 
-		expect(await isActive(page)).toBe(false);
-	});
+    // Move off the container so mouseleave fires → maybeHide() is triggered.
+    await page.mouse.move(box!.x - 30, box!.y - 30);
 
-	test('moving mouse after hide re-shows controls', async ({ page }) => {
-		await loadFixture(page);
+    // Wait for the inactivity timer to fire (800 ms + buffer).
+    await page.waitForFunction(
+      () => !(window as any).player.container.classList.contains('active'),
+      { timeout: 3_500 },
+    );
 
-		const box = await page.locator('#player').boundingBox();
+    expect(await isActive(page)).toBe(false);
+  });
 
-		// Wake → move off → wait for hide.
-		await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
-		await page.waitForFunction(
-			() => (window as any).player.container.classList.contains('active'),
-			{ timeout: 3_000 },
-		);
-		await page.mouse.move(box!.x - 30, box!.y - 30);
-		await page.waitForFunction(
-			() => !(window as any).player.container.classList.contains('active'),
-			{ timeout: 3_500 },
-		);
+  test('moving mouse after hide re-shows controls', async ({ page }) => {
+    await loadFixture(page);
 
-		// Move back over container → controls must re-appear.
-		// Pause first to prevent the 3s MP4 ending before this move.
-		await page.evaluate(async () => {
-			await (window as any).player.pause().catch(() => {});
-		});
-		await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
-		await page.waitForFunction(
-			() => (window as any).player.container.classList.contains('active'),
-			{ timeout: 5_000 },
-		);
+    const box = await page.locator('#player').boundingBox();
 
-		expect(await isActive(page)).toBe(true);
-	});
+    // Wake → move off → wait for hide.
+    await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+
+    await page.waitForFunction(
+      () => (window as any).player.container.classList.contains('active'),
+      { timeout: 3_000 },
+    );
+
+    await page.mouse.move(box!.x - 30, box!.y - 30);
+
+    await page.waitForFunction(
+      () => !(window as any).player.container.classList.contains('active'),
+      { timeout: 3_500 },
+    );
+
+    // Move back over container → controls must re-appear.
+    // Pause first to prevent the 3s MP4 ending before this move.
+    await page.evaluate(async () => {
+      await (window as any).player.pause().catch(() => {});
+    });
+
+    await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+
+    await page.waitForFunction(
+      () => (window as any).player.container.classList.contains('active'),
+      { timeout: 5_000 },
+    );
+
+    expect(await isActive(page)).toBe(true);
+  });
 });

@@ -33,47 +33,50 @@ export { tvKeyHandlerPlugin, TvKeyHandlerPlugin } from './tv-key-handler';
 export type { TvKeyHandlerOptions } from './tv-key-handler';
 export { TwitchPlugin } from './twitch';
 export type { TwitchPluginEvents, TwitchPluginOptions } from './twitch';
+
 // Cross-library kit plugins re-exported for ergonomic imports.
 export {
-	audioGraphPlugin,
-	AudioGraphPlugin,
-	canvasPlugin,
-	CanvasPlugin,
-	equalizerPlugin,
-	EqualizerPlugin,
-	mixerPlugin,
-	MixerPlugin,
-	spectrumPlugin,
-	SpectrumPlugin,
-	VisualizationPlugin,
-	volumeMemoryPlugin,
-	VolumeMemoryPlugin,
+  audioGraphPlugin,
+  AudioGraphPlugin,
+  canvasPlugin,
+  CanvasPlugin,
+  equalizerPlugin,
+  EqualizerPlugin,
+  mixerPlugin,
+  MixerPlugin,
+  spectrumPlugin,
+  SpectrumPlugin,
+  VisualizationPlugin,
+  volumeMemoryPlugin,
+  VolumeMemoryPlugin,
 } from '@nomercy-entertainment/nomercy-player-core';
+
 export type {
-	AudioGraphEvents,
-	AudioGraphOptions,
-	CanvasEvents,
-	CanvasOptions,
-	CanvasRenderFn,
-	EqBand,
-	EqPreset,
-	EqualizerEvents,
-	EqualizerOptions,
-	MixerEvents,
-	MixerOptions,
-	SpectrumOptions,
-	VisualizationFrame,
-	VisualizationOptions,
-	VolumeMemoryOptions,
+  AudioGraphEvents,
+  AudioGraphOptions,
+  CanvasEvents,
+  CanvasOptions,
+  CanvasRenderFn,
+  EqBand,
+  EqPreset,
+  EqualizerEvents,
+  EqualizerOptions,
+  MixerEvents,
+  MixerOptions,
+  SpectrumOptions,
+  VisualizationFrame,
+  VisualizationOptions,
+  VolumeMemoryOptions,
 } from '@nomercy-entertainment/nomercy-player-core';
 
 export { embedPlugin, EmbedPlugin } from '@nomercy-entertainment/nomercy-player-core/plugins/embed';
+
 export type {
-	EmbedCommand,
-	EmbedEventMessage,
-	EmbedForwardedEvent,
-	EmbedOptions,
-	EmbedSerializedError,
+  EmbedCommand,
+  EmbedEventMessage,
+  EmbedForwardedEvent,
+  EmbedOptions,
+  EmbedSerializedError,
 } from '@nomercy-entertainment/nomercy-player-core/plugins/embed';
 
 export type { KeyBindings, KeyHandlerOptions } from '@nomercy-entertainment/nomercy-player-core/plugins/key-handler';

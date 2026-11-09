@@ -14,50 +14,50 @@
 
 /** @type {import('eslint').Rule.RuleModule} */
 export default {
-	meta: {
-		type: 'suggestion',
-		docs: {
-			description: 'Disallow casting an object literal with `as` — type it at construction instead.',
-		},
-		schema: [],
-		messages: {
-			literalCast: 'Cast on an object literal — type it at construction (typed const / parameter / return type) instead of `as {{type}}`.',
-		},
-	},
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description: 'Disallow casting an object literal with `as` — type it at construction instead.',
+    },
+    schema: [],
+    messages: {
+      literalCast: 'Cast on an object literal — type it at construction (typed const / parameter / return type) instead of `as {{type}}`.',
+    },
+  },
 
-	create(context) {
-		const sourceCode = context.sourceCode ?? context.getSourceCode();
+  create(context) {
+    const sourceCode = context.sourceCode ?? context.getSourceCode();
 
-		return {
-			TSAsExpression(node) {
-				if (node.expression.type !== 'ObjectExpression')
-					return;
+    return {
+      TSAsExpression(node) {
+        if (node.expression.type !== 'ObjectExpression')
+          return;
 
-				const annotation = node.typeAnnotation;
-				const isAsConst
-					= annotation.type === 'TSTypeReference'
-						&& annotation.typeName.type === 'Identifier'
-						&& annotation.typeName.name === 'const';
-				if (isAsConst)
-					return;
+        const annotation = node.typeAnnotation;
+        const isAsConst
+          = annotation.type === 'TSTypeReference'
+            && annotation.typeName.type === 'Identifier'
+            && annotation.typeName.name === 'const';
+        if (isAsConst)
+          return;
 
-				context.report({
-					node,
-					messageId: 'literalCast',
-					data: { type: sourceCode.getText(annotation) },
-				});
-			},
+        context.report({
+          node,
+          messageId: 'literalCast',
+          data: { type: sourceCode.getText(annotation) },
+        });
+      },
 
-			TSTypeAssertion(node) {
-				if (node.expression.type !== 'ObjectExpression')
-					return;
+      TSTypeAssertion(node) {
+        if (node.expression.type !== 'ObjectExpression')
+          return;
 
-				context.report({
-					node,
-					messageId: 'literalCast',
-					data: { type: sourceCode.getText(node.typeAnnotation) },
-				});
-			},
-		};
-	},
+        context.report({
+          node,
+          messageId: 'literalCast',
+          data: { type: sourceCode.getText(node.typeAnnotation) },
+        });
+      },
+    };
+  },
 };

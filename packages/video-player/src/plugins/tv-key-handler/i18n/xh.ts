@@ -9,13 +9,13 @@
 import type { TvKeyHandlerTranslationKey } from './en';
 
 export default {
-	'plugin.tv-key-handler.info.chapter': 'Isahluko',
-	'plugin.tv-key-handler.info.noTitle': 'Akukho sihloko',
-	'plugin.tv-key-handler.info.timeRemaining': 'eseleyo',
-	'plugin.tv-key-handler.seek.red': '+30s',
-	'plugin.tv-key-handler.seek.green': '+60s',
-	'plugin.tv-key-handler.seek.yellow': '+90s',
-	'plugin.tv-key-handler.seek.blue': '+120s',
-	'plugin.tv-key-handler.aspectRatio.cycled': 'Umlinganiselo wembonakalo',
-	'plugin.tv-key-handler.bookmark.added': 'Uphawu longeziwe',
+  'plugin.tv-key-handler.info.chapter': 'Isahluko',
+  'plugin.tv-key-handler.info.noTitle': 'Akukho sihloko',
+  'plugin.tv-key-handler.info.timeRemaining': 'eseleyo',
+  'plugin.tv-key-handler.seek.red': '+30s',
+  'plugin.tv-key-handler.seek.green': '+60s',
+  'plugin.tv-key-handler.seek.yellow': '+90s',
+  'plugin.tv-key-handler.seek.blue': '+120s',
+  'plugin.tv-key-handler.aspectRatio.cycled': 'Umlinganiselo wembonakalo',
+  'plugin.tv-key-handler.bookmark.added': 'Uphawu longeziwe',
 } satisfies Record<TvKeyHandlerTranslationKey, string>;

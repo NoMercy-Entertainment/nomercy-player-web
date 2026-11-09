@@ -15,10 +15,10 @@ You need [Vitest](https://vitest.dev/) with `test.globals: true` in the config:
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-	test: {
-		globals: true,
-		environment: 'happy-dom',
-	},
+  test: {
+    globals: true,
+    environment: 'happy-dom',
+  },
 });
 ```
 
@@ -31,14 +31,14 @@ import { describePlugin } from '@nomercy-entertainment/nomercy-player-core/testi
 import { PlaybackTrackerPlugin } from './playback-tracker';
 
 describePlugin(PlaybackTrackerPlugin, (ctx) => {
-	it('starts with zero events recorded', () => {
-		expect(ctx.plugin.playCount()).toBe(0);
-	});
+  it('starts with zero events recorded', () => {
+    expect(ctx.plugin.playCount()).toBe(0);
+  });
 
-	it('increments count when play fires', () => {
-		ctx.player.emit('play', undefined);
-		expect(ctx.plugin.playCount()).toBe(1);
-	});
+  it('increments count when play fires', () => {
+    ctx.player.emit('play', undefined);
+    expect(ctx.plugin.playCount()).toBe(1);
+  });
 });
 ```
 
@@ -62,18 +62,18 @@ Everything inside the `describePlugin` callback is yours. Use standard Vitest AP
 
 ```ts
 describePlugin(PlaybackTrackerPlugin, (ctx) => {
-	describe('maxEvents cap', () => {
-		it('stops tracking after maxEvents play events', () => {
-			ctx.plugin.options({ maxEvents: 2 });
+  describe('maxEvents cap', () => {
+    it('stops tracking after maxEvents play events', () => {
+      ctx.plugin.options({ maxEvents: 2 });
 
-			ctx.player.emit('play', undefined);
-			ctx.player.emit('play', undefined);
-			ctx.player.emit('play', undefined); // over the cap
+      ctx.player.emit('play', undefined);
+      ctx.player.emit('play', undefined);
+      ctx.player.emit('play', undefined); // over the cap
 
-			expect(ctx.plugin.playCount()).toBe(2);
-			expect(ctx.plugin.isCapped()).toBe(true);
-		});
-	});
+      expect(ctx.plugin.playCount()).toBe(2);
+      expect(ctx.plugin.isCapped()).toBe(true);
+    });
+  });
 });
 ```
 
@@ -81,18 +81,18 @@ describePlugin(PlaybackTrackerPlugin, (ctx) => {
 
 ```ts
 describePlugin(PlaybackTrackerPlugin, (ctx) => {
-	// ...
+  // ...
 }, {
-	// Pass pre-set plugin options.
-	opts: { maxEvents: 5 },
+  // Pass pre-set plugin options.
+  opts: { maxEvents: 5 },
 
-	// Skip the automatic leak assertion. Only use this when you are
-	// deliberately testing leak behavior itself.
-	skipLeakAssertion: true,
+  // Skip the automatic leak assertion. Only use this when you are
+  // deliberately testing leak behavior itself.
+  skipLeakAssertion: true,
 
-	// Provide a custom player — useful when your plugin needs a specific
-	// phase, seeded translations, or injected auth.
-	createPlayer: () => new StubPlayer({ id: 'my-app-player' }),
+  // Provide a custom player — useful when your plugin needs a specific
+  // phase, seeded translations, or injected auth.
+  createPlayer: () => new StubPlayer({ id: 'my-app-player' }),
 });
 ```
 
@@ -102,20 +102,20 @@ Plugin events are namespaced under `plugin:<id>:`. Listen via `ctx.player.on` an
 
 ```ts
 describePlugin(PlaybackTrackerPlugin, (ctx) => {
-	it('emits plugin:playback-tracker:tracked on each play', () => {
-		const received: Array<{ count: number }> = [];
-		const handler = (data: { count: number }): void => {
-			received.push(data);
-		};
-		ctx.player.on('plugin:playback-tracker:tracked', handler);
+  it('emits plugin:playback-tracker:tracked on each play', () => {
+    const received: Array<{ count: number }> = [];
+    const handler = (data: { count: number }): void => {
+      received.push(data);
+    };
+    ctx.player.on('plugin:playback-tracker:tracked', handler);
 
-		ctx.player.emit('play', undefined);
-		ctx.player.emit('play', undefined);
+    ctx.player.emit('play', undefined);
+    ctx.player.emit('play', undefined);
 
-		ctx.player.off('plugin:playback-tracker:tracked', handler);
+    ctx.player.off('plugin:playback-tracker:tracked', handler);
 
-		expect(received).toEqual([{ count: 1 }, { count: 2 }]);
-	});
+    expect(received).toEqual([{ count: 1 }, { count: 2 }]);
+  });
 });
 ```
 
@@ -125,9 +125,9 @@ Plugins that react to phase transitions use `ctx.player.setPhase()`:
 
 ```ts
 it('stops tracking when player enters disposed phase', () => {
-	ctx.player.setPhase('disposed');
-	ctx.player.emit('play', undefined);
-	expect(ctx.plugin.playCount()).toBe(0);
+  ctx.player.setPhase('disposed');
+  ctx.player.emit('play', undefined);
+  expect(ctx.plugin.playCount()).toBe(0);
 });
 ```
 
@@ -137,27 +137,27 @@ The leak assertion that `describePlugin` runs automatically is also exported sta
 
 ```ts
 import { LifecycleRegistry }
-	from '@nomercy-entertainment/nomercy-player-core/adapters/lifecycle-registry';
+  from '@nomercy-entertainment/nomercy-player-core/adapters/lifecycle-registry';
 import { assertNoListenerLeak, StubPlayer }
-	from '@nomercy-entertainment/nomercy-player-core/testing';
+  from '@nomercy-entertainment/nomercy-player-core/testing';
 
 it('my plugin cleans up cleanly', async () => {
-	const player = new StubPlayer();
-	const lifecycle = new LifecycleRegistry();
-	const plugin = new PlaybackTrackerPlugin();
+  const player = new StubPlayer();
+  const lifecycle = new LifecycleRegistry();
+  const plugin = new PlaybackTrackerPlugin();
 
-	await assertNoListenerLeak({
-		subjectId: 'playback-tracker',
-		player,
-		setup: () => {
-			plugin.initialize(player, {}, lifecycle);
-			plugin.use();
-		},
-		teardown: () => {
-			plugin.dispose();
-			lifecycle.dispose();
-		},
-	});
+  await assertNoListenerLeak({
+    subjectId: 'playback-tracker',
+    player,
+    setup: () => {
+      plugin.initialize(player, {}, lifecycle);
+      plugin.use();
+    },
+    teardown: () => {
+      plugin.dispose();
+      lifecycle.dispose();
+    },
+  });
 });
 ```
 

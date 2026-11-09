@@ -31,24 +31,25 @@ import { buildSliderBar } from './progressBar';
 // ── Shared helper ─────────────────────────────────────────────────────────────
 
 const DEFAULT_ON_BUTTONS: ReadonlySet<keyof DesktopUiButtonOptions> = new Set([
-	'play',
-	'mute',
-	'volume',
-	'fullscreen',
-	'settings',
-	'next',
-	'previous',
-	'chapterPrev',
-	'chapterNext',
+  'play',
+  'mute',
+  'volume',
+  'fullscreen',
+  'settings',
+  'next',
+  'previous',
+  'chapterPrev',
+  'chapterNext',
 ]);
 
 function buttonVisible(
-	key: keyof DesktopUiButtonOptions,
-	opts: DesktopUiButtonOptions | undefined,
+  key: keyof DesktopUiButtonOptions,
+  opts: DesktopUiButtonOptions | undefined,
 ): boolean {
-	if (opts && key in opts)
-		return Boolean(opts[key]);
-	return DEFAULT_ON_BUTTONS.has(key);
+  if (opts && key in opts)
+    return Boolean(opts[key]);
+
+  return DEFAULT_ON_BUTTONS.has(key);
 }
 
 // ── iconBtn ───────────────────────────────────────────────────────────────────
@@ -58,359 +59,393 @@ function buttonVisible(
  * Wraps `player.createButton` and appends a `.btn-icon` span.
  */
 export function iconBtn(
-	player: IVideoPlayer<VideoPlaylistItem>,
-	id: string,
-	iconName: keyof typeof fluentIcons,
+  player: IVideoPlayer<VideoPlaylistItem>,
+  id: string,
+  iconName: keyof typeof fluentIcons,
 ): HTMLButtonElement {
-	const icon = fluentIcons[iconName];
-	const btn = createButton(id, icon.title || iconName, () => {});
-	addClasses(btn, ['btn']);
-	btn.style.position = 'relative';
-	const iconHolder = document.createElement('span');
-	iconHolder.className = 'btn-icon';
-	iconHolder.innerHTML = svgFromIcon(icon);
-	btn.appendChild(iconHolder);
-	return btn;
+  const icon = fluentIcons[iconName];
+  const btn = createButton(id, icon.title || iconName, () => {});
+
+  addClasses(btn, ['btn']);
+  btn.style.position = 'relative';
+  const iconHolder = document.createElement('span');
+
+  iconHolder.className = 'btn-icon';
+  iconHolder.innerHTML = svgFromIcon(icon);
+  btn.appendChild(iconHolder);
+
+  return btn;
 }
 
 // ── Refs ──────────────────────────────────────────────────────────────────────
 
 export interface CenterRefs {
-	centerWrap: HTMLDivElement;
-	centerBtn: HTMLButtonElement;
-	spinner: HTMLDivElement;
+  centerWrap: HTMLDivElement;
+  centerBtn: HTMLButtonElement;
+  spinner: HTMLDivElement;
 }
 
 export interface BottomBarRefs {
-	bottomBar: HTMLDivElement;
-	topRow: HTMLDivElement;
-	bottomRow: HTMLDivElement;
-	sliderRefs: SliderBarRefs;
+  bottomBar: HTMLDivElement;
+  topRow: HTMLDivElement;
+  bottomRow: HTMLDivElement;
+  sliderRefs: SliderBarRefs;
 }
 
 export interface BottomRowRefs {
-	playBtn: HTMLButtonElement;
-	prevBtn: HTMLButtonElement;
-	nextBtn: HTMLButtonElement;
-	rewindBtn: HTMLButtonElement;
-	forwardBtn: HTMLButtonElement;
-	chapBackBtn: HTMLButtonElement;
-	chapFwdBtn: HTMLButtonElement;
-	volBtn: HTMLButtonElement;
-	volSlider: HTMLInputElement;
-	volSliderVertical: HTMLDivElement;
-	/** The raw volume-container element — callers need it to pass to wireVolumeSlider. */
-	volContainer: HTMLDivElement;
-	/** The raw vertical-popup input — callers need it to pass to wireVolumeSlider. */
-	volVertInput: HTMLInputElement;
-	volPopupMuteBtn: HTMLButtonElement;
-	currentTimeEl: HTMLDivElement;
-	remainingTimeEl: HTMLDivElement;
-	aspectRatioBtn: HTMLButtonElement;
-	theaterBtn: HTMLButtonElement;
-	theaterConfigHidden: boolean;
-	pipBtn: HTMLButtonElement;
-	speedBtn: HTMLButtonElement;
-	subsBtn: HTMLButtonElement;
-	audioBtn: HTMLButtonElement;
-	qualityBtn: HTMLButtonElement;
-	playlistBtn: HTMLButtonElement;
-	settingsBtn: HTMLButtonElement;
-	fsBtn: HTMLButtonElement;
+  playBtn: HTMLButtonElement;
+  prevBtn: HTMLButtonElement;
+  nextBtn: HTMLButtonElement;
+  rewindBtn: HTMLButtonElement;
+  forwardBtn: HTMLButtonElement;
+  chapBackBtn: HTMLButtonElement;
+  chapFwdBtn: HTMLButtonElement;
+  volBtn: HTMLButtonElement;
+  volSlider: HTMLInputElement;
+  volSliderVertical: HTMLDivElement;
+  /** The raw volume-container element — callers need it to pass to wireVolumeSlider. */
+  volContainer: HTMLDivElement;
+  /** The raw vertical-popup input — callers need it to pass to wireVolumeSlider. */
+  volVertInput: HTMLInputElement;
+  volPopupMuteBtn: HTMLButtonElement;
+  currentTimeEl: HTMLDivElement;
+  remainingTimeEl: HTMLDivElement;
+  aspectRatioBtn: HTMLButtonElement;
+  theaterBtn: HTMLButtonElement;
+  theaterConfigHidden: boolean;
+  pipBtn: HTMLButtonElement;
+  speedBtn: HTMLButtonElement;
+  subsBtn: HTMLButtonElement;
+  audioBtn: HTMLButtonElement;
+  qualityBtn: HTMLButtonElement;
+  playlistBtn: HTMLButtonElement;
+  settingsBtn: HTMLButtonElement;
+  fsBtn: HTMLButtonElement;
 }
 
 // ── Center ────────────────────────────────────────────────────────────────────
 
 /** Build the center spinner + big-play button and return named refs. */
 export function buildCenter(
-	player: IVideoPlayer<VideoPlaylistItem>,
-	parent: HTMLElement,
+  player: IVideoPlayer<VideoPlaylistItem>,
+  parent: HTMLElement,
 ): CenterRefs {
-	const centerWrap = createElement('div', 'center')
-		.addClasses(['center'])
-		.appendTo(parent)
-		.get();
+  const centerWrap = createElement('div', 'center')
+    .addClasses(['center'])
+    .appendTo(parent)
+    .get();
 
-	const spinner = createElement('div', 'spinner')
-		.addClasses(['spinner'])
-		.appendTo(centerWrap)
-		.get();
-	spinner.innerHTML = '<svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-dasharray="100 28"/></svg>';
+  const spinner = createElement('div', 'spinner')
+    .addClasses(['spinner'])
+    .appendTo(centerWrap)
+    .get();
 
-	const centerBtn = createButton('center-btn', fluentIcons.bigPlay.title || 'Play', () => {});
-	addClasses(centerBtn, ['center-btn']);
-	const centerIconHolder = document.createElement('span');
-	centerIconHolder.className = 'btn-icon';
-	centerIconHolder.innerHTML = svgFromIcon(fluentIcons.bigPlay, 32);
-	centerBtn.appendChild(centerIconHolder);
-	centerWrap.appendChild(centerBtn);
+  spinner.innerHTML = '<svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-dasharray="100 28"/></svg>';
 
-	return {
-		centerWrap,
-		centerBtn,
-		spinner,
-	};
+  const centerBtn = createButton('center-btn', fluentIcons.bigPlay.title || 'Play', () => {});
+
+  addClasses(centerBtn, ['center-btn']);
+  const centerIconHolder = document.createElement('span');
+
+  centerIconHolder.className = 'btn-icon';
+  centerIconHolder.innerHTML = svgFromIcon(fluentIcons.bigPlay, 32);
+  centerBtn.appendChild(centerIconHolder);
+  centerWrap.appendChild(centerBtn);
+
+  return {
+    centerWrap,
+    centerBtn,
+    spinner,
+  };
 }
 
 // ── Bottom bar ────────────────────────────────────────────────────────────────
 
 /** Build the bottom-bar skeleton (shadow + top-row + slider + bottom-row). */
 export function buildBottomBar(
-	player: IVideoPlayer<VideoPlaylistItem>,
-	parent: HTMLElement,
-	opts: DesktopUiOptions | undefined,
-	listen: (target: EventTarget, event: string, fn: (event: Event) => void) => void,
-	translate: (key: string, params?: Record<string, string>) => string,
+  player: IVideoPlayer<VideoPlaylistItem>,
+  parent: HTMLElement,
+  opts: DesktopUiOptions | undefined,
+  listen: (target: EventTarget, event: string, fn: (event: Event) => void) => void,
+  translate: (key: string, params?: Record<string, string>) => string,
 ): BottomBarRefs & BottomRowRefs {
-	const bottomBar = createElement('div', 'bottom-bar')
-		.addClasses(['bottom-bar'])
-		.appendTo(parent)
-		.get();
+  const bottomBar = createElement('div', 'bottom-bar')
+    .addClasses(['bottom-bar'])
+    .appendTo(parent)
+    .get();
 
-	createElement('div', 'bottom-bar-shadow')
-		.addClasses(['bottom-bar-shadow'])
-		.appendTo(bottomBar);
+  createElement('div', 'bottom-bar-shadow')
+    .addClasses(['bottom-bar-shadow'])
+    .appendTo(bottomBar);
 
-	const topRow = createElement('div', 'top-row')
-		.addClasses(['top-row'])
-		.appendTo(bottomBar)
-		.get();
+  const topRow = createElement('div', 'top-row')
+    .addClasses(['top-row'])
+    .appendTo(bottomBar)
+    .get();
 
-	const sliderRefs = buildSliderBar(player);
-	topRow.appendChild(sliderRefs.sliderBar);
+  const sliderRefs = buildSliderBar(player);
 
-	const bottomRow = createElement('div', 'bottom-row')
-		.addClasses(['bottom-row'])
-		.appendTo(bottomBar)
-		.get();
+  topRow.appendChild(sliderRefs.sliderBar);
 
-	const rowRefs = buildBottomRow(player, bottomRow, opts, listen, translate);
+  const bottomRow = createElement('div', 'bottom-row')
+    .addClasses(['bottom-row'])
+    .appendTo(bottomBar)
+    .get();
 
-	return {
-		bottomBar,
-		topRow,
-		bottomRow,
-		sliderRefs,
-		...rowRefs,
-	};
+  const rowRefs = buildBottomRow(player, bottomRow, opts, listen, translate);
+
+  return {
+    bottomBar,
+    topRow,
+    bottomRow,
+    sliderRefs,
+    ...rowRefs,
+  };
 }
 
 // ── Bottom row ────────────────────────────────────────────────────────────────
 
 /** Build all buttons and controls inside the bottom row. */
 export function buildBottomRow(
-	player: IVideoPlayer<VideoPlaylistItem>,
-	parent: HTMLElement,
-	opts: DesktopUiOptions | undefined,
-	listen: (target: EventTarget, event: string, fn: (event: Event) => void) => void,
-	translate: (key: string, params?: Record<string, string>) => string,
+  player: IVideoPlayer<VideoPlaylistItem>,
+  parent: HTMLElement,
+  opts: DesktopUiOptions | undefined,
+  listen: (target: EventTarget, event: string, fn: (event: Event) => void) => void,
+  translate: (key: string, params?: Record<string, string>) => string,
 ): BottomRowRefs {
-	const btns = opts?.buttons;
-	const show = (key: keyof DesktopUiButtonOptions): boolean => buttonVisible(key, btns);
+  const btns = opts?.buttons;
+  const show = (key: keyof DesktopUiButtonOptions): boolean => buttonVisible(key, btns);
 
-	const playBtn = iconBtn(player, 'playback', 'play');
-	playBtn.hidden = !show('play');
-	parent.appendChild(playBtn);
+  const playBtn = iconBtn(player, 'playback', 'play');
 
-	const prevBtn = iconBtn(player, 'previous', 'previous');
-	prevBtn.hidden = !show('previous');
-	parent.appendChild(prevBtn);
+  playBtn.hidden = !show('play');
+  parent.appendChild(playBtn);
 
-	const rewindBtn = iconBtn(player, 'seek-back', 'seekBack');
-	rewindBtn.hidden = !show('seekBack');
-	parent.appendChild(rewindBtn);
+  const prevBtn = iconBtn(player, 'previous', 'previous');
 
-	const forwardBtn = iconBtn(player, 'seek-forward', 'seekForward');
-	forwardBtn.hidden = !show('seekForward');
-	parent.appendChild(forwardBtn);
+  prevBtn.hidden = !show('previous');
+  parent.appendChild(prevBtn);
 
-	const chapBackBtn = iconBtn(player, 'chapter-back', 'chapterBack');
-	chapBackBtn.hidden = !show('chapterPrev');
-	parent.appendChild(chapBackBtn);
+  const rewindBtn = iconBtn(player, 'seek-back', 'seekBack');
 
-	const chapFwdBtn = iconBtn(player, 'chapter-forward', 'chapterForward');
-	chapFwdBtn.hidden = !show('chapterNext');
-	parent.appendChild(chapFwdBtn);
+  rewindBtn.hidden = !show('seekBack');
+  parent.appendChild(rewindBtn);
 
-	const nextBtn = iconBtn(player, 'next', 'next');
-	nextBtn.hidden = !show('next');
-	parent.appendChild(nextBtn);
+  const forwardBtn = iconBtn(player, 'seek-forward', 'seekForward');
 
-	const volContainer = createElement('div', 'volume-container')
-		.addClasses(['volume-container'])
-		.appendTo(parent)
-		.get();
-	volContainer.hidden = !show('mute') && !show('volume');
+  forwardBtn.hidden = !show('seekForward');
+  parent.appendChild(forwardBtn);
 
-	// Scroll over the volume cluster adjusts volume (v1: ±delta * 0.5).
-	listen(volContainer, 'wheel', (event: Event) => {
-		const wheel = event as WheelEvent;
-		wheel.preventDefault();
-		const current = player.volume?.() ?? 100;
-		const next = Math.min(100, Math.max(0, current - wheel.deltaY * 0.5));
-		player.volume?.(next);
-	});
+  const chapBackBtn = iconBtn(player, 'chapter-back', 'chapterBack');
 
-	const volBtn = iconBtn(player, 'volume', 'volumeHigh');
-	volBtn.hidden = !show('mute');
-	volContainer.appendChild(volBtn);
+  chapBackBtn.hidden = !show('chapterPrev');
+  parent.appendChild(chapBackBtn);
 
-	const volSlider = createElement('input', 'volume-slider')
-		.addClasses(['volume-slider'])
-		.appendTo(volContainer)
-		.get();
-	volSlider.type = 'range';
-	volSlider.min = '0';
-	volSlider.max = '100';
-	volSlider.value = '100';
-	volSlider.setAttribute('aria-label', translate('a11y.volume'));
-	volSlider.hidden = !show('volume');
+  const chapFwdBtn = iconBtn(player, 'chapter-forward', 'chapterForward');
 
-	// Vertical slider popup (hidden initially; activated by wireVolumeSlider).
-	const vertPop = createElement('div', 'volume-slider-vertical')
-		.addClasses(['volume-slider-vertical'])
-		.appendTo(volContainer)
-		.get();
-	const vertInput = createElement('input', 'volume-slider-vertical-input')
-		.addClasses(['volume-slider-vertical-input'])
-		.appendTo(vertPop)
-		.get();
-	vertInput.type = 'range';
-	vertInput.min = '0';
-	vertInput.max = '100';
-	vertInput.value = '100';
-	vertInput.setAttribute('aria-label', translate('a11y.volume'));
-	vertInput.setAttribute('orient', 'vertical');
+  chapFwdBtn.hidden = !show('chapterNext');
+  parent.appendChild(chapFwdBtn);
 
-	const volPopupMuteBtn = iconBtn(player, 'vol-popup-mute', 'volumeHigh');
-	volPopupMuteBtn.classList.add('vol-popup-mute');
-	vertPop.appendChild(volPopupMuteBtn);
+  const nextBtn = iconBtn(player, 'next', 'next');
 
-	const currentTimeEl = createElement('div', 'current-time')
-		.addClasses(['current-time', 'time'])
-		.appendTo(parent)
-		.get();
-	currentTimeEl.textContent = '0:00';
+  nextBtn.hidden = !show('next');
+  parent.appendChild(nextBtn);
 
-	createElement('div', 'divider')
-		.addClasses(['divider'])
-		.appendTo(parent);
+  const volContainer = createElement('div', 'volume-container')
+    .addClasses(['volume-container'])
+    .appendTo(parent)
+    .get();
 
-	const remainingTimeEl = createElement('div', 'remaining-time')
-		.addClasses(['remaining-time', 'time'])
-		.appendTo(parent)
-		.get();
-	remainingTimeEl.textContent = '0:00';
+  volContainer.hidden = !show('mute') && !show('volume');
 
-	const aspectRatioBtn = iconBtn(player, 'aspect-ratio', 'aspectFit');
-	aspectRatioBtn.hidden = !show('aspectRatio');
-	parent.appendChild(aspectRatioBtn);
+  // Scroll over the volume cluster adjusts volume (v1: ±delta * 0.5).
+  listen(volContainer, 'wheel', (event: Event) => {
+    const wheel = event as WheelEvent;
 
-	const theaterBtn = iconBtn(player, 'theater', 'theater');
-	theaterBtn.hidden = !show('theater');
-	const theaterConfigHidden = theaterBtn.hidden;
-	parent.appendChild(theaterBtn);
+    wheel.preventDefault();
+    const current = player.volume?.() ?? 100;
+    const next = Math.min(100, Math.max(0, current - wheel.deltaY * 0.5));
 
-	const pipBtn = iconBtn(player, 'pip', 'pipEnter');
-	pipBtn.hidden = !show('pip');
-	parent.appendChild(pipBtn);
+    player.volume?.(next);
+  });
 
-	const speedBtn = iconBtn(player, 'speed', 'speed');
-	speedBtn.setAttribute('aria-label', translate('tooltip.speed'));
-	speedBtn.hidden = !show('speed');
-	parent.appendChild(speedBtn);
+  const volBtn = iconBtn(player, 'volume', 'volumeHigh');
 
-	const subsBtn = iconBtn(player, 'subtitles', 'subtitles');
-	subsBtn.hidden = !show('subtitles');
-	parent.appendChild(subsBtn);
+  volBtn.hidden = !show('mute');
+  volContainer.appendChild(volBtn);
 
-	const audioBtn = iconBtn(player, 'audio', 'language');
-	audioBtn.hidden = !show('audio');
-	parent.appendChild(audioBtn);
+  const volSlider = createElement('input', 'volume-slider')
+    .addClasses(['volume-slider'])
+    .appendTo(volContainer)
+    .get();
 
-	const qualityBtn = iconBtn(player, 'quality', 'quality');
-	qualityBtn.hidden = !show('quality');
-	parent.appendChild(qualityBtn);
+  volSlider.type = 'range';
+  volSlider.min = '0';
+  volSlider.max = '100';
+  volSlider.value = '100';
+  volSlider.setAttribute('aria-label', translate('a11y.volume'));
+  volSlider.hidden = !show('volume');
 
-	const playlistBtn = iconBtn(player, 'playlist', 'playlist');
-	playlistBtn.hidden = !show('playlist');
-	parent.appendChild(playlistBtn);
+  // Vertical slider popup (hidden initially; activated by wireVolumeSlider).
+  const vertPop = createElement('div', 'volume-slider-vertical')
+    .addClasses(['volume-slider-vertical'])
+    .appendTo(volContainer)
+    .get();
+  const vertInput = createElement('input', 'volume-slider-vertical-input')
+    .addClasses(['volume-slider-vertical-input'])
+    .appendTo(vertPop)
+    .get();
 
-	const settingsBtn = iconBtn(player, 'settings', 'settings');
-	settingsBtn.hidden = !show('settings');
-	parent.appendChild(settingsBtn);
+  vertInput.type = 'range';
+  vertInput.min = '0';
+  vertInput.max = '100';
+  vertInput.value = '100';
+  vertInput.setAttribute('aria-label', translate('a11y.volume'));
+  vertInput.setAttribute('orient', 'vertical');
 
-	const fsBtn = iconBtn(player, 'fullscreen', 'fullscreen');
-	fsBtn.hidden = !show('fullscreen');
-	parent.appendChild(fsBtn);
+  const volPopupMuteBtn = iconBtn(player, 'vol-popup-mute', 'volumeHigh');
 
-	collapseAllTriggers({
-		settingsBtn,
-		speedBtn,
-		qualityBtn,
-		subsBtn,
-		audioBtn,
-		playlistBtn,
-		aspectRatioBtn,
-	});
+  volPopupMuteBtn.classList.add('vol-popup-mute');
+  vertPop.appendChild(volPopupMuteBtn);
 
-	applyButtonOrder(parent, opts, {
-		playBtn,
-		prevBtn,
-		nextBtn,
-		rewindBtn,
-		forwardBtn,
-		chapBackBtn,
-		chapFwdBtn,
-		volBtn,
-		speedBtn,
-		qualityBtn,
-		subsBtn,
-		audioBtn,
-		aspectRatioBtn,
-		theaterBtn,
-		pipBtn,
-		playlistBtn,
-		settingsBtn,
-		fsBtn,
-		volSlider,
-		volSliderVertical: vertPop,
-		volContainer,
-		volVertInput: vertInput,
-		volPopupMuteBtn,
-		currentTimeEl,
-		remainingTimeEl,
-		theaterConfigHidden,
-	});
+  const currentTimeEl = createElement('div', 'current-time')
+    .addClasses(['current-time', 'time'])
+    .appendTo(parent)
+    .get();
 
-	return {
-		playBtn,
-		prevBtn,
-		nextBtn,
-		rewindBtn,
-		forwardBtn,
-		chapBackBtn,
-		chapFwdBtn,
-		volBtn,
-		volSlider,
-		volSliderVertical: vertPop,
-		volContainer,
-		volVertInput: vertInput,
-		volPopupMuteBtn,
-		currentTimeEl,
-		remainingTimeEl,
-		aspectRatioBtn,
-		theaterBtn,
-		theaterConfigHidden,
-		pipBtn,
-		speedBtn,
-		subsBtn,
-		audioBtn,
-		qualityBtn,
-		playlistBtn,
-		settingsBtn,
-		fsBtn,
-	};
+  currentTimeEl.textContent = '0:00';
+
+  createElement('div', 'divider')
+    .addClasses(['divider'])
+    .appendTo(parent);
+
+  const remainingTimeEl = createElement('div', 'remaining-time')
+    .addClasses(['remaining-time', 'time'])
+    .appendTo(parent)
+    .get();
+
+  remainingTimeEl.textContent = '0:00';
+
+  const aspectRatioBtn = iconBtn(player, 'aspect-ratio', 'aspectFit');
+
+  aspectRatioBtn.hidden = !show('aspectRatio');
+  parent.appendChild(aspectRatioBtn);
+
+  const theaterBtn = iconBtn(player, 'theater', 'theater');
+
+  theaterBtn.hidden = !show('theater');
+  const theaterConfigHidden = theaterBtn.hidden;
+
+  parent.appendChild(theaterBtn);
+
+  const pipBtn = iconBtn(player, 'pip', 'pipEnter');
+
+  pipBtn.hidden = !show('pip');
+  parent.appendChild(pipBtn);
+
+  const speedBtn = iconBtn(player, 'speed', 'speed');
+
+  speedBtn.setAttribute('aria-label', translate('tooltip.speed'));
+  speedBtn.hidden = !show('speed');
+  parent.appendChild(speedBtn);
+
+  const subsBtn = iconBtn(player, 'subtitles', 'subtitles');
+
+  subsBtn.hidden = !show('subtitles');
+  parent.appendChild(subsBtn);
+
+  const audioBtn = iconBtn(player, 'audio', 'language');
+
+  audioBtn.hidden = !show('audio');
+  parent.appendChild(audioBtn);
+
+  const qualityBtn = iconBtn(player, 'quality', 'quality');
+
+  qualityBtn.hidden = !show('quality');
+  parent.appendChild(qualityBtn);
+
+  const playlistBtn = iconBtn(player, 'playlist', 'playlist');
+
+  playlistBtn.hidden = !show('playlist');
+  parent.appendChild(playlistBtn);
+
+  const settingsBtn = iconBtn(player, 'settings', 'settings');
+
+  settingsBtn.hidden = !show('settings');
+  parent.appendChild(settingsBtn);
+
+  const fsBtn = iconBtn(player, 'fullscreen', 'fullscreen');
+
+  fsBtn.hidden = !show('fullscreen');
+  parent.appendChild(fsBtn);
+
+  collapseAllTriggers({
+    settingsBtn,
+    speedBtn,
+    qualityBtn,
+    subsBtn,
+    audioBtn,
+    playlistBtn,
+    aspectRatioBtn,
+  });
+
+  applyButtonOrder(parent, opts, {
+    playBtn,
+    prevBtn,
+    nextBtn,
+    rewindBtn,
+    forwardBtn,
+    chapBackBtn,
+    chapFwdBtn,
+    volBtn,
+    speedBtn,
+    qualityBtn,
+    subsBtn,
+    audioBtn,
+    aspectRatioBtn,
+    theaterBtn,
+    pipBtn,
+    playlistBtn,
+    settingsBtn,
+    fsBtn,
+    volSlider,
+    volSliderVertical: vertPop,
+    volContainer,
+    volVertInput: vertInput,
+    volPopupMuteBtn,
+    currentTimeEl,
+    remainingTimeEl,
+    theaterConfigHidden,
+  });
+
+  return {
+    playBtn,
+    prevBtn,
+    nextBtn,
+    rewindBtn,
+    forwardBtn,
+    chapBackBtn,
+    chapFwdBtn,
+    volBtn,
+    volSlider,
+    volSliderVertical: vertPop,
+    volContainer,
+    volVertInput: vertInput,
+    volPopupMuteBtn,
+    currentTimeEl,
+    remainingTimeEl,
+    aspectRatioBtn,
+    theaterBtn,
+    theaterConfigHidden,
+    pipBtn,
+    speedBtn,
+    subsBtn,
+    audioBtn,
+    qualityBtn,
+    playlistBtn,
+    settingsBtn,
+    fsBtn,
+  };
 }
 
 // ── Button order ──────────────────────────────────────────────────────────────
@@ -422,40 +457,42 @@ export function buildBottomRow(
  * by `buttonPriority`.
  */
 export function applyButtonOrder(
-	parent: HTMLElement,
-	opts: DesktopUiOptions | undefined,
-	refs: BottomRowRefs,
+  parent: HTMLElement,
+  opts: DesktopUiOptions | undefined,
+  refs: BottomRowRefs,
 ): void {
-	const order = opts?.buttonOrder;
-	if (!order || order.length === 0)
-		return;
+  const order = opts?.buttonOrder;
 
-	const byKey: Partial<Record<keyof DesktopUiButtonOptions, HTMLButtonElement | null>> = {
-		play: refs.playBtn,
-		mute: refs.volBtn,
-		fullscreen: refs.fsBtn,
-		settings: refs.settingsBtn,
-		next: refs.nextBtn,
-		previous: refs.prevBtn,
-		seekBack: refs.rewindBtn,
-		seekForward: refs.forwardBtn,
-		chapterPrev: refs.chapBackBtn,
-		chapterNext: refs.chapFwdBtn,
-		theater: refs.theaterBtn,
-		pip: refs.pipBtn,
-		speed: refs.speedBtn,
-		quality: refs.qualityBtn,
-		subtitles: refs.subsBtn,
-		audio: refs.audioBtn,
-		aspectRatio: refs.aspectRatioBtn,
-		playlist: refs.playlistBtn,
-	};
+  if (!order || order.length === 0) return;
 
-	for (const key of order) {
-		const btn = byKey[key];
-		if (btn)
-			parent.appendChild(btn);
-	}
+  const byKey: Partial<Record<keyof DesktopUiButtonOptions, HTMLButtonElement | null>> = {
+    play: refs.playBtn,
+    mute: refs.volBtn,
+    fullscreen: refs.fsBtn,
+    settings: refs.settingsBtn,
+    next: refs.nextBtn,
+    previous: refs.prevBtn,
+    seekBack: refs.rewindBtn,
+    seekForward: refs.forwardBtn,
+    chapterPrev: refs.chapBackBtn,
+    chapterNext: refs.chapFwdBtn,
+    theater: refs.theaterBtn,
+    pip: refs.pipBtn,
+    speed: refs.speedBtn,
+    quality: refs.qualityBtn,
+    subtitles: refs.subsBtn,
+    audio: refs.audioBtn,
+    aspectRatio: refs.aspectRatioBtn,
+    playlist: refs.playlistBtn,
+  };
+
+  for (const key of order) {
+    const btn = byKey[key];
+
+    if (btn) {
+      parent.appendChild(btn);
+    }
+  }
 }
 
 // ── Keyboard shortcuts overlay ────────────────────────────────────────────────
@@ -466,274 +503,288 @@ export function applyButtonOrder(
  * up on dispose.
  */
 export function buildShortcutsOverlay(
-	parent: HTMLElement,
-	listen: (target: EventTarget, event: string, fn: (event: Event) => void) => void,
-	translate: (key: string, params?: Record<string, string>) => string,
-	hideShortcuts: () => void,
+  parent: HTMLElement,
+  listen: (target: EventTarget, event: string, fn: (event: Event) => void) => void,
+  translate: (key: string, params?: Record<string, string>) => string,
+  hideShortcuts: () => void,
 ): HTMLDivElement {
-	const overlay = document.createElement('div');
-	overlay.id = 'nmplayer-keybinds-dialog';
-	overlay.className = 'keybinds-dialog';
-	overlay.setAttribute('role', 'dialog');
-	overlay.setAttribute('aria-modal', 'true');
-	overlay.setAttribute('aria-label', translate('shortcuts.title'));
+  const overlay = document.createElement('div');
 
-	const card = document.createElement('div');
-	card.className = 'keybinds-card';
+  overlay.id = 'nmplayer-keybinds-dialog';
+  overlay.className = 'keybinds-dialog';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', translate('shortcuts.title'));
 
-	const heading = document.createElement('h2');
-	heading.className = 'keybinds-heading';
-	heading.textContent = translate('shortcuts.title');
-	card.appendChild(heading);
+  const card = document.createElement('div');
 
-	const sections: ReadonlyArray<ReadonlyArray<{
-		title: string;
-		entries: ReadonlyArray<{ keys: ReadonlyArray<string>; label: string }>;
-	}>> = [
-		[
-			{
-				title: translate('shortcuts.group.playback'),
-				entries: [
-					{
-						keys: ['Space'],
-						label: translate('shortcuts.playPause'),
-					},
-					{
-						keys: ['S'],
-						label: translate('shortcuts.stop'),
-					},
-					{
-						keys: ['E'],
-						label: translate('shortcuts.frameAdvance'),
-					},
-				],
-			},
-			{
-				title: translate('shortcuts.group.speed'),
-				entries: [
-					{
-						keys: [']'],
-						label: translate('shortcuts.speedUp'),
-					},
-					{
-						keys: ['['],
-						label: translate('shortcuts.speedDown'),
-					},
-					{
-						keys: ['='],
-						label: translate('shortcuts.normalSpeed'),
-					},
-				],
-			},
-			{
-				title: translate('shortcuts.group.volume'),
-				entries: [
-					{
-						keys: ['↑'],
-						label: translate('shortcuts.volumeUp'),
-					},
-					{
-						keys: ['↓'],
-						label: translate('shortcuts.volumeDown'),
-					},
-					{
-						keys: ['M'],
-						label: translate('shortcuts.mute'),
-					},
-				],
-			},
-		],
-		[
-			{
-				title: translate('shortcuts.group.seeking'),
-				entries: [
-					{
-						keys: ['←'],
-						label: translate('shortcuts.seekBack5'),
-					},
-					{
-						keys: ['→'],
-						label: translate('shortcuts.seekForward5'),
-					},
-					{
-						keys: ['Shift', '← / →'],
-						label: translate('shortcuts.seek3s'),
-					},
-					{
-						keys: ['Alt', '← / →'],
-						label: translate('shortcuts.seek10s'),
-					},
-					{
-						keys: ['Ctrl', '← / →'],
-						label: translate('shortcuts.seek60s'),
-					},
-				],
-			},
-			{
-				title: translate('shortcuts.group.quickSeek'),
-				entries: [
-					{
-						keys: ['3'],
-						label: translate('shortcuts.seek30s'),
-					},
-					{
-						keys: ['6'],
-						label: translate('shortcuts.seek60sKey'),
-					},
-					{
-						keys: ['9'],
-						label: translate('shortcuts.seek90s'),
-					},
-					{
-						keys: ['1'],
-						label: translate('shortcuts.seek120s'),
-					},
-				],
-			},
-			{
-				title: translate('shortcuts.group.navigation'),
-				entries: [
-					{
-						keys: ['N'],
-						label: translate('shortcuts.next'),
-					},
-					{
-						keys: ['P'],
-						label: translate('shortcuts.previous'),
-					},
-					{
-						keys: ['Shift', 'N'],
-						label: translate('shortcuts.nextChapter'),
-					},
-					{
-						keys: ['Shift', 'P'],
-						label: translate('shortcuts.previousChapter'),
-					},
-				],
-			},
-		],
-		[
-			{
-				title: translate('shortcuts.group.tracksAndSubtitles'),
-				entries: [
-					{
-						keys: ['V'],
-						label: translate('shortcuts.cycleSubs'),
-					},
-					{
-						keys: ['B'],
-						label: translate('shortcuts.cycleAudio'),
-					},
-					{
-						keys: ['A'],
-						label: translate('shortcuts.cycleAspect'),
-					},
-					{
-						keys: ['+'],
-						label: translate('shortcuts.subSizeUp'),
-					},
-					{
-						keys: ['–'],
-						label: translate('shortcuts.subSizeDown'),
-					},
-				],
-			},
-			{
-				title: translate('shortcuts.group.display'),
-				entries: [
-					{
-						keys: ['F'],
-						label: translate('shortcuts.fullscreen'),
-					},
-					{
-						keys: ['F11'],
-						label: translate('shortcuts.fullscreen'),
-					},
-					{
-						keys: ['Esc'],
-						label: translate('shortcuts.exitFullscreen'),
-					},
-					{
-						keys: ['T'],
-						label: translate('shortcuts.showTime'),
-					},
-					{
-						keys: ['?'],
-						label: translate('shortcuts.help'),
-					},
-				],
-			},
-		],
-	];
+  card.className = 'keybinds-card';
 
-	const grid = document.createElement('div');
-	grid.className = 'keybinds-grid';
+  const heading = document.createElement('h2');
 
-	for (const column of sections) {
-		const cell = document.createElement('div');
-		cell.className = 'keybinds-column';
+  heading.className = 'keybinds-heading';
+  heading.textContent = translate('shortcuts.title');
+  card.appendChild(heading);
 
-		for (const group of column) {
-			const groupEl = document.createElement('div');
+  const sections: ReadonlyArray<ReadonlyArray<{
+    title: string;
+    entries: ReadonlyArray<{ keys: ReadonlyArray<string>; label: string }>;
+  }>> = [
+    [
+      {
+        title: translate('shortcuts.group.playback'),
+        entries: [
+          {
+            keys: ['Space'],
+            label: translate('shortcuts.playPause'),
+          },
+          {
+            keys: ['S'],
+            label: translate('shortcuts.stop'),
+          },
+          {
+            keys: ['E'],
+            label: translate('shortcuts.frameAdvance'),
+          },
+        ],
+      },
+      {
+        title: translate('shortcuts.group.speed'),
+        entries: [
+          {
+            keys: [']'],
+            label: translate('shortcuts.speedUp'),
+          },
+          {
+            keys: ['['],
+            label: translate('shortcuts.speedDown'),
+          },
+          {
+            keys: ['='],
+            label: translate('shortcuts.normalSpeed'),
+          },
+        ],
+      },
+      {
+        title: translate('shortcuts.group.volume'),
+        entries: [
+          {
+            keys: ['↑'],
+            label: translate('shortcuts.volumeUp'),
+          },
+          {
+            keys: ['↓'],
+            label: translate('shortcuts.volumeDown'),
+          },
+          {
+            keys: ['M'],
+            label: translate('shortcuts.mute'),
+          },
+        ],
+      },
+    ],
+    [
+      {
+        title: translate('shortcuts.group.seeking'),
+        entries: [
+          {
+            keys: ['←'],
+            label: translate('shortcuts.seekBack5'),
+          },
+          {
+            keys: ['→'],
+            label: translate('shortcuts.seekForward5'),
+          },
+          {
+            keys: ['Shift', '← / →'],
+            label: translate('shortcuts.seek3s'),
+          },
+          {
+            keys: ['Alt', '← / →'],
+            label: translate('shortcuts.seek10s'),
+          },
+          {
+            keys: ['Ctrl', '← / →'],
+            label: translate('shortcuts.seek60s'),
+          },
+        ],
+      },
+      {
+        title: translate('shortcuts.group.quickSeek'),
+        entries: [
+          {
+            keys: ['3'],
+            label: translate('shortcuts.seek30s'),
+          },
+          {
+            keys: ['6'],
+            label: translate('shortcuts.seek60sKey'),
+          },
+          {
+            keys: ['9'],
+            label: translate('shortcuts.seek90s'),
+          },
+          {
+            keys: ['1'],
+            label: translate('shortcuts.seek120s'),
+          },
+        ],
+      },
+      {
+        title: translate('shortcuts.group.navigation'),
+        entries: [
+          {
+            keys: ['N'],
+            label: translate('shortcuts.next'),
+          },
+          {
+            keys: ['P'],
+            label: translate('shortcuts.previous'),
+          },
+          {
+            keys: ['Shift', 'N'],
+            label: translate('shortcuts.nextChapter'),
+          },
+          {
+            keys: ['Shift', 'P'],
+            label: translate('shortcuts.previousChapter'),
+          },
+        ],
+      },
+    ],
+    [
+      {
+        title: translate('shortcuts.group.tracksAndSubtitles'),
+        entries: [
+          {
+            keys: ['V'],
+            label: translate('shortcuts.cycleSubs'),
+          },
+          {
+            keys: ['B'],
+            label: translate('shortcuts.cycleAudio'),
+          },
+          {
+            keys: ['A'],
+            label: translate('shortcuts.cycleAspect'),
+          },
+          {
+            keys: ['+'],
+            label: translate('shortcuts.subSizeUp'),
+          },
+          {
+            keys: ['–'],
+            label: translate('shortcuts.subSizeDown'),
+          },
+        ],
+      },
+      {
+        title: translate('shortcuts.group.display'),
+        entries: [
+          {
+            keys: ['F'],
+            label: translate('shortcuts.fullscreen'),
+          },
+          {
+            keys: ['F11'],
+            label: translate('shortcuts.fullscreen'),
+          },
+          {
+            keys: ['Esc'],
+            label: translate('shortcuts.exitFullscreen'),
+          },
+          {
+            keys: ['T'],
+            label: translate('shortcuts.showTime'),
+          },
+          {
+            keys: ['?'],
+            label: translate('shortcuts.help'),
+          },
+        ],
+      },
+    ],
+  ];
 
-			const groupTitle = document.createElement('h3');
-			groupTitle.className = 'keybinds-group-title';
-			groupTitle.textContent = group.title;
-			groupEl.appendChild(groupTitle);
+  const grid = document.createElement('div');
 
-			for (const entry of group.entries) {
-				const row = document.createElement('div');
-				row.className = 'keybinds-row';
+  grid.className = 'keybinds-grid';
 
-				const keysContainer = document.createElement('span');
-				keysContainer.className = 'keybinds-keys';
+  for (const column of sections) {
+    const cell = document.createElement('div');
 
-				for (let keyIndex = 0; keyIndex < entry.keys.length; keyIndex++) {
-					if (keyIndex > 0) {
-						const plus = document.createElement('span');
-						plus.className = 'keybinds-plus';
-						plus.textContent = '+';
-						keysContainer.appendChild(plus);
-					}
+    cell.className = 'keybinds-column';
 
-					const kbd = document.createElement('kbd');
-					kbd.className = 'keybinds-key';
-					kbd.textContent = entry.keys[keyIndex]!;
-					keysContainer.appendChild(kbd);
-				}
+    for (const group of column) {
+      const groupEl = document.createElement('div');
 
-				const labelEl = document.createElement('span');
-				labelEl.className = 'keybinds-label';
-				labelEl.textContent = entry.label;
+      const groupTitle = document.createElement('h3');
 
-				row.appendChild(keysContainer);
-				row.appendChild(labelEl);
-				groupEl.appendChild(row);
-			}
+      groupTitle.className = 'keybinds-group-title';
+      groupTitle.textContent = group.title;
+      groupEl.appendChild(groupTitle);
 
-			cell.appendChild(groupEl);
-		}
+      for (const entry of group.entries) {
+        const row = document.createElement('div');
 
-		grid.appendChild(cell);
-	}
+        row.className = 'keybinds-row';
 
-	card.appendChild(grid);
-	card.appendChild(buildKeyboardDecoration());
+        const keysContainer = document.createElement('span');
 
-	const hintEl = document.createElement('p');
-	hintEl.className = 'keybinds-hint';
-	hintEl.textContent = translate('shortcuts.hint');
-	card.appendChild(hintEl);
+        keysContainer.className = 'keybinds-keys';
 
-	overlay.appendChild(card);
+        for (let keyIndex = 0; keyIndex < entry.keys.length; keyIndex++) {
+          if (keyIndex > 0) {
+            const plus = document.createElement('span');
 
-	listen(overlay, 'click', (event: Event) => {
-		if (event.target === overlay)
-			hideShortcuts();
-	});
+            plus.className = 'keybinds-plus';
+            plus.textContent = '+';
+            keysContainer.appendChild(plus);
+          }
 
-	parent.appendChild(overlay);
-	return overlay;
+          const kbd = document.createElement('kbd');
+
+          kbd.className = 'keybinds-key';
+          kbd.textContent = entry.keys[keyIndex]!;
+          keysContainer.appendChild(kbd);
+        }
+
+        const labelEl = document.createElement('span');
+
+        labelEl.className = 'keybinds-label';
+        labelEl.textContent = entry.label;
+
+        row.appendChild(keysContainer);
+        row.appendChild(labelEl);
+        groupEl.appendChild(row);
+      }
+
+      cell.appendChild(groupEl);
+    }
+
+    grid.appendChild(cell);
+  }
+
+  card.appendChild(grid);
+  card.appendChild(buildKeyboardDecoration());
+
+  const hintEl = document.createElement('p');
+
+  hintEl.className = 'keybinds-hint';
+  hintEl.textContent = translate('shortcuts.hint');
+  card.appendChild(hintEl);
+
+  overlay.appendChild(card);
+
+  listen(overlay, 'click', (event: Event) => {
+    if (event.target === overlay) {
+      hideShortcuts();
+    }
+  });
+
+  parent.appendChild(overlay);
+
+  return overlay;
 }
 
 /**
@@ -741,32 +792,41 @@ export function buildShortcutsOverlay(
  * Highlights the keys used by NOMERCY.
  */
 export function buildKeyboardDecoration(): HTMLDivElement {
-	const wrap = document.createElement('div');
-	wrap.className = 'keybinds-decoration';
+  const wrap = document.createElement('div');
 
-	const highlighted = new Set('NOMERCY'.split(''));
-	const keyRows = [
-		'1234567890-='.split(''),
-		'QWERTYUIOP'.split(''),
-		'ASDFGHJKL'.split(''),
-		'ZXCVBNM'.split(''),
-	];
-	const rowOffsets = [0, 10, 22, 38];
-	let svgKeys = '';
-	for (let rowIdx = 0; rowIdx < keyRows.length; rowIdx++) {
-		const row = keyRows[rowIdx]!;
-		for (let keyIdx = 0; keyIdx < row.length; keyIdx++) {
-			const kx = keyIdx * 28 + rowOffsets[rowIdx]!;
-			const ky = rowIdx * 30;
-			const letter = row[keyIdx]!;
-			const opacity = highlighted.has(letter) ? '1' : '0.35';
-			svgKeys += `<rect x="${kx}" y="${ky}" width="24" height="24" rx="4" fill="white" opacity="${opacity}"/>`;
-			if (highlighted.has(letter)) {
-				svgKeys += `<text x="${kx + 12}" y="${ky + 16}" text-anchor="middle" fill="black" font-size="11" font-family="monospace" font-weight="700" opacity="0.7">${letter}</text>`;
-			}
-		}
-	}
-	svgKeys += '<rect x="110" y="120" width="160" height="24" rx="4" fill="white" opacity="0.35"/>';
-	wrap.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 412 164" width="450" height="180">${svgKeys}</svg>`;
-	return wrap;
+  wrap.className = 'keybinds-decoration';
+
+  const highlighted = new Set('NOMERCY'.split(''));
+  const keyRows = [
+    '1234567890-='.split(''),
+    'QWERTYUIOP'.split(''),
+    'ASDFGHJKL'.split(''),
+    'ZXCVBNM'.split(''),
+  ];
+  const rowOffsets = [0, 10, 22, 38];
+  let svgKeys = '';
+
+  for (let rowIdx = 0; rowIdx < keyRows.length; rowIdx++) {
+    const row = keyRows[rowIdx]!;
+
+    for (let keyIdx = 0; keyIdx < row.length; keyIdx++) {
+      const kx = keyIdx * 28 + rowOffsets[rowIdx]!;
+      const ky = rowIdx * 30;
+      const letter = row[keyIdx]!;
+      const opacity = highlighted.has(letter)
+        ? '1'
+        : '0.35';
+
+      svgKeys += `<rect x="${kx}" y="${ky}" width="24" height="24" rx="4" fill="white" opacity="${opacity}"/>`;
+
+      if (highlighted.has(letter)) {
+        svgKeys += `<text x="${kx + 12}" y="${ky + 16}" text-anchor="middle" fill="black" font-size="11" font-family="monospace" font-weight="700" opacity="0.7">${letter}</text>`;
+      }
+    }
+  }
+
+  svgKeys += '<rect x="110" y="120" width="160" height="24" rx="4" fill="white" opacity="0.35"/>';
+  wrap.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 412 164" width="450" height="180">${svgKeys}</svg>`;
+
+  return wrap;
 }

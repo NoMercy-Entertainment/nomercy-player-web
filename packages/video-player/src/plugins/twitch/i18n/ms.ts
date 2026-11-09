@@ -7,11 +7,11 @@
 // -----------------------------------------------------------------------------
 
 const translations = {
-	'plugin.twitch.error.clip-unavailable': 'Twitch tidak mempunyai fail boleh main untuk klip {slug}',
-	'plugin.twitch.channel.offline': '{channel} sedang luar talian',
-	'plugin.twitch.channel.ended': 'Strim {channel} telah tamat',
-	'plugin.twitch.setting.use-twitch-player': 'Guna pemain asal Twitch',
-	'plugin.twitch.subtitle.enabled': 'Didayakan',
+  'plugin.twitch.error.clip-unavailable': 'Twitch tidak mempunyai fail boleh main untuk klip {slug}',
+  'plugin.twitch.channel.offline': '{channel} sedang luar talian',
+  'plugin.twitch.channel.ended': 'Strim {channel} telah tamat',
+  'plugin.twitch.setting.use-twitch-player': 'Guna pemain asal Twitch',
+  'plugin.twitch.subtitle.enabled': 'Didayakan',
 };
 
 export default translations;

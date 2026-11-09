@@ -35,12 +35,12 @@
  */
 
 import {
-	readFileSync,
-	writeFileSync,
+  readFileSync,
+  writeFileSync,
 } from 'node:fs';
 import {
-	join,
-	resolve,
+  join,
+  resolve,
 } from 'node:path';
 
 const distArg = process.argv[2] ?? 'dist';
@@ -52,17 +52,17 @@ const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
 const version = pkg.version;
 
 if (!version || typeof version !== 'string') {
-	console.error(`[inline-kit-version] Could not read version from ${pkgPath}`);
-	process.exit(1);
+  console.error(`[inline-kit-version] Could not read version from ${pkgPath}`);
+  process.exit(1);
 }
 
 let source;
+
 try {
-	source = readFileSync(targetPath, 'utf8');
-}
-catch {
-	console.error(`[inline-kit-version] Target not found: ${targetPath} — run tsc first`);
-	process.exit(1);
+  source = readFileSync(targetPath, 'utf8');
+} catch {
+  console.error(`[inline-kit-version] Target not found: ${targetPath} — run tsc first`);
+  process.exit(1);
 }
 
 // The emitted file contains a JSON import and a pkg.version reference.
@@ -71,8 +71,8 @@ const hasJsonImport = source.includes('package.json');
 const hasPkgRef = source.includes('pkg.version') || source.includes('pkg[');
 
 if (!hasJsonImport && !hasPkgRef) {
-	console.log(`[inline-kit-version] Already inlined or unexpected shape — skipping ${targetPath}`);
-	process.exit(0);
+  console.log(`[inline-kit-version] Already inlined or unexpected shape — skipping ${targetPath}`);
+  process.exit(0);
 }
 
 const inlined = `// -----------------------------------------------------------------------------

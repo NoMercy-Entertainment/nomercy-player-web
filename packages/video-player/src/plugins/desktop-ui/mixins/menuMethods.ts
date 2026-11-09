@@ -24,120 +24,120 @@
 import type { SubMenuId } from '../helpers/menus';
 import type { DesktopUiInternals } from '../internals';
 import {
-	closeAllMenus as closeAllMenusFn,
-	openMainMenu as openMainMenuFn,
-	openSubMenu as openSubMenuFn,
-	repaintAspectRatioIfOpen as repaintAspectRatioIfOpenFn,
-	repaintAudioIfOpen as repaintAudioIfOpenFn,
-	repaintPlaylistIfOpen as repaintPlaylistIfOpenFn,
-	repaintQualityIfOpen as repaintQualityIfOpenFn,
-	repaintSpeedIfOpen as repaintSpeedIfOpenFn,
-	repaintSubsIfOpen as repaintSubsIfOpenFn,
-	syncActiveIndexes as syncActiveIndexesFn,
-	wireMenuKeyboardNav as wireMenuKeyboardNavFn,
+  closeAllMenus as closeAllMenusFn,
+  openMainMenu as openMainMenuFn,
+  openSubMenu as openSubMenuFn,
+  repaintAspectRatioIfOpen as repaintAspectRatioIfOpenFn,
+  repaintAudioIfOpen as repaintAudioIfOpenFn,
+  repaintPlaylistIfOpen as repaintPlaylistIfOpenFn,
+  repaintQualityIfOpen as repaintQualityIfOpenFn,
+  repaintSpeedIfOpen as repaintSpeedIfOpenFn,
+  repaintSubsIfOpen as repaintSubsIfOpenFn,
+  syncActiveIndexes as syncActiveIndexesFn,
+  wireMenuKeyboardNav as wireMenuKeyboardNavFn,
 } from '../helpers/menuControl';
 
 export const menuMethods = {
-	openMainMenu(this: DesktopUiInternals): void {
-		openMainMenuFn(this._menuControlState, this._activityState, this.menus, this._menuControlRefs);
-	},
+  openMainMenu(this: DesktopUiInternals): void {
+    openMainMenuFn(this._menuControlState, this._activityState, this.menus, this._menuControlRefs);
+  },
 
-	openSubMenu(this: DesktopUiInternals, id: SubMenuId): void {
-		openSubMenuFn(
-			id,
-			this._menuControlState,
-			this._activityState,
-			this.menus,
-			this._menuControlRefs,
-			this.player,
-			this.listen.bind(this),
-			() => this.closeAllMenus(),
-			this.opts,
-			() => this.bumpActivity(),
-		);
-	},
+  openSubMenu(this: DesktopUiInternals, id: SubMenuId): void {
+    openSubMenuFn(
+      id,
+      this._menuControlState,
+      this._activityState,
+      this.menus,
+      this._menuControlRefs,
+      this.player,
+      this.listen.bind(this),
+      () => this.closeAllMenus(),
+      this.opts,
+      () => this.bumpActivity(),
+    );
+  },
 
-	wireMenuKeyboardNav(this: DesktopUiInternals): void {
-		wireMenuKeyboardNavFn(this._menuControlState, this.menus, this.listen.bind(this));
-	},
+  wireMenuKeyboardNav(this: DesktopUiInternals): void {
+    wireMenuKeyboardNavFn(this._menuControlState, this.menus, this.listen.bind(this));
+  },
 
-	closeAllMenus(this: DesktopUiInternals): void {
-		closeAllMenusFn(
-			this._menuControlState,
-			this._activityState,
-			this.menus,
-			this._menuControlRefs,
-			() => this.bumpActivity(),
-		);
-	},
+  closeAllMenus(this: DesktopUiInternals): void {
+    closeAllMenusFn(
+      this._menuControlState,
+      this._activityState,
+      this.menus,
+      this._menuControlRefs,
+      () => this.bumpActivity(),
+    );
+  },
 
-	syncActiveIndexes(this: DesktopUiInternals): void {
-		syncActiveIndexesFn(this._menuControlState, this.player);
-	},
+  syncActiveIndexes(this: DesktopUiInternals): void {
+    syncActiveIndexesFn(this._menuControlState, this.player);
+  },
 
-	repaintSubsIfOpen(this: DesktopUiInternals): void {
-		repaintSubsIfOpenFn(
-			this._menuControlState,
-			this.menus,
-			this.player,
-			this.listen.bind(this),
-			() => this.closeAllMenus(),
-			this.opts,
-		);
-	},
+  repaintSubsIfOpen(this: DesktopUiInternals): void {
+    repaintSubsIfOpenFn(
+      this._menuControlState,
+      this.menus,
+      this.player,
+      this.listen.bind(this),
+      () => this.closeAllMenus(),
+      this.opts,
+    );
+  },
 
-	repaintAudioIfOpen(this: DesktopUiInternals): void {
-		repaintAudioIfOpenFn(
-			this._menuControlState,
-			this.menus,
-			this.player,
-			this.listen.bind(this),
-			() => this.closeAllMenus(),
-			this.opts,
-		);
-	},
+  repaintAudioIfOpen(this: DesktopUiInternals): void {
+    repaintAudioIfOpenFn(
+      this._menuControlState,
+      this.menus,
+      this.player,
+      this.listen.bind(this),
+      () => this.closeAllMenus(),
+      this.opts,
+    );
+  },
 
-	repaintQualityIfOpen(this: DesktopUiInternals): void {
-		repaintQualityIfOpenFn(
-			this._menuControlState,
-			this.menus,
-			this.player,
-			this.listen.bind(this),
-			() => this.closeAllMenus(),
-			this.opts,
-		);
-	},
+  repaintQualityIfOpen(this: DesktopUiInternals): void {
+    repaintQualityIfOpenFn(
+      this._menuControlState,
+      this.menus,
+      this.player,
+      this.listen.bind(this),
+      () => this.closeAllMenus(),
+      this.opts,
+    );
+  },
 
-	repaintSpeedIfOpen(this: DesktopUiInternals): void {
-		repaintSpeedIfOpenFn(
-			this._menuControlState,
-			this.menus,
-			this.player,
-			this.listen.bind(this),
-			() => this.closeAllMenus(),
-			this.opts,
-		);
-	},
+  repaintSpeedIfOpen(this: DesktopUiInternals): void {
+    repaintSpeedIfOpenFn(
+      this._menuControlState,
+      this.menus,
+      this.player,
+      this.listen.bind(this),
+      () => this.closeAllMenus(),
+      this.opts,
+    );
+  },
 
-	repaintPlaylistIfOpen(this: DesktopUiInternals): void {
-		repaintPlaylistIfOpenFn(
-			this._menuControlState,
-			this.menus,
-			this.player,
-			this.listen.bind(this),
-			() => this.closeAllMenus(),
-			this.opts,
-		);
-	},
+  repaintPlaylistIfOpen(this: DesktopUiInternals): void {
+    repaintPlaylistIfOpenFn(
+      this._menuControlState,
+      this.menus,
+      this.player,
+      this.listen.bind(this),
+      () => this.closeAllMenus(),
+      this.opts,
+    );
+  },
 
-	repaintAspectRatioIfOpen(this: DesktopUiInternals): void {
-		repaintAspectRatioIfOpenFn(
-			this._menuControlState,
-			this.menus,
-			this.player,
-			this.listen.bind(this),
-			() => this.closeAllMenus(),
-			this.opts,
-		);
-	},
+  repaintAspectRatioIfOpen(this: DesktopUiInternals): void {
+    repaintAspectRatioIfOpenFn(
+      this._menuControlState,
+      this.menus,
+      this.player,
+      this.listen.bind(this),
+      () => this.closeAllMenus(),
+      this.opts,
+    );
+  },
 } as const;

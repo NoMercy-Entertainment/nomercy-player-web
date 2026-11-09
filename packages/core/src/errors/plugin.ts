@@ -17,7 +17,7 @@ import { PlayerError } from './player';
  * Use `pluginError()` to construct.
  */
 export class PluginError extends PlayerError {
-	override readonly name = 'PluginError';
+  override readonly name = 'PluginError';
 }
 
 /**
@@ -32,24 +32,24 @@ export class PluginError extends PlayerError {
  * Code convention: `<pluginId>:<area>/<reason>` — e.g. `lyrics:parse/bad-lrc`.
  */
 export function pluginError(
-	code: string,
-	message: string,
-	opts?: {
-		severity?: Severity;
-		pluginId?: string;
-		context?: Record<string, unknown>;
-	},
+  code: string,
+  message: string,
+  opts?: {
+    severity?: Severity;
+    pluginId?: string;
+    context?: Record<string, unknown>;
+  },
 ): PluginError {
-	return new PluginError({
-		code,
-		severity: opts?.severity ?? 'error',
-		scope: opts?.pluginId
-			? {
-					kind: 'plugin',
-					id: opts.pluginId,
-				}
-			: { kind: 'core' },
-		message: `${code}: ${message}`,
-		context: opts?.context,
-	});
+  return new PluginError({
+    code,
+    severity: opts?.severity ?? 'error',
+    scope: opts?.pluginId
+      ? {
+          kind: 'plugin',
+          id: opts.pluginId,
+        }
+      : { kind: 'core' },
+    message: `${code}: ${message}`,
+    context: opts?.context,
+  });
 }

@@ -9,9 +9,9 @@
 import type { CastSenderTranslationKey } from './en';
 
 export default {
-	'plugin.cast-sender.casting.movie': 'Emitiranje "{title}"',
-	'plugin.cast-sender.casting.episode': 'Emitiranje {show} S{season}E{episode}: {title}',
-	'plugin.cast-sender.casting.live': 'Emitiranje uživo: {title}',
-	'plugin.cast-sender.action.cast-from-here': 'Emitiraj od ove točke',
-	'plugin.cast-sender.action.continue-on-tv': 'Nastavi na TV-u',
+  'plugin.cast-sender.casting.movie': 'Emitiranje "{title}"',
+  'plugin.cast-sender.casting.episode': 'Emitiranje {show} S{season}E{episode}: {title}',
+  'plugin.cast-sender.casting.live': 'Emitiranje uživo: {title}',
+  'plugin.cast-sender.action.cast-from-here': 'Emitiraj od ove točke',
+  'plugin.cast-sender.action.continue-on-tv': 'Nastavi na TV-u',
 } satisfies Record<CastSenderTranslationKey, string>;

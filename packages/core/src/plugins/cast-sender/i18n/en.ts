@@ -15,18 +15,18 @@
  * the glob in the plugin file picks them up at build time.
  */
 const translations = {
-	'plugin.cast-sender.unavailable': 'Casting is not available on this device.',
-	'plugin.cast-sender.connecting': 'Connecting to {device}…',
-	'plugin.cast-sender.connected': 'Casting to {device}',
-	'plugin.cast-sender.disconnected': 'Disconnected from {device}',
-	'plugin.cast-sender.error.session-failed': 'Could not start the cast session.',
-	'plugin.cast-sender.error.load-failed': 'The cast device refused the media.',
-	'plugin.cast-sender.error.generic': 'A cast error occurred.',
-	'plugin.cast-sender.action.connect': 'Cast',
-	'plugin.cast-sender.action.disconnect': 'Stop casting',
-	'plugin.cast-sender.state.buffering': 'Buffering…',
-	'plugin.cast-sender.state.playing': 'Playing on {device}',
-	'plugin.cast-sender.state.paused': 'Paused on {device}',
+  'plugin.cast-sender.unavailable': 'Casting is not available on this device.',
+  'plugin.cast-sender.connecting': 'Connecting to {device}…',
+  'plugin.cast-sender.connected': 'Casting to {device}',
+  'plugin.cast-sender.disconnected': 'Disconnected from {device}',
+  'plugin.cast-sender.error.session-failed': 'Could not start the cast session.',
+  'plugin.cast-sender.error.load-failed': 'The cast device refused the media.',
+  'plugin.cast-sender.error.generic': 'A cast error occurred.',
+  'plugin.cast-sender.action.connect': 'Cast',
+  'plugin.cast-sender.action.disconnect': 'Stop casting',
+  'plugin.cast-sender.state.buffering': 'Buffering…',
+  'plugin.cast-sender.state.playing': 'Playing on {device}',
+  'plugin.cast-sender.state.paused': 'Paused on {device}',
 };
 
 /** Canonical translation key set for the shared cast-sender plugin, derived from English. */

@@ -24,139 +24,163 @@ import type { DesktopUiInternals } from '../internals';
 import { fluentIcons, svgFromIcon } from '../data/icons';
 import { clampVolume } from '../data/utils';
 import {
-	applyAspectRatioIcon,
-	applyAudioIcon,
-	applyFullscreen,
-	applyMuted,
-	applyMutedIcon,
-	applyPipIcon,
-	applyQualityIcon,
-	applyRate,
-	applySubsIcon,
-	applyTheaterIcon,
-	applyVolume,
+  applyAspectRatioIcon,
+  applyAudioIcon,
+  applyFullscreen,
+  applyMuted,
+  applyMutedIcon,
+  applyPipIcon,
+  applyQualityIcon,
+  applyRate,
+  applySubsIcon,
+  applyTheaterIcon,
+  applyVolume,
 } from '../helpers/buttonState';
 
 export const iconStateMethods = {
-	applyVolume(this: DesktopUiInternals, level: number): void {
-		applyVolume(this.volSlider, () => this.applyMutedIcon(), level);
+  applyVolume(this: DesktopUiInternals, level: number): void {
+    applyVolume(this.volSlider, () => this.applyMutedIcon(), level);
 
-		// Keep the vertical popup input in sync when volume changes externally.
-		if (this.volSliderVertical) {
-			const vertInput = this.volSliderVertical.querySelector<HTMLInputElement>('.volume-slider-vertical-input');
-			if (vertInput) {
-				const pct = clampVolume(level);
-				vertInput.value = String(pct);
-				vertInput.style.setProperty('--vol-pct', `${pct}%`);
-			}
-		}
-	},
+    // Keep the vertical popup input in sync when volume changes externally.
+    if (this.volSliderVertical) {
+      const vertInput = this.volSliderVertical.querySelector<HTMLInputElement>('.volume-slider-vertical-input');
 
-	applyMuted(this: DesktopUiInternals, muted: boolean): void {
-		applyMuted(this.volBtn, () => this.applyMutedIcon(), muted);
-		this.applyPopupMuteIcon(muted);
-	},
+      if (vertInput) {
+        const pct = clampVolume(level);
 
-	applyMutedIcon(this: DesktopUiInternals): void {
-		applyMutedIcon(this.volBtn, this.player, this.t.bind(this));
-	},
+        vertInput.value = String(pct);
+        vertInput.style.setProperty('--vol-pct', `${pct}%`);
+      }
+    }
+  },
 
-	applyPopupMuteIcon(this: DesktopUiInternals, muted: boolean): void {
-		if (!this.volPopupMuteBtn)
-			return;
-		const icon = muted ? fluentIcons.volumeMuted : fluentIcons.volumeHigh;
-		const iconHolder = this.volPopupMuteBtn.querySelector('.btn-icon');
-		if (iconHolder) {
-			iconHolder.innerHTML = svgFromIcon(icon);
-		}
-		this.volPopupMuteBtn.setAttribute('aria-label', this.t('tooltip.mute', {}));
-	},
+  applyMuted(this: DesktopUiInternals, muted: boolean): void {
+    applyMuted(this.volBtn, () => this.applyMutedIcon(), muted);
+    this.applyPopupMuteIcon(muted);
+  },
 
-	applyRate(this: DesktopUiInternals): void {
-		const rate = this.player.playbackRate?.() ?? 1;
-		applyRate(this.speedBtn, rate, this.t.bind(this));
-	},
+  applyMutedIcon(this: DesktopUiInternals): void {
+    applyMutedIcon(this.volBtn, this.player, this.t.bind(this));
+  },
 
-	applyAudioIcon(this: DesktopUiInternals): void {
-		const audios = this.player.audioTracks?.() ?? [];
-		const defaultIdx = audios.findIndex(tr => tr.default === true);
-		const manifestDefault = defaultIdx >= 0 ? defaultIdx : 0;
-		const isNonDefault = audios.length > 1 && this._menuControlState.activeAudioIdx !== manifestDefault;
-		applyAudioIcon(this.audioBtn, this.t.bind(this), isNonDefault);
-	},
+  applyPopupMuteIcon(this: DesktopUiInternals, muted: boolean): void {
+    if (!this.volPopupMuteBtn) return;
 
-	applyQualityIcon(this: DesktopUiInternals): void {
-		applyQualityIcon(
-			this.qualityBtn,
-			this.t.bind(this),
-			this.playingQualityLabel(),
-			this._menuControlState.userPickedQuality,
-		);
-	},
+    const icon = muted
+      ? fluentIcons.volumeMuted
+      : fluentIcons.volumeHigh;
+    const iconHolder = this.volPopupMuteBtn.querySelector('.btn-icon');
 
-	/**
-	 * Human label for the level the backend is actually playing right now
-	 * (e.g. "1080p"). Returns `undefined` when no level info is available
-	 * (before `level-switched` lands, or non-HLS sources).
-	 */
-	playingQualityLabel(this: DesktopUiInternals): string | undefined {
-		const idx = this.resolvePlayingQualityIdx();
-		if (idx === null)
-			return undefined;
-		// `qualityLevels()` filters unsupported codecs — match by the original
-		// HLS index, not array position.
-		const levels = this.player.qualityLevels?.() ?? [];
-		const level = levels.find(qualityLevel => qualityLevel.index === idx);
-		if (!level)
-			return undefined;
-		return level.label ?? (level.height ? `${level.height}p` : undefined);
-	},
+    if (iconHolder) {
+      iconHolder.innerHTML = svgFromIcon(icon);
+    }
 
-	/**
-	 * The level index the backend is actually playing. Prefers the cached
-	 * `playingQualityIdx` (updated on `level-switched`), falls back to peeking
-	 * `backend.currentLevel()` before the first `level-switched` fires.
-	 * Returns null when no level is known.
-	 */
-	resolvePlayingQualityIdx(this: DesktopUiInternals): number | null {
-		if (this._menuControlState.playingQualityIdx !== null)
-			return this._menuControlState.playingQualityIdx;
-		const backend = this.player.backend?.();
-		const idx = backend?.currentLevel?.();
-		if (typeof idx === 'number' && idx >= 0)
-			return idx;
-		return null;
-	},
+    this.volPopupMuteBtn.setAttribute('aria-label', this.t('tooltip.mute', {}));
+  },
 
-	applyFullscreen(this: DesktopUiInternals): void {
-		applyFullscreen(this.fsBtn);
-	},
+  applyRate(this: DesktopUiInternals): void {
+    const rate = this.player.playbackRate?.() ?? 1;
 
-	applyTheaterIcon(this: DesktopUiInternals, active: boolean): void {
-		applyTheaterIcon(this.theaterBtn, active, this.t.bind(this));
-	},
+    applyRate(this.speedBtn, rate, this.t.bind(this));
+  },
 
-	applySubsIcon(this: DesktopUiInternals): void {
-		applySubsIcon(this.subsBtn, this._menuControlState.activeSubtitleIdx, this.t.bind(this));
-		this.applyMenuSubsIcon();
-	},
+  applyAudioIcon(this: DesktopUiInternals): void {
+    const audios = this.player.audioTracks?.() ?? [];
+    const defaultIdx = audios.findIndex((tr) => tr.default === true);
+    const manifestDefault = defaultIdx >= 0
+      ? defaultIdx
+      : 0;
+    const isNonDefault = audios.length > 1 && this._menuControlState.activeAudioIdx !== manifestDefault;
 
-	/** Mirror the bottom-bar subtitle on/off state onto the menu category button. */
-	applyMenuSubsIcon(this: DesktopUiInternals): void {
-		const slot = this.menus?.mainButtons?.subtitles?.querySelector('.menu-button-icon-left');
-		if (!slot)
-			return;
-		const on = this._menuControlState.activeSubtitleIdx !== null
-			&& this._menuControlState.activeSubtitleIdx !== -1;
-		slot.innerHTML = svgFromIcon(on ? fluentIcons.subtitles : fluentIcons.subtitlesOff);
-	},
+    applyAudioIcon(this.audioBtn, this.t.bind(this), isNonDefault);
+  },
 
-	applyPipIcon(this: DesktopUiInternals, active: boolean): void {
-		applyPipIcon(this.pipBtn, active, this.t.bind(this));
-	},
+  applyQualityIcon(this: DesktopUiInternals): void {
+    applyQualityIcon(
+      this.qualityBtn,
+      this.t.bind(this),
+      this.playingQualityLabel(),
+      this._menuControlState.userPickedQuality,
+    );
+  },
 
-	applyAspectRatioIcon(this: DesktopUiInternals): void {
-		const aspect = this.player.aspectRatio?.() ?? 'uniform';
-		applyAspectRatioIcon(this.aspectRatioBtn, aspect === 'uniform', this.t.bind(this));
-	},
+  /**
+   * Human label for the level the backend is actually playing right now
+   * (e.g. "1080p"). Returns `undefined` when no level info is available
+   * (before `level-switched` lands, or non-HLS sources).
+   */
+  playingQualityLabel(this: DesktopUiInternals): string | undefined {
+    const idx = this.resolvePlayingQualityIdx();
+
+    if (idx === null)
+      return undefined;
+
+    // `qualityLevels()` filters unsupported codecs — match by the original
+    // HLS index, not array position.
+    const levels = this.player.qualityLevels?.() ?? [];
+    const level = levels.find((qualityLevel) => qualityLevel.index === idx);
+
+    if (!level)
+      return undefined;
+
+    return level.label ?? (level.height
+      ? `${level.height}p`
+      : undefined);
+  },
+
+  /**
+   * The level index the backend is actually playing. Prefers the cached
+   * `playingQualityIdx` (updated on `level-switched`), falls back to peeking
+   * `backend.currentLevel()` before the first `level-switched` fires.
+   * Returns null when no level is known.
+   */
+  resolvePlayingQualityIdx(this: DesktopUiInternals): number | null {
+    if (this._menuControlState.playingQualityIdx !== null)
+      return this._menuControlState.playingQualityIdx;
+
+    const backend = this.player.backend?.();
+    const idx = backend?.currentLevel?.();
+
+    if (typeof idx === 'number' && idx >= 0)
+      return idx;
+
+    return null;
+  },
+
+  applyFullscreen(this: DesktopUiInternals): void {
+    applyFullscreen(this.fsBtn);
+  },
+
+  applyTheaterIcon(this: DesktopUiInternals, active: boolean): void {
+    applyTheaterIcon(this.theaterBtn, active, this.t.bind(this));
+  },
+
+  applySubsIcon(this: DesktopUiInternals): void {
+    applySubsIcon(this.subsBtn, this._menuControlState.activeSubtitleIdx, this.t.bind(this));
+    this.applyMenuSubsIcon();
+  },
+
+  /** Mirror the bottom-bar subtitle on/off state onto the menu category button. */
+  applyMenuSubsIcon(this: DesktopUiInternals): void {
+    const slot = this.menus?.mainButtons?.subtitles?.querySelector('.menu-button-icon-left');
+
+    if (!slot) return;
+
+    const on = this._menuControlState.activeSubtitleIdx !== null &&
+      this._menuControlState.activeSubtitleIdx !== -1;
+
+    slot.innerHTML = svgFromIcon(on
+      ? fluentIcons.subtitles
+      : fluentIcons.subtitlesOff);
+  },
+
+  applyPipIcon(this: DesktopUiInternals, active: boolean): void {
+    applyPipIcon(this.pipBtn, active, this.t.bind(this));
+  },
+
+  applyAspectRatioIcon(this: DesktopUiInternals): void {
+    const aspect = this.player.aspectRatio?.() ?? 'uniform';
+
+    applyAspectRatioIcon(this.aspectRatioBtn, aspect === 'uniform', this.t.bind(this));
+  },
 } as const;

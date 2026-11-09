@@ -8,11 +8,11 @@
 
 /** A single timed cue. Lyrics, subtitles, and sprite previews all use this. */
 export interface Cue<T = unknown> {
-	start: number;
-	end: number;
-	payload: T;
-	/** Optional stable id, used by `MutableCueList.remove`. */
-	id?: string | number;
+  start: number;
+  end: number;
+  payload: T;
+  /** Optional stable id, used by `MutableCueList.remove`. */
+  id?: string | number;
 }
 
 /**
@@ -25,10 +25,10 @@ export interface Cue<T = unknown> {
  * cues overlap by a frame.
  */
 export interface CueList<T = unknown> {
-	readonly cues: ReadonlyArray<Cue<T>>;
-	active(time: number): Cue<T>[];
-	next(time: number): Cue<T> | undefined;
-	prev(time: number): Cue<T> | undefined;
+  readonly cues: ReadonlyArray<Cue<T>>;
+  active(time: number): Cue<T>[];
+  next(time: number): Cue<T> | undefined;
+  prev(time: number): Cue<T> | undefined;
 }
 
 /**
@@ -38,14 +38,14 @@ export interface CueList<T = unknown> {
  * on mutation.
  */
 export interface MutableCueList<T = unknown> extends CueList<T> {
-	/** Insert a cue, kept sorted by `start`. */
-	add(cue: Cue<T>): void;
-	/** Remove the first cue matching `id`. Returns `true` if removed. */
-	remove(id: string | number): boolean;
-	/** Drop every cue. */
-	clear(): void;
-	/** Subscribe to mutations. Returns an unsubscribe fn. */
-	subscribe(fn: (cues: ReadonlyArray<Cue<T>>) => void): () => void;
+  /** Insert a cue, kept sorted by `start`. */
+  add(cue: Cue<T>): void;
+  /** Remove the first cue matching `id`. Returns `true` if removed. */
+  remove(id: string | number): boolean;
+  /** Drop every cue. */
+  clear(): void;
+  /** Subscribe to mutations. Returns an unsubscribe fn. */
+  subscribe(fn: (cues: ReadonlyArray<Cue<T>>) => void): () => void;
 }
 
 /**
@@ -59,59 +59,72 @@ export interface MutableCueList<T = unknown> extends CueList<T> {
  * `next(t)` and `prev(t)` locate the cue immediately after and before `t`.
  */
 export function createCueList<T>(cues: ReadonlyArray<Cue<T>>): CueList<T> {
-	const sorted = [...cues].sort((itemA, itemB) => itemA.start - itemB.start);
+  const sorted = [...cues].sort((itemA, itemB) => itemA.start - itemB.start);
 
-	// Returns the first index whose start > time (sorted.length when none exists).
-	const upperBound = (time: number): number => {
-		let lo = 0;
-		let hi = sorted.length;
-		while (lo < hi) {
-			const mid = (lo + hi) >>> 1;
-			const cue = sorted[mid];
-			if (!cue)
-				break;
-			if (cue.start > time)
-				hi = mid;
-			else lo = mid + 1;
-		}
-		return lo;
-	};
+  // Returns the first index whose start > time (sorted.length when none exists).
+  const upperBound = (time: number): number => {
+    let lo = 0;
+    let hi = sorted.length;
 
-	return {
-		cues: sorted,
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      const cue = sorted[mid];
 
-		active(time: number): Cue<T>[] {
-			// No early exit: sorted-by-end is not maintained, so every candidate
-			// with start <= time must be checked for end >= time.
-			const result: Cue<T>[] = [];
-			const ub = upperBound(time);
-			for (let i = ub - 1; i >= 0; i--) {
-				const cue = sorted[i];
-				if (!cue)
-					continue;
-				if (cue.end >= time)
-					result.push(cue);
-			}
-			return result.reverse();
-		},
+      if (!cue) break;
 
-		next(time: number): Cue<T> | undefined {
-			const ub = upperBound(time);
-			return sorted[ub];
-		},
+      if (cue.start > time) {
+        hi = mid;
+      } else {
+        lo = mid + 1;
+      }
+    }
 
-		prev(time: number): Cue<T> | undefined {
-			const ub = upperBound(time);
-			for (let i = ub - 1; i >= 0; i--) {
-				const cue = sorted[i];
-				if (!cue)
-					continue;
-				if (cue.end < time)
-					return cue;
-			}
-			return undefined;
-		},
-	};
+    return lo;
+  };
+
+  return {
+    cues: sorted,
+
+    active(time: number): Cue<T>[] {
+      // No early exit: sorted-by-end is not maintained, so every candidate
+      // with start <= time must be checked for end >= time.
+      const result: Cue<T>[] = [];
+      const ub = upperBound(time);
+
+      for (let i = ub - 1; i >= 0; i--) {
+        const cue = sorted[i];
+
+        if (!cue) continue;
+
+        if (cue.end >= time) {
+          result.push(cue);
+        }
+      }
+
+      return result.reverse();
+    },
+
+    next(time: number): Cue<T> | undefined {
+      const ub = upperBound(time);
+
+      return sorted[ub];
+    },
+
+    prev(time: number): Cue<T> | undefined {
+      const ub = upperBound(time);
+
+      for (let i = ub - 1; i >= 0; i--) {
+        const cue = sorted[i];
+
+        if (!cue) continue;
+
+        if (cue.end < time)
+          return cue;
+      }
+
+      return undefined;
+    },
+  };
 }
 
 /**
@@ -126,110 +139,133 @@ export function createCueList<T>(cues: ReadonlyArray<Cue<T>>): CueList<T> {
  * Subscriber errors are swallowed so a bad consumer cannot corrupt the list.
  */
 export function createMutableCueList<T>(initial?: ReadonlyArray<Cue<T>>): MutableCueList<T> {
-	const sorted: Cue<T>[] = initial ? [...initial].sort((itemA, itemB) => itemA.start - itemB.start) : [];
-	const subs = new Set<(cues: ReadonlyArray<Cue<T>>) => void>();
+  const sorted: Cue<T>[] = initial
+    ? [...initial].sort((itemA, itemB) => itemA.start - itemB.start)
+    : [];
+  const subs = new Set<(cues: ReadonlyArray<Cue<T>>) => void>();
 
-	const upperBound = (time: number): number => {
-		let lo = 0;
-		let hi = sorted.length;
-		while (lo < hi) {
-			const mid = (lo + hi) >>> 1;
-			const cue = sorted[mid];
-			if (!cue)
-				break;
-			if (cue.start > time)
-				hi = mid;
-			else lo = mid + 1;
-		}
-		return lo;
-	};
+  const upperBound = (time: number): number => {
+    let lo = 0;
+    let hi = sorted.length;
 
-	const insertSorted = (cue: Cue<T>): void => {
-		// Insert AFTER any existing cue with the same start — stable ordering.
-		let lo = 0;
-		let hi = sorted.length;
-		while (lo < hi) {
-			const mid = (lo + hi) >>> 1;
-			const probe = sorted[mid];
-			if (!probe)
-				break;
-			if (probe.start > cue.start)
-				hi = mid;
-			else lo = mid + 1;
-		}
-		sorted.splice(lo, 0, cue);
-	};
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      const cue = sorted[mid];
 
-	const notify = (): void => {
-		const snapshot: ReadonlyArray<Cue<T>> = sorted.slice();
-		for (const fn of subs) {
-			try {
-				fn(snapshot);
-			}
-			catch { /* subscriber errors must not corrupt the list */ }
-		}
-	};
+      if (!cue) break;
 
-	return {
-		get cues(): ReadonlyArray<Cue<T>> {
-			return sorted;
-		},
+      if (cue.start > time) {
+        hi = mid;
+      } else {
+        lo = mid + 1;
+      }
+    }
 
-		active(time: number): Cue<T>[] {
-			const result: Cue<T>[] = [];
-			const ub = upperBound(time);
-			for (let i = ub - 1; i >= 0; i--) {
-				const cue = sorted[i];
-				if (!cue)
-					continue;
-				if (cue.end >= time)
-					result.push(cue);
-			}
-			return result.reverse();
-		},
+    return lo;
+  };
 
-		next(time: number): Cue<T> | undefined {
-			return sorted[upperBound(time)];
-		},
+  const insertSorted = (cue: Cue<T>): void => {
+    // Insert AFTER any existing cue with the same start — stable ordering.
+    let lo = 0;
+    let hi = sorted.length;
 
-		prev(time: number): Cue<T> | undefined {
-			const ub = upperBound(time);
-			for (let i = ub - 1; i >= 0; i--) {
-				const cue = sorted[i];
-				if (!cue)
-					continue;
-				if (cue.end < time)
-					return cue;
-			}
-			return undefined;
-		},
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      const probe = sorted[mid];
 
-		add(cue: Cue<T>): void {
-			insertSorted(cue);
-			notify();
-		},
+      if (!probe) break;
 
-		remove(id: string | number): boolean {
-			const idx = sorted.findIndex(cue => cue.id === id);
-			if (idx === -1)
-				return false;
-			sorted.splice(idx, 1);
-			notify();
-			return true;
-		},
+      if (probe.start > cue.start) {
+        hi = mid;
+      } else {
+        lo = mid + 1;
+      }
+    }
 
-		clear(): void {
-			if (sorted.length === 0)
-				return;
-			sorted.length = 0;
-			notify();
-		},
+    sorted.splice(lo, 0, cue);
+  };
 
-		subscribe(fn: (cues: ReadonlyArray<Cue<T>>) => void): () => void {
-			subs.add(fn);
-			return () => {
-				subs.delete(fn);
-			};
-		},
-	};
+  const notify = (): void => {
+    const snapshot: ReadonlyArray<Cue<T>> = sorted.slice();
+
+    for (const fn of subs) {
+      try {
+        fn(snapshot);
+      } catch { /* subscriber errors must not corrupt the list */ }
+    }
+  };
+
+  return {
+    get cues(): ReadonlyArray<Cue<T>> {
+      return sorted;
+    },
+
+    active(time: number): Cue<T>[] {
+      const result: Cue<T>[] = [];
+      const ub = upperBound(time);
+
+      for (let i = ub - 1; i >= 0; i--) {
+        const cue = sorted[i];
+
+        if (!cue) continue;
+
+        if (cue.end >= time) {
+          result.push(cue);
+        }
+      }
+
+      return result.reverse();
+    },
+
+    next(time: number): Cue<T> | undefined {
+      return sorted[upperBound(time)];
+    },
+
+    prev(time: number): Cue<T> | undefined {
+      const ub = upperBound(time);
+
+      for (let i = ub - 1; i >= 0; i--) {
+        const cue = sorted[i];
+
+        if (!cue) continue;
+
+        if (cue.end < time)
+          return cue;
+      }
+
+      return undefined;
+    },
+
+    add(cue: Cue<T>): void {
+      insertSorted(cue);
+      notify();
+    },
+
+    remove(id: string | number): boolean {
+      const idx = sorted.findIndex((cue) => cue.id === id);
+
+      if (idx === -1)
+        return false;
+
+      sorted.splice(idx, 1);
+      notify();
+
+      return true;
+    },
+
+    clear(): void {
+      if (sorted.length === 0) return;
+
+      sorted.length = 0;
+      notify();
+    },
+
+    subscribe(fn: (cues: ReadonlyArray<Cue<T>>) => void): () => void {
+      subs.add(fn);
+
+      return () => {
+        subs.delete(fn);
+      };
+    },
+  };
 }

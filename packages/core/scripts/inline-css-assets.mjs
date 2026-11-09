@@ -31,16 +31,16 @@
  */
 
 import {
-	readdirSync,
-	readFileSync,
-	statSync,
-	writeFileSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
 } from 'node:fs';
 import {
-	dirname,
-	join,
-	relative,
-	resolve,
+  dirname,
+  join,
+  relative,
+  resolve,
 } from 'node:path';
 
 // Matches: this.appendStyles(new URL('./styles.css', import.meta.url).href, 'style-id')
@@ -52,18 +52,20 @@ const CALL_RE = /this\.appendStyles\(\s*new URL\(\s*(['"])([^'"]+\.css)\1\s*,\s*
  * @returns {string[]} Absolute paths of every .js file found under `dir`.
  */
 function walkJs(dir) {
-	const results = [];
-	for (const entry of readdirSync(dir)) {
-		const full = join(dir, entry);
-		const stat = statSync(full);
-		if (stat.isDirectory()) {
-			results.push(...walkJs(full));
-		}
-		else if (entry.endsWith('.js')) {
-			results.push(full);
-		}
-	}
-	return results;
+  const results = [];
+
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    const stat = statSync(full);
+
+    if (stat.isDirectory()) {
+      results.push(...walkJs(full));
+    } else if (entry.endsWith('.js')) {
+      results.push(full);
+    }
+  }
+
+  return results;
 }
 
 /**
@@ -72,48 +74,51 @@ function walkJs(dir) {
  * @returns {boolean} True when the file was rewritten, false when left unchanged.
  */
 function processFile(filePath) {
-	const original = readFileSync(filePath, 'utf8');
+  const original = readFileSync(filePath, 'utf8');
 
-	if (!original.includes('appendStyles('))
-		return false;
+  if (!original.includes('appendStyles('))
+    return false;
 
-	CALL_RE.lastIndex = 0;
-	let rewritten = original;
-	const matches = [];
+  CALL_RE.lastIndex = 0;
+  let rewritten = original;
+  const matches = [];
 
-	for (let match = CALL_RE.exec(original); match !== null; match = CALL_RE.exec(original)) {
-		matches.push({
-			full: match[0],
-			cssPath: match[2],
-			styleId: match[4],
-		});
-	}
+  for (let match = CALL_RE.exec(original); match !== null; match = CALL_RE.exec(original)) {
+    matches.push({
+      full: match[0],
+      cssPath: match[2],
+      styleId: match[4],
+    });
+  }
 
-	if (matches.length === 0)
-		return false;
+  if (matches.length === 0)
+    return false;
 
-	for (const { full, cssPath, styleId } of matches) {
-		const cssFile = resolve(dirname(filePath), cssPath);
-		let cssText;
-		try {
-			cssText = readFileSync(cssFile, 'utf8');
-		}
-		catch {
-			const rel = relative(process.cwd(), filePath);
-			throw new Error(
-				`[inline-css-assets] CSS file not found for '${cssPath}' referenced in ${rel}.\n`
-				+ `  Looked at: ${cssFile}\n`
-				+ `  Run copy-dist-assets before this script so the .css sits beside the .js.`,
-			);
-		}
-		rewritten = rewritten.replace(full, `this.appendInlineStyles(${JSON.stringify(cssText)}, '${styleId}')`);
-	}
+  for (const { full, cssPath, styleId } of matches) {
+    const cssFile = resolve(dirname(filePath), cssPath);
+    let cssText;
 
-	if (rewritten === original)
-		return false;
+    try {
+      cssText = readFileSync(cssFile, 'utf8');
+    } catch {
+      const rel = relative(process.cwd(), filePath);
 
-	writeFileSync(filePath, rewritten, 'utf8');
-	return true;
+      throw new Error(
+        `[inline-css-assets] CSS file not found for '${cssPath}' referenced in ${rel}.\n` +
+        `  Looked at: ${cssFile}\n` +
+        `  Run copy-dist-assets before this script so the .css sits beside the .js.`,
+      );
+    }
+
+    rewritten = rewritten.replace(full, `this.appendInlineStyles(${JSON.stringify(cssText)}, '${styleId}')`);
+  }
+
+  if (rewritten === original)
+    return false;
+
+  writeFileSync(filePath, rewritten, 'utf8');
+
+  return true;
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -127,18 +132,19 @@ const jsFiles = walkJs(distDir);
 let changedCount = 0;
 
 for (const file of jsFiles) {
-	try {
-		const changed = processFile(file);
-		if (changed) {
-			const rel = relative(process.cwd(), file);
-			console.log(`  inlined: ${rel}`);
-			changedCount++;
-		}
-	}
-	catch (err) {
-		console.error(err.message);
-		process.exit(1);
-	}
+  try {
+    const changed = processFile(file);
+
+    if (changed) {
+      const rel = relative(process.cwd(), file);
+
+      console.log(`  inlined: ${rel}`);
+      changedCount++;
+    }
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
+  }
 }
 
 console.log(`[inline-css-assets] Done. ${changedCount} file(s) rewritten.`);

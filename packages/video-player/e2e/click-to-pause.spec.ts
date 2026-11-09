@@ -29,46 +29,49 @@ import { expect, test } from '@playwright/test';
 type Page = import('@playwright/test').Page;
 
 async function loadFixture(page: Page, config: Record<string, unknown>): Promise<void> {
-	await page.goto('/e2e/fixture-full.html');
-	await page.waitForFunction(
-		() => (window as any).__playerReady === true,
-		{ timeout: 10_000 },
-	);
+  await page.goto('/e2e/fixture-full.html');
 
-	const error = await page.evaluate(() => (window as any).__playerError);
-	if (error) {
-		throw new Error(`Player init failed: ${error}`);
-	}
+  await page.waitForFunction(
+    () => (window as any).__playerReady === true,
+    { timeout: 10_000 },
+  );
 
-	await page.evaluate((playerConfig) => {
-		(window as any).player.setup({
-			playlist: [{
-				id: 'click-src',
-				file: '/e2e/media/sample.mp4',
-			}],
-			muted: true,
-			autoPlay: true,
-			...playerConfig,
-		});
-	}, config);
+  const error = await page.evaluate(() => (window as any).__playerError);
 
-	await page.waitForSelector('.overlay', { timeout: 5_000 });
+  if (error) {
+    throw new Error(`Player init failed: ${error}`);
+  }
 
-	await page.waitForFunction(
-		() => {
-			const el = (window as any).player.videoElement;
-			return el && Number.isFinite(el.duration) && el.duration > 0;
-		},
-		{ timeout: 20_000 },
-	);
+  await page.evaluate((playerConfig) => {
+    (window as any).player.setup({
+      playlist: [{
+        id: 'click-src',
+        file: '/e2e/media/sample.mp4',
+      }],
+      muted: true,
+      autoPlay: true,
+      ...playerConfig,
+    });
+  }, config);
 
-	// Playback must actually be running, or "did not pause" proves nothing.
-	await page.waitForFunction(
-		() => (window as any).player.videoElement?.paused === false,
-		{ timeout: 20_000 },
-	);
+  await page.waitForSelector('.overlay', { timeout: 5_000 });
 
-	await loopForever(page);
+  await page.waitForFunction(
+    () => {
+      const el = (window as any).player.videoElement;
+
+      return el && Number.isFinite(el.duration) && el.duration > 0;
+    },
+    { timeout: 20_000 },
+  );
+
+  // Playback must actually be running, or "did not pause" proves nothing.
+  await page.waitForFunction(
+    () => (window as any).player.videoElement?.paused === false,
+    { timeout: 20_000 },
+  );
+
+  await loopForever(page);
 }
 
 /**
@@ -77,58 +80,63 @@ async function loadFixture(page: Page, config: Record<string, unknown>): Promise
  * removes that confound, so `paused === true` can only mean something paused.
  */
 async function loopForever(page: Page): Promise<void> {
-	await page.evaluate(() => {
-		const el = (window as any).player.videoElement as HTMLMediaElement;
-		el.loop = true;
-	});
+  await page.evaluate(() => {
+    const el = (window as any).player.videoElement as HTMLMediaElement;
+
+    el.loop = true;
+  });
 }
 
 function isPaused(page: Page): Promise<boolean> {
-	return page.evaluate(() => (window as any).player.videoElement.paused === true);
+  return page.evaluate(() => (window as any).player.videoElement.paused === true);
 }
 
 async function clickTheVideo(page: Page): Promise<void> {
-	const box = await page.locator('#player video').boundingBox();
-	expect(box).not.toBeNull();
+  const box = await page.locator('#player video').boundingBox();
 
-	await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  expect(box).not.toBeNull();
+
+  await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
 }
 
 async function loadWithTouchZones(page: Page, config: Record<string, unknown>): Promise<void> {
-	await page.goto('/e2e/fixture-full.html');
-	await page.waitForFunction(
-		() => (window as any).__playerReady === true,
-		{ timeout: 10_000 },
-	);
+  await page.goto('/e2e/fixture-full.html');
 
-	const error = await page.evaluate(() => (window as any).__playerError);
-	if (error) {
-		throw new Error(`Player init failed: ${error}`);
-	}
+  await page.waitForFunction(
+    () => (window as any).__playerReady === true,
+    { timeout: 10_000 },
+  );
 
-	await page.evaluate(async (playerConfig) => {
-		const mod = await import('/src/plugins/touch-zones/index.ts');
-		(window as any).player.addPlugin(mod.TouchZonesPlugin, { doubleTapThreshold: 300 });
+  const error = await page.evaluate(() => (window as any).__playerError);
 
-		(window as any).player.setup({
-			playlist: [{
-				id: 'tap-src',
-				file: '/e2e/media/sample.mp4',
-			}],
-			muted: true,
-			autoPlay: true,
-			...playerConfig,
-		});
-	}, config);
+  if (error) {
+    throw new Error(`Player init failed: ${error}`);
+  }
 
-	await page.waitForSelector('.nm-touch-zones-root', { timeout: 5_000 });
+  await page.evaluate(async (playerConfig) => {
+    const mod = await import('/src/plugins/touch-zones/index.ts');
 
-	await page.waitForFunction(
-		() => (window as any).player.videoElement?.paused === false,
-		{ timeout: 20_000 },
-	);
+    (window as any).player.addPlugin(mod.TouchZonesPlugin, { doubleTapThreshold: 300 });
 
-	await loopForever(page);
+    (window as any).player.setup({
+      playlist: [{
+        id: 'tap-src',
+        file: '/e2e/media/sample.mp4',
+      }],
+      muted: true,
+      autoPlay: true,
+      ...playerConfig,
+    });
+  }, config);
+
+  await page.waitForSelector('.nm-touch-zones-root', { timeout: 5_000 });
+
+  await page.waitForFunction(
+    () => (window as any).player.videoElement?.paused === false,
+    { timeout: 20_000 },
+  );
+
+  await loopForever(page);
 }
 
 /**
@@ -137,80 +145,83 @@ async function loadWithTouchZones(page: Page, config: Record<string, unknown>): 
  * whichever box happens to sit at position one.
  */
 async function tapTheCenterZone(page: Page): Promise<void> {
-	const box = await page.evaluate(() => {
-		const zones = Array.from(document.querySelectorAll<HTMLElement>('.nm-touch-box'));
-		const center = zones.find(
-			zone => zone.style.gridColumnStart === '2' && zone.style.gridColumnEnd === '3',
-		);
+  const box = await page.evaluate(() => {
+    const zones = Array.from(document.querySelectorAll<HTMLElement>('.nm-touch-box'));
+    const center = zones.find(
+      (zone) => zone.style.gridColumnStart === '2' && zone.style.gridColumnEnd === '3',
+    );
 
-		if (!center)
-			return null;
+    if (!center)
+      return null;
 
-		const rect = center.getBoundingClientRect();
-		return {
-			x: rect.x,
-			y: rect.y,
-			width: rect.width,
-			height: rect.height,
-		};
-	});
+    const rect = center.getBoundingClientRect();
 
-	expect(box, 'center touch zone (grid column 2/3) must exist').not.toBeNull();
+    return {
+      x: rect.x,
+      y: rect.y,
+      width: rect.width,
+      height: rect.height,
+    };
+  });
 
-	await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  expect(box, 'center touch zone (grid column 2/3) must exist').not.toBeNull();
+
+  await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
 }
 
 test.describe('Click to pause — real browser clicks', () => {
-	test('a click on the video pauses playback by default', async ({ page }) => {
-		await loadFixture(page, {});
+  test('a click on the video pauses playback by default', async ({ page }) => {
+    await loadFixture(page, {});
 
-		expect(await isPaused(page)).toBe(false);
+    expect(await isPaused(page)).toBe(false);
 
-		const hitTag = await page.evaluate(() => {
-			const el = document.querySelector('#player video') as HTMLElement;
-			const rect = el.getBoundingClientRect();
-			const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
-			return hit?.tagName ?? null;
-		});
-		expect(hitTag, 'the element a centre click actually lands on').toBe('VIDEO');
+    const hitTag = await page.evaluate(() => {
+      const el = document.querySelector('#player video') as HTMLElement;
+      const rect = el.getBoundingClientRect();
+      const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
 
-		await clickTheVideo(page);
+      return hit?.tagName ?? null;
+    });
 
-		await expect.poll(() => isPaused(page), { timeout: 5_000 }).toBe(true);
-	});
+    expect(hitTag, 'the element a centre click actually lands on').toBe('VIDEO');
 
-	test('setup({ disableClickToPause: true }) leaves playback alone', async ({ page }) => {
-		await loadFixture(page, { disableClickToPause: true });
+    await clickTheVideo(page);
 
-		expect(await isPaused(page)).toBe(false);
+    await expect.poll(() => isPaused(page), { timeout: 5_000 }).toBe(true);
+  });
 
-		await clickTheVideo(page);
+  test('setup({ disableClickToPause: true }) leaves playback alone', async ({ page }) => {
+    await loadFixture(page, { disableClickToPause: true });
 
-		// Give a toggle time to land before concluding it never happened.
-		await page.waitForTimeout(1_000);
+    expect(await isPaused(page)).toBe(false);
 
-		expect(await isPaused(page)).toBe(false);
-	});
+    await clickTheVideo(page);
 
-	test('a tap on the touch center zone pauses playback by default', async ({ page }) => {
-		await loadWithTouchZones(page, {});
+    // Give a toggle time to land before concluding it never happened.
+    await page.waitForTimeout(1_000);
 
-		expect(await isPaused(page)).toBe(false);
+    expect(await isPaused(page)).toBe(false);
+  });
 
-		await tapTheCenterZone(page);
+  test('a tap on the touch center zone pauses playback by default', async ({ page }) => {
+    await loadWithTouchZones(page, {});
 
-		await expect.poll(() => isPaused(page), { timeout: 5_000 }).toBe(true);
-	});
+    expect(await isPaused(page)).toBe(false);
 
-	test('setup({ disableClickToPause: true }) reaches TouchZonesPlugin too', async ({ page }) => {
-		await loadWithTouchZones(page, { disableClickToPause: true });
+    await tapTheCenterZone(page);
 
-		expect(await isPaused(page)).toBe(false);
+    await expect.poll(() => isPaused(page), { timeout: 5_000 }).toBe(true);
+  });
 
-		await tapTheCenterZone(page);
+  test('setup({ disableClickToPause: true }) reaches TouchZonesPlugin too', async ({ page }) => {
+    await loadWithTouchZones(page, { disableClickToPause: true });
 
-		await page.waitForTimeout(1_000);
+    expect(await isPaused(page)).toBe(false);
 
-		expect(await isPaused(page)).toBe(false);
-	});
+    await tapTheCenterZone(page);
+
+    await page.waitForTimeout(1_000);
+
+    expect(await isPaused(page)).toBe(false);
+  });
 });

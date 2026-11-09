@@ -36,10 +36,11 @@
  *                   be copied onto `prototype`.
  */
 export function composeMixins<T extends object>(prototype: T, ...modules: object[]): void {
-	for (const module of modules) {
-		const descriptors = Object.getOwnPropertyDescriptors(module);
-		for (const [key, descriptor] of Object.entries(descriptors)) {
-			Object.defineProperty(prototype, key, descriptor);
-		}
-	}
+  for (const module of modules) {
+    const descriptors = Object.getOwnPropertyDescriptors(module);
+
+    for (const [key, descriptor] of Object.entries(descriptors)) {
+      Object.defineProperty(prototype, key, descriptor);
+    }
+  }
 }

@@ -11,11 +11,11 @@
  * discovery — drop a sibling `<tag>.ts` to add a language.
  */
 const translations = {
-	'plugin.cast-sender.casting.movie': 'Casting "{title}"',
-	'plugin.cast-sender.casting.episode': 'Casting {show} S{season}E{episode}: {title}',
-	'plugin.cast-sender.casting.live': 'Casting live: {title}',
-	'plugin.cast-sender.action.cast-from-here': 'Cast from this point',
-	'plugin.cast-sender.action.continue-on-tv': 'Continue on TV',
+  'plugin.cast-sender.casting.movie': 'Casting "{title}"',
+  'plugin.cast-sender.casting.episode': 'Casting {show} S{season}E{episode}: {title}',
+  'plugin.cast-sender.casting.live': 'Casting live: {title}',
+  'plugin.cast-sender.action.cast-from-here': 'Cast from this point',
+  'plugin.cast-sender.action.continue-on-tv': 'Continue on TV',
 };
 
 /** Canonical translation key set for the video cast-sender plugin, derived from English. */

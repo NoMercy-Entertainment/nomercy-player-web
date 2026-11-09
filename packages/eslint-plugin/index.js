@@ -18,22 +18,22 @@ import noUnknownCast from './rules/no-unknown-cast.js';
 import pluginIdRequired from './rules/plugin-id-required.js';
 
 const plugin = {
-	meta: {
-		name: '@nomercy-entertainment/eslint-plugin-player',
-		version: '0.3.0',
-	},
-	rules: {
-		'no-single-letter-ident': noSingleLetterIdent,
-		'no-compat-vocab': noCompatVocab,
-		'no-history-comments': noHistoryComments,
-		'no-object-literal-cast': noObjectLiteralCast,
-		'no-unknown-cast': noUnknownCast,
-		'no-raw-player-bus': noRawPlayerBus,
-		'no-raw-timers-in-plugin': noRawTimersInPlugin,
-		'no-raw-throw-in-plugin': noRawThrowInPlugin,
-		'no-raw-fetch-in-plugin': noRawFetchInPlugin,
-		'plugin-id-required': pluginIdRequired,
-	},
+  meta: {
+    name: '@nomercy-entertainment/eslint-plugin-player',
+    version: '0.3.0',
+  },
+  rules: {
+    'no-single-letter-ident': noSingleLetterIdent,
+    'no-compat-vocab': noCompatVocab,
+    'no-history-comments': noHistoryComments,
+    'no-object-literal-cast': noObjectLiteralCast,
+    'no-unknown-cast': noUnknownCast,
+    'no-raw-player-bus': noRawPlayerBus,
+    'no-raw-timers-in-plugin': noRawTimersInPlugin,
+    'no-raw-throw-in-plugin': noRawThrowInPlugin,
+    'no-raw-fetch-in-plugin': noRawFetchInPlugin,
+    'plugin-id-required': pluginIdRequired,
+  },
 };
 
 /**
@@ -42,21 +42,21 @@ const plugin = {
  * where mock construction legitimately casts — see the README.
  */
 plugin.configs = {
-	recommended: {
-		plugins: { player: plugin },
-		rules: {
-			'player/no-single-letter-ident': 'error',
-			'player/no-compat-vocab': 'error',
-			'player/no-history-comments': 'error',
-			'player/no-object-literal-cast': 'error',
-			'player/no-unknown-cast': 'error',
-			'player/no-raw-player-bus': 'error',
-			'player/no-raw-timers-in-plugin': 'error',
-			'player/no-raw-throw-in-plugin': 'error',
-			'player/no-raw-fetch-in-plugin': 'error',
-			'player/plugin-id-required': 'error',
-		},
-	},
+  recommended: {
+    plugins: { player: plugin },
+    rules: {
+      'player/no-single-letter-ident': 'error',
+      'player/no-compat-vocab': 'error',
+      'player/no-history-comments': 'error',
+      'player/no-object-literal-cast': 'error',
+      'player/no-unknown-cast': 'error',
+      'player/no-raw-player-bus': 'error',
+      'player/no-raw-timers-in-plugin': 'error',
+      'player/no-raw-throw-in-plugin': 'error',
+      'player/no-raw-fetch-in-plugin': 'error',
+      'player/plugin-id-required': 'error',
+    },
+  },
 };
 
 export default plugin;

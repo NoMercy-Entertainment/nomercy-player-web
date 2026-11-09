@@ -18,8 +18,8 @@
  * HDR video on a screen whose page rendering it reports as standard.
  */
 export interface DisplayRangeProbe {
-	/** Answers a CSS media query. Injected so the decision is testable. */
-	matches: (query: string) => boolean;
+  /** Answers a CSS media query. Injected so the decision is testable. */
+  matches: (query: string) => boolean;
 }
 
 const VIDEO_RANGE_QUERY = '(video-dynamic-range: high)';
@@ -33,21 +33,20 @@ const PAGE_RANGE_QUERY = '(dynamic-range: high)';
  * a caller free to skip the whole question.
  */
 export function browserDisplayRangeProbe(): DisplayRangeProbe | null {
-	if (typeof globalThis.matchMedia !== 'function')
-		return null;
+  if (typeof globalThis.matchMedia !== 'function')
+    return null;
 
-	return {
-		matches: (query: string): boolean => {
-			try {
-				return globalThis.matchMedia(query).matches;
-			}
-			catch {
-				// A browser that does not understand the query throws rather than
-				// returning false, and an unknown query is not a claim about the screen.
-				return false;
-			}
-		},
-	};
+  return {
+    matches: (query: string): boolean => {
+      try {
+        return globalThis.matchMedia(query).matches;
+      } catch {
+        // A browser that does not understand the query throws rather than
+        // returning false, and an unknown query is not a claim about the screen.
+        return false;
+      }
+    },
+  };
 }
 
 /**
@@ -59,8 +58,8 @@ export function browserDisplayRangeProbe(): DisplayRangeProbe | null {
  * the washed-out one a viewer reported.
  */
 export function detectDisplayHdr(probe: DisplayRangeProbe | null = browserDisplayRangeProbe()): boolean {
-	if (probe === null)
-		return false;
+  if (probe === null)
+    return false;
 
-	return probe.matches(VIDEO_RANGE_QUERY) || probe.matches(PAGE_RANGE_QUERY);
+  return probe.matches(VIDEO_RANGE_QUERY) || probe.matches(PAGE_RANGE_QUERY);
 }

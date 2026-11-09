@@ -31,160 +31,181 @@ const VAR_RE = /\{(\w+)\}/g;
  * ICU MessageFormat, or any feature the built-in lookup doesn't cover.
  */
 export class DefaultTranslator implements ITranslator {
-	private currentLanguage: string;
-	private readonly bundles: Translations;
-	private readonly loaded = new Set<string>();
-	private readonly loader?: (lang: string) => Promise<Record<string, string> | undefined>;
-	private readonly missingHandler?: (key: string, lang: string) => string;
-	private readonly fallbackLanguage: string | null;
+  private currentLanguage: string;
+  private readonly bundles: Translations;
+  private readonly loaded = new Set<string>();
+  private readonly loader?: (lang: string) => Promise<Record<string, string> | undefined>;
+  private readonly missingHandler?: (key: string, lang: string) => string;
+  private readonly fallbackLanguage: string | null;
 
-	constructor(opts?: DefaultTranslatorOptions) {
-		this.currentLanguage = opts?.language ?? 'en';
-		this.bundles = {};
-		if (opts?.translations) {
-			for (const [lang, bundle] of Object.entries(opts.translations)) {
-				this.bundles[lang] = { ...bundle };
-				this.loaded.add(lang);
-			}
-		}
-		this.loader = opts?.loadTranslations;
-		this.missingHandler = opts?.onMissingTranslation;
-		// `null` opts out of the global default; `undefined` keeps `'en'`.
-		this.fallbackLanguage = opts?.fallbackLanguage === null
-			? null
-			: (opts?.fallbackLanguage ?? 'en');
-	}
+  constructor(opts?: DefaultTranslatorOptions) {
+    this.currentLanguage = opts?.language ?? 'en';
+    this.bundles = {};
 
-	t(key: string, vars?: Record<string, string>): string {
-		const chain = bcp47FallbackChain(this.currentLanguage);
-		if (this.fallbackLanguage && !chain.includes(this.fallbackLanguage)) {
-			chain.push(this.fallbackLanguage);
-		}
+    if (opts?.translations) {
+      for (const [lang, bundle] of Object.entries(opts.translations)) {
+        this.bundles[lang] = { ...bundle };
+        this.loaded.add(lang);
+      }
+    }
 
-		let raw: string | undefined;
-		for (const lang of chain) {
-			const bundle = this.bundles[lang];
-			const value = bundle?.[key];
-			if (typeof value === 'string') {
-				raw = value;
-				break;
-			}
-		}
+    this.loader = opts?.loadTranslations;
+    this.missingHandler = opts?.onMissingTranslation;
 
-		const resolved = raw
-			?? this.missingHandler?.(key, this.currentLanguage)
-			?? key;
+    // `null` opts out of the global default; `undefined` keeps `'en'`.
+    this.fallbackLanguage = opts?.fallbackLanguage === null
+      ? null
+      : (opts?.fallbackLanguage ?? 'en');
+  }
 
-		if (!vars)
-			return resolved;
-		return resolved.replace(VAR_RE, (_match, name: string) => vars[name] ?? `{${name}}`);
-	}
+  t(key: string, vars?: Record<string, string>): string {
+    const chain = bcp47FallbackChain(this.currentLanguage);
 
-	/**
-	 * Read or write the active language tag.
-	 *
-	 * `language()` — returns the current BCP-47 tag.
-	 * `language(lang)` — switches to `lang`, loading bundles via the configured
-	 * loader if the tag hasn't been fetched yet. Resolves once all tags in the
-	 * BCP-47 chain are loaded.
-	 */
-	language(): string;
-	language(lang: string): Promise<void>;
-	language(lang?: string): string | Promise<void> {
-		if (lang === undefined) {
-			return this.currentLanguage;
-		}
-		return this.switchLanguage(lang);
-	}
+    if (this.fallbackLanguage && !chain.includes(this.fallbackLanguage)) {
+      chain.push(this.fallbackLanguage);
+    }
 
-	private async switchLanguage(lang: string): Promise<void> {
-		this.currentLanguage = lang;
+    let raw: string | undefined;
 
-		// Walk the full BCP-47 chain so regional variants (`pt-BR`) also have
-		// the parent bundle (`pt`) in memory as a natural fallback for keys
-		// the regional file doesn't override.
-		const chain = bcp47FallbackChain(lang);
-		for (const tag of chain) {
-			if (this.loaded.has(tag))
-				continue;
-			this.loaded.add(tag); // mark BEFORE loader so re-entrant language() doesn't double-fire
+    for (const lang of chain) {
+      const bundle = this.bundles[lang];
+      const value = bundle?.[key];
 
-			if (!this.loader) {
-				if (!this.bundles[tag])
-					this.bundles[tag] = {};
-				continue;
-			}
+      if (typeof value === 'string') {
+        raw = value;
+        break;
+      }
+    }
 
-			try {
-				const loaded = await this.loader(tag);
-				if (loaded) {
-					this.bundles[tag] = {
-						...(this.bundles[tag] ?? {}),
-						...loaded,
-					};
-				}
-			}
-			catch (err) {
-				// Loader failure must not break language() — fall through to
-				// whatever bundle is already loaded (or the missing-key fallback).
-				void err;
-			}
+    const resolved = raw ??
+      this.missingHandler?.(key, this.currentLanguage) ??
+      key;
 
-			if (!this.bundles[tag])
-				this.bundles[tag] = {};
-		}
-	}
+    if (!vars)
+      return resolved;
 
-	addTranslations(bundle: Translations): void {
-		for (const [lang, keys] of Object.entries(bundle)) {
-			this.bundles[lang] = {
-				...(this.bundles[lang] ?? {}),
-				...keys,
-			};
-			// Deliberately NOT marked in `loaded`: merging keys (e.g. a plugin's
-			// static bundle at registration) must not satisfy the loader
-			// contract — `language(lang)` still owes the configured
-			// `loadTranslations` a call for this tag.
-		}
-	}
+    return resolved.replace(VAR_RE, (_match, name: string) =>
+      vars[name] ?? `{${name}}`);
+  }
 
-	/**
-	 * Read or write a single translation key.
-	 *
-	 * `translation(lang, key)` — returns the stored value or `undefined`.
-	 * `translation(lang, key, value)` — sets the key. Persists for the
-	 * player's lifetime.
-	 */
-	translation(lang: string, key: string): string | undefined;
-	translation(lang: string, key: string, value: string): void;
-	translation(lang: string, key: string, value?: string): string | undefined | void {
-		if (value === undefined) {
-			return this.bundles[lang]?.[key];
-		}
-		if (!this.bundles[lang]) {
-			this.bundles[lang] = {};
-			this.loaded.add(lang);
-		}
-		this.bundles[lang]![key] = value;
-	}
+  /**
+   * Read or write the active language tag.
+   *
+   * `language()` — returns the current BCP-47 tag.
+   * `language(lang)` — switches to `lang`, loading bundles via the configured
+   * loader if the tag hasn't been fetched yet. Resolves once all tags in the
+   * BCP-47 chain are loaded.
+   */
+  language(): string;
+  language(lang: string): Promise<void>;
+  language(lang?: string): string | Promise<void> {
+    if (lang === undefined) {
+      return this.currentLanguage;
+    }
 
-	removeTranslations(prefix: string, lang?: string): void {
-		const langs = lang ? [lang] : Object.keys(this.bundles);
-		for (const lang of langs) {
-			const bundle = this.bundles[lang];
-			if (!bundle)
-				continue;
-			for (const k of Object.keys(bundle)) {
-				if (k.startsWith(prefix))
-					delete bundle[k];
-			}
-		}
-	}
+    return this.switchLanguage(lang);
+  }
 
-	dispose(): void {
-		for (const lang of Object.keys(this.bundles)) {
-			delete this.bundles[lang];
-		}
-		this.loaded.clear();
-	}
+  private async switchLanguage(lang: string): Promise<void> {
+    this.currentLanguage = lang;
+
+    // Walk the full BCP-47 chain so regional variants (`pt-BR`) also have
+    // the parent bundle (`pt`) in memory as a natural fallback for keys
+    // the regional file doesn't override.
+    const chain = bcp47FallbackChain(lang);
+
+    for (const tag of chain) {
+      if (this.loaded.has(tag)) continue;
+
+      this.loaded.add(tag); // mark BEFORE loader so re-entrant language() doesn't double-fire
+
+      if (!this.loader) {
+        if (!this.bundles[tag]) {
+          this.bundles[tag] = {};
+        }
+
+        continue;
+      }
+
+      try {
+        const loaded = await this.loader(tag);
+
+        if (loaded) {
+          this.bundles[tag] = {
+            ...(this.bundles[tag] ?? {}),
+            ...loaded,
+          };
+        }
+      } catch (err) {
+        // Loader failure must not break language() — fall through to
+        // whatever bundle is already loaded (or the missing-key fallback).
+        void err;
+      }
+
+      if (!this.bundles[tag]) {
+        this.bundles[tag] = {};
+      }
+    }
+  }
+
+  addTranslations(bundle: Translations): void {
+    for (const [lang, keys] of Object.entries(bundle)) {
+      this.bundles[lang] = {
+        ...(this.bundles[lang] ?? {}),
+        ...keys,
+      };
+      // Deliberately NOT marked in `loaded`: merging keys (e.g. a plugin's
+      // static bundle at registration) must not satisfy the loader
+      // contract — `language(lang)` still owes the configured
+      // `loadTranslations` a call for this tag.
+    }
+  }
+
+  /**
+   * Read or write a single translation key.
+   *
+   * `translation(lang, key)` — returns the stored value or `undefined`.
+   * `translation(lang, key, value)` — sets the key. Persists for the
+   * player's lifetime.
+   */
+  translation(lang: string, key: string): string | undefined;
+  translation(lang: string, key: string, value: string): void;
+  translation(lang: string, key: string, value?: string): string | undefined | void {
+    if (value === undefined) {
+      return this.bundles[lang]?.[key];
+    }
+
+    if (!this.bundles[lang]) {
+      this.bundles[lang] = {};
+      this.loaded.add(lang);
+    }
+
+    this.bundles[lang]![key] = value;
+  }
+
+  removeTranslations(prefix: string, lang?: string): void {
+    const langs = lang
+      ? [lang]
+      : Object.keys(this.bundles);
+
+    for (const lang of langs) {
+      const bundle = this.bundles[lang];
+
+      if (!bundle) continue;
+
+      for (const k of Object.keys(bundle)) {
+        if (k.startsWith(prefix)) {
+          delete bundle[k];
+        }
+      }
+    }
+  }
+
+  dispose(): void {
+    for (const lang of Object.keys(this.bundles)) {
+      delete this.bundles[lang];
+    }
+
+    this.loaded.clear();
+  }
 }

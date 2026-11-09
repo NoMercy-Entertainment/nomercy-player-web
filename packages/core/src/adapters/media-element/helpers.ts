@@ -27,7 +27,7 @@ export type BackendId = Extract<ErrorScope, { kind: 'backend' }>['id'];
  * of truth instead of duplicating the regex test inline.
  */
 export function isHls(url: string): boolean {
-	return HLS_EXT_RE.test(url);
+  return HLS_EXT_RE.test(url);
 }
 
 /**
@@ -38,20 +38,21 @@ export function isHls(url: string): boolean {
  * run there anyway and native is the only option.
  */
 export function supportsNativeHls(el: HTMLMediaElement): boolean {
-	const can = el.canPlayType('application/vnd.apple.mpegurl');
-	return (
-		can === 'probably'
-		|| (can === 'maybe' && typeof MediaSource === 'undefined')
-	);
+  const can = el.canPlayType('application/vnd.apple.mpegurl');
+
+  return (
+    can === 'probably' ||
+    (can === 'maybe' && typeof MediaSource === 'undefined')
+  );
 }
 
 // ─── HLS handle / config types ───────────────────────────────────────────────
 
 /** Minimal handle shape returned by `attachHlsOrFallback`. */
 export interface HlsHandle {
-	destroy: () => void;
-	stopLoad: () => void;
-	startLoad: (startPosition?: number) => void;
+  destroy: () => void;
+  stopLoad: () => void;
+  startLoad: (startPosition?: number) => void;
 }
 
 /**
@@ -63,22 +64,22 @@ export interface HlsHandle {
  * here — the video backend passes them through the plain `Record` escape hatch.
  */
 export interface HlsLoaderConfig {
-	autoStartLoad?: boolean;
-	enableWorker?: boolean;
-	lowLatencyMode?: boolean;
-	enableCEA708Captions?: boolean;
-	startPosition?: number;
-	startFragPrefetch?: boolean;
-	xhrSetup?: (xhr: XMLHttpRequest, url: string) => void;
-	[key: string]: unknown;
+  autoStartLoad?: boolean;
+  enableWorker?: boolean;
+  lowLatencyMode?: boolean;
+  enableCEA708Captions?: boolean;
+  startPosition?: number;
+  startFragPrefetch?: boolean;
+  xhrSetup?: (xhr: XMLHttpRequest, url: string) => void;
+  [key: string]: unknown;
 }
 
 interface HlsCtor {
-	new (cfg?: HlsLoaderConfig): HlsHandle & {
-		loadSource: (url: string) => void;
-		attachMedia: (el: HTMLMediaElement) => void;
-	};
-	isSupported: () => boolean;
+  new (cfg?: HlsLoaderConfig): HlsHandle & {
+    loadSource: (url: string) => void;
+    attachMedia: (el: HTMLMediaElement) => void;
+  };
+  isSupported: () => boolean;
 }
 
 /**
@@ -93,22 +94,27 @@ interface HlsCtor {
  * merge config here. The config is backend-owned.
  */
 export function attachHlsOrFallback(
-	HlsModule: unknown,
-	el: HTMLMediaElement,
-	url: string,
-	headerValue: string | undefined,
-	hlsConfig: HlsLoaderConfig,
+  HlsModule: unknown,
+  el: HTMLMediaElement,
+  url: string,
+  headerValue: string | undefined,
+  hlsConfig: HlsLoaderConfig,
 ): HlsHandle | undefined {
-	const Hls = HlsModule as HlsCtor;
-	if (!Hls.isSupported()) {
-		el.src = appendAuthTokenParam(url, headerValue);
-		(el as HTMLAudioElement).load?.();
-		return undefined;
-	}
-	const hls = new Hls(hlsConfig);
-	hls.attachMedia(el);
-	hls.loadSource(url);
-	return hls;
+  const Hls = HlsModule as HlsCtor;
+
+  if (!Hls.isSupported()) {
+    el.src = appendAuthTokenParam(url, headerValue);
+    (el as HTMLAudioElement).load?.();
+
+    return undefined;
+  }
+
+  const hls = new Hls(hlsConfig);
+
+  hls.attachMedia(el);
+  hls.loadSource(url);
+
+  return hls;
 }
 
 /**
@@ -122,14 +128,15 @@ export function attachHlsOrFallback(
  * did answer the question this asks.
  */
 export function createAuthorizationXhrSetup(
-	provider: AuthHeaderProvider | undefined,
+  provider: AuthHeaderProvider | undefined,
 ): (xhr: XMLHttpRequest, url: string) => void {
-	return (xhr: XMLHttpRequest, url: string): void => {
-		const headerValue = provider?.(url);
-		if (headerValue) {
-			xhr.setRequestHeader('Authorization', headerValue);
-		}
-	};
+  return (xhr: XMLHttpRequest, url: string): void => {
+    const headerValue = provider?.(url);
+
+    if (headerValue) {
+      xhr.setRequestHeader('Authorization', headerValue);
+    }
+  };
 }
 
 /**
@@ -138,28 +145,27 @@ export function createAuthorizationXhrSetup(
  * field to `undefined` after this call.
  */
 export function destroyHlsInstance(
-	hls: HlsHandle & { detachMedia?: () => void },
+  hls: HlsHandle & { detachMedia?: () => void },
 ): void {
-	try {
-		hls.detachMedia?.();
-	}
-	catch {
-		/* defensive */
-	}
-	try {
-		hls.destroy();
-	}
-	catch {
-		/* defensive */
-	}
+  try {
+    hls.detachMedia?.();
+  } catch {
+    /* defensive */
+  }
+
+  try {
+    hls.destroy();
+  } catch {
+    /* defensive */
+  }
 }
 
 // ─── DOM-event bridge ─────────────────────────────────────────────────────────
 
 /** One tracked DOM-event handler. Store an array of these and remove them on dispose. */
 export interface DomBridgeHandler {
-	event: string;
-	handler: EventListener;
+  event: string;
+  handler: EventListener;
 }
 
 /**
@@ -173,59 +179,90 @@ export interface DomBridgeHandler {
  * pause handler to guard against resetting an already-idle or error state.
  */
 export function attachDomBridgesTo(
-	el: HTMLMediaElement,
-	emit: (event: string, data: unknown) => void,
-	onStateChange: (state: BackendState) => void,
-	getState: () => BackendState,
+  el: HTMLMediaElement,
+  emit: (event: string, data: unknown) => void,
+  onStateChange: (state: BackendState) => void,
+  getState: () => BackendState,
 ): DomBridgeHandler[] {
-	const handlers: DomBridgeHandler[] = [];
+  const handlers: DomBridgeHandler[] = [];
 
-	const track = (domEvent: string, handler: EventListener): void => {
-		el.addEventListener(domEvent, handler);
-		handlers.push({
-			event: domEvent,
-			handler,
-		});
-	};
+  const track = (domEvent: string, handler: EventListener): void => {
+    el.addEventListener(domEvent, handler);
 
-	track('loadstart', ev => emit('loadstart', ev));
-	track('loadedmetadata', ev => emit('loadedmetadata', ev));
-	track('canplay', ev => emit('canplay', ev));
-	track('play', ev => emit('play', ev));
-	track('playing', ev => emit('playing', ev));
-	track('pause', ev => emit('pause', ev));
-	track('ended', ev => emit('ended', ev));
-	track('timeupdate', ev => emit('timeupdate', ev));
-	track('waiting', ev => emit('waiting', ev));
-	track('stalled', ev => emit('stalled', ev));
-	track('ratechange', ev => emit('ratechange', ev));
-	track('encrypted', ev => emit('encrypted', ev));
-	track('error', ev => emit('error', ev));
+    handlers.push({
+      event: domEvent,
+      handler,
+    });
+  };
 
-	// State-mutation handlers tracked in the same array so detach/dispose
-	// always removes them — no separate cleanup path.
-	track('loadstart', () => {
-		onStateChange(BACKEND_STATE.LOADING);
-	});
-	track('loadedmetadata', () => {
-		onStateChange(BACKEND_STATE.READY);
-	});
-	track('play', () => {
-		onStateChange(BACKEND_STATE.PLAYING);
-	});
-	track('pause', () => {
-		if (getState() !== BACKEND_STATE.IDLE && getState() !== BACKEND_STATE.ERROR) {
-			onStateChange(BACKEND_STATE.PAUSED);
-		}
-	});
-	track('ended', () => {
-		onStateChange(BACKEND_STATE.PAUSED);
-	});
-	track('error', () => {
-		onStateChange(BACKEND_STATE.ERROR);
-	});
+  track('loadstart', (ev) =>
+    emit('loadstart', ev));
 
-	return handlers;
+  track('loadedmetadata', (ev) =>
+    emit('loadedmetadata', ev));
+
+  track('canplay', (ev) =>
+    emit('canplay', ev));
+
+  track('play', (ev) =>
+    emit('play', ev));
+
+  track('playing', (ev) =>
+    emit('playing', ev));
+
+  track('pause', (ev) =>
+    emit('pause', ev));
+
+  track('ended', (ev) =>
+    emit('ended', ev));
+
+  track('timeupdate', (ev) =>
+    emit('timeupdate', ev));
+
+  track('waiting', (ev) =>
+    emit('waiting', ev));
+
+  track('stalled', (ev) =>
+    emit('stalled', ev));
+
+  track('ratechange', (ev) =>
+    emit('ratechange', ev));
+
+  track('encrypted', (ev) =>
+    emit('encrypted', ev));
+
+  track('error', (ev) =>
+    emit('error', ev));
+
+  // State-mutation handlers tracked in the same array so detach/dispose
+  // always removes them — no separate cleanup path.
+  track('loadstart', () => {
+    onStateChange(BACKEND_STATE.LOADING);
+  });
+
+  track('loadedmetadata', () => {
+    onStateChange(BACKEND_STATE.READY);
+  });
+
+  track('play', () => {
+    onStateChange(BACKEND_STATE.PLAYING);
+  });
+
+  track('pause', () => {
+    if (getState() !== BACKEND_STATE.IDLE && getState() !== BACKEND_STATE.ERROR) {
+      onStateChange(BACKEND_STATE.PAUSED);
+    }
+  });
+
+  track('ended', () => {
+    onStateChange(BACKEND_STATE.PAUSED);
+  });
+
+  track('error', () => {
+    onStateChange(BACKEND_STATE.ERROR);
+  });
+
+  return handlers;
 }
 
 // ─── Element lifecycle helpers ────────────────────────────────────────────────
@@ -239,24 +276,23 @@ export function attachDomBridgesTo(
  * pipeline and to clear the browser's internal `ended` flag cleanly.
  */
 export function resetMediaElement(el: HTMLMediaElement): void {
-	try {
-		el.pause();
-	}
-	catch {
-		/* defensive */
-	}
-	try {
-		el.removeAttribute('src');
-	}
-	catch {
-		/* defensive */
-	}
-	try {
-		el.load();
-	}
-	catch {
-		/* defensive */
-	}
+  try {
+    el.pause();
+  } catch {
+    /* defensive */
+  }
+
+  try {
+    el.removeAttribute('src');
+  } catch {
+    /* defensive */
+  }
+
+  try {
+    el.load();
+  } catch {
+    /* defensive */
+  }
 }
 
 /**
@@ -267,37 +303,40 @@ export function resetMediaElement(el: HTMLMediaElement): void {
  * container query; in that case `ownsElement` is always `false`.
  */
 export function resolveOrCreateMediaElement<T extends HTMLMediaElement>(
-	container: HTMLElement | undefined,
-	tag: 'audio' | 'video',
-	opts?: { element?: T },
+  container: HTMLElement | undefined,
+  tag: 'audio' | 'video',
+  opts?: { element?: T },
 ): { element: T; ownsElement: boolean } {
-	if (opts?.element) {
-		return {
-			element: opts.element,
-			ownsElement: false,
-		};
-	}
+  if (opts?.element) {
+    return {
+      element: opts.element,
+      ownsElement: false,
+    };
+  }
 
-	if (container) {
-		const existing = container.querySelector<T>(tag);
-		if (existing) {
-			return {
-				element: existing,
-				ownsElement: false,
-			};
-		}
-	}
+  if (container) {
+    const existing = container.querySelector<T>(tag);
 
-	const created = (container?.ownerDocument ?? document).createElement(
-		tag,
-	) as T;
-	if (container) {
-		container.appendChild(created);
-	}
-	return {
-		element: created,
-		ownsElement: true,
-	};
+    if (existing) {
+      return {
+        element: existing,
+        ownsElement: false,
+      };
+    }
+  }
+
+  const created = (container?.ownerDocument ?? document).createElement(
+    tag,
+  ) as T;
+
+  if (container) {
+    container.appendChild(created);
+  }
+
+  return {
+    element: created,
+    ownsElement: true,
+  };
 }
 
 /**
@@ -306,19 +345,24 @@ export function resolveOrCreateMediaElement<T extends HTMLMediaElement>(
  * already has it (needed for Web Audio graph taps on cross-origin streams).
  */
 export function createSecondaryAudioElement(
-	container: HTMLElement | undefined,
-	primaryCrossOrigin: string | null,
+  container: HTMLElement | undefined,
+  primaryCrossOrigin: string | null,
 ): HTMLAudioElement {
-	const el = (container?.ownerDocument ?? document).createElement('audio');
-	el.preload = 'auto';
-	if (primaryCrossOrigin === 'anonymous') {
-		el.crossOrigin = 'anonymous';
-	}
-	el.style.display = 'none';
-	if (container) {
-		container.appendChild(el);
-	}
-	return el;
+  const el = (container?.ownerDocument ?? document).createElement('audio');
+
+  el.preload = 'auto';
+
+  if (primaryCrossOrigin === 'anonymous') {
+    el.crossOrigin = 'anonymous';
+  }
+
+  el.style.display = 'none';
+
+  if (container) {
+    container.appendChild(el);
+  }
+
+  return el;
 }
 
 /**
@@ -327,20 +371,22 @@ export function createSecondaryAudioElement(
  * already ready to play.
  */
 export async function primeSecondaryElement(
-	el: HTMLAudioElement,
-	seekMs?: number,
+  el: HTMLAudioElement,
+  seekMs?: number,
 ): Promise<void> {
-	await new Promise<void>((resolve) => {
-		if (el.readyState >= 3) {
-			resolve();
-			return;
-		}
-		el.addEventListener('canplay', () => resolve(), { once: true });
-	});
+  await new Promise<void>((resolve) => {
+    if (el.readyState >= 3) {
+      resolve();
 
-	if (seekMs != null && seekMs > 0) {
-		el.currentTime = seekMs / 1000;
-	}
+      return;
+    }
+
+    el.addEventListener('canplay', () => resolve(), { once: true });
+  });
+
+  if (seekMs != null && seekMs > 0) {
+    el.currentTime = seekMs / 1000;
+  }
 }
 
 // ─── Capability helpers ───────────────────────────────────────────────────────
@@ -351,23 +397,25 @@ export async function primeSecondaryElement(
  * the backend that threw.
  */
 export function captureStreamFromElement(
-	el: HTMLMediaElement,
-	backendId: BackendId,
+  el: HTMLMediaElement,
+  backendId: BackendId,
 ): MediaStream {
-	const fn = (el as HTMLMediaElement & { captureStream?: () => MediaStream })
-		.captureStream;
-	if (typeof fn !== 'function') {
-		throw new BrowserPolicyError({
-			code: 'core:policy/captureStreamUnsupported',
-			severity: 'error',
-			scope: {
-				kind: 'backend',
-				id: backendId,
-			},
-			message: `captureStream() is not available in this environment.`,
-		});
-	}
-	return fn.call(el);
+  const fn = (el as HTMLMediaElement & { captureStream?: () => MediaStream })
+    .captureStream;
+
+  if (typeof fn !== 'function') {
+    throw new BrowserPolicyError({
+      code: 'core:policy/captureStreamUnsupported',
+      severity: 'error',
+      scope: {
+        kind: 'backend',
+        id: backendId,
+      },
+      message: `captureStream() is not available in this environment.`,
+    });
+  }
+
+  return fn.call(el);
 }
 
 /**
@@ -375,25 +423,27 @@ export function captureStreamFromElement(
  * is unavailable.
  */
 export async function setSinkIdOnElement(
-	el: HTMLMediaElement,
-	deviceId: string,
-	backendId: BackendId,
+  el: HTMLMediaElement,
+  deviceId: string,
+  backendId: BackendId,
 ): Promise<void> {
-	const fn = (
-		el as HTMLMediaElement & { setSinkId?: (id: string) => Promise<void> }
-	).setSinkId;
-	if (typeof fn !== 'function') {
-		throw new BrowserPolicyError({
-			code: 'core:policy/setSinkIdUnsupported',
-			severity: 'error',
-			scope: {
-				kind: 'backend',
-				id: backendId,
-			},
-			message: `setSinkId() is not available in this environment.`,
-		});
-	}
-	await fn.call(el, deviceId);
+  const fn = (
+    el as HTMLMediaElement & { setSinkId?: (id: string) => Promise<void> }
+  ).setSinkId;
+
+  if (typeof fn !== 'function') {
+    throw new BrowserPolicyError({
+      code: 'core:policy/setSinkIdUnsupported',
+      severity: 'error',
+      scope: {
+        kind: 'backend',
+        id: backendId,
+      },
+      message: `setSinkId() is not available in this environment.`,
+    });
+  }
+
+  await fn.call(el, deviceId);
 }
 
 /**
@@ -402,7 +452,7 @@ export async function setSinkIdOnElement(
  * throw on missing sinkId must do so in their own layer.
  */
 export function getSinkIdFromElement(el: HTMLMediaElement): string {
-	return (el as HTMLMediaElement & { sinkId?: string }).sinkId ?? '';
+  return (el as HTMLMediaElement & { sinkId?: string }).sinkId ?? '';
 }
 
 /**
@@ -410,9 +460,9 @@ export function getSinkIdFromElement(el: HTMLMediaElement): string {
  * to an `undefined`-returning signature matching the backend contract.
  */
 export function getMediaKeysFromElement(
-	el: HTMLMediaElement,
+  el: HTMLMediaElement,
 ): MediaKeys | undefined {
-	return el.mediaKeys ?? undefined;
+  return el.mediaKeys ?? undefined;
 }
 
 /**
@@ -420,25 +470,27 @@ export function getMediaKeysFromElement(
  * is unavailable. Applies the guarded form consistently across all backends.
  */
 export async function setMediaKeysOnElement(
-	el: HTMLMediaElement,
-	keys: MediaKeys,
-	backendId: BackendId,
+  el: HTMLMediaElement,
+  keys: MediaKeys,
+  backendId: BackendId,
 ): Promise<void> {
-	const fn = (
-		el as HTMLMediaElement & { setMediaKeys?: (k: MediaKeys) => Promise<void> }
-	).setMediaKeys;
-	if (typeof fn !== 'function') {
-		throw new BrowserPolicyError({
-			code: 'core:policy/emeUnsupported',
-			severity: 'error',
-			scope: {
-				kind: 'backend',
-				id: backendId,
-			},
-			message: `setMediaKeys() is not available in this environment.`,
-		});
-	}
-	await fn.call(el, keys);
+  const fn = (
+    el as HTMLMediaElement & { setMediaKeys?: (k: MediaKeys) => Promise<void> }
+  ).setMediaKeys;
+
+  if (typeof fn !== 'function') {
+    throw new BrowserPolicyError({
+      code: 'core:policy/emeUnsupported',
+      severity: 'error',
+      scope: {
+        kind: 'backend',
+        id: backendId,
+      },
+      message: `setMediaKeys() is not available in this environment.`,
+    });
+  }
+
+  await fn.call(el, keys);
 }
 
 /**
@@ -451,24 +503,26 @@ export async function setMediaKeysOnElement(
  * reimplements the same pattern with extras.
  */
 export function waitForMediaElementMetadata(
-	el: HTMLMediaElement,
+  el: HTMLMediaElement,
 ): Promise<void> {
-	if (el.readyState >= 1) {
-		return Promise.resolve();
-	}
+  if (el.readyState >= 1) {
+    return Promise.resolve();
+  }
 
-	return new Promise<void>((resolve, reject) => {
-		const onLoad = (): void => {
-			el.removeEventListener('loadedmetadata', onLoad);
-			el.removeEventListener('error', onError);
-			resolve();
-		};
-		const onError = (): void => {
-			el.removeEventListener('loadedmetadata', onLoad);
-			el.removeEventListener('error', onError);
-			reject(el.error ?? new Error('media element error'));
-		};
-		el.addEventListener('loadedmetadata', onLoad, { once: true });
-		el.addEventListener('error', onError, { once: true });
-	});
+  return new Promise<void>((resolve, reject) => {
+    const onLoad = (): void => {
+      el.removeEventListener('loadedmetadata', onLoad);
+      el.removeEventListener('error', onError);
+      resolve();
+    };
+
+    const onError = (): void => {
+      el.removeEventListener('loadedmetadata', onLoad);
+      el.removeEventListener('error', onError);
+      reject(el.error ?? new Error('media element error'));
+    };
+
+    el.addEventListener('loadedmetadata', onLoad, { once: true });
+    el.addEventListener('error', onError, { once: true });
+  });
 }

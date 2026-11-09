@@ -16,6 +16,6 @@ export type BeforeDispatchResult<TData> = BeforeDispatchOutcome<TData>;
 
 /** Options for `Plugin.dispatchBefore(...)`. */
 export interface DispatchBeforeOptions {
-	/** Cap on `delay()` waits before timing out. Default = player's `beforeEventTimeoutMs`. */
-	timeoutMs?: number;
+  /** Cap on `delay()` waits before timing out. Default = player's `beforeEventTimeoutMs`. */
+  timeoutMs?: number;
 }

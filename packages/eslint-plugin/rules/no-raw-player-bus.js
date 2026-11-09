@@ -34,11 +34,11 @@ const BUS_METHODS = new Set(['on', 'once', 'off', 'emit']);
  * @returns {string | null} The member name, or null when it is neither form.
  */
 function memberName(node) {
-	if (!node.computed)
-		return node.property.type === 'Identifier' ? node.property.name : null;
-	return node.property.type === 'Literal' && typeof node.property.value === 'string'
-		? node.property.value
-		: null;
+  if (!node.computed)
+    return node.property.type === 'Identifier' ? node.property.name : null;
+  return node.property.type === 'Literal' && typeof node.property.value === 'string'
+    ? node.property.value
+    : null;
 }
 
 /**
@@ -48,47 +48,47 @@ function memberName(node) {
  * @returns {boolean} True when the node is a `this.player` read.
  */
 function isThisPlayer(node) {
-	return node.type === 'MemberExpression'
-		&& node.object.type === 'ThisExpression'
-		&& memberName(node) === 'player';
+  return node.type === 'MemberExpression'
+    && node.object.type === 'ThisExpression'
+    && memberName(node) === 'player';
 }
 
 /** @type {import('eslint').Rule.RuleModule} */
 export default {
-	meta: {
-		type: 'problem',
-		docs: {
-			description: 'Ban this.player.on/once/off/emit inside a plugin — use the scoped, auto-disposing this.on/once/off/emit.',
-		},
-		schema: [],
-		messages: {
-			rawBus: 'this.player.{{method}}(...) inside a plugin bypasses scoping and auto-dispose — use this.{{method}}(...) instead.',
-		},
-	},
+  meta: {
+    type: 'problem',
+    docs: {
+      description: 'Ban this.player.on/once/off/emit inside a plugin — use the scoped, auto-disposing this.on/once/off/emit.',
+    },
+    schema: [],
+    messages: {
+      rawBus: 'this.player.{{method}}(...) inside a plugin bypasses scoping and auto-dispose — use this.{{method}}(...) instead.',
+    },
+  },
 
-	create(context) {
-		return {
-			CallExpression(node) {
-				const callee = node.callee;
-				if (callee.type !== 'MemberExpression')
-					return;
-				const method = memberName(callee);
-				if (method === null || !BUS_METHODS.has(method))
-					return;
+  create(context) {
+    return {
+      CallExpression(node) {
+        const callee = node.callee;
+        if (callee.type !== 'MemberExpression')
+          return;
+        const method = memberName(callee);
+        if (method === null || !BUS_METHODS.has(method))
+          return;
 
-				// object must be `this.player`
-				if (!isThisPlayer(callee.object))
-					return;
+        // object must be `this.player`
+        if (!isThisPlayer(callee.object))
+          return;
 
-				if (!inPluginSubclass(node))
-					return;
+        if (!inPluginSubclass(node))
+          return;
 
-				context.report({
-					node: callee,
-					messageId: 'rawBus',
-					data: { method },
-				});
-			},
-		};
-	},
+        context.report({
+          node: callee,
+          messageId: 'rawBus',
+          data: { method },
+        });
+      },
+    };
+  },
 };

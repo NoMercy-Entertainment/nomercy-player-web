@@ -35,11 +35,12 @@ import nmplayer from '../index';
 
 /** The load path emits `mediaReady` once the backend holds the item. */
 function afterItemLoaded(player: NMVideoPlayer): Promise<void> {
-	return new Promise<void>((resolve) => {
-		const done = (): void => resolve();
-		player.on('mediaReady', done);
-		setTimeout(done, 1000);
-	});
+  return new Promise<void>((resolve) => {
+    const done = (): void => resolve();
+
+    player.on('mediaReady', done);
+    setTimeout(done, 1000);
+  });
 }
 
 const MEDIA = 'https://raw.githubusercontent.com/NoMercy-Entertainment/nomercy-media/master/Films/Sintel.(2010)';
@@ -47,59 +48,74 @@ const DASH_URL = `${MEDIA}/Sintel.(2010).NoMercy.mpd`;
 const MP4_URL = `${MEDIA}/Sintel.(2010).NoMercy.mp4`;
 
 function makeContainer(id: string): void {
-	const div = document.createElement('div');
-	div.id = id;
-	document.body.appendChild(div);
+  const div = document.createElement('div');
+
+  div.id = id;
+  document.body.appendChild(div);
 }
 
 /** Claims `.mpd` only, which neither built-in factory nor the element branch takes. */
 function makeDashFactory(attach: (element: HTMLMediaElement) => void): IStreamFactory {
-	return {
-		id: 'dash',
-		canPlay: (url: string) => /\.mpd(?:[?#]|$)/iu.test(url),
-		create: (): IStreamSource => ({
-			id: 'dash',
-			attach: async (element: HTMLMediaElement) => {
-				attach(element);
-			},
-			destroy: () => {},
-		}) as unknown as IStreamSource,
-	} as unknown as IStreamFactory;
+  return {
+    id: 'dash',
+    canPlay: (url: string) => /\.mpd(?:[?#]|$)/iu.test(url),
+    create: (): IStreamSource => ({
+      id: 'dash',
+      attach: async (element: HTMLMediaElement) => {
+        attach(element);
+      },
+      destroy: () => {},
+    }) as unknown as IStreamSource,
+  } as unknown as IStreamFactory;
 }
 
 describe('a factory registered through the player reaches the load path', () => {
-	beforeEach(() => {
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
 
-	it('attaches the consumer source for a URL the built-ins do not claim', async () => {
-		makeContainer('sr-1');
-		const attach = vi.fn();
+  it('attaches the consumer source for a URL the built-ins do not claim', async () => {
+    makeContainer('sr-1');
+    const attach = vi.fn();
 
-		const player = nmplayer('sr-1');
-		player.registerStream(makeDashFactory(attach));
-		player.setup({ playlist: [{ id: 'sintel', title: 'Sintel', url: DASH_URL }] });
-		await player.ready();
-		await afterItemLoaded(player);
+    const player = nmplayer('sr-1');
 
-		expect(attach).toHaveBeenCalledTimes(1);
-		expect(attach.mock.calls[0]?.[0]).toBeInstanceOf(HTMLElement);
+    player.registerStream(makeDashFactory(attach));
 
-		await player.dispose();
-	});
+    player.setup({ playlist: [{
+      id: 'sintel',
+      title: 'Sintel',
+      url: DASH_URL,
+    }] });
 
-	it('leaves a URL the factory does not claim on the built-in path', async () => {
-		makeContainer('sr-2');
-		const attach = vi.fn();
+    await player.ready();
+    await afterItemLoaded(player);
 
-		const player = nmplayer('sr-2');
-		player.registerStream(makeDashFactory(attach));
-		player.setup({ playlist: [{ id: 'sintel', title: 'Sintel', url: MP4_URL }] });
-		await player.ready();
-		await afterItemLoaded(player);
+    expect(attach).toHaveBeenCalledTimes(1);
+    expect(attach.mock.calls[0]?.[0]).toBeInstanceOf(HTMLElement);
 
-		expect(attach).not.toHaveBeenCalled();
+    await player.dispose();
+  });
 
-		await player.dispose();
-	});
+  it('leaves a URL the factory does not claim on the built-in path', async () => {
+    makeContainer('sr-2');
+    const attach = vi.fn();
+
+    const player = nmplayer('sr-2');
+
+    player.registerStream(makeDashFactory(attach));
+
+    player.setup({ playlist: [{
+      id: 'sintel',
+      title: 'Sintel',
+      url: MP4_URL,
+    }] });
+
+    await player.ready();
+    await afterItemLoaded(player);
+
+    expect(attach).not.toHaveBeenCalled();
+
+    await player.dispose();
+  });
 });

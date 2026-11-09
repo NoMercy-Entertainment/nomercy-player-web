@@ -10,7 +10,7 @@ import type { IPreloadStrategy, PreloadAsset, PreloadContext } from '../../adapt
 import type { BasePlaylistItem } from '../../types';
 
 export interface FakePreloadStrategy extends IPreloadStrategy {
-	shouldPreloadCalls: number;
+  shouldPreloadCalls: number;
 }
 
 /**
@@ -19,22 +19,23 @@ export interface FakePreloadStrategy extends IPreloadStrategy {
  * an empty asset list so no real network fetch is triggered.
  */
 export function makeFakePreloadStrategy(): FakePreloadStrategy {
-	let shouldPreloadCalls = 0;
+  let shouldPreloadCalls = 0;
 
-	const strategy: FakePreloadStrategy = {
-		get shouldPreloadCalls(): number { return shouldPreloadCalls; },
+  const strategy: FakePreloadStrategy = {
+    get shouldPreloadCalls(): number { return shouldPreloadCalls; },
 
-		shouldPreload(_context: PreloadContext): boolean {
-			shouldPreloadCalls += 1;
-			return false;
-		},
+    shouldPreload(_context: PreloadContext): boolean {
+      shouldPreloadCalls += 1;
 
-		assetsToPreload(_item: BasePlaylistItem): PreloadAsset[] {
-			return [];
-		},
+      return false;
+    },
 
-		cancel(): void {},
-	};
+    assetsToPreload(_item: BasePlaylistItem): PreloadAsset[] {
+      return [];
+    },
 
-	return strategy;
+    cancel(): void {},
+  };
+
+  return strategy;
 }

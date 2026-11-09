@@ -55,122 +55,130 @@ Dialogue: 0,0:00:01.50,0:00:03.00,Default,,0,0,0,,Second ASS cue
 
 const EPISODE_SECONDS = 24;
 const EPISODE_RENDITIONS = [
-	{
-		dir: 'v0',
-		size: '320x180',
-		bandwidth: 400000,
-	},
-	{
-		dir: 'v1',
-		size: '640x360',
-		bandwidth: 1200000,
-	},
+  {
+    dir: 'v0',
+    size: '320x180',
+    bandwidth: 400000,
+  },
+  {
+    dir: 'v1',
+    size: '640x360',
+    bandwidth: 1200000,
+  },
 ];
 
 /** Two multi-rendition HLS episodes (ep1, ep2) with a VTT each, for the next-item warmup spec. */
 function generateEpisodePair(ffmpeg) {
-	for (const episode of ['ep1', 'ep2']) {
-		const episodeDir = join(mediaDir, episode);
-		let master = '#EXTM3U\n';
+  for (const episode of ['ep1', 'ep2']) {
+    const episodeDir = join(mediaDir, episode);
+    let master = '#EXTM3U\n';
 
-		for (const rendition of EPISODE_RENDITIONS) {
-			mkdirSync(join(episodeDir, rendition.dir), { recursive: true });
-			run(ffmpeg, [
-				'-f',
-				'lavfi',
-				'-i',
-				`testsrc=duration=${EPISODE_SECONDS}:size=${rendition.size}:rate=15`,
-				'-f',
-				'lavfi',
-				'-i',
-				`sine=frequency=${episode === 'ep1' ? 440 : 660}:duration=${EPISODE_SECONDS}`,
-				'-c:v',
-				'libx264',
-				'-pix_fmt',
-				'yuv420p',
-				'-g',
-				'60',
-				'-keyint_min',
-				'60',
-				'-sc_threshold',
-				'0',
-				'-c:a',
-				'aac',
-				'-shortest',
-				'-f',
-				'hls',
-				'-hls_time',
-				'4',
-				'-hls_list_size',
-				'0',
-				'-hls_segment_filename',
-				`${episode}/${rendition.dir}/seg_%03d.ts`,
-				`${episode}/${rendition.dir}/index.m3u8`,
-			]);
-			master += `#EXT-X-STREAM-INF:BANDWIDTH=${rendition.bandwidth},RESOLUTION=${rendition.size}\n${rendition.dir}/index.m3u8\n`;
-		}
+    for (const rendition of EPISODE_RENDITIONS) {
+      mkdirSync(join(episodeDir, rendition.dir), { recursive: true });
 
-		writeFileSync(join(episodeDir, 'master.m3u8'), master);
+      run(ffmpeg, [
+        '-f',
+        'lavfi',
+        '-i',
+        `testsrc=duration=${EPISODE_SECONDS}:size=${rendition.size}:rate=15`,
+        '-f',
+        'lavfi',
+        '-i',
+        `sine=frequency=${episode === 'ep1'
+          ? 440
+          : 660}:duration=${EPISODE_SECONDS}`,
+        '-c:v',
+        'libx264',
+        '-pix_fmt',
+        'yuv420p',
+        '-g',
+        '60',
+        '-keyint_min',
+        '60',
+        '-sc_threshold',
+        '0',
+        '-c:a',
+        'aac',
+        '-shortest',
+        '-f',
+        'hls',
+        '-hls_time',
+        '4',
+        '-hls_list_size',
+        '0',
+        '-hls_segment_filename',
+        `${episode}/${rendition.dir}/seg_%03d.ts`,
+        `${episode}/${rendition.dir}/index.m3u8`,
+      ]);
 
-		let vtt = 'WEBVTT\n\n';
-		for (let second = 0; second < EPISODE_SECONDS; second += 2) {
-			const format = value => `00:00:${String(value).padStart(2, '0')}.000`;
-			vtt += `${format(second)} --> ${format(second + 2)}\n${episode} caption at ${second}s\n\n`;
-		}
-		writeFileSync(join(episodeDir, 'captions.vtt'), vtt);
-	}
+      master += `#EXT-X-STREAM-INF:BANDWIDTH=${rendition.bandwidth},RESOLUTION=${rendition.size}\n${rendition.dir}/index.m3u8\n`;
+    }
+
+    writeFileSync(join(episodeDir, 'master.m3u8'), master);
+
+    let vtt = 'WEBVTT\n\n';
+
+    for (let second = 0; second < EPISODE_SECONDS; second += 2) {
+      const format = (value) => `00:00:${String(value).padStart(2, '0')}.000`;
+
+      vtt += `${format(second)} --> ${format(second + 2)}\n${episode} caption at ${second}s\n\n`;
+    }
+
+    writeFileSync(join(episodeDir, 'captions.vtt'), vtt);
+  }
 }
 
 async function main() {
-	const ffmpeg = await ensureFfmpeg();
-	mkdirSync(mediaDir, { recursive: true });
+  const ffmpeg = await ensureFfmpeg();
 
-	run(ffmpeg, [
-		'-f',
-		'lavfi',
-		'-i',
-		'testsrc=duration=3:size=320x180:rate=15',
-		'-f',
-		'lavfi',
-		'-i',
-		'sine=frequency=440:duration=3',
-		'-c:v',
-		'libx264',
-		'-pix_fmt',
-		'yuv420p',
-		'-c:a',
-		'aac',
-		'-shortest',
-		'sample.mp4',
-	]);
+  mkdirSync(mediaDir, { recursive: true });
 
-	run(ffmpeg, [
-		'-i',
-		'sample.mp4',
-		'-c:v',
-		'libx264',
-		'-c:a',
-		'aac',
-		'-f',
-		'hls',
-		'-hls_time',
-		'1',
-		'-hls_list_size',
-		'0',
-		'-hls_segment_filename',
-		'seg_%03d.ts',
-		'stream.m3u8',
-	]);
+  run(ffmpeg, [
+    '-f',
+    'lavfi',
+    '-i',
+    'testsrc=duration=3:size=320x180:rate=15',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=3',
+    '-c:v',
+    'libx264',
+    '-pix_fmt',
+    'yuv420p',
+    '-c:a',
+    'aac',
+    '-shortest',
+    'sample.mp4',
+  ]);
 
-	writeFileSync(join(mediaDir, 'sample.vtt'), SAMPLE_VTT);
-	writeFileSync(join(mediaDir, 'sample.ass'), SAMPLE_ASS);
+  run(ffmpeg, [
+    '-i',
+    'sample.mp4',
+    '-c:v',
+    'libx264',
+    '-c:a',
+    'aac',
+    '-f',
+    'hls',
+    '-hls_time',
+    '1',
+    '-hls_list_size',
+    '0',
+    '-hls_segment_filename',
+    'seg_%03d.ts',
+    'stream.m3u8',
+  ]);
 
-	generateEpisodePair(ffmpeg);
+  writeFileSync(join(mediaDir, 'sample.vtt'), SAMPLE_VTT);
+  writeFileSync(join(mediaDir, 'sample.ass'), SAMPLE_ASS);
 
-	console.log(`e2e fixtures generated in ${mediaDir} using ${ffmpeg}`);
+  generateEpisodePair(ffmpeg);
+
+  console.log(`e2e fixtures generated in ${mediaDir} using ${ffmpeg}`);
 }
 
 main().catch((error) => {
-	console.error(error.message);
-	process.exit(1);
+  console.error(error.message);
+  process.exit(1);
 });

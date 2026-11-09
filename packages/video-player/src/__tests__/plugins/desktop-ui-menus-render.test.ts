@@ -30,41 +30,49 @@ import { renderQualityPane, renderSpeedPane, renderSubsPane, renderSubtitleSetti
 
 type ResizeCallback = (entries: Array<{ contentRect: { width: number } }>) => void;
 const MockResizeObserver = vi.fn(function (this: unknown, _cb: ResizeCallback) {
-	return { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() };
+  return {
+    observe: vi.fn(),
+    disconnect: vi.fn(),
+    unobserve: vi.fn(),
+  };
 });
 
 // ── Shared helpers ───────��────────────────────────────────────────────────────
 
 function resetAndMount(id = 'test'): void {
-	(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	const div = document.createElement('div');
-	div.id = id;
-	div.className = 'nomercyplayer';
-	document.body.appendChild(div);
-	vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  const div = document.createElement('div');
+
+  div.id = id;
+  div.className = 'nomercyplayer';
+  document.body.appendChild(div);
+  vi.stubGlobal('ResizeObserver', MockResizeObserver);
 }
 
 function cleanup(): void {
-	(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	document.body.innerHTML = '';
-	vi.unstubAllGlobals();
+  (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  document.body.innerHTML = '';
+  vi.unstubAllGlobals();
 }
 
 async function makePlayer(overrides: Record<string, unknown> = {}): Promise<NMVideoPlayer> {
-	const player = new NMVideoPlayer('test').setup({});
-	await player.addPlugin(desktopUiPlugin, {
-		buttons: {
-			speed: true,
-			quality: true,
-			subtitles: true,
-			audio: true,
-			playlist: true,
-			aspectRatio: true,
-			settings: true,
-		},
-	}).ready();
-	Object.assign(player, overrides);
-	return player;
+  const player = new NMVideoPlayer('test').setup({});
+
+  await player.addPlugin(desktopUiPlugin, {
+    buttons: {
+      speed: true,
+      quality: true,
+      subtitles: true,
+      audio: true,
+      playlist: true,
+      aspectRatio: true,
+      settings: true,
+    },
+  }).ready();
+
+  Object.assign(player, overrides);
+
+  return player;
 }
 
 function NOOP_LISTEN(_target: EventTarget, _event: string, _handler: (event: Event) => void): void {}
@@ -72,872 +80,1113 @@ function NOOP_LISTEN(_target: EventTarget, _event: string, _handler: (event: Eve
 // ── renderSpeedPane via real player ────────��─────────────────────────────────
 
 describe('renderSpeedPane (direct call)', () => {
-	beforeEach(() => resetAndMount());
-	afterEach(() => cleanup());
+  beforeEach(() => resetAndMount());
+  afterEach(() => cleanup());
 
-	it('builds speed choice rows for each rate', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+  it('builds speed choice rows for each rate', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'speed-scroll-container';
-		pane.appendChild(scroll);
+    await player.ready();
 
-		const rates = [0.5, 1, 1.5, 2];
-		Object.assign(player, { playbackRates: () => rates, playbackRate: () => 1 });
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
 
-		renderSpeedPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {});
+    scroll.className = 'speed-scroll-container';
+    pane.appendChild(scroll);
 
-		const buttons = scroll.querySelectorAll('button');
-		expect(buttons.length).toBe(rates.length);
-	});
+    const rates = [0.5, 1, 1.5, 2];
 
-	it('marks current rate as active', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+    Object.assign(player, { playbackRates: () => rates, playbackRate: () => 1 });
 
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'speed-scroll-container';
-		pane.appendChild(scroll);
+    renderSpeedPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {});
 
-		Object.assign(player, {
-			playbackRates: () => [0.5, 1, 1.5],
-			playbackRate: () => 1.5,
-		});
+    const buttons = scroll.querySelectorAll('button');
 
-		renderSpeedPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {});
+    expect(buttons.length).toBe(rates.length);
+  });
 
-		const active = scroll.querySelector('button.is-active, button[aria-checked="true"]');
-		expect(active).not.toBeNull();
-	});
+  it('marks current rate as active', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-	it('calls onPick and sets playbackRate when a speed row is clicked', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+    await player.ready();
 
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'speed-scroll-container';
-		pane.appendChild(scroll);
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
 
-		let pickedRate: number | null = null;
-		let onPickCalled = false;
+    scroll.className = 'speed-scroll-container';
+    pane.appendChild(scroll);
 
-		Object.assign(player, {
-			playbackRates: () => [0.5, 1, 2],
-			playbackRate: (rate?: number) => {
-				if (rate !== undefined)
-					pickedRate = rate; return 1;
-			},
-		});
+    Object.assign(player, {
+      playbackRates: () => [0.5, 1, 1.5],
+      playbackRate: () => 1.5,
+    });
 
-		const listen = (target: EventTarget, event: string, fn: (ev: Event) => void): void => {
-			(target as HTMLElement).addEventListener(event, fn);
-		};
+    renderSpeedPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {});
 
-		renderSpeedPane(pane, player as unknown as NMVideoPlayer, listen, () => { onPickCalled = true; });
+    const active = scroll.querySelector('button.is-active, button[aria-checked="true"]');
 
-		const buttons = scroll.querySelectorAll<HTMLButtonElement>('button');
-		buttons[buttons.length - 1]!.click();
+    expect(active).not.toBeNull();
+  });
 
-		expect(pickedRate).toBe(2);
-		expect(onPickCalled).toBe(true);
-	});
+  it('calls onPick and sets playbackRate when a speed row is clicked', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.ready();
+
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
+
+    scroll.className = 'speed-scroll-container';
+    pane.appendChild(scroll);
+
+    let pickedRate: number | null = null;
+    let onPickCalled = false;
+
+    Object.assign(player, {
+      playbackRates: () => [0.5, 1, 2],
+      playbackRate: (rate?: number) => {
+        if (rate !== undefined) {
+          pickedRate = rate;
+        }
+
+        return 1;
+      },
+    });
+
+    const listen = (target: EventTarget, event: string, fn: (ev: Event) => void): void => {
+      (target as HTMLElement).addEventListener(event, fn);
+    };
+
+    renderSpeedPane(pane, player as unknown as NMVideoPlayer, listen, () => { onPickCalled = true; });
+
+    const buttons = scroll.querySelectorAll<HTMLButtonElement>('button');
+
+    buttons[buttons.length - 1]!.click();
+
+    expect(pickedRate).toBe(2);
+    expect(onPickCalled).toBe(true);
+  });
 });
 
 // ── renderQualityPane via real player ─────────────────────────────────────��───
 
 describe('renderQualityPane (direct call)', () => {
-	beforeEach(() => resetAndMount());
-	afterEach(() => cleanup());
+  beforeEach(() => resetAndMount());
+  afterEach(() => cleanup());
 
-	it('renders Auto row plus one row per quality level', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+  it('renders Auto row plus one row per quality level', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'quality-scroll-container';
-		pane.appendChild(scroll);
+    await player.ready();
 
-		const levels: QualityLevel[] = [
-			{ index: 0, height: 1080, bitrate: 5000, label: '1080p' },
-			{ index: 1, height: 720, bitrate: 3000, label: '720p' },
-		];
-		Object.assign(player, { qualityLevels: () => levels });
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
 
-		renderQualityPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {}, {
-			subtitleIdx: -1,
-			audioIdx: 0,
-			qualityIdx: 'auto',
-		});
+    scroll.className = 'quality-scroll-container';
+    pane.appendChild(scroll);
 
-		const buttons = scroll.querySelectorAll('button');
-		expect(buttons.length).toBe(3); // Auto + 2 levels
-	});
+    const levels: QualityLevel[] = [
+      {
+        index: 0,
+        height: 1080,
+        bitrate: 5000,
+        label: '1080p',
+      },
+      {
+        index: 1,
+        height: 720,
+        bitrate: 3000,
+        label: '720p',
+      },
+    ];
 
-	it('marks Auto row active when qualityIdx is "auto"', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+    Object.assign(player, { qualityLevels: () => levels });
 
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'quality-scroll-container';
-		pane.appendChild(scroll);
+    renderQualityPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {}, {
+      subtitleIdx: -1,
+      audioIdx: 0,
+      qualityIdx: 'auto',
+    });
 
-		Object.assign(player, {
-			qualityLevels: () => [{ index: 0, height: 1080, bitrate: 5000, label: '1080p' }],
-		});
+    const buttons = scroll.querySelectorAll('button');
 
-		renderQualityPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {}, {
-			subtitleIdx: -1,
-			audioIdx: 0,
-			qualityIdx: 'auto',
-		});
+    expect(buttons.length).toBe(3); // Auto + 2 levels
+  });
 
-		const autoBtn = scroll.querySelector<HTMLButtonElement>('#quality-auto');
-		expect(autoBtn).not.toBeNull();
-		const isActive = autoBtn!.classList.contains('is-active') || autoBtn!.getAttribute('aria-checked') === 'true';
-		expect(isActive).toBe(true);
-	});
+  it('marks Auto row active when qualityIdx is "auto"', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-	it('shows playingLabel as sublabel on Auto row when in auto mode', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+    await player.ready();
 
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'quality-scroll-container';
-		pane.appendChild(scroll);
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
 
-		Object.assign(player, {
-			qualityLevels: () => [{ index: 0, height: 1080, bitrate: 5000, label: '1080p' }],
-		});
+    scroll.className = 'quality-scroll-container';
+    pane.appendChild(scroll);
 
-		renderQualityPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {}, {
-			subtitleIdx: -1,
-			audioIdx: 0,
-			qualityIdx: 'auto',
-			playingQualityIdx: 0,
-		});
+    Object.assign(player, {
+      qualityLevels: () => [{
+        index: 0,
+        height: 1080,
+        bitrate: 5000,
+        label: '1080p',
+      }],
+    });
 
-		const autoBtn = scroll.querySelector('#quality-auto');
-		expect(autoBtn?.textContent).toMatch(/1080p/);
-	});
+    renderQualityPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {}, {
+      subtitleIdx: -1,
+      audioIdx: 0,
+      qualityIdx: 'auto',
+    });
 
-	it('routes a filtered quality row click + checkmark by raw index, not array position', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+    const autoBtn = scroll.querySelector<HTMLButtonElement>('#quality-auto');
 
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'quality-scroll-container';
-		pane.appendChild(scroll);
+    expect(autoBtn).not.toBeNull();
+    const isActive = autoBtn!.classList.contains('is-active') || autoBtn!.getAttribute('aria-checked') === 'true';
 
-		// Raw HLS index 0 filtered out, so array positions [0,1] map to raw indices [1,2].
-		const levels: QualityLevel[] = [
-			{ index: 1, height: 1080, bitrate: 5000, label: '1080p' },
-			{ index: 2, height: 720, bitrate: 3000, label: '720p' },
-		];
-		const qualityCalls: unknown[] = [];
-		Object.assign(player, {
-			qualityLevels: () => levels,
-			quality: (value: unknown) => { qualityCalls.push(value); },
-		});
+    expect(isActive).toBe(true);
+  });
 
-		const listen = (target: EventTarget, event: string, fn: (event: Event) => void): void => {
-			target.addEventListener(event, fn);
-		};
+  it('shows playingLabel as sublabel on Auto row when in auto mode', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		renderQualityPane(pane, player as unknown as NMVideoPlayer, listen, () => {}, {
-			subtitleIdx: -1,
-			audioIdx: 0,
-			qualityIdx: 2,
-		});
+    await player.ready();
 
-		const row = scroll.querySelector<HTMLButtonElement>('#quality-720-3000');
-		expect(row).not.toBeNull();
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
 
-		// Checkmark is matched by raw index (2), not array position (1).
-		const active = row!.classList.contains('is-active') || row!.getAttribute('aria-checked') === 'true';
-		expect(active).toBe(true);
+    scroll.className = 'quality-scroll-container';
+    pane.appendChild(scroll);
 
-		row!.click();
-		expect(qualityCalls).toEqual([2]);
-	});
+    Object.assign(player, {
+      qualityLevels: () => [{
+        index: 0,
+        height: 1080,
+        bitrate: 5000,
+        label: '1080p',
+      }],
+    });
+
+    renderQualityPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {}, {
+      subtitleIdx: -1,
+      audioIdx: 0,
+      qualityIdx: 'auto',
+      playingQualityIdx: 0,
+    });
+
+    const autoBtn = scroll.querySelector('#quality-auto');
+
+    expect(autoBtn?.textContent).toMatch(/1080p/);
+  });
+
+  it('routes a filtered quality row click + checkmark by raw index, not array position', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.ready();
+
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
+
+    scroll.className = 'quality-scroll-container';
+    pane.appendChild(scroll);
+
+    // Raw HLS index 0 filtered out, so array positions [0,1] map to raw indices [1,2].
+    const levels: QualityLevel[] = [
+      {
+        index: 1,
+        height: 1080,
+        bitrate: 5000,
+        label: '1080p',
+      },
+      {
+        index: 2,
+        height: 720,
+        bitrate: 3000,
+        label: '720p',
+      },
+    ];
+    const qualityCalls: unknown[] = [];
+
+    Object.assign(player, {
+      qualityLevels: () => levels,
+      quality: (value: unknown) => { qualityCalls.push(value); },
+    });
+
+    const listen = (target: EventTarget, event: string, fn: (event: Event) => void): void => {
+      target.addEventListener(event, fn);
+    };
+
+    renderQualityPane(pane, player as unknown as NMVideoPlayer, listen, () => {}, {
+      subtitleIdx: -1,
+      audioIdx: 0,
+      qualityIdx: 2,
+    });
+
+    const row = scroll.querySelector<HTMLButtonElement>('#quality-720-3000');
+
+    expect(row).not.toBeNull();
+
+    // Checkmark is matched by raw index (2), not array position (1).
+    const active = row!.classList.contains('is-active') || row!.getAttribute('aria-checked') === 'true';
+
+    expect(active).toBe(true);
+
+    row!.click();
+    expect(qualityCalls).toEqual([2]);
+  });
 });
 
 // ── renderSubsPane via real player ────────────────────────────────────────────
 
 describe('renderSubsPane (direct call)', () => {
-	beforeEach(() => resetAndMount());
-	afterEach(() => cleanup());
+  beforeEach(() => resetAndMount());
+  afterEach(() => cleanup());
 
-	it('renders Off row plus one row per subtitle track', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+  it('renders Off row plus one row per subtitle track', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'subtitles-scroll-container';
-		pane.appendChild(scroll);
+    await player.ready();
 
-		const subs: SubtitleTrackRef[] = [
-			{ id: 'en', language: 'en', label: 'English', kind: 'subtitles', default: false, url: '' },
-			{ id: 'nl', language: 'nl', label: 'Dutch', kind: 'subtitles', default: false, url: '' },
-		];
-		Object.assign(player, { subtitles: () => subs, language: () => 'en' });
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
 
-		renderSubsPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {}, {
-			subtitleIdx: -1,
-			audioIdx: 0,
-			qualityIdx: 'auto',
-		});
+    scroll.className = 'subtitles-scroll-container';
+    pane.appendChild(scroll);
 
-		const buttons = scroll.querySelectorAll('button');
-		expect(buttons.length).toBe(3); // Off + 2 tracks
-	});
+    const subs: SubtitleTrackRef[] = [
+      {
+        id: 'en',
+        language: 'en',
+        label: 'English',
+        kind: 'subtitles',
+        default: false,
+        url: '',
+      },
+      {
+        id: 'nl',
+        language: 'nl',
+        label: 'Dutch',
+        kind: 'subtitles',
+        default: false,
+        url: '',
+      },
+    ];
 
-	it('marks Off active when subtitleIdx is -1', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+    Object.assign(player, { subtitles: () => subs, language: () => 'en' });
 
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'subtitles-scroll-container';
-		pane.appendChild(scroll);
+    renderSubsPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {}, {
+      subtitleIdx: -1,
+      audioIdx: 0,
+      qualityIdx: 'auto',
+    });
 
-		Object.assign(player, {
-			subtitles: () => [{ id: 'en', language: 'en', label: 'English', kind: 'subtitles', default: false, url: '' }],
-			language: () => 'en',
-		});
+    const buttons = scroll.querySelectorAll('button');
 
-		renderSubsPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {}, {
-			subtitleIdx: -1,
-			audioIdx: 0,
-			qualityIdx: 'auto',
-		});
+    expect(buttons.length).toBe(3); // Off + 2 tracks
+  });
 
-		const offBtn = scroll.querySelector<HTMLButtonElement>('#off-button-');
-		expect(offBtn).not.toBeNull();
-		const isActive = offBtn!.classList.contains('is-active') || offBtn!.getAttribute('aria-checked') === 'true';
-		expect(isActive).toBe(true);
-	});
+  it('marks Off active when subtitleIdx is -1', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-	it('marks the active track (index 1)', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+    await player.ready();
 
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'subtitles-scroll-container';
-		pane.appendChild(scroll);
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
 
-		Object.assign(player, {
-			subtitles: () => [
-				{ id: 'en', language: 'en', label: 'English', kind: 'subtitles', default: false, url: '' },
-				{ id: 'nl', language: 'nl', label: 'Dutch', kind: 'subtitles', default: false, url: '' },
-			],
-			language: () => 'en',
-		});
+    scroll.className = 'subtitles-scroll-container';
+    pane.appendChild(scroll);
 
-		renderSubsPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {}, {
-			subtitleIdx: 1,
-			audioIdx: 0,
-			qualityIdx: 'auto',
-		});
+    Object.assign(player, {
+      subtitles: () => [{
+        id: 'en',
+        language: 'en',
+        label: 'English',
+        kind: 'subtitles',
+        default: false,
+        url: '',
+      }],
+      language: () => 'en',
+    });
 
-		const buttons = scroll.querySelectorAll<HTMLButtonElement>('button');
-		const dutchBtn = buttons[2]; // Off=0, English=1, Dutch=2
-		const isActive = dutchBtn?.classList.contains('is-active') || dutchBtn?.getAttribute('aria-checked') === 'true';
-		expect(isActive).toBe(true);
-	});
+    renderSubsPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {}, {
+      subtitleIdx: -1,
+      audioIdx: 0,
+      qualityIdx: 'auto',
+    });
 
-	it('calls player.subtitle(null) when Off is clicked', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+    const offBtn = scroll.querySelector<HTMLButtonElement>('#off-button-');
 
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'subtitles-scroll-container';
-		pane.appendChild(scroll);
+    expect(offBtn).not.toBeNull();
+    const isActive = offBtn!.classList.contains('is-active') || offBtn!.getAttribute('aria-checked') === 'true';
 
-		let subArg: number | null = -99;
-		Object.assign(player, {
-			subtitles: () => [],
-			subtitle: (idx?: number | null) => {
-				if (idx !== undefined)
-					subArg = idx ?? null; return null;
-			},
-			language: () => 'en',
-		});
+    expect(isActive).toBe(true);
+  });
 
-		const listen = (target: EventTarget, event: string, fn: (ev: Event) => void): void => {
-			(target as HTMLElement).addEventListener(event, fn);
-		};
+  it('marks the active track (index 1)', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		renderSubsPane(pane, player as unknown as NMVideoPlayer, listen, () => {}, {
-			subtitleIdx: 0,
-			audioIdx: 0,
-			qualityIdx: 'auto',
-		});
+    await player.ready();
 
-		const offBtn = scroll.querySelector<HTMLButtonElement>('#off-button-');
-		offBtn!.click();
-		expect(subArg).toBeNull();
-	});
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
 
-	it('renders a consumer subtitleMenuAction row after the tracks, even with zero tracks', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+    scroll.className = 'subtitles-scroll-container';
+    pane.appendChild(scroll);
 
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'subtitles-scroll-container';
-		pane.appendChild(scroll);
+    Object.assign(player, {
+      subtitles: () => [
+        {
+          id: 'en',
+          language: 'en',
+          label: 'English',
+          kind: 'subtitles',
+          default: false,
+          url: '',
+        },
+        {
+          id: 'nl',
+          language: 'nl',
+          label: 'Dutch',
+          kind: 'subtitles',
+          default: false,
+          url: '',
+        },
+      ],
+      language: () => 'en',
+    });
 
-		Object.assign(player, { subtitles: () => [], language: () => 'en' });
+    renderSubsPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {}, {
+      subtitleIdx: 1,
+      audioIdx: 0,
+      qualityIdx: 'auto',
+    });
 
-		let selectedWith: unknown = null;
-		renderSubsPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {}, {
-			subtitleIdx: -1,
-			audioIdx: 0,
-			qualityIdx: 'auto',
-		}, [{
-			id: 'search-online',
-			label: () => 'Search subtitles online…',
-			onSelect: (receivedPlayer) => { selectedWith = receivedPlayer; },
-		}]);
+    const buttons = scroll.querySelectorAll<HTMLButtonElement>('button');
+    const dutchBtn = buttons[2]; // Off=0, English=1, Dutch=2
+    const isActive = dutchBtn?.classList.contains('is-active') || dutchBtn?.getAttribute('aria-checked') === 'true';
 
-		const actionBtn = scroll.querySelector<HTMLButtonElement>('#subtitle-action-search-online');
-		expect(actionBtn).not.toBeNull();
-		expect(actionBtn!.getAttribute('role')).not.toBe('switch');
-		expect(actionBtn!.textContent).toContain('Search subtitles online');
+    expect(isActive).toBe(true);
+  });
 
-		const listen = (target: EventTarget, event: string, fn: (ev: Event) => void): void => {
-			(target as HTMLElement).addEventListener(event, fn);
-		};
-		let onPickCalled = false;
-		renderSubsPane(pane, player as unknown as NMVideoPlayer, listen, () => { onPickCalled = true; }, {
-			subtitleIdx: -1,
-			audioIdx: 0,
-			qualityIdx: 'auto',
-		}, [{
-			id: 'search-online',
-			label: () => 'Search subtitles online…',
-			onSelect: (receivedPlayer) => { selectedWith = receivedPlayer; },
-		}]);
-		scroll.querySelector<HTMLButtonElement>('#subtitle-action-search-online')!.click();
+  it('calls player.subtitle(null) when Off is clicked', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		expect(selectedWith).toBe(player);
-		expect(onPickCalled).toBe(true);
-	});
+    await player.ready();
+
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
+
+    scroll.className = 'subtitles-scroll-container';
+    pane.appendChild(scroll);
+
+    let subArg: number | null = -99;
+
+    Object.assign(player, {
+      subtitles: () => [],
+      subtitle: (idx?: number | null) => {
+        if (idx !== undefined) {
+          subArg = idx ?? null;
+        }
+
+        return null;
+      },
+      language: () => 'en',
+    });
+
+    const listen = (target: EventTarget, event: string, fn: (ev: Event) => void): void => {
+      (target as HTMLElement).addEventListener(event, fn);
+    };
+
+    renderSubsPane(pane, player as unknown as NMVideoPlayer, listen, () => {}, {
+      subtitleIdx: 0,
+      audioIdx: 0,
+      qualityIdx: 'auto',
+    });
+
+    const offBtn = scroll.querySelector<HTMLButtonElement>('#off-button-');
+
+    offBtn!.click();
+    expect(subArg).toBeNull();
+  });
+
+  it('renders a consumer subtitleMenuAction row after the tracks, even with zero tracks', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.ready();
+
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
+
+    scroll.className = 'subtitles-scroll-container';
+    pane.appendChild(scroll);
+
+    Object.assign(player, { subtitles: () => [], language: () => 'en' });
+
+    let selectedWith: unknown = null;
+
+    renderSubsPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {}, {
+      subtitleIdx: -1,
+      audioIdx: 0,
+      qualityIdx: 'auto',
+    }, [{
+      id: 'search-online',
+      label: () => 'Search subtitles online…',
+      onSelect: (receivedPlayer) => { selectedWith = receivedPlayer; },
+    }]);
+
+    const actionBtn = scroll.querySelector<HTMLButtonElement>('#subtitle-action-search-online');
+
+    expect(actionBtn).not.toBeNull();
+    expect(actionBtn!.getAttribute('role')).not.toBe('switch');
+    expect(actionBtn!.textContent).toContain('Search subtitles online');
+
+    const listen = (target: EventTarget, event: string, fn: (ev: Event) => void): void => {
+      (target as HTMLElement).addEventListener(event, fn);
+    };
+
+    let onPickCalled = false;
+
+    renderSubsPane(pane, player as unknown as NMVideoPlayer, listen, () => { onPickCalled = true; }, {
+      subtitleIdx: -1,
+      audioIdx: 0,
+      qualityIdx: 'auto',
+    }, [{
+      id: 'search-online',
+      label: () => 'Search subtitles online…',
+      onSelect: (receivedPlayer) => { selectedWith = receivedPlayer; },
+    }]);
+
+    scroll.querySelector<HTMLButtonElement>('#subtitle-action-search-online')!.click();
+
+    expect(selectedWith).toBe(player);
+    expect(onPickCalled).toBe(true);
+  });
 });
 
 // ── renderSubtitleSettingsPane via real player ───────────────────────────────
 
 describe('renderSubtitleSettingsPane (direct call)', () => {
-	beforeEach(() => resetAndMount());
-	afterEach(() => cleanup());
+  beforeEach(() => resetAndMount());
+  afterEach(() => cleanup());
 
-	it('renders setting rows in the scroll container', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.ready();
+  it('renders setting rows in the scroll container', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const pane = document.createElement('div');
-		const scroll = document.createElement('div');
-		scroll.className = 'subtitleSettings-scroll-container';
-		pane.appendChild(scroll);
+    await player.ready();
 
-		Object.assign(player, {
-			subtitleStyle: () => ({
-				fontSize: 100,
-				fontFamily: 'sans-serif',
-				textColor: 'white',
-				textOpacity: 100,
-				backgroundColor: 'black',
-				backgroundOpacity: 75,
-				edgeStyle: 'none',
-				areaColor: 'transparent',
-				windowOpacity: 0,
-			}),
-		});
+    const pane = document.createElement('div');
+    const scroll = document.createElement('div');
 
-		renderSubtitleSettingsPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {});
+    scroll.className = 'subtitleSettings-scroll-container';
+    pane.appendChild(scroll);
 
-		const buttons = scroll.querySelectorAll('button');
-		expect(buttons.length).toBeGreaterThan(0);
-	});
+    Object.assign(player, {
+      subtitleStyle: () => ({
+        fontSize: 100,
+        fontFamily: 'sans-serif',
+        textColor: 'white',
+        textOpacity: 100,
+        backgroundColor: 'black',
+        backgroundOpacity: 75,
+        edgeStyle: 'none',
+        areaColor: 'transparent',
+        windowOpacity: 0,
+      }),
+    });
+
+    renderSubtitleSettingsPane(pane, player as unknown as NMVideoPlayer, NOOP_LISTEN, () => {});
+
+    const buttons = scroll.querySelectorAll('button');
+
+    expect(buttons.length).toBeGreaterThan(0);
+  });
 });
 
 // ── Via plugin integration (button clicks) ───────────────────────────────────
 
 describe('DesktopUiPlugin — settings items (consumer toggle rows)', () => {
-	beforeEach(() => resetAndMount());
-	afterEach(() => cleanup());
+  beforeEach(() => resetAndMount());
+  afterEach(() => cleanup());
 
-	it('consumer settingsItems toggle rows render in the main menu', async () => {
-		let toggleState = false;
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { settings: true },
-			settingsItems: [
-				{
-					id: 'auto-skip',
-					label: () => 'Auto Skip',
-					get: () => toggleState,
-					set: (value: boolean) => { toggleState = value; },
-				},
-			],
-		}).ready();
+  it('consumer settingsItems toggle rows render in the main menu', async () => {
+    let toggleState = false;
+    const player = new NMVideoPlayer('test').setup({});
 
-		const container = player.container;
-		const mainMenu = container.querySelector('.main-menu');
-		expect(mainMenu).not.toBeNull();
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { settings: true },
+      settingsItems: [
+        {
+          id: 'auto-skip',
+          label: () => 'Auto Skip',
+          get: () => toggleState,
+          set: (value: boolean) => { toggleState = value; },
+        },
+      ],
+    }).ready();
 
-		const toggleBtn = mainMenu!.querySelector<HTMLButtonElement>('#menu-toggle-auto-skip');
-		expect(toggleBtn).not.toBeNull();
-		expect(toggleBtn!.getAttribute('role')).toBe('switch');
-	});
+    const container = player.container;
+    const mainMenu = container.querySelector('.main-menu');
 
-	it('clicking a settings toggle row flips the state', async () => {
-		let toggleState = false;
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { settings: true },
-			settingsItems: [
-				{
-					id: 'loop',
-					label: () => 'Loop',
-					get: () => toggleState,
-					set: (value: boolean) => { toggleState = value; },
-				},
-			],
-		}).ready();
+    expect(mainMenu).not.toBeNull();
 
-		const container = player.container;
-		const toggleBtn = container.querySelector<HTMLButtonElement>('#menu-toggle-loop');
-		expect(toggleBtn).not.toBeNull();
+    const toggleBtn = mainMenu!.querySelector<HTMLButtonElement>('#menu-toggle-auto-skip');
 
-		toggleBtn!.click();
-		expect(toggleState).toBe(true);
+    expect(toggleBtn).not.toBeNull();
+    expect(toggleBtn!.getAttribute('role')).toBe('switch');
+  });
 
-		toggleBtn!.click();
-		expect(toggleState).toBe(false);
-	});
+  it('clicking a settings toggle row flips the state', async () => {
+    let toggleState = false;
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { settings: true },
+      settingsItems: [
+        {
+          id: 'loop',
+          label: () => 'Loop',
+          get: () => toggleState,
+          set: (value: boolean) => { toggleState = value; },
+        },
+      ],
+    }).ready();
+
+    const container = player.container;
+    const toggleBtn = container.querySelector<HTMLButtonElement>('#menu-toggle-loop');
+
+    expect(toggleBtn).not.toBeNull();
+
+    toggleBtn!.click();
+    expect(toggleState).toBe(true);
+
+    toggleBtn!.click();
+    expect(toggleState).toBe(false);
+  });
 });
 
 describe('DesktopUiPlugin — settingsMenuActions (consumer action rows)', () => {
-	beforeEach(() => resetAndMount());
-	afterEach(() => cleanup());
+  beforeEach(() => resetAndMount());
+  afterEach(() => cleanup());
 
-	it('consumer settingsMenuActions render as action rows in the main menu', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { settings: true },
-			settingsMenuActions: [
-				{
-					id: 'cast',
-					label: () => 'Cast to device…',
-					onSelect: () => {},
-				},
-			],
-		}).ready();
+  it('consumer settingsMenuActions render as action rows in the main menu', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const container = player.container;
-		const mainMenu = container.querySelector('.main-menu');
-		expect(mainMenu).not.toBeNull();
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { settings: true },
+      settingsMenuActions: [
+        {
+          id: 'cast',
+          label: () => 'Cast to device…',
+          onSelect: () => {},
+        },
+      ],
+    }).ready();
 
-		const actionBtn = mainMenu!.querySelector<HTMLButtonElement>('#subtitle-action-cast');
-		expect(actionBtn).not.toBeNull();
-		expect(actionBtn!.textContent).toContain('Cast to device…');
-	});
+    const container = player.container;
+    const mainMenu = container.querySelector('.main-menu');
 
-	it('clicking a settingsMenuActions row runs onSelect and closes the settings menu', async () => {
-		let selected = false;
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { settings: true },
-			settingsMenuActions: [
-				{
-					id: 'cast',
-					label: () => 'Cast to device…',
-					onSelect: () => { selected = true; },
-				},
-			],
-		}).ready();
+    expect(mainMenu).not.toBeNull();
 
-		player.getPlugin(DesktopUiPlugin)?.openMainMenu();
-		const container = player.container;
-		expect(container.querySelector('.menu-frame')?.classList.contains('open')).toBe(true);
+    const actionBtn = mainMenu!.querySelector<HTMLButtonElement>('#subtitle-action-cast');
 
-		const actionBtn = container.querySelector<HTMLButtonElement>('#subtitle-action-cast');
-		expect(actionBtn).not.toBeNull();
+    expect(actionBtn).not.toBeNull();
+    expect(actionBtn!.textContent).toContain('Cast to device…');
+  });
 
-		actionBtn!.click();
-		expect(selected).toBe(true);
-		expect(container.querySelector('.menu-frame')?.classList.contains('open')).toBe(false);
-	});
+  it('clicking a settingsMenuActions row runs onSelect and closes the settings menu', async () => {
+    let selected = false;
+    const player = new NMVideoPlayer('test').setup({});
 
-	it('settingsMenuActions and settingsItems coexist — toggle rows then action rows', async () => {
-		let toggleState = false;
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { settings: true },
-			settingsItems: [
-				{
-					id: 'auto-skip',
-					label: () => 'Auto Skip',
-					get: () => toggleState,
-					set: (value: boolean) => { toggleState = value; },
-				},
-			],
-			settingsMenuActions: [
-				{
-					id: 'cast',
-					label: () => 'Cast to device…',
-					onSelect: () => {},
-				},
-			],
-		}).ready();
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { settings: true },
+      settingsMenuActions: [
+        {
+          id: 'cast',
+          label: () => 'Cast to device…',
+          onSelect: () => { selected = true; },
+        },
+      ],
+    }).ready();
 
-		const mainMenu = player.container.querySelector('.main-menu');
-		expect(mainMenu!.querySelector('#menu-toggle-auto-skip')).not.toBeNull();
-		expect(mainMenu!.querySelector('#subtitle-action-cast')).not.toBeNull();
-	});
+    player.getPlugin(DesktopUiPlugin)?.openMainMenu();
+    const container = player.container;
 
-	it('a live settingsMenuActions update (plugin.options()) adds the row after mount', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { settings: true },
-		}).ready();
+    expect(container.querySelector('.menu-frame')?.classList.contains('open')).toBe(true);
 
-		const mainMenu = player.container.querySelector('.main-menu');
-		expect(mainMenu!.querySelector('#subtitle-action-cast')).toBeNull();
+    const actionBtn = container.querySelector<HTMLButtonElement>('#subtitle-action-cast');
 
-		player.getPlugin(DesktopUiPlugin)?.options({
-			settingsMenuActions: [{
-				id: 'cast',
-				label: () => 'Cast to device…',
-				onSelect: () => {},
-			}],
-		});
+    expect(actionBtn).not.toBeNull();
 
-		expect(mainMenu!.querySelector('#subtitle-action-cast')).not.toBeNull();
-	});
+    actionBtn!.click();
+    expect(selected).toBe(true);
+    expect(container.querySelector('.menu-frame')?.classList.contains('open')).toBe(false);
+  });
 
-	it('a live settingsMenuActions update to an empty array removes the row', async () => {
-		let selected = false;
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { settings: true },
-			settingsMenuActions: [{
-				id: 'cast',
-				label: () => 'Cast to device…',
-				onSelect: () => { selected = true; },
-			}],
-		}).ready();
+  it('settingsMenuActions and settingsItems coexist — toggle rows then action rows', async () => {
+    let toggleState = false;
+    const player = new NMVideoPlayer('test').setup({});
 
-		const mainMenu = player.container.querySelector('.main-menu');
-		expect(mainMenu!.querySelector('#subtitle-action-cast')).not.toBeNull();
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { settings: true },
+      settingsItems: [
+        {
+          id: 'auto-skip',
+          label: () => 'Auto Skip',
+          get: () => toggleState,
+          set: (value: boolean) => { toggleState = value; },
+        },
+      ],
+      settingsMenuActions: [
+        {
+          id: 'cast',
+          label: () => 'Cast to device…',
+          onSelect: () => {},
+        },
+      ],
+    }).ready();
 
-		player.getPlugin(DesktopUiPlugin)?.options({ settingsMenuActions: [] });
-		expect(mainMenu!.querySelector('#subtitle-action-cast')).toBeNull();
-		expect(selected).toBe(false);
-	});
+    const mainMenu = player.container.querySelector('.main-menu');
+
+    expect(mainMenu!.querySelector('#menu-toggle-auto-skip')).not.toBeNull();
+    expect(mainMenu!.querySelector('#subtitle-action-cast')).not.toBeNull();
+  });
+
+  it('a live settingsMenuActions update (plugin.options()) adds the row after mount', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { settings: true },
+    }).ready();
+
+    const mainMenu = player.container.querySelector('.main-menu');
+
+    expect(mainMenu!.querySelector('#subtitle-action-cast')).toBeNull();
+
+    player.getPlugin(DesktopUiPlugin)?.options({
+      settingsMenuActions: [{
+        id: 'cast',
+        label: () => 'Cast to device…',
+        onSelect: () => {},
+      }],
+    });
+
+    expect(mainMenu!.querySelector('#subtitle-action-cast')).not.toBeNull();
+  });
+
+  it('a live settingsMenuActions update to an empty array removes the row', async () => {
+    let selected = false;
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { settings: true },
+      settingsMenuActions: [{
+        id: 'cast',
+        label: () => 'Cast to device…',
+        onSelect: () => { selected = true; },
+      }],
+    }).ready();
+
+    const mainMenu = player.container.querySelector('.main-menu');
+
+    expect(mainMenu!.querySelector('#subtitle-action-cast')).not.toBeNull();
+
+    player.getPlugin(DesktopUiPlugin)?.options({ settingsMenuActions: [] });
+    expect(mainMenu!.querySelector('#subtitle-action-cast')).toBeNull();
+    expect(selected).toBe(false);
+  });
 });
 
 // ── refreshCapabilityVisibility — content-hidden gates ───────────────────────
 
 describe('DesktopUiPlugin — capability visibility gates (data-content-hidden)', () => {
-	beforeEach(() => resetAndMount());
-	afterEach(() => cleanup());
+  beforeEach(() => resetAndMount());
+  afterEach(() => cleanup());
 
-	it('settingsBtn gets data-content-hidden="true" when all submenu sections are empty', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { settings: true, subtitles: true, audio: true, quality: true },
-		}).ready();
+  it('settingsBtn gets data-content-hidden="true" when all submenu sections are empty', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		// Single playback rate (<= 1), single audio track (<= 1), no subtitles, no settingsItems
-		Object.assign(player, {
-			playbackRates: () => [1],
-			audioTracks: () => [{ id: 'en', label: 'English', default: true }],
-			subtitles: () => [],
-			qualityLevels: () => [],
-			chapters: () => [],
-		});
-		player.emit('mediaReady' as never, {} as never);
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: {
+        settings: true,
+        subtitles: true,
+        audio: true,
+        quality: true,
+      },
+    }).ready();
 
-		const settingsBtn = player.container.querySelector<HTMLButtonElement>('[id="settings"]');
-		expect(settingsBtn).not.toBeNull();
-		expect(settingsBtn!.getAttribute('data-content-hidden')).toBe('true');
-	});
+    // Single playback rate (<= 1), single audio track (<= 1), no subtitles, no settingsItems
+    Object.assign(player, {
+      playbackRates: () => [1],
+      audioTracks: () => [{
+        id: 'en',
+        label: 'English',
+        default: true,
+      }],
+      subtitles: () => [],
+      qualityLevels: () => [],
+      chapters: () => [],
+    });
 
-	it('settingsBtn is NOT content-hidden when speeds list has more than one entry', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { settings: true },
-		}).ready();
+    player.emit('mediaReady' as never, {} as never);
 
-		Object.assign(player, {
-			playbackRates: () => [0.5, 1, 1.5, 2],
-			audioTracks: () => [{ id: 'en', label: 'English', default: true }],
-			subtitles: () => [],
-			qualityLevels: () => [],
-			chapters: () => [],
-		});
-		player.emit('mediaReady' as never, {} as never);
+    const settingsBtn = player.container.querySelector<HTMLButtonElement>('[id="settings"]');
 
-		const settingsBtn = player.container.querySelector<HTMLButtonElement>('[id="settings"]');
-		expect(settingsBtn).not.toBeNull();
-		expect(settingsBtn!.getAttribute('data-content-hidden')).toBeNull();
-	});
+    expect(settingsBtn).not.toBeNull();
+    expect(settingsBtn!.getAttribute('data-content-hidden')).toBe('true');
+  });
 
-	it('settingsBtn is NOT content-hidden when subtitles are present', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { settings: true, subtitles: true },
-		}).ready();
+  it('settingsBtn is NOT content-hidden when speeds list has more than one entry', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		Object.assign(player, {
-			playbackRates: () => [1],
-			audioTracks: () => [{ id: 'en', label: 'English', default: true }],
-			subtitles: () => [{ id: 'en', language: 'en', label: 'English', kind: 'subtitles', default: false, url: '' }],
-			qualityLevels: () => [],
-			chapters: () => [],
-		});
-		player.emit('mediaReady' as never, {} as never);
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { settings: true },
+    }).ready();
 
-		const settingsBtn = player.container.querySelector<HTMLButtonElement>('[id="settings"]');
-		expect(settingsBtn).not.toBeNull();
-		expect(settingsBtn!.getAttribute('data-content-hidden')).toBeNull();
-	});
+    Object.assign(player, {
+      playbackRates: () => [0.5, 1, 1.5, 2],
+      audioTracks: () => [{
+        id: 'en',
+        label: 'English',
+        default: true,
+      }],
+      subtitles: () => [],
+      qualityLevels: () => [],
+      chapters: () => [],
+    });
 
-	it('qualityBtn gets data-content-hidden="true" when fewer than 2 quality levels', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { quality: true },
-		}).ready();
+    player.emit('mediaReady' as never, {} as never);
 
-		Object.assign(player, {
-			qualityLevels: () => [],
-			audioTracks: () => [],
-			subtitles: () => [],
-			chapters: () => [],
-			playbackRates: () => [1],
-		});
-		player.emit('mediaReady' as never, {} as never);
+    const settingsBtn = player.container.querySelector<HTMLButtonElement>('[id="settings"]');
 
-		const qualityBtn = player.container.querySelector<HTMLButtonElement>('[id="quality"]');
-		expect(qualityBtn).not.toBeNull();
-		expect(qualityBtn!.getAttribute('data-content-hidden')).toBe('true');
-	});
+    expect(settingsBtn).not.toBeNull();
+    expect(settingsBtn!.getAttribute('data-content-hidden')).toBeNull();
+  });
 
-	it('qualityBtn gets data-content-hidden="true" with exactly 1 quality level', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { quality: true },
-		}).ready();
+  it('settingsBtn is NOT content-hidden when subtitles are present', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		Object.assign(player, {
-			qualityLevels: () => [{ index: 0, height: 1080, bitrate: 5000, label: '1080p' }],
-			audioTracks: () => [],
-			subtitles: () => [],
-			chapters: () => [],
-			playbackRates: () => [1],
-		});
-		player.emit('mediaReady' as never, {} as never);
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { settings: true, subtitles: true },
+    }).ready();
 
-		const qualityBtn = player.container.querySelector<HTMLButtonElement>('[id="quality"]');
-		expect(qualityBtn).not.toBeNull();
-		expect(qualityBtn!.getAttribute('data-content-hidden')).toBe('true');
-	});
+    Object.assign(player, {
+      playbackRates: () => [1],
+      audioTracks: () => [{
+        id: 'en',
+        label: 'English',
+        default: true,
+      }],
+      subtitles: () => [{
+        id: 'en',
+        language: 'en',
+        label: 'English',
+        kind: 'subtitles',
+        default: false,
+        url: '',
+      }],
+      qualityLevels: () => [],
+      chapters: () => [],
+    });
 
-	it('qualityBtn is NOT content-hidden when 2 or more quality levels exist', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { quality: true },
-		}).ready();
+    player.emit('mediaReady' as never, {} as never);
 
-		Object.assign(player, {
-			qualityLevels: () => [
-				{ index: 0, height: 1080, bitrate: 5000, label: '1080p' },
-				{ index: 1, height: 720, bitrate: 3000, label: '720p' },
-			],
-			audioTracks: () => [],
-			subtitles: () => [],
-			chapters: () => [],
-			playbackRates: () => [1],
-		});
-		player.emit('mediaReady' as never, {} as never);
+    const settingsBtn = player.container.querySelector<HTMLButtonElement>('[id="settings"]');
 
-		const qualityBtn = player.container.querySelector<HTMLButtonElement>('[id="quality"]');
-		expect(qualityBtn).not.toBeNull();
-		expect(qualityBtn!.getAttribute('data-content-hidden')).toBeNull();
-	});
+    expect(settingsBtn).not.toBeNull();
+    expect(settingsBtn!.getAttribute('data-content-hidden')).toBeNull();
+  });
 
-	it('audioBtn gets data-content-hidden="true" when only 1 audio track', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { audio: true },
-		}).ready();
+  it('qualityBtn gets data-content-hidden="true" when fewer than 2 quality levels', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		Object.assign(player, {
-			audioTracks: () => [{ id: 'en', label: 'English', default: true }],
-			subtitles: () => [],
-			qualityLevels: () => [],
-			chapters: () => [],
-			playbackRates: () => [1],
-		});
-		player.emit('mediaReady' as never, {} as never);
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { quality: true },
+    }).ready();
 
-		const audioBtn = player.container.querySelector<HTMLButtonElement>('[id="audio"]');
-		expect(audioBtn).not.toBeNull();
-		expect(audioBtn!.getAttribute('data-content-hidden')).toBe('true');
-	});
+    Object.assign(player, {
+      qualityLevels: () => [],
+      audioTracks: () => [],
+      subtitles: () => [],
+      chapters: () => [],
+      playbackRates: () => [1],
+    });
 
-	it('audioBtn is NOT content-hidden when 2 or more audio tracks exist', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { audio: true },
-		}).ready();
+    player.emit('mediaReady' as never, {} as never);
 
-		Object.assign(player, {
-			audioTracks: () => [
-				{ id: 'en', label: 'English', default: true },
-				{ id: 'nl', label: 'Dutch', default: false },
-			],
-			subtitles: () => [],
-			qualityLevels: () => [],
-			chapters: () => [],
-			playbackRates: () => [1],
-		});
-		player.emit('mediaReady' as never, {} as never);
+    const qualityBtn = player.container.querySelector<HTMLButtonElement>('[id="quality"]');
 
-		const audioBtn = player.container.querySelector<HTMLButtonElement>('[id="audio"]');
-		expect(audioBtn).not.toBeNull();
-		expect(audioBtn!.getAttribute('data-content-hidden')).toBeNull();
-	});
+    expect(qualityBtn).not.toBeNull();
+    expect(qualityBtn!.getAttribute('data-content-hidden')).toBe('true');
+  });
 
-	it('subsBtn gets data-content-hidden="true" when 0 subtitle tracks', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { subtitles: true },
-		}).ready();
+  it('qualityBtn gets data-content-hidden="true" with exactly 1 quality level', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		Object.assign(player, {
-			subtitles: () => [],
-			audioTracks: () => [],
-			qualityLevels: () => [],
-			chapters: () => [],
-			playbackRates: () => [1],
-		});
-		player.emit('mediaReady' as never, {} as never);
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { quality: true },
+    }).ready();
 
-		const subsBtn = player.container.querySelector<HTMLButtonElement>('[id="subtitles"]');
-		expect(subsBtn).not.toBeNull();
-		expect(subsBtn!.getAttribute('data-content-hidden')).toBe('true');
-	});
+    Object.assign(player, {
+      qualityLevels: () => [{
+        index: 0,
+        height: 1080,
+        bitrate: 5000,
+        label: '1080p',
+      }],
+      audioTracks: () => [],
+      subtitles: () => [],
+      chapters: () => [],
+      playbackRates: () => [1],
+    });
 
-	it('subsBtn is NOT content-hidden when at least 1 subtitle track exists', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { subtitles: true },
-		}).ready();
+    player.emit('mediaReady' as never, {} as never);
 
-		Object.assign(player, {
-			subtitles: () => [{ id: 'en', language: 'en', label: 'English', kind: 'subtitles', default: false, url: '' }],
-			audioTracks: () => [],
-			qualityLevels: () => [],
-			chapters: () => [],
-			playbackRates: () => [1],
-		});
-		player.emit('mediaReady' as never, {} as never);
+    const qualityBtn = player.container.querySelector<HTMLButtonElement>('[id="quality"]');
 
-		const subsBtn = player.container.querySelector<HTMLButtonElement>('[id="subtitles"]');
-		expect(subsBtn).not.toBeNull();
-		expect(subsBtn!.getAttribute('data-content-hidden')).toBeNull();
-	});
+    expect(qualityBtn).not.toBeNull();
+    expect(qualityBtn!.getAttribute('data-content-hidden')).toBe('true');
+  });
 
-	it('subsBtn is NOT content-hidden with zero tracks when subtitleMenuActions is configured', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { subtitles: true },
-			subtitleMenuActions: [{
-				id: 'search-online',
-				label: () => 'Search subtitles online…',
-				onSelect: () => {},
-			}],
-		}).ready();
+  it('qualityBtn is NOT content-hidden when 2 or more quality levels exist', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		Object.assign(player, {
-			subtitles: () => [],
-			audioTracks: () => [],
-			qualityLevels: () => [],
-			chapters: () => [],
-			playbackRates: () => [1],
-		});
-		player.emit('mediaReady' as never, {} as never);
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { quality: true },
+    }).ready();
 
-		const subsBtn = player.container.querySelector<HTMLButtonElement>('[id="subtitles"]');
-		expect(subsBtn).not.toBeNull();
-		expect(subsBtn!.getAttribute('data-content-hidden')).toBeNull();
+    Object.assign(player, {
+      qualityLevels: () => [
+        {
+          index: 0,
+          height: 1080,
+          bitrate: 5000,
+          label: '1080p',
+        },
+        {
+          index: 1,
+          height: 720,
+          bitrate: 3000,
+          label: '720p',
+        },
+      ],
+      audioTracks: () => [],
+      subtitles: () => [],
+      chapters: () => [],
+      playbackRates: () => [1],
+    });
 
-		player.getPlugin(DesktopUiPlugin)?.openSubMenu('subtitles');
-		const scroll = player.container.querySelector('.subtitles-scroll-container');
-		expect(scroll?.textContent).toContain('Search subtitles online');
-	});
+    player.emit('mediaReady' as never, {} as never);
 
-	it('a live subtitleMenuActions update (plugin.options()) unhides subsBtn with zero tracks', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, {
-			buttons: { subtitles: true },
-		}).ready();
+    const qualityBtn = player.container.querySelector<HTMLButtonElement>('[id="quality"]');
 
-		Object.assign(player, {
-			subtitles: () => [],
-			audioTracks: () => [],
-			qualityLevels: () => [],
-			chapters: () => [],
-			playbackRates: () => [1],
-		});
-		player.emit('mediaReady' as never, {} as never);
+    expect(qualityBtn).not.toBeNull();
+    expect(qualityBtn!.getAttribute('data-content-hidden')).toBeNull();
+  });
 
-		const subsBtn = player.container.querySelector<HTMLButtonElement>('[id="subtitles"]');
-		expect(subsBtn!.getAttribute('data-content-hidden')).toBe('true');
+  it('audioBtn gets data-content-hidden="true" when only 1 audio track', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		player.getPlugin(DesktopUiPlugin)?.options({
-			subtitleMenuActions: [{
-				id: 'search-online',
-				label: () => 'Search subtitles online…',
-				onSelect: () => {},
-			}],
-		});
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { audio: true },
+    }).ready();
 
-		expect(subsBtn!.getAttribute('data-content-hidden')).toBeNull();
-	});
+    Object.assign(player, {
+      audioTracks: () => [{
+        id: 'en',
+        label: 'English',
+        default: true,
+      }],
+      subtitles: () => [],
+      qualityLevels: () => [],
+      chapters: () => [],
+      playbackRates: () => [1],
+    });
+
+    player.emit('mediaReady' as never, {} as never);
+
+    const audioBtn = player.container.querySelector<HTMLButtonElement>('[id="audio"]');
+
+    expect(audioBtn).not.toBeNull();
+    expect(audioBtn!.getAttribute('data-content-hidden')).toBe('true');
+  });
+
+  it('audioBtn is NOT content-hidden when 2 or more audio tracks exist', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { audio: true },
+    }).ready();
+
+    Object.assign(player, {
+      audioTracks: () => [
+        {
+          id: 'en',
+          label: 'English',
+          default: true,
+        },
+        {
+          id: 'nl',
+          label: 'Dutch',
+          default: false,
+        },
+      ],
+      subtitles: () => [],
+      qualityLevels: () => [],
+      chapters: () => [],
+      playbackRates: () => [1],
+    });
+
+    player.emit('mediaReady' as never, {} as never);
+
+    const audioBtn = player.container.querySelector<HTMLButtonElement>('[id="audio"]');
+
+    expect(audioBtn).not.toBeNull();
+    expect(audioBtn!.getAttribute('data-content-hidden')).toBeNull();
+  });
+
+  it('subsBtn gets data-content-hidden="true" when 0 subtitle tracks', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { subtitles: true },
+    }).ready();
+
+    Object.assign(player, {
+      subtitles: () => [],
+      audioTracks: () => [],
+      qualityLevels: () => [],
+      chapters: () => [],
+      playbackRates: () => [1],
+    });
+
+    player.emit('mediaReady' as never, {} as never);
+
+    const subsBtn = player.container.querySelector<HTMLButtonElement>('[id="subtitles"]');
+
+    expect(subsBtn).not.toBeNull();
+    expect(subsBtn!.getAttribute('data-content-hidden')).toBe('true');
+  });
+
+  it('subsBtn is NOT content-hidden when at least 1 subtitle track exists', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { subtitles: true },
+    }).ready();
+
+    Object.assign(player, {
+      subtitles: () => [{
+        id: 'en',
+        language: 'en',
+        label: 'English',
+        kind: 'subtitles',
+        default: false,
+        url: '',
+      }],
+      audioTracks: () => [],
+      qualityLevels: () => [],
+      chapters: () => [],
+      playbackRates: () => [1],
+    });
+
+    player.emit('mediaReady' as never, {} as never);
+
+    const subsBtn = player.container.querySelector<HTMLButtonElement>('[id="subtitles"]');
+
+    expect(subsBtn).not.toBeNull();
+    expect(subsBtn!.getAttribute('data-content-hidden')).toBeNull();
+  });
+
+  it('subsBtn is NOT content-hidden with zero tracks when subtitleMenuActions is configured', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { subtitles: true },
+      subtitleMenuActions: [{
+        id: 'search-online',
+        label: () => 'Search subtitles online…',
+        onSelect: () => {},
+      }],
+    }).ready();
+
+    Object.assign(player, {
+      subtitles: () => [],
+      audioTracks: () => [],
+      qualityLevels: () => [],
+      chapters: () => [],
+      playbackRates: () => [1],
+    });
+
+    player.emit('mediaReady' as never, {} as never);
+
+    const subsBtn = player.container.querySelector<HTMLButtonElement>('[id="subtitles"]');
+
+    expect(subsBtn).not.toBeNull();
+    expect(subsBtn!.getAttribute('data-content-hidden')).toBeNull();
+
+    player.getPlugin(DesktopUiPlugin)?.openSubMenu('subtitles');
+    const scroll = player.container.querySelector('.subtitles-scroll-container');
+
+    expect(scroll?.textContent).toContain('Search subtitles online');
+  });
+
+  it('a live subtitleMenuActions update (plugin.options()) unhides subsBtn with zero tracks', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.addPlugin(desktopUiPlugin, {
+      buttons: { subtitles: true },
+    }).ready();
+
+    Object.assign(player, {
+      subtitles: () => [],
+      audioTracks: () => [],
+      qualityLevels: () => [],
+      chapters: () => [],
+      playbackRates: () => [1],
+    });
+
+    player.emit('mediaReady' as never, {} as never);
+
+    const subsBtn = player.container.querySelector<HTMLButtonElement>('[id="subtitles"]');
+
+    expect(subsBtn!.getAttribute('data-content-hidden')).toBe('true');
+
+    player.getPlugin(DesktopUiPlugin)?.options({
+      subtitleMenuActions: [{
+        id: 'search-online',
+        label: () => 'Search subtitles online…',
+        onSelect: () => {},
+      }],
+    });
+
+    expect(subsBtn!.getAttribute('data-content-hidden')).toBeNull();
+  });
 });
 
 // ── Menu keyboard navigation ──────────────────────────────────────────────────
 
 describe('DesktopUiPlugin — menu keyboard navigation (ArrowUp / ArrowDown)', () => {
-	beforeEach(() => resetAndMount());
-	afterEach(() => cleanup());
+  beforeEach(() => resetAndMount());
+  afterEach(() => cleanup());
 
-	it('ArrowDown on the menu frame does not throw (e.preventDefault called)', async () => {
-		const player = await makePlayer({ playbackRates: () => [0.5, 1, 1.5, 2] });
-		const container = player.container;
+  it('ArrowDown on the menu frame does not throw (e.preventDefault called)', async () => {
+    const player = await makePlayer({ playbackRates: () => [0.5, 1, 1.5, 2] });
+    const container = player.container;
 
-		const speedBtn = container.querySelector<HTMLButtonElement>('[id="speed"]');
-		speedBtn!.click();
+    const speedBtn = container.querySelector<HTMLButtonElement>('[id="speed"]');
 
-		const frame = container.querySelector<HTMLElement>('.menu-frame')!;
-		expect(() => {
-			frame.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
-		}).not.toThrow();
-		expect(frame).not.toBeNull();
-	});
+    speedBtn!.click();
+
+    const frame = container.querySelector<HTMLElement>('.menu-frame')!;
+
+    expect(() => {
+      frame.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'ArrowDown',
+        bubbles: true,
+        cancelable: true,
+      }));
+    }).not.toThrow();
+
+    expect(frame).not.toBeNull();
+  });
 });

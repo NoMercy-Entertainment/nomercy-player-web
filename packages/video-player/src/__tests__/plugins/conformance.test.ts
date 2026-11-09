@@ -59,16 +59,18 @@ import { TvKeyHandlerPlugin } from '../../plugins/tv-key-handler';
 // ---------------------------------------------------------------------------
 
 function makePlayerDiv(): HTMLDivElement {
-	(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	const div = document.createElement('div');
-	div.id = 'conformance-test';
-	document.body.appendChild(div);
-	return div;
+  (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  const div = document.createElement('div');
+
+  div.id = 'conformance-test';
+  document.body.appendChild(div);
+
+  return div;
 }
 
 function teardownPlayer(): void {
-	(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-	document.body.innerHTML = '';
+  (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+  document.body.innerHTML = '';
 }
 
 /**
@@ -76,8 +78,9 @@ function teardownPlayer(): void {
  * Used for plugins that reach into `player.options` or the createElement builder.
  */
 function makeRealPlayer(): NMVideoPlayer {
-	makePlayerDiv();
-	return new NMVideoPlayer('conformance-test').setup({});
+  makePlayerDiv();
+
+  return new NMVideoPlayer('conformance-test').setup({});
 }
 
 // ---------------------------------------------------------------------------
@@ -85,14 +88,15 @@ function makeRealPlayer(): NMVideoPlayer {
 // ---------------------------------------------------------------------------
 
 describePlugin(CastSenderPlugin, (ctx) => {
-	it('exposes static id = "cast-sender"', () => {
-		expect(CastSenderPlugin.id).toBe('cast-sender');
-	});
+  it('exposes static id = "cast-sender"', () => {
+    expect(CastSenderPlugin.id).toBe('cast-sender');
+  });
 
-	it('defaultContentType() returns "video/mp4"', () => {
-		const type = (ctx.plugin as unknown as { defaultContentType: () => string }).defaultContentType();
-		expect(type).toBe('video/mp4');
-	});
+  it('defaultContentType() returns "video/mp4"', () => {
+    const type = (ctx.plugin as unknown as { defaultContentType: () => string }).defaultContentType();
+
+    expect(type).toBe('video/mp4');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -101,45 +105,47 @@ describePlugin(CastSenderPlugin, (ctx) => {
 // Autohide lifecycle covered by desktop-ui-autohide.test.ts.
 
 describe('Plugin conformance: desktop-ui (real player)', () => {
-	let player: NMVideoPlayer;
+  let player: NMVideoPlayer;
 
-	beforeEach(async () => {
-		player = makeRealPlayer();
-		player.addPlugin(DesktopUiPlugin);
-		await player.ready();
-	});
+  beforeEach(async () => {
+    player = makeRealPlayer();
+    player.addPlugin(DesktopUiPlugin);
+    await player.ready();
+  });
 
-	afterEach(() => {
-		player.dispose();
-		teardownPlayer();
-		vi.restoreAllMocks();
-	});
+  afterEach(() => {
+    player.dispose();
+    teardownPlayer();
+    vi.restoreAllMocks();
+  });
 
-	it('exposes static id = "desktop-ui"', () => {
-		expect(DesktopUiPlugin.id).toBe('desktop-ui');
-	});
+  it('exposes static id = "desktop-ui"', () => {
+    expect(DesktopUiPlugin.id).toBe('desktop-ui');
+  });
 
-	it('mounts an overlay element into the player container on use()', () => {
-		expect(player.container.children.length).toBeGreaterThan(0);
-	});
+  it('mounts an overlay element into the player container on use()', () => {
+    expect(player.container.children.length).toBeGreaterThan(0);
+  });
 
-	it('container gains .active class when activity event fires with active:true', () => {
-		(player as unknown as { emit: (event: string, data: unknown) => void }).emit('activity', { active: true });
-		expect(player.container.classList.contains('active')).toBe(true);
-	});
+  it('container gains .active class when activity event fires with active:true', () => {
+    (player as unknown as { emit: (event: string, data: unknown) => void }).emit('activity', { active: true });
+    expect(player.container.classList.contains('active')).toBe(true);
+  });
 
-	it('container loses .active class when activity event fires with active:false', () => {
-		(player as unknown as { emit: (event: string, data: unknown) => void }).emit('activity', { active: true });
-		(player as unknown as { emit: (event: string, data: unknown) => void }).emit('activity', { active: false });
-		expect(player.container.classList.contains('active')).toBe(false);
-	});
+  it('container loses .active class when activity event fires with active:false', () => {
+    (player as unknown as { emit: (event: string, data: unknown) => void }).emit('activity', { active: true });
+    (player as unknown as { emit: (event: string, data: unknown) => void }).emit('activity', { active: false });
+    expect(player.container.classList.contains('active')).toBe(false);
+  });
 
-	it('plugin disposes without listener leak', () => {
-		const before = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
-		player.removePlugin(DesktopUiPlugin);
-		const after = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
-		expect(after).toBeLessThanOrEqual(before);
-	});
+  it('plugin disposes without listener leak', () => {
+    const before = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
+
+    player.removePlugin(DesktopUiPlugin);
+    const after = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
+
+    expect(after).toBeLessThanOrEqual(before);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -147,18 +153,18 @@ describe('Plugin conformance: desktop-ui (real player)', () => {
 // ---------------------------------------------------------------------------
 
 describePlugin(DrmPlugin, (ctx) => {
-	it('exposes static id = "drm"', () => {
-		expect(DrmPlugin.id).toBe('drm');
-	});
+  it('exposes static id = "drm"', () => {
+    expect(DrmPlugin.id).toBe('drm');
+  });
 
-	it('mediaKeys() returns null when EME is absent (jsdom)', () => {
-		// requestMediaKeySystemAccess is absent in jsdom — plugin degrades cleanly.
-		expect(ctx.plugin.mediaKeys()).toBeNull();
-	});
+  it('mediaKeys() returns null when EME is absent (jsdom)', () => {
+    // requestMediaKeySystemAccess is absent in jsdom — plugin degrades cleanly.
+    expect(ctx.plugin.mediaKeys()).toBeNull();
+  });
 
-	it('fetchLicense() rejects when licenseUrl is not configured', async () => {
-		await expect(ctx.plugin.fetchLicense(new ArrayBuffer(8))).rejects.toThrow(/licenseUrl|url.*missing/i);
-	});
+  it('fetchLicense() rejects when licenseUrl is not configured', async () => {
+    await expect(ctx.plugin.fetchLicense(new ArrayBuffer(8))).rejects.toThrow(/licenseUrl|url.*missing/i);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -166,43 +172,51 @@ describePlugin(DrmPlugin, (ctx) => {
 // ---------------------------------------------------------------------------
 
 describe('Plugin conformance: key-handler (real player)', () => {
-	let player: NMVideoPlayer;
+  let player: NMVideoPlayer;
 
-	beforeEach(async () => {
-		player = makeRealPlayer();
-		// Stub transport methods up-front so key dispatches never reach the real
-		// transport layer — avoids "player disposed" unhandled rejections.
-		(player as unknown as Record<string, unknown>).togglePlayback = vi.fn().mockResolvedValue(undefined);
-		(player as unknown as Record<string, unknown>).rewind = vi.fn().mockResolvedValue(undefined);
-		(player as unknown as Record<string, unknown>).forward = vi.fn().mockResolvedValue(undefined);
-		(player as unknown as Record<string, unknown>).stop = vi.fn().mockResolvedValue(undefined);
-		player.addPlugin(KeyHandlerPlugin);
-		await player.ready();
-	});
+  beforeEach(async () => {
+    player = makeRealPlayer();
+    // Stub transport methods up-front so key dispatches never reach the real
+    // transport layer — avoids "player disposed" unhandled rejections.
+    (player as unknown as Record<string, unknown>).togglePlayback = vi.fn().mockResolvedValue(undefined);
+    (player as unknown as Record<string, unknown>).rewind = vi.fn().mockResolvedValue(undefined);
+    (player as unknown as Record<string, unknown>).forward = vi.fn().mockResolvedValue(undefined);
+    (player as unknown as Record<string, unknown>).stop = vi.fn().mockResolvedValue(undefined);
+    player.addPlugin(KeyHandlerPlugin);
+    await player.ready();
+  });
 
-	afterEach(() => {
-		player.removePlugin(KeyHandlerPlugin);
-		player.dispose();
-		teardownPlayer();
-		vi.restoreAllMocks();
-	});
+  afterEach(() => {
+    player.removePlugin(KeyHandlerPlugin);
+    player.dispose();
+    teardownPlayer();
+    vi.restoreAllMocks();
+  });
 
-	it('exposes static id = "key-handler" (matches the core base and music)', () => {
-		expect(KeyHandlerPlugin.id).toBe('key-handler');
-	});
+  it('exposes static id = "key-handler" (matches the core base and music)', () => {
+    expect(KeyHandlerPlugin.id).toBe('key-handler');
+  });
 
-	it('Space key triggers togglePlayback()', () => {
-		const stub = (player as unknown as Record<string, unknown>).togglePlayback as ReturnType<typeof vi.fn>;
-		document.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
-		expect(stub).toHaveBeenCalledTimes(1);
-	});
+  it('Space key triggers togglePlayback()', () => {
+    const stub = (player as unknown as Record<string, unknown>).togglePlayback as ReturnType<typeof vi.fn>;
 
-	it('plugin disposes without listener leak', () => {
-		const before = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
-		player.removePlugin(KeyHandlerPlugin);
-		const after = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
-		expect(after).toBeLessThanOrEqual(before);
-	});
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      key: ' ',
+      bubbles: true,
+      cancelable: true,
+    }));
+
+    expect(stub).toHaveBeenCalledTimes(1);
+  });
+
+  it('plugin disposes without listener leak', () => {
+    const before = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
+
+    player.removePlugin(KeyHandlerPlugin);
+    const after = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
+
+    expect(after).toBeLessThanOrEqual(before);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -210,31 +224,45 @@ describe('Plugin conformance: key-handler (real player)', () => {
 // ---------------------------------------------------------------------------
 
 describePlugin(LiveTranscodingPlugin, (ctx) => {
-	it('exposes static id = "live-transcoding"', () => {
-		expect(LiveTranscodingPlugin.id).toBe('live-transcoding');
-	});
+  it('exposes static id = "live-transcoding"', () => {
+    expect(LiveTranscodingPlugin.id).toBe('live-transcoding');
+  });
 
-	it('transcodedTo() returns 0 after use() with no URL configured', () => {
-		expect(ctx.plugin.transcodedTo()).toBe(0);
-	});
+  it('transcodedTo() returns 0 after use() with no URL configured', () => {
+    expect(ctx.plugin.transcodedTo()).toBe(0);
+  });
 
-	it('transcodedTo() updates when server "progress" message arrives', () => {
-		const advance = (ctx.plugin as unknown as { onServerMessage: (msg: unknown) => void }).onServerMessage?.bind(ctx.plugin);
-		advance?.({ type: 'progress', transcodedSeconds: 75, jobId: 'j1', variantsReady: [] });
-		expect(ctx.plugin.transcodedTo()).toBe(75);
-	});
+  it('transcodedTo() updates when server "progress" message arrives', () => {
+    const advance = (ctx.plugin as unknown as { onServerMessage: (msg: unknown) => void }).onServerMessage?.bind(ctx.plugin);
 
-	it('transcodedTo() resets to 0 after dispose()', () => {
-		const advance = (ctx.plugin as unknown as { onServerMessage: (msg: unknown) => void }).onServerMessage?.bind(ctx.plugin);
-		advance?.({ type: 'progress', transcodedSeconds: 45, jobId: 'j1', variantsReady: [] });
-		expect(ctx.plugin.transcodedTo()).toBe(45);
+    advance?.({
+      type: 'progress',
+      transcodedSeconds: 75,
+      jobId: 'j1',
+      variantsReady: [],
+    });
 
-		ctx.plugin.dispose();
-		expect(ctx.plugin.transcodedTo()).toBe(0);
+    expect(ctx.plugin.transcodedTo()).toBe(75);
+  });
 
-		// Re-arm so the kit afterEach can call dispose() cleanly.
-		ctx.plugin.use();
-	});
+  it('transcodedTo() resets to 0 after dispose()', () => {
+    const advance = (ctx.plugin as unknown as { onServerMessage: (msg: unknown) => void }).onServerMessage?.bind(ctx.plugin);
+
+    advance?.({
+      type: 'progress',
+      transcodedSeconds: 45,
+      jobId: 'j1',
+      variantsReady: [],
+    });
+
+    expect(ctx.plugin.transcodedTo()).toBe(45);
+
+    ctx.plugin.dispose();
+    expect(ctx.plugin.transcodedTo()).toBe(0);
+
+    // Re-arm so the kit afterEach can call dispose() cleanly.
+    ctx.plugin.use();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -242,27 +270,41 @@ describePlugin(LiveTranscodingPlugin, (ctx) => {
 // ---------------------------------------------------------------------------
 
 describePlugin(MediaSessionPlugin, (ctx) => {
-	it('exposes static id = "media-session"', () => {
-		expect(MediaSessionPlugin.id).toBe('media-session');
-	});
+  it('exposes static id = "media-session"', () => {
+    expect(MediaSessionPlugin.id).toBe('media-session');
+  });
 
-	it('getMetadata() maps title / show / season to title / artist / album', () => {
-		type Item = Parameters<(typeof ctx.plugin)['getMetadata']>[0];
-		const item: Item = { title: 'Episode 1', show: 'Test Show', season: 2 } as Item;
-		const meta = (ctx.plugin as unknown as { getMetadata: (i: Item) => { title: string; artist: string; album: string } })
-			.getMetadata(item);
-		expect(meta.title).toBe('Episode 1');
-		expect(meta.artist).toBe('Test Show');
-		expect(meta.album).toBe('Season 2');
-	});
+  it('getMetadata() maps title / show / season to title / artist / album', () => {
+    type Item = Parameters<(typeof ctx.plugin)['getMetadata']>[0];
+    const item: Item = {
+      title: 'Episode 1',
+      show: 'Test Show',
+      season: 2,
+    } as Item;
+    const meta = (ctx.plugin as unknown as { getMetadata: (i: Item) => {
+      title: string;
+      artist: string;
+      album: string;
+    }; })
+      .getMetadata(item);
 
-	it('getMetadata() returns empty album when season is absent', () => {
-		type Item = Parameters<(typeof ctx.plugin)['getMetadata']>[0];
-		const item: Item = { title: 'Movie', show: '' } as Item;
-		const meta = (ctx.plugin as unknown as { getMetadata: (i: Item) => { title: string; artist: string; album: string } })
-			.getMetadata(item);
-		expect(meta.album).toBe('');
-	});
+    expect(meta.title).toBe('Episode 1');
+    expect(meta.artist).toBe('Test Show');
+    expect(meta.album).toBe('Season 2');
+  });
+
+  it('getMetadata() returns empty album when season is absent', () => {
+    type Item = Parameters<(typeof ctx.plugin)['getMetadata']>[0];
+    const item: Item = { title: 'Movie', show: '' } as Item;
+    const meta = (ctx.plugin as unknown as { getMetadata: (i: Item) => {
+      title: string;
+      artist: string;
+      album: string;
+    }; })
+      .getMetadata(item);
+
+    expect(meta.album).toBe('');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -270,30 +312,31 @@ describePlugin(MediaSessionPlugin, (ctx) => {
 // ---------------------------------------------------------------------------
 
 describePlugin(OctopusPlugin, (ctx) => {
-	it('exposes static id = "octopus"', () => {
-		expect(OctopusPlugin.id).toBe('octopus');
-	});
+  it('exposes static id = "octopus"', () => {
+    expect(OctopusPlugin.id).toBe('octopus');
+  });
 
-	it('subtitle() getter returns null before any track is loaded', () => {
-		expect(ctx.plugin.subtitle()).toBeNull();
-	});
+  it('subtitle() getter returns null before any track is loaded', () => {
+    expect(ctx.plugin.subtitle()).toBeNull();
+  });
 
-	it('renderer() returns null before a track is loaded', () => {
-		expect(ctx.plugin.renderer()).toBeNull();
-	});
+  it('renderer() returns null before a track is loaded', () => {
+    expect(ctx.plugin.renderer()).toBeNull();
+  });
 
-	it('subtitle(null) resolves without throwing', async () => {
-		await expect(ctx.plugin.subtitle(null)).resolves.not.toThrow();
-	});
+  it('subtitle(null) resolves without throwing', async () => {
+    await expect(ctx.plugin.subtitle(null)).resolves.not.toThrow();
+  });
 
-	it('fonts() getter returns a readonly array', () => {
-		const list = ctx.plugin.fonts();
-		expect(Array.isArray(list)).toBe(true);
-	});
+  it('fonts() getter returns a readonly array', () => {
+    const list = ctx.plugin.fonts();
 
-	it('fonts(urls) setter resolves without throwing', async () => {
-		await expect(ctx.plugin.fonts(['https://example.test/font.ttf'])).resolves.not.toThrow();
-	});
+    expect(Array.isArray(list)).toBe(true);
+  });
+
+  it('fonts(urls) setter resolves without throwing', async () => {
+    await expect(ctx.plugin.fonts(['https://example.test/font.ttf'])).resolves.not.toThrow();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -301,59 +344,75 @@ describePlugin(OctopusPlugin, (ctx) => {
 // ---------------------------------------------------------------------------
 
 describe('Plugin conformance: subtitle-overlay (real player)', () => {
-	let player: NMVideoPlayer;
+  let player: NMVideoPlayer;
 
-	beforeEach(async () => {
-		player = makeRealPlayer();
-		player.addPlugin(SubtitleOverlayPlugin);
-		await player.ready();
-	});
+  beforeEach(async () => {
+    player = makeRealPlayer();
+    player.addPlugin(SubtitleOverlayPlugin);
+    await player.ready();
+  });
 
-	afterEach(() => {
-		player.dispose();
-		teardownPlayer();
-	});
+  afterEach(() => {
+    player.dispose();
+    teardownPlayer();
+  });
 
-	it('exposes static id = "subtitle-overlay"', () => {
-		expect(SubtitleOverlayPlugin.id).toBe('subtitle-overlay');
-	});
+  it('exposes static id = "subtitle-overlay"', () => {
+    expect(SubtitleOverlayPlugin.id).toBe('subtitle-overlay');
+  });
 
-	it('mounts a .subtitle-overlay element into the player container', () => {
-		expect(player.container.querySelector('.subtitle-overlay')).not.toBeNull();
-	});
+  it('mounts a .subtitle-overlay element into the player container', () => {
+    expect(player.container.querySelector('.subtitle-overlay')).not.toBeNull();
+  });
 
-	it('renders cue text into the overlay when subtitleCue event fires', () => {
-		(player as unknown as { emit: (event: string, data: unknown) => void }).emit('subtitleCue', {
-			cues: [{ text: 'Hello world', line: 85, position: 50, size: 80, align: 'center' }],
-			language: 'en',
-		});
+  it('renders cue text into the overlay when subtitleCue event fires', () => {
+    (player as unknown as { emit: (event: string, data: unknown) => void }).emit('subtitleCue', {
+      cues: [{
+        text: 'Hello world',
+        line: 85,
+        position: 50,
+        size: 80,
+        align: 'center',
+      }],
+      language: 'en',
+    });
 
-		const text = player.container.querySelector('.subtitle-text');
-		expect(text).not.toBeNull();
-		expect((text as HTMLElement).textContent).toContain('Hello world');
-	});
+    const text = player.container.querySelector('.subtitle-text');
 
-	it('clears the overlay when an empty cue list fires', () => {
-		(player as unknown as { emit: (event: string, data: unknown) => void }).emit('subtitleCue', {
-			cues: [{ text: 'Going away', line: 85, position: 50, size: 80, align: 'center' }],
-			language: 'en',
-		});
+    expect(text).not.toBeNull();
+    expect((text as HTMLElement).textContent).toContain('Hello world');
+  });
 
-		(player as unknown as { emit: (event: string, data: unknown) => void }).emit('subtitleCue', {
-			cues: [],
-			language: 'en',
-		});
+  it('clears the overlay when an empty cue list fires', () => {
+    (player as unknown as { emit: (event: string, data: unknown) => void }).emit('subtitleCue', {
+      cues: [{
+        text: 'Going away',
+        line: 85,
+        position: 50,
+        size: 80,
+        align: 'center',
+      }],
+      language: 'en',
+    });
 
-		const areas = player.container.querySelectorAll('.subtitle-area');
-		expect(areas.length).toBe(0);
-	});
+    (player as unknown as { emit: (event: string, data: unknown) => void }).emit('subtitleCue', {
+      cues: [],
+      language: 'en',
+    });
 
-	it('plugin disposes without listener leak', () => {
-		const before = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
-		player.removePlugin(SubtitleOverlayPlugin);
-		const after = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
-		expect(after).toBeLessThanOrEqual(before);
-	});
+    const areas = player.container.querySelectorAll('.subtitle-area');
+
+    expect(areas.length).toBe(0);
+  });
+
+  it('plugin disposes without listener leak', () => {
+    const before = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
+
+    player.removePlugin(SubtitleOverlayPlugin);
+    const after = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
+
+    expect(after).toBeLessThanOrEqual(before);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -362,56 +421,59 @@ describe('Plugin conformance: subtitle-overlay (real player)', () => {
 // Single/double-tap race and autohide integration covered by touch-zones.test.ts.
 
 describe('Plugin conformance: touch-zones (real player)', () => {
-	let player: NMVideoPlayer;
+  let player: NMVideoPlayer;
 
-	beforeEach(async () => {
-		player = makeRealPlayer();
-		player.addPlugin(TouchZonesPlugin);
-		await player.ready();
-	});
+  beforeEach(async () => {
+    player = makeRealPlayer();
+    player.addPlugin(TouchZonesPlugin);
+    await player.ready();
+  });
 
-	afterEach(() => {
-		player.dispose();
-		teardownPlayer();
-		vi.restoreAllMocks();
-	});
+  afterEach(() => {
+    player.dispose();
+    teardownPlayer();
+    vi.restoreAllMocks();
+  });
 
-	it('exposes static id = "touch-zones"', () => {
-		expect(TouchZonesPlugin.id).toBe('touch-zones');
-	});
+  it('exposes static id = "touch-zones"', () => {
+    expect(TouchZonesPlugin.id).toBe('touch-zones');
+  });
 
-	it('mounts a .nm-touch-zones-root element into the player container', () => {
-		expect(player.container.querySelector('.nm-touch-zones-root')).not.toBeNull();
-	});
+  it('mounts a .nm-touch-zones-root element into the player container', () => {
+    expect(player.container.querySelector('.nm-touch-zones-root')).not.toBeNull();
+  });
 
-	it('single-tap on center zone calls player.togglePlayback()', () => {
-		const togglePlayback = vi.fn();
-		(player as unknown as Record<string, unknown>).togglePlayback = togglePlayback;
+  it('single-tap on center zone calls player.togglePlayback()', () => {
+    const togglePlayback = vi.fn();
 
-		vi.useFakeTimers();
-		try {
-			const boxes = player.container.querySelectorAll('.nm-touch-box');
-			// Desktop layout (no touch): [left-back, center, right-forward]
-			const centerBox = boxes[1] as HTMLElement | undefined;
-			if (!centerBox)
-				return;
+    (player as unknown as Record<string, unknown>).togglePlayback = togglePlayback;
 
-			centerBox.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-			vi.advanceTimersByTime(350);
+    vi.useFakeTimers();
 
-			expect(togglePlayback).toHaveBeenCalledTimes(1);
-		}
-		finally {
-			vi.useRealTimers();
-		}
-	});
+    try {
+      const boxes = player.container.querySelectorAll('.nm-touch-box');
+      // Desktop layout (no touch): [left-back, center, right-forward]
+      const centerBox = boxes[1] as HTMLElement | undefined;
 
-	it('plugin disposes without listener leak', () => {
-		const before = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
-		player.removePlugin(TouchZonesPlugin);
-		const after = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
-		expect(after).toBeLessThanOrEqual(before);
-	});
+      if (!centerBox) return;
+
+      centerBox.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      vi.advanceTimersByTime(350);
+
+      expect(togglePlayback).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('plugin disposes without listener leak', () => {
+    const before = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
+
+    player.removePlugin(TouchZonesPlugin);
+    const after = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
+
+    expect(after).toBeLessThanOrEqual(before);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -419,60 +481,80 @@ describe('Plugin conformance: touch-zones (real player)', () => {
 // ---------------------------------------------------------------------------
 
 describe('Plugin conformance: tv-key-handler (real player)', () => {
-	let player: NMVideoPlayer;
+  let player: NMVideoPlayer;
 
-	beforeEach(async () => {
-		player = makeRealPlayer();
-		// Stub transport methods up-front so key dispatches never reach the real
-		// transport layer — avoids "player disposed" unhandled rejections.
-		(player as unknown as Record<string, unknown>).rewind = vi.fn().mockResolvedValue(undefined);
-		(player as unknown as Record<string, unknown>).forward = vi.fn().mockResolvedValue(undefined);
-		(player as unknown as Record<string, unknown>).volumeUp = vi.fn();
-		(player as unknown as Record<string, unknown>).volumeDown = vi.fn();
-		player.addPlugin(TvKeyHandlerPlugin);
-		await player.ready();
-	});
+  beforeEach(async () => {
+    player = makeRealPlayer();
+    // Stub transport methods up-front so key dispatches never reach the real
+    // transport layer — avoids "player disposed" unhandled rejections.
+    (player as unknown as Record<string, unknown>).rewind = vi.fn().mockResolvedValue(undefined);
+    (player as unknown as Record<string, unknown>).forward = vi.fn().mockResolvedValue(undefined);
+    (player as unknown as Record<string, unknown>).volumeUp = vi.fn();
+    (player as unknown as Record<string, unknown>).volumeDown = vi.fn();
+    player.addPlugin(TvKeyHandlerPlugin);
+    await player.ready();
+  });
 
-	afterEach(() => {
-		player.removePlugin(TvKeyHandlerPlugin);
-		player.dispose();
-		teardownPlayer();
-		vi.restoreAllMocks();
-	});
+  afterEach(() => {
+    player.removePlugin(TvKeyHandlerPlugin);
+    player.dispose();
+    teardownPlayer();
+    vi.restoreAllMocks();
+  });
 
-	it('exposes static id = "tv-key-handler"', () => {
-		expect(TvKeyHandlerPlugin.id).toBe('tv-key-handler');
-	});
+  it('exposes static id = "tv-key-handler"', () => {
+    expect(TvKeyHandlerPlugin.id).toBe('tv-key-handler');
+  });
 
-	it('ArrowLeft triggers player.rewind() with default 5 s', () => {
-		const rewind = (player as unknown as Record<string, unknown>).rewind as ReturnType<typeof vi.fn>;
-		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }));
-		expect(rewind).toHaveBeenCalledWith(5);
-	});
+  it('ArrowLeft triggers player.rewind() with default 5 s', () => {
+    const rewind = (player as unknown as Record<string, unknown>).rewind as ReturnType<typeof vi.fn>;
 
-	it('ArrowRight triggers player.forward() with default 5 s', () => {
-		const forward = (player as unknown as Record<string, unknown>).forward as ReturnType<typeof vi.fn>;
-		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
-		expect(forward).toHaveBeenCalledWith(5);
-	});
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'ArrowLeft',
+      bubbles: true,
+      cancelable: true,
+    }));
 
-	it('MediaRecord emits plugin:tv-key-handler:bookmark with current time', () => {
-		const events: unknown[] = [];
-		(player as unknown as { on: (event: string, fn: (payload: unknown) => void) => void })
-			.on('plugin:tv-key-handler:bookmark', payload => events.push(payload));
+    expect(rewind).toHaveBeenCalledWith(5);
+  });
 
-		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'MediaRecord', bubbles: true, cancelable: true }));
+  it('ArrowRight triggers player.forward() with default 5 s', () => {
+    const forward = (player as unknown as Record<string, unknown>).forward as ReturnType<typeof vi.fn>;
 
-		expect(events).toHaveLength(1);
-		expect(typeof (events[0] as { time: number }).time).toBe('number');
-	});
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'ArrowRight',
+      bubbles: true,
+      cancelable: true,
+    }));
 
-	it('plugin disposes without listener leak', () => {
-		const before = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
-		player.removePlugin(TvKeyHandlerPlugin);
-		const after = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
-		expect(after).toBeLessThanOrEqual(before);
-	});
+    expect(forward).toHaveBeenCalledWith(5);
+  });
+
+  it('MediaRecord emits plugin:tv-key-handler:bookmark with current time', () => {
+    const events: unknown[] = [];
+
+    (player as unknown as { on: (event: string, fn: (payload: unknown) => void) => void })
+      .on('plugin:tv-key-handler:bookmark', (payload) =>
+        events.push(payload));
+
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'MediaRecord',
+      bubbles: true,
+      cancelable: true,
+    }));
+
+    expect(events).toHaveLength(1);
+    expect(typeof (events[0] as { time: number }).time).toBe('number');
+  });
+
+  it('plugin disposes without listener leak', () => {
+    const before = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
+
+    player.removePlugin(TvKeyHandlerPlugin);
+    const after = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
+
+    expect(after).toBeLessThanOrEqual(before);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -487,4 +569,5 @@ describe('Plugin conformance: tv-key-handler (real player)', () => {
 
 // Suppress the unused type import — it IS used: the `ctx` parameter type.
 const _typeCheck: StubPlayer | undefined = undefined;
+
 void _typeCheck;

@@ -36,32 +36,47 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function buildFixtureTree(root: string, files: Record<string, string>): void {
-	for (const [relPath, content] of Object.entries(files)) {
-		const full = join(root, relPath);
-		mkdirSync(join(full, '..'), { recursive: true });
-		writeFileSync(full, content, 'utf8');
-	}
+  for (const [relPath, content] of Object.entries(files)) {
+    const full = join(root, relPath);
+
+    mkdirSync(join(full, '..'), { recursive: true });
+    writeFileSync(full, content, 'utf8');
+  }
 }
 
 function read(filePath: string): string {
-	return readFileSync(filePath, 'utf8');
+  return readFileSync(filePath, 'utf8');
 }
 
 // Invoke the resolver script as a child process against a fixture dist tree.
-function runResolver(distDir: string): { stdout: string; stderr: string; exitCode: number } {
-	const scriptPath = resolve(import.meta.dirname, '../../scripts/resolve-translation-globs.mjs');
-	try {
-		const stdout = execSync(`node "${scriptPath}" "${distDir}"`, { encoding: 'utf8', cwd: distDir });
-		return { stdout, stderr: '', exitCode: 0 };
-	}
-	catch (err: unknown) {
-		const execError = err as { stdout?: string; stderr?: string; status?: number };
-		return {
-			stdout: execError.stdout ?? '',
-			stderr: execError.stderr ?? '',
-			exitCode: execError.status ?? 1,
-		};
-	}
+function runResolver(distDir: string): {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+} {
+  const scriptPath = resolve(import.meta.dirname, '../../scripts/resolve-translation-globs.mjs');
+
+  try {
+    const stdout = execSync(`node "${scriptPath}" "${distDir}"`, { encoding: 'utf8', cwd: distDir });
+
+    return {
+      stdout,
+      stderr: '',
+      exitCode: 0,
+    };
+  } catch (err: unknown) {
+    const execError = err as {
+      stdout?: string;
+      stderr?: string;
+      status?: number;
+    };
+
+    return {
+      stdout: execError.stdout ?? '',
+      stderr: execError.stderr ?? '',
+      exitCode: execError.status ?? 1,
+    };
+  }
 }
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -98,121 +113,134 @@ const NL_JS = `export default { 'plugin.foo': 'Foo NL' };`;
 let tmpDir = '';
 
 beforeEach(() => {
-	tmpDir = mkdtempSync(join(tmpdir(), 'resolve-glob-test-'));
+  tmpDir = mkdtempSync(join(tmpdir(), 'resolve-glob-test-'));
 });
 
 afterEach(() => {
-	rmSync(tmpDir, { recursive: true, force: true });
+  rmSync(tmpDir, { recursive: true, force: true });
 });
 
 describe('resolve-translation-globs integration', () => {
-	it('rewrites a literal translationsFromGlob call to a static lazy map', () => {
-		buildFixtureTree(tmpDir, {
-			'plugins/my-plugin/index.js': PLUGIN_SOURCE,
-			'plugins/my-plugin/i18n/en.js': EN_JS,
-			'plugins/my-plugin/i18n/nl.js': NL_JS,
-		});
+  it('rewrites a literal translationsFromGlob call to a static lazy map', () => {
+    buildFixtureTree(tmpDir, {
+      'plugins/my-plugin/index.js': PLUGIN_SOURCE,
+      'plugins/my-plugin/i18n/en.js': EN_JS,
+      'plugins/my-plugin/i18n/nl.js': NL_JS,
+    });
 
-		const result = runResolver(tmpDir);
-		expect(result.exitCode).toBe(0);
+    const result = runResolver(tmpDir);
 
-		const rewritten = read(join(tmpDir, 'plugins/my-plugin/index.js'));
-		expect(rewritten).toContain(`'./i18n/en.js': () => import('./i18n/en.js')`);
-		expect(rewritten).toContain(`'./i18n/nl.js': () => import('./i18n/nl.js')`);
-		expect(rewritten).not.toContain(LITERAL_CALL);
-	});
+    expect(result.exitCode).toBe(0);
 
-	it('lists all actual .js files found in the i18n directory', () => {
-		buildFixtureTree(tmpDir, {
-			'plugins/my-plugin/index.js': PLUGIN_SOURCE,
-			'plugins/my-plugin/i18n/en.js': EN_JS,
-			'plugins/my-plugin/i18n/nl.js': NL_JS,
-			'plugins/my-plugin/i18n/pt-BR.js': `export default { 'plugin.foo': 'Foo BR' };`,
-		});
+    const rewritten = read(join(tmpDir, 'plugins/my-plugin/index.js'));
 
-		const result = runResolver(tmpDir);
-		expect(result.exitCode).toBe(0);
+    expect(rewritten).toContain(`'./i18n/en.js': () => import('./i18n/en.js')`);
+    expect(rewritten).toContain(`'./i18n/nl.js': () => import('./i18n/nl.js')`);
+    expect(rewritten).not.toContain(LITERAL_CALL);
+  });
 
-		const rewritten = read(join(tmpDir, 'plugins/my-plugin/index.js'));
-		expect(rewritten).toContain(`'./i18n/en.js'`);
-		expect(rewritten).toContain(`'./i18n/nl.js'`);
-		expect(rewritten).toContain(`'./i18n/pt-BR.js'`);
-	});
+  it('lists all actual .js files found in the i18n directory', () => {
+    buildFixtureTree(tmpDir, {
+      'plugins/my-plugin/index.js': PLUGIN_SOURCE,
+      'plugins/my-plugin/i18n/en.js': EN_JS,
+      'plugins/my-plugin/i18n/nl.js': NL_JS,
+      'plugins/my-plugin/i18n/pt-BR.js': `export default { 'plugin.foo': 'Foo BR' };`,
+    });
 
-	it('fails loudly (exit code 1) when the glob resolves to zero files', () => {
-		buildFixtureTree(tmpDir, {
-			'plugins/my-plugin/index.js': PLUGIN_SOURCE,
-			// intentionally no i18n/*.js files
-		});
+    const result = runResolver(tmpDir);
 
-		const result = runResolver(tmpDir);
-		expect(result.exitCode).toBe(1);
-		expect(result.stderr).toContain('Zero i18n files matched');
-	});
+    expect(result.exitCode).toBe(0);
 
-	it('leaves already-rewritten files untouched (idempotent)', () => {
-		buildFixtureTree(tmpDir, {
-			'plugins/my-plugin/index.js': ALREADY_REWRITTEN,
-			'plugins/my-plugin/i18n/en.js': EN_JS,
-			'plugins/my-plugin/i18n/nl.js': NL_JS,
-		});
+    const rewritten = read(join(tmpDir, 'plugins/my-plugin/index.js'));
 
-		const before = read(join(tmpDir, 'plugins/my-plugin/index.js'));
-		const result = runResolver(tmpDir);
-		expect(result.exitCode).toBe(0);
-		const after = read(join(tmpDir, 'plugins/my-plugin/index.js'));
+    expect(rewritten).toContain(`'./i18n/en.js'`);
+    expect(rewritten).toContain(`'./i18n/nl.js'`);
+    expect(rewritten).toContain(`'./i18n/pt-BR.js'`);
+  });
 
-		expect(after).toBe(before);
-		expect(result.stdout).toContain('0 file(s) rewritten');
-	});
+  it('fails loudly (exit code 1) when the glob resolves to zero files', () => {
+    buildFixtureTree(tmpDir, {
+      'plugins/my-plugin/index.js': PLUGIN_SOURCE,
+      // intentionally no i18n/*.js files
+    });
 
-	it('rewrites every plugin in a multi-plugin dist tree', () => {
-		buildFixtureTree(tmpDir, {
-			'plugins/plugin-a/index.js': PLUGIN_SOURCE,
-			'plugins/plugin-a/i18n/en.js': EN_JS,
-			'plugins/plugin-a/i18n/nl.js': NL_JS,
-			'plugins/plugin-b/index.js': PLUGIN_SOURCE,
-			'plugins/plugin-b/i18n/en.js': EN_JS,
-			'plugins/plugin-b/i18n/nl.js': NL_JS,
-		});
+    const result = runResolver(tmpDir);
 
-		const result = runResolver(tmpDir);
-		expect(result.exitCode).toBe(0);
-		expect(result.stdout).toContain('2 file(s) rewritten');
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('Zero i18n files matched');
+  });
 
-		for (const plugin of ['plugin-a', 'plugin-b']) {
-			const rewritten = read(join(tmpDir, `plugins/${plugin}/index.js`));
-			expect(rewritten).toContain(`'./i18n/en.js': () => import('./i18n/en.js')`);
-			expect(rewritten).not.toContain(LITERAL_CALL);
-		}
-	});
+  it('leaves already-rewritten files untouched (idempotent)', () => {
+    buildFixtureTree(tmpDir, {
+      'plugins/my-plugin/index.js': ALREADY_REWRITTEN,
+      'plugins/my-plugin/i18n/en.js': EN_JS,
+      'plugins/my-plugin/i18n/nl.js': NL_JS,
+    });
 
-	it('rewrites the real call site, not an identical call in an earlier comment', () => {
-		const COMMENT_LINE = ` * ${LITERAL_CALL}`;
-		const source = `/**\n${COMMENT_LINE}\n */\nclass MyPlugin {\n  static translations = ${LITERAL_CALL};\n}\n`;
-		buildFixtureTree(tmpDir, {
-			'plugins/my-plugin/index.js': source,
-			'plugins/my-plugin/i18n/en.js': EN_JS,
-		});
+    const before = read(join(tmpDir, 'plugins/my-plugin/index.js'));
+    const result = runResolver(tmpDir);
 
-		const result = runResolver(tmpDir);
-		expect(result.exitCode).toBe(0);
+    expect(result.exitCode).toBe(0);
+    const after = read(join(tmpDir, 'plugins/my-plugin/index.js'));
 
-		const rewritten = read(join(tmpDir, 'plugins/my-plugin/index.js'));
-		expect(rewritten).toContain(COMMENT_LINE);
-		expect(rewritten).toContain(`static translations = ${HELPER}({`);
-		expect(rewritten).toContain(`'./i18n/en.js': () => import('./i18n/en.js')`);
-	});
+    expect(after).toBe(before);
+    expect(result.stdout).toContain('0 file(s) rewritten');
+  });
 
-	it('does not touch files without the helper call', () => {
-		const noHelper = `export const x = 1;`;
-		buildFixtureTree(tmpDir, {
-			'index.js': noHelper,
-		});
+  it('rewrites every plugin in a multi-plugin dist tree', () => {
+    buildFixtureTree(tmpDir, {
+      'plugins/plugin-a/index.js': PLUGIN_SOURCE,
+      'plugins/plugin-a/i18n/en.js': EN_JS,
+      'plugins/plugin-a/i18n/nl.js': NL_JS,
+      'plugins/plugin-b/index.js': PLUGIN_SOURCE,
+      'plugins/plugin-b/i18n/en.js': EN_JS,
+      'plugins/plugin-b/i18n/nl.js': NL_JS,
+    });
 
-		const result = runResolver(tmpDir);
-		expect(result.exitCode).toBe(0);
-		expect(result.stdout).toContain('0 file(s) rewritten');
-		expect(read(join(tmpDir, 'index.js'))).toBe(noHelper);
-	});
+    const result = runResolver(tmpDir);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('2 file(s) rewritten');
+
+    for (const plugin of ['plugin-a', 'plugin-b']) {
+      const rewritten = read(join(tmpDir, `plugins/${plugin}/index.js`));
+
+      expect(rewritten).toContain(`'./i18n/en.js': () => import('./i18n/en.js')`);
+      expect(rewritten).not.toContain(LITERAL_CALL);
+    }
+  });
+
+  it('rewrites the real call site, not an identical call in an earlier comment', () => {
+    const COMMENT_LINE = ` * ${LITERAL_CALL}`;
+    const source = `/**\n${COMMENT_LINE}\n */\nclass MyPlugin {\n  static translations = ${LITERAL_CALL};\n}\n`;
+
+    buildFixtureTree(tmpDir, {
+      'plugins/my-plugin/index.js': source,
+      'plugins/my-plugin/i18n/en.js': EN_JS,
+    });
+
+    const result = runResolver(tmpDir);
+
+    expect(result.exitCode).toBe(0);
+
+    const rewritten = read(join(tmpDir, 'plugins/my-plugin/index.js'));
+
+    expect(rewritten).toContain(COMMENT_LINE);
+    expect(rewritten).toContain(`static translations = ${HELPER}({`);
+    expect(rewritten).toContain(`'./i18n/en.js': () => import('./i18n/en.js')`);
+  });
+
+  it('does not touch files without the helper call', () => {
+    const noHelper = `export const x = 1;`;
+
+    buildFixtureTree(tmpDir, {
+      'index.js': noHelper,
+    });
+
+    const result = runResolver(tmpDir);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('0 file(s) rewritten');
+    expect(read(join(tmpDir, 'index.js'))).toBe(noHelper);
+  });
 });

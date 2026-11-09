@@ -9,13 +9,13 @@
 import type { TvKeyHandlerTranslationKey } from './en';
 
 export default {
-	'plugin.tv-key-handler.info.chapter': 'Capítulo',
-	'plugin.tv-key-handler.info.noTitle': 'Sin título',
-	'plugin.tv-key-handler.info.timeRemaining': 'restante',
-	'plugin.tv-key-handler.seek.red': '+30s',
-	'plugin.tv-key-handler.seek.green': '+60s',
-	'plugin.tv-key-handler.seek.yellow': '+90s',
-	'plugin.tv-key-handler.seek.blue': '+120s',
-	'plugin.tv-key-handler.aspectRatio.cycled': 'Relación de aspecto',
-	'plugin.tv-key-handler.bookmark.added': 'Marcador añadido',
+  'plugin.tv-key-handler.info.chapter': 'Capítulo',
+  'plugin.tv-key-handler.info.noTitle': 'Sin título',
+  'plugin.tv-key-handler.info.timeRemaining': 'restante',
+  'plugin.tv-key-handler.seek.red': '+30s',
+  'plugin.tv-key-handler.seek.green': '+60s',
+  'plugin.tv-key-handler.seek.yellow': '+90s',
+  'plugin.tv-key-handler.seek.blue': '+120s',
+  'plugin.tv-key-handler.aspectRatio.cycled': 'Relación de aspecto',
+  'plugin.tv-key-handler.bookmark.added': 'Marcador añadido',
 } satisfies Record<TvKeyHandlerTranslationKey, string>;

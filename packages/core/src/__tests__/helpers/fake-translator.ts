@@ -10,7 +10,7 @@ import type { ITranslator } from '../../adapters/translator/ITranslator';
 import type { Translations } from '../../types';
 
 export interface FakeTranslator extends ITranslator {
-	translateCalls: string[];
+  translateCalls: string[];
 }
 
 /**
@@ -19,38 +19,42 @@ export interface FakeTranslator extends ITranslator {
  * rather than the DefaultTranslator.
  */
 export function makeFakeTranslator(): FakeTranslator {
-	const translateCalls: string[] = [];
-	let currentLanguage = 'en';
+  const translateCalls: string[] = [];
+  let currentLanguage = 'en';
 
-	const translator: FakeTranslator = {
-		translateCalls,
+  const translator: FakeTranslator = {
+    translateCalls,
 
-		t(key: string, _vars?: Record<string, string>): string {
-			translateCalls.push(key);
-			return `FAKE:${key}`;
-		},
+    t(key: string, _vars?: Record<string, string>): string {
+      translateCalls.push(key);
 
-		language(lang?: string): string | Promise<void> {
-			if (lang === undefined)
-				return currentLanguage;
-			currentLanguage = lang;
-			return Promise.resolve();
-		},
+      return `FAKE:${key}`;
+    },
 
-		addTranslations(_bundle: Translations): void {},
+    language(lang?: string): string | Promise<void> {
+      if (lang === undefined)
+        return currentLanguage;
 
-		translation(lang: string, key: string, value?: string): string | undefined | void {
-			if (value === undefined)
-				return undefined;
-			void lang;
-			void key;
-			void value;
-		},
+      currentLanguage = lang;
 
-		removeTranslations(_prefix: string, _lang?: string): void {},
+      return Promise.resolve();
+    },
 
-		dispose(): void {},
-	} as unknown as FakeTranslator;
+    addTranslations(_bundle: Translations): void {},
 
-	return translator;
+    translation(lang: string, key: string, value?: string): string | undefined | void {
+      if (value === undefined)
+        return undefined;
+
+      void lang;
+      void key;
+      void value;
+    },
+
+    removeTranslations(_prefix: string, _lang?: string): void {},
+
+    dispose(): void {},
+  } as unknown as FakeTranslator;
+
+  return translator;
 }

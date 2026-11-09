@@ -6,7 +6,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
-import { AST_NODE_TYPES, ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/utils';
+import { AST_NODE_TYPES, ESLintUtils } from '@typescript-eslint/utils';
 
 // Owner 2026-10-13: "lets also reduce the complexity for things like this, its a challenge to
 // parse what this does" about `Math.round(Math.min(1, Math.max(0, v)) * 255)`. A call inside a

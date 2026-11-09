@@ -31,339 +31,390 @@ import { NMVideoPlayer } from '../../index';
 import { subtitleOverlayPlugin } from '../../plugins/subtitle-overlay';
 
 function setup(): NMVideoPlayer<any> {
-	return new NMVideoPlayer('test').setup({});
+  return new NMVideoPlayer('test').setup({});
 }
 
 function makeCue(overrides: {
-	text?: string;
-	start?: number;
-	end?: number;
-	line?: number | null;
-	size?: number;
-	position?: number;
-	align?: 'start' | 'center' | 'end';
+  text?: string;
+  start?: number;
+  end?: number;
+  line?: number | null;
+  size?: number;
+  position?: number;
+  align?: 'start' | 'center' | 'end';
 } = {}): Record<string, unknown> {
-	return {
-		text: overrides.text ?? 'Sample cue',
-		start: overrides.start ?? 0,
-		end: overrides.end ?? 5,
-		line: overrides.line !== undefined ? overrides.line : 85,
-		size: overrides.size ?? 80,
-		position: overrides.position ?? 50,
-		align: overrides.align ?? 'center',
-	};
+  return {
+    text: overrides.text ?? 'Sample cue',
+    start: overrides.start ?? 0,
+    end: overrides.end ?? 5,
+    line: overrides.line !== undefined
+      ? overrides.line
+      : 85,
+    size: overrides.size ?? 80,
+    position: overrides.position ?? 50,
+    align: overrides.align ?? 'center',
+  };
 }
 
 describe('SubtitleOverlayPlugin — cue positioning', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+  });
 
-	it('line > 50 produces bottom-anchored CSS (bottom set, top cleared)', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		const cue = makeCue({ line: 80 });
-		(player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
-		await Promise.resolve();
+  it('line > 50 produces bottom-anchored CSS (bottom set, top cleared)', async () => {
+    const player = setup();
 
-		const area = player.container.querySelector<HTMLElement>('.subtitle-area');
-		expect(area).not.toBeNull();
-		expect(area!.style.bottom).toBeTruthy();
-		expect(area!.style.top).toBeFalsy();
-	});
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
 
-	it('line <= 50 produces top-anchored CSS (top set, bottom cleared)', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+    const cue = makeCue({ line: 80 });
 
-		const cue = makeCue({ line: 10 });
-		(player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
-		await Promise.resolve();
+    (player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
+    await Promise.resolve();
 
-		const area = player.container.querySelector<HTMLElement>('.subtitle-area');
-		expect(area).not.toBeNull();
-		expect(area!.style.top).toBeTruthy();
-		expect(area!.style.bottom).toBeFalsy();
-	});
+    const area = player.container.querySelector<HTMLElement>('.subtitle-area');
 
-	it('no line (null) produces bottom:0 fallback', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+    expect(area).not.toBeNull();
+    expect(area!.style.bottom).toBeTruthy();
+    expect(area!.style.top).toBeFalsy();
+  });
 
-		const cue = makeCue({ line: null });
-		(player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
-		await Promise.resolve();
+  it('line <= 50 produces top-anchored CSS (top set, bottom cleared)', async () => {
+    const player = setup();
 
-		const area = player.container.querySelector<HTMLElement>('.subtitle-area');
-		expect(area).not.toBeNull();
-		expect(area!.style.bottom).toMatch(/^0(px)?$/);
-	});
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
 
-	it('align:start sets .aligned-start class', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+    const cue = makeCue({ line: 10 });
 
-		const cue = makeCue({ align: 'start' });
-		(player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
-		await Promise.resolve();
+    (player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
+    await Promise.resolve();
 
-		const area = player.container.querySelector('.subtitle-area');
-		expect(area?.classList.contains('aligned-start')).toBe(true);
-	});
+    const area = player.container.querySelector<HTMLElement>('.subtitle-area');
 
-	it('align:end sets .aligned-end class', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+    expect(area).not.toBeNull();
+    expect(area!.style.top).toBeTruthy();
+    expect(area!.style.bottom).toBeFalsy();
+  });
 
-		const cue = makeCue({ align: 'end' });
-		(player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
-		await Promise.resolve();
+  it('no line (null) produces bottom:0 fallback', async () => {
+    const player = setup();
 
-		const area = player.container.querySelector('.subtitle-area');
-		expect(area?.classList.contains('aligned-end')).toBe(true);
-	});
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
 
-	it('align:center sets .aligned-center class', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+    const cue = makeCue({ line: null });
 
-		const cue = makeCue({ align: 'center' });
-		(player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
-		await Promise.resolve();
+    (player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
+    await Promise.resolve();
 
-		const area = player.container.querySelector('.subtitle-area');
-		expect(area?.classList.contains('aligned-center')).toBe(true);
-	});
+    const area = player.container.querySelector<HTMLElement>('.subtitle-area');
 
-	it('cue size maps to width CSS on the area', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+    expect(area).not.toBeNull();
+    expect(area!.style.bottom).toMatch(/^0(px)?$/);
+  });
 
-		const cue = makeCue({ size: 60, position: 50, align: 'center' });
-		(player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
-		await Promise.resolve();
+  it('align:start sets .aligned-start class', async () => {
+    const player = setup();
 
-		const area = player.container.querySelector<HTMLElement>('.subtitle-area');
-		expect(area).not.toBeNull();
-		expect(area!.style.width).toContain('%');
-	});
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
+
+    const cue = makeCue({ align: 'start' });
+
+    (player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
+    await Promise.resolve();
+
+    const area = player.container.querySelector('.subtitle-area');
+
+    expect(area?.classList.contains('aligned-start')).toBe(true);
+  });
+
+  it('align:end sets .aligned-end class', async () => {
+    const player = setup();
+
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
+
+    const cue = makeCue({ align: 'end' });
+
+    (player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
+    await Promise.resolve();
+
+    const area = player.container.querySelector('.subtitle-area');
+
+    expect(area?.classList.contains('aligned-end')).toBe(true);
+  });
+
+  it('align:center sets .aligned-center class', async () => {
+    const player = setup();
+
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
+
+    const cue = makeCue({ align: 'center' });
+
+    (player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
+    await Promise.resolve();
+
+    const area = player.container.querySelector('.subtitle-area');
+
+    expect(area?.classList.contains('aligned-center')).toBe(true);
+  });
+
+  it('cue size maps to width CSS on the area', async () => {
+    const player = setup();
+
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
+
+    const cue = makeCue({
+      size: 60,
+      position: 50,
+      align: 'center',
+    });
+
+    (player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
+    await Promise.resolve();
+
+    const area = player.container.querySelector<HTMLElement>('.subtitle-area');
+
+    expect(area).not.toBeNull();
+    expect(area!.style.width).toContain('%');
+  });
 });
 
 describe('SubtitleOverlayPlugin — style application', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+  });
 
-	it('subtitleStyle event updates fontFamily on existing text spans', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		// Render a cue first so an area exists
-		const cue = makeCue({ text: 'Styled' });
-		(player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
-		await Promise.resolve();
+  it('subtitleStyle event updates fontFamily on existing text spans', async () => {
+    const player = setup();
 
-		const text = player.container.querySelector<HTMLElement>('.subtitle-text');
-		expect(text).not.toBeNull();
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
 
-		// Emit a style update
-		(player as any).emit('subtitleStyle', {
-			fontSize: 120,
-			fontFamily: 'monospace',
-			textColor: 'white',
-			textOpacity: 100,
-			backgroundColor: 'black',
-			backgroundOpacity: 75,
-			edgeStyle: 'none',
-			areaColor: 'transparent',
-			windowOpacity: 0,
-		});
-		await Promise.resolve();
+    // Render a cue first so an area exists
+    const cue = makeCue({ text: 'Styled' });
 
-		expect(text!.style.fontFamily).toContain('monospace');
-	});
+    (player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
+    await Promise.resolve();
+
+    const text = player.container.querySelector<HTMLElement>('.subtitle-text');
+
+    expect(text).not.toBeNull();
+
+    // Emit a style update
+    (player as any).emit('subtitleStyle', {
+      fontSize: 120,
+      fontFamily: 'monospace',
+      textColor: 'white',
+      textOpacity: 100,
+      backgroundColor: 'black',
+      backgroundOpacity: 75,
+      edgeStyle: 'none',
+      areaColor: 'transparent',
+      windowOpacity: 0,
+    });
+
+    await Promise.resolve();
+
+    expect(text!.style.fontFamily).toContain('monospace');
+  });
 });
 
 describe('SubtitleOverlayPlugin — pool management', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+  });
 
-	it('area pool grows to match multi-cue events', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		const cues = [makeCue({ text: 'Cue 1', line: 70 }), makeCue({ text: 'Cue 2', line: 80 })];
-		(player as any).emit('subtitleCue', { cues, language: 'en' });
-		await Promise.resolve();
+  it('area pool grows to match multi-cue events', async () => {
+    const player = setup();
 
-		const areas = player.container.querySelectorAll('.subtitle-area');
-		expect(areas.length).toBe(2);
-	});
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
 
-	it('area pool shrinks when fewer cues arrive', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+    const cues = [makeCue({ text: 'Cue 1', line: 70 }), makeCue({ text: 'Cue 2', line: 80 })];
 
-		// First render two cues
-		const cues2 = [makeCue({ text: 'A', line: 70 }), makeCue({ text: 'B', line: 80 })];
-		(player as any).emit('subtitleCue', { cues: cues2, language: 'en' });
-		await Promise.resolve();
-		expect(player.container.querySelectorAll('.subtitle-area').length).toBe(2);
+    (player as any).emit('subtitleCue', { cues, language: 'en' });
+    await Promise.resolve();
 
-		// Now render just one cue
-		const cues1 = [makeCue({ text: 'Only one', line: 85 })];
-		(player as any).emit('subtitleCue', { cues: cues1, language: 'en' });
-		await Promise.resolve();
-		expect(player.container.querySelectorAll('.subtitle-area').length).toBe(1);
-	});
+    const areas = player.container.querySelectorAll('.subtitle-area');
 
-	it('item event clears all subtitle areas', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+    expect(areas.length).toBe(2);
+  });
 
-		const cue = makeCue({ text: 'Visible before item change' });
-		(player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
-		await Promise.resolve();
-		expect(player.container.querySelectorAll('.subtitle-area').length).toBeGreaterThanOrEqual(1);
+  it('area pool shrinks when fewer cues arrive', async () => {
+    const player = setup();
 
-		// Item change should clear all areas
-		(player as any).emit('item', { item: null });
-		await Promise.resolve();
-		expect(player.container.querySelectorAll('.subtitle-area').length).toBe(0);
-	});
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
+
+    // First render two cues
+    const cues2 = [makeCue({ text: 'A', line: 70 }), makeCue({ text: 'B', line: 80 })];
+
+    (player as any).emit('subtitleCue', { cues: cues2, language: 'en' });
+    await Promise.resolve();
+    expect(player.container.querySelectorAll('.subtitle-area').length).toBe(2);
+
+    // Now render just one cue
+    const cues1 = [makeCue({ text: 'Only one', line: 85 })];
+
+    (player as any).emit('subtitleCue', { cues: cues1, language: 'en' });
+    await Promise.resolve();
+    expect(player.container.querySelectorAll('.subtitle-area').length).toBe(1);
+  });
+
+  it('item event clears all subtitle areas', async () => {
+    const player = setup();
+
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
+
+    const cue = makeCue({ text: 'Visible before item change' });
+
+    (player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
+    await Promise.resolve();
+    expect(player.container.querySelectorAll('.subtitle-area').length).toBeGreaterThanOrEqual(1);
+
+    // Item change should clear all areas
+    (player as any).emit('item', { item: null });
+    await Promise.resolve();
+    expect(player.container.querySelectorAll('.subtitle-area').length).toBe(0);
+  });
 });
 
 describe('SubtitleOverlayPlugin — language attribute', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+  });
 
-	it('data-language attribute reflects the cue language', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		const cue = makeCue({ text: 'Bonjour' });
-		(player as any).emit('subtitleCue', { cues: [cue], language: 'fr' });
-		await Promise.resolve();
+  it('data-language attribute reflects the cue language', async () => {
+    const player = setup();
 
-		const text = player.container.querySelector('.subtitle-text');
-		expect(text?.getAttribute('data-language')).toBe('fr');
-	});
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
 
-	it('data-language updates when language changes between cue events', async () => {
-		const player = setup();
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+    const cue = makeCue({ text: 'Bonjour' });
 
-		const cue = makeCue({ text: 'Hello' });
-		(player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
-		await Promise.resolve();
+    (player as any).emit('subtitleCue', { cues: [cue], language: 'fr' });
+    await Promise.resolve();
 
-		(player as any).emit('subtitleCue', { cues: [cue], language: 'de' });
-		await Promise.resolve();
+    const text = player.container.querySelector('.subtitle-text');
 
-		const text = player.container.querySelector('.subtitle-text');
-		expect(text?.getAttribute('data-language')).toBe('de');
-	});
+    expect(text?.getAttribute('data-language')).toBe('fr');
+  });
+
+  it('data-language updates when language changes between cue events', async () => {
+    const player = setup();
+
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
+
+    const cue = makeCue({ text: 'Hello' });
+
+    (player as any).emit('subtitleCue', { cues: [cue], language: 'en' });
+    await Promise.resolve();
+
+    (player as any).emit('subtitleCue', { cues: [cue], language: 'de' });
+    await Promise.resolve();
+
+    const text = player.container.querySelector('.subtitle-text');
+
+    expect(text?.getAttribute('data-language')).toBe('de');
+  });
 });
 
 describe('SubtitleOverlayPlugin — videoRect binding', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    div.id = 'test';
+    document.body.appendChild(div);
+  });
 
-	it('videoRect event with a rect sizes the overlay to the given px dimensions', async () => {
-		const player = setup();
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		// Stub videoRect() so applyRect uses our dimensions
-		Object.assign(player, {
-			videoRect: () => ({ width: 640, height: 360 }),
-		});
+  it('videoRect event with a rect sizes the overlay to the given px dimensions', async () => {
+    const player = setup();
 
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+    // Stub videoRect() so applyRect uses our dimensions
+    Object.assign(player, {
+      videoRect: () => ({ width: 640, height: 360 }),
+    });
 
-		const overlay = player.container.querySelector<HTMLElement>('.subtitle-overlay');
-		expect(overlay).not.toBeNull();
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
 
-		// Emit videoRect event to trigger the resize handler
-		(player as any).emit('videoRect', { width: 640, height: 360 });
-		await Promise.resolve();
+    const overlay = player.container.querySelector<HTMLElement>('.subtitle-overlay');
 
-		expect(overlay!.style.width).toBe('640px');
-		expect(overlay!.style.height).toBe('360px');
-	});
+    expect(overlay).not.toBeNull();
 
-	it('videoRect event with null falls back to 100% sizing', async () => {
-		const player = setup();
+    // Emit videoRect event to trigger the resize handler
+    (player as any).emit('videoRect', { width: 640, height: 360 });
+    await Promise.resolve();
 
-		Object.assign(player, {
-			videoRect: () => null,
-		});
+    expect(overlay!.style.width).toBe('640px');
+    expect(overlay!.style.height).toBe('360px');
+  });
 
-		player.addPlugin(subtitleOverlayPlugin);
-		await player.ready();
+  it('videoRect event with null falls back to 100% sizing', async () => {
+    const player = setup();
 
-		const overlay = player.container.querySelector<HTMLElement>('.subtitle-overlay');
+    Object.assign(player, {
+      videoRect: () => null,
+    });
 
-		(player as any).emit('videoRect', null);
-		await Promise.resolve();
+    player.addPlugin(subtitleOverlayPlugin);
+    await player.ready();
 
-		expect(overlay!.style.width).toBe('100%');
-		expect(overlay!.style.height).toBe('100%');
-	});
+    const overlay = player.container.querySelector<HTMLElement>('.subtitle-overlay');
+
+    (player as any).emit('videoRect', null);
+    await Promise.resolve();
+
+    expect(overlay!.style.width).toBe('100%');
+    expect(overlay!.style.height).toBe('100%');
+  });
 });

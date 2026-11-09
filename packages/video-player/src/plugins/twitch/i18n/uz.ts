@@ -7,11 +7,11 @@
 // -----------------------------------------------------------------------------
 
 const translations = {
-	'plugin.twitch.error.clip-unavailable': 'Twitchda {slug} klipi uchun ijro etiladigan fayl yoq',
-	'plugin.twitch.channel.offline': '{channel} oflayn',
-	'plugin.twitch.channel.ended': '{channel} efiri tugadi',
-	'plugin.twitch.setting.use-twitch-player': 'Twitchning o\'z pleyeridan foydalanish',
-	'plugin.twitch.subtitle.enabled': 'Yoqilgan',
+  'plugin.twitch.error.clip-unavailable': 'Twitchda {slug} klipi uchun ijro etiladigan fayl yoq',
+  'plugin.twitch.channel.offline': '{channel} oflayn',
+  'plugin.twitch.channel.ended': '{channel} efiri tugadi',
+  'plugin.twitch.setting.use-twitch-player': 'Twitchning o\'z pleyeridan foydalanish',
+  'plugin.twitch.subtitle.enabled': 'Yoqilgan',
 };
 
 export default translations;

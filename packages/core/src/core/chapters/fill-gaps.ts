@@ -24,14 +24,14 @@ const CHAPTER_ABSORB_SECONDS = 2;
 
 /** Result of {@link fillChapterGaps}. */
 export interface ChapterGapFillResult {
-	/**
-	 * The gap-filled list. Reference-identical to the input `chapters` array
-	 * when `changed` is `false` — callers can skip a write/re-emit with an
-	 * identity check instead of a deep comparison.
-	 */
-	chapters: ReadonlyArray<Chapter>;
-	/** `true` when the returned list differs from the input. */
-	changed: boolean;
+  /**
+   * The gap-filled list. Reference-identical to the input `chapters` array
+   * when `changed` is `false` — callers can skip a write/re-emit with an
+   * identity check instead of a deep comparison.
+   */
+  chapters: ReadonlyArray<Chapter>;
+  /** `true` when the returned list differs from the input. */
+  changed: boolean;
 }
 
 /**
@@ -64,105 +64,110 @@ export interface ChapterGapFillResult {
  * dependency of its own.
  */
 export function fillChapterGaps(
-	chapters: ReadonlyArray<Chapter>,
-	duration: number,
-	makeFillerTitle: () => string,
+  chapters: ReadonlyArray<Chapter>,
+  duration: number,
+  makeFillerTitle: () => string,
 ): ChapterGapFillResult {
-	if (chapters.length === 0) {
-		return {
-			chapters,
-			changed: false,
-		};
-	}
+  if (chapters.length === 0) {
+    return {
+      chapters,
+      changed: false,
+    };
+  }
 
-	if (!Number.isFinite(duration) || duration <= 0) {
-		return {
-			chapters,
-			changed: false,
-		};
-	}
+  if (!Number.isFinite(duration) || duration <= 0) {
+    return {
+      chapters,
+      changed: false,
+    };
+  }
 
-	const real = chapters.filter(chapter => !chapter.synthetic);
-	if (real.length === 0) {
-		return {
-			chapters,
-			changed: false,
-		};
-	}
+  const real = chapters.filter((chapter) => !chapter.synthetic);
 
-	const filled: Chapter[] = [];
-	let cursor = 0;
+  if (real.length === 0) {
+    return {
+      chapters,
+      changed: false,
+    };
+  }
 
-	for (const chapter of real) {
-		const gap = chapter.start - cursor;
-		if (gap >= CHAPTER_ABSORB_SECONDS) {
-			filled.push(_makeFiller(cursor, chapter.start, makeFillerTitle()));
-			filled.push(chapter);
-		}
-		else if (gap > CHAPTER_GAP_EPSILON_SECONDS) {
-			const previous = filled[filled.length - 1];
-			// No chapter before it: the first one starts at 0 instead.
-			filled.push(previous
-				? chapter
-				: {
-						...chapter,
-						start: 0,
-					});
-			if (previous) {
-				filled[filled.length - 2] = {
-					...previous,
-					end: chapter.start,
-				};
-			}
-		}
-		else {
-			filled.push(chapter);
-		}
-		cursor = Math.max(cursor, chapter.end);
-	}
+  const filled: Chapter[] = [];
+  let cursor = 0;
 
-	const tailGap = duration - cursor;
-	if (tailGap >= CHAPTER_ABSORB_SECONDS) {
-		filled.push(_makeFiller(cursor, duration, makeFillerTitle()));
-	}
-	else if (tailGap > CHAPTER_GAP_EPSILON_SECONDS) {
-		const last = filled[filled.length - 1]!;
-		filled[filled.length - 1] = {
-			...last,
-			end: duration,
-		};
-	}
+  for (const chapter of real) {
+    const gap = chapter.start - cursor;
 
-	if (_sameChapterList(filled, chapters)) {
-		return {
-			chapters,
-			changed: false,
-		};
-	}
+    if (gap >= CHAPTER_ABSORB_SECONDS) {
+      filled.push(_makeFiller(cursor, chapter.start, makeFillerTitle()));
+      filled.push(chapter);
+    } else if (gap > CHAPTER_GAP_EPSILON_SECONDS) {
+      const previous = filled[filled.length - 1];
 
-	return {
-		chapters: _reindex(filled),
-		changed: true,
-	};
+      // No chapter before it: the first one starts at 0 instead.
+      filled.push(previous
+        ? chapter
+        : {
+            ...chapter,
+            start: 0,
+          });
+
+      if (previous) {
+        filled[filled.length - 2] = {
+          ...previous,
+          end: chapter.start,
+        };
+      }
+    } else {
+      filled.push(chapter);
+    }
+
+    cursor = Math.max(cursor, chapter.end);
+  }
+
+  const tailGap = duration - cursor;
+
+  if (tailGap >= CHAPTER_ABSORB_SECONDS) {
+    filled.push(_makeFiller(cursor, duration, makeFillerTitle()));
+  } else if (tailGap > CHAPTER_GAP_EPSILON_SECONDS) {
+    const last = filled[filled.length - 1]!;
+
+    filled[filled.length - 1] = {
+      ...last,
+      end: duration,
+    };
+  }
+
+  if (_sameChapterList(filled, chapters)) {
+    return {
+      chapters,
+      changed: false,
+    };
+  }
+
+  return {
+    chapters: _reindex(filled),
+    changed: true,
+  };
 }
 
 function _makeFiller(start: number, end: number, title: string): Chapter {
-	return {
-		index: -1,
-		start,
-		end,
-		title,
-		synthetic: true,
-	};
+  return {
+    index: -1,
+    start,
+    end,
+    title,
+    synthetic: true,
+  };
 }
 
 function _reindex(list: ReadonlyArray<Chapter>): Chapter[] {
-	return list.map((chapter, index) => (chapter.index === index
-		? chapter
-		: {
-				...chapter,
-				index,
-			}));
+  return list.map((chapter, index) =>
+    chapter.index === index
+      ? chapter
+      : {
+          ...chapter,
+          index,
+        });
 }
 
 /**
@@ -173,17 +178,18 @@ function _reindex(list: ReadonlyArray<Chapter>): Chapter[] {
  * cheaply on the common "nothing to do" path.
  */
 function _sameChapterList(candidate: ReadonlyArray<Chapter>, existing: ReadonlyArray<Chapter>): boolean {
-	if (candidate.length !== existing.length)
-		return false;
+  if (candidate.length !== existing.length)
+    return false;
 
-	return candidate.every((chapter, i) => {
-		const other = existing[i]!;
-		return chapter === other
-			|| (
-				chapter.start === other.start
-				&& chapter.end === other.end
-				&& chapter.title === other.title
-				&& Boolean(chapter.synthetic) === Boolean(other.synthetic)
-			);
-	});
+  return candidate.every((chapter, i) => {
+    const other = existing[i]!;
+
+    return chapter === other ||
+      (
+        chapter.start === other.start &&
+        chapter.end === other.end &&
+        chapter.title === other.title &&
+        Boolean(chapter.synthetic) === Boolean(other.synthetic)
+      );
+  });
 }

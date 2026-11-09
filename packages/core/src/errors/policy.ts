@@ -15,7 +15,7 @@ import { PlayerError } from './player';
  * Codes follow `core:policy/<reason>`. Use `browserPolicyError()` to construct.
  */
 export class BrowserPolicyError extends PlayerError {
-	override readonly name = 'BrowserPolicyError';
+  override readonly name = 'BrowserPolicyError';
 }
 
 /**
@@ -28,19 +28,19 @@ export class BrowserPolicyError extends PlayerError {
  * Code convention: `core:policy/<reason>` — e.g. `core:policy/autoplay-blocked`.
  */
 export function browserPolicyError(
-	code: string,
-	message: string,
-	opts?: {
-		suggestion?: string;
-		context?: Record<string, unknown>;
-	},
+  code: string,
+  message: string,
+  opts?: {
+    suggestion?: string;
+    context?: Record<string, unknown>;
+  },
 ): BrowserPolicyError {
-	return new BrowserPolicyError({
-		code,
-		severity: 'error',
-		scope: { kind: 'core' },
-		message: `${code}: ${message}`,
-		suggestion: opts?.suggestion,
-		context: opts?.context,
-	});
+  return new BrowserPolicyError({
+    code,
+    severity: 'error',
+    scope: { kind: 'core' },
+    message: `${code}: ${message}`,
+    suggestion: opts?.suggestion,
+    context: opts?.context,
+  });
 }

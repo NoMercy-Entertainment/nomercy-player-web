@@ -21,11 +21,11 @@
 import type { BaseEventMap, IUrlResolver, UrlResolverContext } from '../types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	composeMixins,
-	EventEmitter,
-	initPlayerCoreState,
-	playerCoreMethods,
-	resolvePlayerConstructor,
+  composeMixins,
+  EventEmitter,
+  initPlayerCoreState,
+  playerCoreMethods,
+  resolvePlayerConstructor,
 } from '../index';
 import { StubPlayer } from '../testing/stub-player';
 
@@ -36,72 +36,77 @@ import { StubPlayer } from '../testing/stub-player';
 const _authInstances = new Map<string, AuthMockPlayer>();
 
 class AuthMockPlayer extends EventEmitter<BaseEventMap> {
-	readonly playerId: string = '';
-	container: HTMLElement = {} as HTMLElement;
+  readonly playerId: string = '';
+  container: HTMLElement = {} as HTMLElement;
 
-	get id(): string {
-		return this.playerId;
-	}
+  get id(): string {
+    return this.playerId;
+  }
 
-	declare options: Record<string, unknown>;
-	declare setup: (config: Record<string, unknown>) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare phase: () => string;
-	declare auth: {
-		(): Readonly<Record<string, unknown>> | undefined;
-		(cfg: Record<string, unknown>): void;
-		(value: null): void;
-	};
+  declare options: Record<string, unknown>;
+  declare setup: (config: Record<string, unknown>) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare phase: () => string;
+  declare auth: {
+    (): Readonly<Record<string, unknown>> | undefined;
+    (cfg: Record<string, unknown>): void;
+    (value: null): void;
+  };
 
-	declare resolveUrl: (url: string, category?: string) => Promise<{ href: string; relative: boolean }>;
+  declare resolveUrl: (url: string, category?: string) => Promise<{ href: string; relative: boolean }>;
 
-	declare urlResolver: {
-		(): IUrlResolver | undefined;
-		(resolver: IUrlResolver | undefined): void;
-	};
+  declare urlResolver: {
+    (): IUrlResolver | undefined;
+    (resolver: IUrlResolver | undefined): void;
+  };
 
-	declare baseImageUrl: {
-		(): string | undefined;
-		(path: string): void;
-	};
+  declare baseImageUrl: {
+    (): string | undefined;
+    (path: string): void;
+  };
 
-	declare baseUrl: {
-		(): string | undefined;
-		(url: string): void;
-	};
+  declare baseUrl: {
+    (): string | undefined;
+    (url: string): void;
+  };
 
-	declare queue: {
-		(): ReadonlyArray<unknown>;
-		(items: unknown[]): void;
-	};
+  declare queue: {
+    (): ReadonlyArray<unknown>;
+    (items: unknown[]): void;
+  };
 
-	constructor(id?: string | number) {
-		super();
-		const resolved = resolvePlayerConstructor(id, _authInstances, 'AuthMockPlayer');
-		if (resolved.kind === 'existing') {
-			return resolved.instance as unknown as this;
-		}
-		initPlayerCoreState(this, { className: 'AuthMockPlayer' });
-		(this as { playerId: string }).playerId = resolved.id;
-		this.container = resolved.div;
-		_authInstances.set(resolved.id, this);
-	}
+  constructor(id?: string | number) {
+    super();
+    const resolved = resolvePlayerConstructor(id, _authInstances, 'AuthMockPlayer');
 
-	static _resetRegistry(): void {
-		_authInstances.clear();
-	}
+    if (resolved.kind === 'existing') {
+      return resolved.instance as unknown as this;
+    }
+
+    initPlayerCoreState(this, { className: 'AuthMockPlayer' });
+    (this as { playerId: string }).playerId = resolved.id;
+    this.container = resolved.div;
+    _authInstances.set(resolved.id, this);
+  }
+
+  static _resetRegistry(): void {
+    _authInstances.clear();
+  }
 }
 
 composeMixins(AuthMockPlayer.prototype, ...playerCoreMethods);
 
 let _authDivCounter = 0;
+
 function makeAuthPlayer(): AuthMockPlayer {
-	const id = `auth-player-${_authDivCounter++}`;
-	const div = document.createElement('div');
-	div.id = id;
-	document.body.appendChild(div);
-	return new AuthMockPlayer(id);
+  const id = `auth-player-${_authDivCounter++}`;
+  const div = document.createElement('div');
+
+  div.id = id;
+  document.body.appendChild(div);
+
+  return new AuthMockPlayer(id);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -109,45 +114,49 @@ function makeAuthPlayer(): AuthMockPlayer {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('auth mixin — resolveUrl() baseImageUrl prefix (artwork categories)', () => {
-	it('poster category: relative path is prefixed with baseImageUrl as a string', async () => {
-		const stubPlayer = new StubPlayer();
-		stubPlayer.baseImageUrl('https://image.tmdb.org/t/p/w780');
+  it('poster category: relative path is prefixed with baseImageUrl as a string', async () => {
+    const stubPlayer = new StubPlayer();
 
-		const resolvedUrl = await stubPlayer.resolveUrl('/poster-path.jpg', 'poster');
+    stubPlayer.baseImageUrl('https://image.tmdb.org/t/p/w780');
 
-		expect(resolvedUrl.relative).toBe(false);
-		expect(resolvedUrl.href).toBe('https://image.tmdb.org/t/p/w780/poster-path.jpg');
-	});
+    const resolvedUrl = await stubPlayer.resolveUrl('/poster-path.jpg', 'poster');
 
-	it('cast category: relative path is prefixed with baseImageUrl as a string', async () => {
-		const stubPlayer = new StubPlayer();
-		stubPlayer.baseImageUrl('https://image.tmdb.org/t/p/w300');
+    expect(resolvedUrl.relative).toBe(false);
+    expect(resolvedUrl.href).toBe('https://image.tmdb.org/t/p/w780/poster-path.jpg');
+  });
 
-		const resolvedUrl = await stubPlayer.resolveUrl('/cast-path.jpg', 'cast');
+  it('cast category: relative path is prefixed with baseImageUrl as a string', async () => {
+    const stubPlayer = new StubPlayer();
 
-		expect(resolvedUrl.relative).toBe(false);
-		expect(resolvedUrl.href).toBe('https://image.tmdb.org/t/p/w300/cast-path.jpg');
-	});
+    stubPlayer.baseImageUrl('https://image.tmdb.org/t/p/w300');
 
-	it('artwork category: already-absolute URL is not double-prefixed', async () => {
-		const stubPlayer = new StubPlayer();
-		stubPlayer.baseImageUrl('https://image.tmdb.org/t/p/w780');
+    const resolvedUrl = await stubPlayer.resolveUrl('/cast-path.jpg', 'cast');
 
-		const resolvedUrl = await stubPlayer.resolveUrl('https://cdn.example.com/art.jpg', 'poster');
+    expect(resolvedUrl.relative).toBe(false);
+    expect(resolvedUrl.href).toBe('https://image.tmdb.org/t/p/w300/cast-path.jpg');
+  });
 
-		expect(resolvedUrl.href).toBe('https://cdn.example.com/art.jpg');
-	});
+  it('artwork category: already-absolute URL is not double-prefixed', async () => {
+    const stubPlayer = new StubPlayer();
 
-	it('non-artwork category (subtitle) ignores baseImageUrl, uses baseUrl instead', async () => {
-		const stubPlayer = new StubPlayer();
-		stubPlayer.baseImageUrl('https://image.tmdb.org/t/p/w780');
-		stubPlayer.baseUrl('https://media.example.com/');
+    stubPlayer.baseImageUrl('https://image.tmdb.org/t/p/w780');
 
-		const resolvedUrl = await stubPlayer.resolveUrl('sub.vtt', 'subtitle');
+    const resolvedUrl = await stubPlayer.resolveUrl('https://cdn.example.com/art.jpg', 'poster');
 
-		expect(resolvedUrl.href).toBe('https://media.example.com/sub.vtt');
-		expect(resolvedUrl.href).not.toContain('tmdb');
-	});
+    expect(resolvedUrl.href).toBe('https://cdn.example.com/art.jpg');
+  });
+
+  it('non-artwork category (subtitle) ignores baseImageUrl, uses baseUrl instead', async () => {
+    const stubPlayer = new StubPlayer();
+
+    stubPlayer.baseImageUrl('https://image.tmdb.org/t/p/w780');
+    stubPlayer.baseUrl('https://media.example.com/');
+
+    const resolvedUrl = await stubPlayer.resolveUrl('sub.vtt', 'subtitle');
+
+    expect(resolvedUrl.href).toBe('https://media.example.com/sub.vtt');
+    expect(resolvedUrl.href).not.toContain('tmdb');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -157,82 +166,110 @@ describe('auth mixin — resolveUrl() baseImageUrl prefix (artwork categories)',
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('auth mixin — resolveUrl() custom resolver receives redacted auth', () => {
-	beforeEach(() => AuthMockPlayer._resetRegistry());
-	afterEach(() => {
-		AuthMockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => AuthMockPlayer._resetRegistry());
 
-	it('custom resolver ctx.auth has no bearerToken field', async () => {
-		const authMockPlayer = makeAuthPlayer();
-		authMockPlayer.setup({ auth: { bearerToken: 'secret-bearer', credentials: 'include' } });
-		await authMockPlayer.ready();
+  afterEach(() => {
+    AuthMockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		const capturedContexts: UrlResolverContext[] = [];
-		const resolver: IUrlResolver = (url, ctx) => {
-			capturedContexts.push({ ...ctx, auth: ctx.auth ? { ...ctx.auth } : undefined });
-			return ctx.defaultResolve(url);
-		};
-		authMockPlayer.urlResolver(resolver);
+  it('custom resolver ctx.auth has no bearerToken field', async () => {
+    const authMockPlayer = makeAuthPlayer();
 
-		await authMockPlayer.resolveUrl('https://cdn.example.com/video.mp4', 'media');
+    authMockPlayer.setup({ auth: { bearerToken: 'secret-bearer', credentials: 'include' } });
+    await authMockPlayer.ready();
 
-		expect(capturedContexts.length).toBeGreaterThan(0);
-		const ctx = capturedContexts[0]!;
-		expect(ctx.auth).toBeDefined();
-		expect((ctx.auth as Record<string, unknown>)['bearerToken']).toBeUndefined();
-		expect((ctx.auth as Record<string, unknown>)['accessToken']).toBeUndefined();
-	});
+    const capturedContexts: UrlResolverContext[] = [];
 
-	it('custom resolver ctx.auth retains non-secret fields (credentials)', async () => {
-		const authMockPlayer = makeAuthPlayer();
-		authMockPlayer.setup({ auth: { bearerToken: 'secret', credentials: 'include' } });
-		await authMockPlayer.ready();
+    const resolver: IUrlResolver = (url, ctx) => {
+      capturedContexts.push({
+        ...ctx,
+        auth: ctx.auth
+          ? { ...ctx.auth }
+          : undefined,
+      });
 
-		const capturedContexts: UrlResolverContext[] = [];
-		const resolver: IUrlResolver = (url, ctx) => {
-			capturedContexts.push({ ...ctx, auth: ctx.auth ? { ...ctx.auth } : undefined });
-			return ctx.defaultResolve(url);
-		};
-		authMockPlayer.urlResolver(resolver);
+      return ctx.defaultResolve(url);
+    };
 
-		await authMockPlayer.resolveUrl('https://cdn.example.com/video.mp4', 'media');
+    authMockPlayer.urlResolver(resolver);
 
-		const auth = capturedContexts[0]?.auth as Record<string, unknown> | undefined;
-		expect(auth).toBeDefined();
-		expect(auth?.['credentials']).toBe('include');
-	});
+    await authMockPlayer.resolveUrl('https://cdn.example.com/video.mp4', 'media');
 
-	it('custom resolver is called with the category that was passed', async () => {
-		const stubPlayer = new StubPlayer();
+    expect(capturedContexts.length).toBeGreaterThan(0);
+    const ctx = capturedContexts[0]!;
 
-		const seen: string[] = [];
-		const resolver: IUrlResolver = (url, ctx) => {
-			seen.push(ctx.category);
-			return ctx.defaultResolve(url);
-		};
-		stubPlayer.urlResolver(resolver);
+    expect(ctx.auth).toBeDefined();
+    expect((ctx.auth as Record<string, unknown>)['bearerToken']).toBeUndefined();
+    expect((ctx.auth as Record<string, unknown>)['accessToken']).toBeUndefined();
+  });
 
-		await stubPlayer.resolveUrl('https://cdn.example.com/poster.jpg', 'poster');
+  it('custom resolver ctx.auth retains non-secret fields (credentials)', async () => {
+    const authMockPlayer = makeAuthPlayer();
 
-		expect(seen[0]).toBe('poster');
-	});
+    authMockPlayer.setup({ auth: { bearerToken: 'secret', credentials: 'include' } });
+    await authMockPlayer.ready();
 
-	it('custom resolver for artwork category receives baseImageUrl as ctx.baseUrl', async () => {
-		const stubPlayer = new StubPlayer();
-		stubPlayer.baseImageUrl('https://image.tmdb.org/t/p/w780');
+    const capturedContexts: UrlResolverContext[] = [];
 
-		const seenBaseUrls: Array<string | undefined> = [];
-		const resolver: IUrlResolver = (url, ctx) => {
-			seenBaseUrls.push(ctx.baseUrl);
-			return ctx.defaultResolve(url);
-		};
-		stubPlayer.urlResolver(resolver);
+    const resolver: IUrlResolver = (url, ctx) => {
+      capturedContexts.push({
+        ...ctx,
+        auth: ctx.auth
+          ? { ...ctx.auth }
+          : undefined,
+      });
 
-		await stubPlayer.resolveUrl('/poster.jpg', 'poster');
+      return ctx.defaultResolve(url);
+    };
 
-		expect(seenBaseUrls[0]).toBe('https://image.tmdb.org/t/p/w780');
-	});
+    authMockPlayer.urlResolver(resolver);
+
+    await authMockPlayer.resolveUrl('https://cdn.example.com/video.mp4', 'media');
+
+    const auth = capturedContexts[0]?.auth as Record<string, unknown> | undefined;
+
+    expect(auth).toBeDefined();
+    expect(auth?.['credentials']).toBe('include');
+  });
+
+  it('custom resolver is called with the category that was passed', async () => {
+    const stubPlayer = new StubPlayer();
+
+    const seen: string[] = [];
+
+    const resolver: IUrlResolver = (url, ctx) => {
+      seen.push(ctx.category);
+
+      return ctx.defaultResolve(url);
+    };
+
+    stubPlayer.urlResolver(resolver);
+
+    await stubPlayer.resolveUrl('https://cdn.example.com/poster.jpg', 'poster');
+
+    expect(seen[0]).toBe('poster');
+  });
+
+  it('custom resolver for artwork category receives baseImageUrl as ctx.baseUrl', async () => {
+    const stubPlayer = new StubPlayer();
+
+    stubPlayer.baseImageUrl('https://image.tmdb.org/t/p/w780');
+
+    const seenBaseUrls: Array<string | undefined> = [];
+
+    const resolver: IUrlResolver = (url, ctx) => {
+      seenBaseUrls.push(ctx.baseUrl);
+
+      return ctx.defaultResolve(url);
+    };
+
+    stubPlayer.urlResolver(resolver);
+
+    await stubPlayer.resolveUrl('/poster.jpg', 'poster');
+
+    expect(seenBaseUrls[0]).toBe('https://image.tmdb.org/t/p/w780');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -240,35 +277,38 @@ describe('auth mixin — resolveUrl() custom resolver receives redacted auth', (
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('i18n mixin — translation() read/write round-trip', () => {
-	it('write then read returns the stored value', () => {
-		const stubPlayer = new StubPlayer();
-		stubPlayer.translation('en', 'my.key', 'Hello World');
+  it('write then read returns the stored value', () => {
+    const stubPlayer = new StubPlayer();
 
-		expect(stubPlayer.translation('en', 'my.key')).toBe('Hello World');
-	});
+    stubPlayer.translation('en', 'my.key', 'Hello World');
 
-	it('read for an unknown key returns undefined', () => {
-		const stubPlayer = new StubPlayer();
+    expect(stubPlayer.translation('en', 'my.key')).toBe('Hello World');
+  });
 
-		expect(stubPlayer.translation('en', 'no.such.key')).toBeUndefined();
-	});
+  it('read for an unknown key returns undefined', () => {
+    const stubPlayer = new StubPlayer();
 
-	it('write in one language does not affect another', () => {
-		const stubPlayer = new StubPlayer();
-		stubPlayer.translation('en', 'greet', 'Hello');
-		stubPlayer.translation('fr', 'greet', 'Bonjour');
+    expect(stubPlayer.translation('en', 'no.such.key')).toBeUndefined();
+  });
 
-		expect(stubPlayer.translation('en', 'greet')).toBe('Hello');
-		expect(stubPlayer.translation('fr', 'greet')).toBe('Bonjour');
-	});
+  it('write in one language does not affect another', () => {
+    const stubPlayer = new StubPlayer();
 
-	it('overwrite replaces the previous value', () => {
-		const stubPlayer = new StubPlayer();
-		stubPlayer.translation('en', 'my.key', 'v1');
-		stubPlayer.translation('en', 'my.key', 'v2');
+    stubPlayer.translation('en', 'greet', 'Hello');
+    stubPlayer.translation('fr', 'greet', 'Bonjour');
 
-		expect(stubPlayer.translation('en', 'my.key')).toBe('v2');
-	});
+    expect(stubPlayer.translation('en', 'greet')).toBe('Hello');
+    expect(stubPlayer.translation('fr', 'greet')).toBe('Bonjour');
+  });
+
+  it('overwrite replaces the previous value', () => {
+    const stubPlayer = new StubPlayer();
+
+    stubPlayer.translation('en', 'my.key', 'v1');
+    stubPlayer.translation('en', 'my.key', 'v2');
+
+    expect(stubPlayer.translation('en', 'my.key')).toBe('v2');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -276,57 +316,61 @@ describe('i18n mixin — translation() read/write round-trip', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('i18n mixin — removeTranslations() by prefix', () => {
-	it('removes all keys with the matching prefix from a specific language', () => {
-		const stubPlayer = new StubPlayer();
-		stubPlayer.addTranslations({
-			en: {
-				'plugin.test.a': 'A',
-				'plugin.test.b': 'B',
-				'other.key': 'C',
-			},
-		});
+  it('removes all keys with the matching prefix from a specific language', () => {
+    const stubPlayer = new StubPlayer();
 
-		stubPlayer.removeTranslations('plugin.test', 'en');
+    stubPlayer.addTranslations({
+      en: {
+        'plugin.test.a': 'A',
+        'plugin.test.b': 'B',
+        'other.key': 'C',
+      },
+    });
 
-		expect(stubPlayer.translation('en', 'plugin.test.a')).toBeUndefined();
-		expect(stubPlayer.translation('en', 'plugin.test.b')).toBeUndefined();
-		expect(stubPlayer.translation('en', 'other.key')).toBe('C');
-	});
+    stubPlayer.removeTranslations('plugin.test', 'en');
 
-	it('removeTranslations without lang removes from all languages', () => {
-		const stubPlayer = new StubPlayer();
-		stubPlayer.addTranslations({
-			en: { 'plugin.x.key': 'en-val' },
-			fr: { 'plugin.x.key': 'fr-val' },
-		});
+    expect(stubPlayer.translation('en', 'plugin.test.a')).toBeUndefined();
+    expect(stubPlayer.translation('en', 'plugin.test.b')).toBeUndefined();
+    expect(stubPlayer.translation('en', 'other.key')).toBe('C');
+  });
 
-		stubPlayer.removeTranslations('plugin.x');
+  it('removeTranslations without lang removes from all languages', () => {
+    const stubPlayer = new StubPlayer();
 
-		expect(stubPlayer.translation('en', 'plugin.x.key')).toBeUndefined();
-		expect(stubPlayer.translation('fr', 'plugin.x.key')).toBeUndefined();
-	});
+    stubPlayer.addTranslations({
+      en: { 'plugin.x.key': 'en-val' },
+      fr: { 'plugin.x.key': 'fr-val' },
+    });
 
-	it('keys not matching the prefix are retained', () => {
-		const stubPlayer = new StubPlayer();
-		stubPlayer.addTranslations({
-			en: {
-				'plugin.a.key': 'a',
-				'plugin.b.key': 'b',
-			},
-		});
+    stubPlayer.removeTranslations('plugin.x');
 
-		stubPlayer.removeTranslations('plugin.a', 'en');
+    expect(stubPlayer.translation('en', 'plugin.x.key')).toBeUndefined();
+    expect(stubPlayer.translation('fr', 'plugin.x.key')).toBeUndefined();
+  });
 
-		expect(stubPlayer.translation('en', 'plugin.b.key')).toBe('b');
-	});
+  it('keys not matching the prefix are retained', () => {
+    const stubPlayer = new StubPlayer();
 
-	it('no-op when prefix does not match any key', () => {
-		const stubPlayer = new StubPlayer();
-		stubPlayer.addTranslations({ en: { 'my.key': 'v' } });
+    stubPlayer.addTranslations({
+      en: {
+        'plugin.a.key': 'a',
+        'plugin.b.key': 'b',
+      },
+    });
 
-		expect(() => stubPlayer.removeTranslations('nonexistent.prefix', 'en')).not.toThrow();
-		expect(stubPlayer.translation('en', 'my.key')).toBe('v');
-	});
+    stubPlayer.removeTranslations('plugin.a', 'en');
+
+    expect(stubPlayer.translation('en', 'plugin.b.key')).toBe('b');
+  });
+
+  it('no-op when prefix does not match any key', () => {
+    const stubPlayer = new StubPlayer();
+
+    stubPlayer.addTranslations({ en: { 'my.key': 'v' } });
+
+    expect(() => stubPlayer.removeTranslations('nonexistent.prefix', 'en')).not.toThrow();
+    expect(stubPlayer.translation('en', 'my.key')).toBe('v');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -335,55 +379,68 @@ describe('i18n mixin — removeTranslations() by prefix', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('auth mixin — refreshAuth()', () => {
-	beforeEach(() => AuthMockPlayer._resetRegistry());
-	afterEach(() => {
-		AuthMockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => AuthMockPlayer._resetRegistry());
 
-	it('emits auth:refreshed when no refreshOnUnauthenticated handler is set', async () => {
-		const authMockPlayer = makeAuthPlayer();
-		authMockPlayer.setup({ auth: { credentials: 'include' } });
-		await authMockPlayer.ready();
+  afterEach(() => {
+    AuthMockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		const refreshEvents: unknown[] = [];
-		authMockPlayer.on('auth:refreshed', (data: unknown) => refreshEvents.push(data));
+  it('emits auth:refreshed when no refreshOnUnauthenticated handler is set', async () => {
+    const authMockPlayer = makeAuthPlayer();
 
-		const refreshAuth = (authMockPlayer as unknown as { refreshAuth: () => Promise<void> }).refreshAuth;
-		await refreshAuth.call(authMockPlayer);
+    authMockPlayer.setup({ auth: { credentials: 'include' } });
+    await authMockPlayer.ready();
 
-		expect(refreshEvents.length).toBe(1);
-	});
+    const refreshEvents: unknown[] = [];
 
-	it('calls the refreshOnUnauthenticated handler and emits auth:refreshed on success', async () => {
-		const handler = vi.fn().mockResolvedValue(undefined);
-		const authMockPlayer = makeAuthPlayer();
-		authMockPlayer.setup({ auth: { credentials: 'include', refreshOnUnauthenticated: handler } });
-		await authMockPlayer.ready();
+    authMockPlayer.on('auth:refreshed', (data: unknown) =>
+      refreshEvents.push(data));
 
-		const refreshEvents: unknown[] = [];
-		authMockPlayer.on('auth:refreshed', (data: unknown) => refreshEvents.push(data));
+    const refreshAuth = (authMockPlayer as unknown as { refreshAuth: () => Promise<void> }).refreshAuth;
 
-		const refreshAuth = (authMockPlayer as unknown as { refreshAuth: () => Promise<void> }).refreshAuth;
-		await refreshAuth.call(authMockPlayer);
+    await refreshAuth.call(authMockPlayer);
 
-		expect(handler).toHaveBeenCalledTimes(1);
-		expect(refreshEvents.length).toBe(1);
-	});
+    expect(refreshEvents.length).toBe(1);
+  });
 
-	it('handler throws → emits auth:failed (does not throw)', async () => {
-		const handler = vi.fn().mockRejectedValue(new Error('token refresh failed'));
-		const authMockPlayer = makeAuthPlayer();
-		authMockPlayer.setup({ auth: { credentials: 'include', refreshOnUnauthenticated: handler } });
-		await authMockPlayer.ready();
+  it('calls the refreshOnUnauthenticated handler and emits auth:refreshed on success', async () => {
+    const handler = vi.fn().mockResolvedValue(undefined);
+    const authMockPlayer = makeAuthPlayer();
 
-		const failedEvents: unknown[] = [];
-		authMockPlayer.on('auth:failed', (data: unknown) => failedEvents.push(data));
+    authMockPlayer.setup({ auth: { credentials: 'include', refreshOnUnauthenticated: handler } });
+    await authMockPlayer.ready();
 
-		const refreshAuth = (authMockPlayer as unknown as { refreshAuth: () => Promise<void> }).refreshAuth;
-		await expect(refreshAuth.call(authMockPlayer)).resolves.toBeUndefined();
-		expect(failedEvents.length).toBe(1);
-	});
+    const refreshEvents: unknown[] = [];
+
+    authMockPlayer.on('auth:refreshed', (data: unknown) =>
+      refreshEvents.push(data));
+
+    const refreshAuth = (authMockPlayer as unknown as { refreshAuth: () => Promise<void> }).refreshAuth;
+
+    await refreshAuth.call(authMockPlayer);
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(refreshEvents.length).toBe(1);
+  });
+
+  it('handler throws → emits auth:failed (does not throw)', async () => {
+    const handler = vi.fn().mockRejectedValue(new Error('token refresh failed'));
+    const authMockPlayer = makeAuthPlayer();
+
+    authMockPlayer.setup({ auth: { credentials: 'include', refreshOnUnauthenticated: handler } });
+    await authMockPlayer.ready();
+
+    const failedEvents: unknown[] = [];
+
+    authMockPlayer.on('auth:failed', (data: unknown) =>
+      failedEvents.push(data));
+
+    const refreshAuth = (authMockPlayer as unknown as { refreshAuth: () => Promise<void> }).refreshAuth;
+
+    await expect(refreshAuth.call(authMockPlayer)).resolves.toBeUndefined();
+    expect(failedEvents.length).toBe(1);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -392,52 +449,57 @@ describe('auth mixin — refreshAuth()', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('auth mixin — resolveUrl() real mixin baseImageUrl branch', () => {
-	beforeEach(() => AuthMockPlayer._resetRegistry());
-	afterEach(() => {
-		AuthMockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  beforeEach(() => AuthMockPlayer._resetRegistry());
 
-	it('defaultResolve in real mixin prepends baseImageUrl for poster with no custom resolver', async () => {
-		const authMockPlayer = makeAuthPlayer();
-		authMockPlayer.setup({ baseImageUrl: 'https://image.tmdb.org/t/p/w780' });
-		await authMockPlayer.ready();
+  afterEach(() => {
+    AuthMockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-		const resolved = await authMockPlayer.resolveUrl('/poster.jpg', 'poster');
+  it('defaultResolve in real mixin prepends baseImageUrl for poster with no custom resolver', async () => {
+    const authMockPlayer = makeAuthPlayer();
 
-		expect((resolved as { relative: boolean }).relative).toBe(false);
-		expect((resolved as { href: string }).href).toBe('https://image.tmdb.org/t/p/w780/poster.jpg');
-	});
+    authMockPlayer.setup({ baseImageUrl: 'https://image.tmdb.org/t/p/w780' });
+    await authMockPlayer.ready();
 
-	it('defaultResolve fallback fires when custom resolver returns a non-object', async () => {
-		const authMockPlayer = makeAuthPlayer();
-		authMockPlayer.setup({ baseUrl: 'https://cdn.example.com/' });
-		await authMockPlayer.ready();
+    const resolved = await authMockPlayer.resolveUrl('/poster.jpg', 'poster');
 
-		authMockPlayer.urlResolver(() => null as unknown as ReturnType<IUrlResolver>);
+    expect((resolved as { relative: boolean }).relative).toBe(false);
+    expect((resolved as { href: string }).href).toBe('https://image.tmdb.org/t/p/w780/poster.jpg');
+  });
 
-		const resolved = await authMockPlayer.resolveUrl('https://cdn.example.com/x.mp4', 'media');
+  it('defaultResolve fallback fires when custom resolver returns a non-object', async () => {
+    const authMockPlayer = makeAuthPlayer();
 
-		expect((resolved as { href: string }).href).toBe('https://cdn.example.com/x.mp4');
-	});
+    authMockPlayer.setup({ baseUrl: 'https://cdn.example.com/' });
+    await authMockPlayer.ready();
+
+    authMockPlayer.urlResolver(() => null as unknown as ReturnType<IUrlResolver>);
+
+    const resolved = await authMockPlayer.resolveUrl('https://cdn.example.com/x.mp4', 'media');
+
+    expect((resolved as { href: string }).href).toBe('https://cdn.example.com/x.mp4');
+  });
 });
 
 describe('auth mixin — resolveUrl() relative-URL warning', () => {
-	beforeEach(() => AuthMockPlayer._resetRegistry());
-	afterEach(() => {
-		AuthMockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-		vi.restoreAllMocks();
-	});
+  beforeEach(() => AuthMockPlayer._resetRegistry());
 
-	it('warns through the player logger when no logger option was set', async () => {
-		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-		const authMockPlayer = makeAuthPlayer();
-		authMockPlayer.setup({});
-		await authMockPlayer.ready();
+  afterEach(() => {
+    AuthMockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+    vi.restoreAllMocks();
+  });
 
-		await authMockPlayer.resolveUrl('/poster.jpg', 'poster');
+  it('warns through the player logger when no logger option was set', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const authMockPlayer = makeAuthPlayer();
 
-		expect(warn).toHaveBeenCalledWith('[nmplayer]', expect.stringContaining('resolved to a relative path'));
-	});
+    authMockPlayer.setup({});
+    await authMockPlayer.ready();
+
+    await authMockPlayer.resolveUrl('/poster.jpg', 'poster');
+
+    expect(warn).toHaveBeenCalledWith('[nmplayer]', expect.stringContaining('resolved to a relative path'));
+  });
 });

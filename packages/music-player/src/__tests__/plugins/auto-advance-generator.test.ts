@@ -27,127 +27,135 @@ import { NMMusicPlayer } from '../../index';
 import { AutoAdvancePlugin, LinearPlaylistGenerator, SmartShuffleGenerator } from '../../plugins/auto-advance';
 
 function track(id: string): MusicPlaylistItem {
-	return { id, name: `track ${id}` };
+  return { id, name: `track ${id}` };
 }
 
 // ── LinearPlaylistGenerator ─────────────────────────────────────────────────────
 
 describe('LinearPlaylistGenerator', () => {
-	it('next(items, 0) returns index 1 (the item after current)', () => {
-		const gen = new LinearPlaylistGenerator();
-		const items: MusicPlaylistItem[] = [track('a'), track('b'), track('c')];
+  it('next(items, 0) returns index 1 (the item after current)', () => {
+    const gen = new LinearPlaylistGenerator();
+    const items: MusicPlaylistItem[] = [track('a'), track('b'), track('c')];
 
-		expect(gen.next(items, 0)).toBe(1);
-	});
+    expect(gen.next(items, 0)).toBe(1);
+  });
 
-	/**
-	 * FINDING: LinearPlaylistGenerator returns undefined at end of queue (no ring).
-	 * AutoAdvancePlugin must handle undefined gracefully when a generator is set.
-	 */
-	it('next() at end of queue returns undefined (no ring behavior)', () => {
-		const gen = new LinearPlaylistGenerator();
-		const items: MusicPlaylistItem[] = [track('a'), track('b'), track('c')];
+  /**
+   * FINDING: LinearPlaylistGenerator returns undefined at end of queue (no ring).
+   * AutoAdvancePlugin must handle undefined gracefully when a generator is set.
+   */
+  it('next() at end of queue returns undefined (no ring behavior)', () => {
+    const gen = new LinearPlaylistGenerator();
+    const items: MusicPlaylistItem[] = [track('a'), track('b'), track('c')];
 
-		expect(gen.next(items, 2)).toBeUndefined();
-	});
+    expect(gen.next(items, 2)).toBeUndefined();
+  });
 
-	it('previous(items, 1) returns index 0; previous(items, 0) returns undefined', () => {
-		const gen = new LinearPlaylistGenerator();
-		const items: MusicPlaylistItem[] = [track('a'), track('b'), track('c')];
+  it('previous(items, 1) returns index 0; previous(items, 0) returns undefined', () => {
+    const gen = new LinearPlaylistGenerator();
+    const items: MusicPlaylistItem[] = [track('a'), track('b'), track('c')];
 
-		expect(gen.previous(items, 1)).toBe(0);
-		expect(gen.previous(items, 0)).toBeUndefined();
-	});
+    expect(gen.previous(items, 1)).toBe(0);
+    expect(gen.previous(items, 0)).toBeUndefined();
+  });
 });
 
 // ── SmartShuffleGenerator ────────────────────────────────────────────────────────
 
 describe('SmartShuffleGenerator', () => {
-	it('next() does not return currentIndex on a non-singleton queue', () => {
-		const gen = new SmartShuffleGenerator();
-		const items: MusicPlaylistItem[] = [track('a'), track('b'), track('c')];
+  it('next() does not return currentIndex on a non-singleton queue', () => {
+    const gen = new SmartShuffleGenerator();
+    const items: MusicPlaylistItem[] = [track('a'), track('b'), track('c')];
 
-		for (let i = 0; i < 20; i++) {
-			const next = gen.next(items, 0);
-			expect(next).not.toBe(0);
-		}
-	});
+    for (let i = 0; i < 20; i++) {
+      const next = gen.next(items, 0);
+
+      expect(next).not.toBe(0);
+    }
+  });
 });
 
 // ── AutoAdvancePlugin — opts.generator wiring ───────────────────────────────────
 
 describe('AutoAdvancePlugin — opts.generator wiring', () => {
-	beforeEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'generator-test';
-		document.body.appendChild(div);
-	});
+  beforeEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+    div.id = 'generator-test';
+    document.body.appendChild(div);
+  });
 
-	const setup = (): NMMusicPlayer => new NMMusicPlayer('generator-test').setup({});
+  afterEach(() => {
+    (NMMusicPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('advance() moves the cursor via the custom generator instead of player.next()', async () => {
-		const musicPlayer = setup();
-		musicPlayer.queue([track('a'), track('b'), track('c')]);
-		musicPlayer.item(2);
+  const setup = (): NMMusicPlayer => new NMMusicPlayer('generator-test').setup({});
 
-		const reverseGenerator: IPlaylistGenerator<MusicPlaylistItem> = {
-			id: 'reverse',
-			next: (items, currentIndex) => (currentIndex <= 0 ? undefined : currentIndex - 1),
-			previous: () => undefined,
-		};
+  it('advance() moves the cursor via the custom generator instead of player.next()', async () => {
+    const musicPlayer = setup();
 
-		musicPlayer.addPlugin(AutoAdvancePlugin, { generator: reverseGenerator });
-		await musicPlayer.ready();
+    musicPlayer.queue([track('a'), track('b'), track('c')]);
+    musicPlayer.item(2);
 
-		const nextSpy = vi.spyOn(musicPlayer, 'next');
-		const instance = musicPlayer.getPlugin(AutoAdvancePlugin)!;
+    const reverseGenerator: IPlaylistGenerator<MusicPlaylistItem> = {
+      id: 'reverse',
+      next: (items, currentIndex) =>
+        currentIndex <= 0
+          ? undefined
+          : currentIndex - 1,
+      previous: () => undefined,
+    };
 
-		await instance.advance();
+    musicPlayer.addPlugin(AutoAdvancePlugin, { generator: reverseGenerator });
+    await musicPlayer.ready();
 
-		expect(nextSpy).not.toHaveBeenCalled();
-		expect(musicPlayer.index()).toBe(1);
-		expect(musicPlayer.item()?.id).toBe('b');
-	});
+    const nextSpy = vi.spyOn(musicPlayer, 'next');
+    const instance = musicPlayer.getPlugin(AutoAdvancePlugin)!;
 
-	it('advance() falls through to player.next() when no generator is passed (default behavior unchanged)', async () => {
-		const musicPlayer = setup();
-		musicPlayer.queue([track('a'), track('b'), track('c')]);
+    await instance.advance();
 
-		musicPlayer.addPlugin(AutoAdvancePlugin);
-		await musicPlayer.ready();
+    expect(nextSpy).not.toHaveBeenCalled();
+    expect(musicPlayer.index()).toBe(1);
+    expect(musicPlayer.item()?.id).toBe('b');
+  });
 
-		const nextSpy = vi.spyOn(musicPlayer, 'next').mockResolvedValue(undefined);
-		const instance = musicPlayer.getPlugin(AutoAdvancePlugin)!;
+  it('advance() falls through to player.next() when no generator is passed (default behavior unchanged)', async () => {
+    const musicPlayer = setup();
 
-		await instance.advance();
+    musicPlayer.queue([track('a'), track('b'), track('c')]);
 
-		expect(nextSpy).toHaveBeenCalledOnce();
-	});
+    musicPlayer.addPlugin(AutoAdvancePlugin);
+    await musicPlayer.ready();
 
-	it('ended → advance() with a generator that returns undefined does not move the cursor', async () => {
-		const musicPlayer = setup();
-		musicPlayer.queue([track('a'), track('b')]);
-		musicPlayer.item(1);
+    const nextSpy = vi.spyOn(musicPlayer, 'next').mockResolvedValue(undefined);
+    const instance = musicPlayer.getPlugin(AutoAdvancePlugin)!;
 
-		const exhaustedGenerator: IPlaylistGenerator<MusicPlaylistItem> = {
-			id: 'exhausted',
-			next: () => undefined,
-			previous: () => undefined,
-		};
+    await instance.advance();
 
-		musicPlayer.addPlugin(AutoAdvancePlugin, { generator: exhaustedGenerator });
-		await musicPlayer.ready();
+    expect(nextSpy).toHaveBeenCalledOnce();
+  });
 
-		musicPlayer.emit('ended' as any, undefined as any);
-		await new Promise<void>(resolve => setTimeout(resolve, 0));
+  it('ended → advance() with a generator that returns undefined does not move the cursor', async () => {
+    const musicPlayer = setup();
 
-		expect(musicPlayer.index()).toBe(1);
-		expect(musicPlayer.item()?.id).toBe('b');
-	});
+    musicPlayer.queue([track('a'), track('b')]);
+    musicPlayer.item(1);
+
+    const exhaustedGenerator: IPlaylistGenerator<MusicPlaylistItem> = {
+      id: 'exhausted',
+      next: () => undefined,
+      previous: () => undefined,
+    };
+
+    musicPlayer.addPlugin(AutoAdvancePlugin, { generator: exhaustedGenerator });
+    await musicPlayer.ready();
+
+    musicPlayer.emit('ended' as any, undefined as any);
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    expect(musicPlayer.index()).toBe(1);
+    expect(musicPlayer.item()?.id).toBe('b');
+  });
 });

@@ -15,9 +15,9 @@ import { describe, expect, it } from 'vitest';
 const css = readFileSync(resolve(process.cwd(), 'src/plugins/desktop-ui/styles.css'), 'utf8');
 
 describe('desktop-ui box-sizing', () => {
-	it('sets border-box on every element inside the player root', () => {
-		const rootBlock = css.slice(css.indexOf('.nomercyplayer {'));
+  it('sets border-box on every element inside the player root', () => {
+    const rootBlock = css.slice(css.indexOf('.nomercyplayer {'));
 
-		expect(rootBlock).toMatch(/\*\s*,\s*\*::before\s*,\s*\*::after\s*\{\s*box-sizing:\s*border-box;?\s*\}/);
-	});
+    expect(rootBlock).toMatch(/\*\s*,\s*\*::before\s*,\s*\*::after\s*\{\s*box-sizing:\s*border-box;?\s*\}/);
+  });
 });

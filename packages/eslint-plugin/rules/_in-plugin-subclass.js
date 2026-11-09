@@ -27,20 +27,20 @@
  * @returns {boolean} True when the heritage names `Plugin`.
  */
 function extendsPlugin(superClass) {
-	if (!superClass)
-		return false;
-	// `extends Plugin` / `extends SomeOther`
-	if (superClass.type === 'Identifier')
-		return superClass.name === 'Plugin';
-	// `extends core.Plugin`
-	if (superClass.type === 'MemberExpression')
-		return superClass.property?.type === 'Identifier' && superClass.property.name === 'Plugin';
-	// `extends Plugin<NMVideoPlayer, Opts>` — the parser models this as the
-	// class heritage carrying `superTypeArguments`; the callee is still the
-	// Identifier/MemberExpression above.
-	if (superClass.type === 'TSInstantiationExpression')
-		return extendsPlugin(superClass.expression);
-	return false;
+  if (!superClass)
+    return false;
+  // `extends Plugin` / `extends SomeOther`
+  if (superClass.type === 'Identifier')
+    return superClass.name === 'Plugin';
+  // `extends core.Plugin`
+  if (superClass.type === 'MemberExpression')
+    return superClass.property?.type === 'Identifier' && superClass.property.name === 'Plugin';
+  // `extends Plugin<NMVideoPlayer, Opts>` — the parser models this as the
+  // class heritage carrying `superTypeArguments`; the callee is still the
+  // Identifier/MemberExpression above.
+  if (superClass.type === 'TSInstantiationExpression')
+    return extendsPlugin(superClass.expression);
+  return false;
 }
 
 /**
@@ -50,14 +50,14 @@ function extendsPlugin(superClass) {
  * @returns {boolean} True when an enclosing class extends `Plugin`.
  */
 export function inPluginSubclass(node) {
-	let current = node.parent;
-	while (current) {
-		if (current.type === 'ClassDeclaration' || current.type === 'ClassExpression') {
-			// Nearest enclosing class decides — a nested non-plugin class inside a
-			// plugin method is judged by its OWN extends, not the outer plugin's.
-			return extendsPlugin(current.superClass);
-		}
-		current = current.parent;
-	}
-	return false;
+  let current = node.parent;
+  while (current) {
+    if (current.type === 'ClassDeclaration' || current.type === 'ClassExpression') {
+      // Nearest enclosing class decides — a nested non-plugin class inside a
+      // plugin method is judged by its OWN extends, not the outer plugin's.
+      return extendsPlugin(current.superClass);
+    }
+    current = current.parent;
+  }
+  return false;
 }

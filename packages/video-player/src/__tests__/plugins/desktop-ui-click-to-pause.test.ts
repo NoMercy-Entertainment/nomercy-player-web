@@ -21,68 +21,79 @@ import { DesktopUiPlugin } from '../../plugins/desktop-ui';
 
 type ResizeCallback = (entries: Array<{ contentRect: { width: number } }>) => void;
 const MockResizeObserver = vi.fn(function (this: unknown, _cb: ResizeCallback) {
-	return { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() };
+  return {
+    observe: vi.fn(),
+    disconnect: vi.fn(),
+    unobserve: vi.fn(),
+  };
 });
 
 function clickTheVideo(): void {
-	const video = document.querySelector('video');
+  const video = document.querySelector('video');
 
-	expect(video).not.toBeNull();
-	video!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  expect(video).not.toBeNull();
+  video!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 }
 
 describe('DesktopUiPlugin — click to pause', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		(globalThis as unknown as Record<string, unknown>).ResizeObserver = MockResizeObserver;
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		delete (globalThis as unknown as Record<string, unknown>).ResizeObserver;
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    (globalThis as unknown as Record<string, unknown>).ResizeObserver = MockResizeObserver;
+  });
 
-	it('a click on the video toggles playback by default', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(DesktopUiPlugin);
-		await player.ready();
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    delete (globalThis as unknown as Record<string, unknown>).ResizeObserver;
+  });
 
-		const toggleSpy = vi.fn().mockResolvedValue(undefined);
-		(player as unknown as { togglePlayback: () => Promise<void> }).togglePlayback = toggleSpy;
+  it('a click on the video toggles playback by default', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		clickTheVideo();
+    player.addPlugin(DesktopUiPlugin);
+    await player.ready();
 
-		expect(toggleSpy).toHaveBeenCalledTimes(1);
-	});
+    const toggleSpy = vi.fn().mockResolvedValue(undefined);
 
-	it('the plugin option suppresses it', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		player.addPlugin(DesktopUiPlugin, { disableClickToPause: true });
-		await player.ready();
+    (player as unknown as { togglePlayback: () => Promise<void> }).togglePlayback = toggleSpy;
 
-		const toggleSpy = vi.fn().mockResolvedValue(undefined);
-		(player as unknown as { togglePlayback: () => Promise<void> }).togglePlayback = toggleSpy;
+    clickTheVideo();
 
-		clickTheVideo();
+    expect(toggleSpy).toHaveBeenCalledTimes(1);
+  });
 
-		expect(toggleSpy).not.toHaveBeenCalled();
-	});
+  it('the plugin option suppresses it', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-	it('setup({ disableClickToPause: true }) suppresses it without the plugin option', async () => {
-		const player = new NMVideoPlayer('test').setup({ disableClickToPause: true });
-		player.addPlugin(DesktopUiPlugin);
-		await player.ready();
+    player.addPlugin(DesktopUiPlugin, { disableClickToPause: true });
+    await player.ready();
 
-		const toggleSpy = vi.fn().mockResolvedValue(undefined);
-		(player as unknown as { togglePlayback: () => Promise<void> }).togglePlayback = toggleSpy;
+    const toggleSpy = vi.fn().mockResolvedValue(undefined);
 
-		clickTheVideo();
+    (player as unknown as { togglePlayback: () => Promise<void> }).togglePlayback = toggleSpy;
 
-		expect(toggleSpy).not.toHaveBeenCalled();
-	});
+    clickTheVideo();
+
+    expect(toggleSpy).not.toHaveBeenCalled();
+  });
+
+  it('setup({ disableClickToPause: true }) suppresses it without the plugin option', async () => {
+    const player = new NMVideoPlayer('test').setup({ disableClickToPause: true });
+
+    player.addPlugin(DesktopUiPlugin);
+    await player.ready();
+
+    const toggleSpy = vi.fn().mockResolvedValue(undefined);
+
+    (player as unknown as { togglePlayback: () => Promise<void> }).togglePlayback = toggleSpy;
+
+    clickTheVideo();
+
+    expect(toggleSpy).not.toHaveBeenCalled();
+  });
 });

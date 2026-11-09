@@ -58,19 +58,19 @@ import { describePlugin, StubPlayer } from '../../testing';
 
 /** Options accepted by {@link PlaybackTrackerPlugin}. */
 export interface PlaybackTrackerOptions {
-	/**
-	 * Maximum number of play events to record before the plugin stops tracking.
-	 * Defaults to `Infinity` (no cap).
-	 */
-	maxEvents?: number;
+  /**
+   * Maximum number of play events to record before the plugin stops tracking.
+   * Defaults to `Infinity` (no cap).
+   */
+  maxEvents?: number;
 }
 
 /** Events emitted by {@link PlaybackTrackerPlugin}. */
 export interface PlaybackTrackerEvents {
-	/** Emitted each time a play event is recorded. */
-	'tracked': { count: number };
-	/** Emitted when the cap set by `maxEvents` is reached. */
-	'cap-reached': { cap: number };
+  /** Emitted each time a play event is recorded. */
+  tracked: { count: number };
+  /** Emitted when the cap set by `maxEvents` is reached. */
+  'cap-reached': { cap: number };
 }
 
 /**
@@ -81,51 +81,51 @@ export interface PlaybackTrackerEvents {
  * This is a self-contained illustration — copy and adapt it for your own plugin.
  */
 export class PlaybackTrackerPlugin
-	extends Plugin<IPlayer<BaseEventMap>, PlaybackTrackerOptions, PlaybackTrackerEvents> {
-	static override readonly id: string = 'playback-tracker';
-	static override readonly version: string = '1.0.0';
-	static override readonly description: string = 'Example consumer plugin — counts play events';
+  extends Plugin<IPlayer<BaseEventMap>, PlaybackTrackerOptions, PlaybackTrackerEvents> {
+  static override readonly id: string = 'playback-tracker';
+  static override readonly version: string = '1.0.0';
+  static override readonly description: string = 'Example consumer plugin — counts play events';
 
-	private _count: number = 0;
-	private _capped: boolean = false;
+  private _count: number = 0;
+  private _capped: boolean = false;
 
-	/** Current number of recorded play events. */
-	playCount(): number {
-		return this._count;
-	}
+  /** Current number of recorded play events. */
+  playCount(): number {
+    return this._count;
+  }
 
-	/** Whether the plugin has stopped tracking due to reaching `maxEvents`. */
-	isCapped(): boolean {
-		return this._capped;
-	}
+  /** Whether the plugin has stopped tracking due to reaching `maxEvents`. */
+  isCapped(): boolean {
+    return this._capped;
+  }
 
-	override use(): void {
-		this.on('play', () => {
-			if (this._capped)
-				return;
+  override use(): void {
+    this.on('play', () => {
+      if (this._capped) return;
 
-			this._count++;
-			this.emit('tracked', { count: this._count });
+      this._count++;
+      this.emit('tracked', { count: this._count });
 
-			const cap = this.opts?.maxEvents;
-			if (cap !== undefined && this._count >= cap) {
-				this._capped = true;
-				this.emit('cap-reached', { cap });
-			}
-		});
-	}
+      const cap = this.opts?.maxEvents;
 
-	override dispose(): void {
-		this._count = 0;
-		this._capped = false;
-	}
+      if (cap !== undefined && this._count >= cap) {
+        this._capped = true;
+        this.emit('cap-reached', { cap });
+      }
+    });
+  }
 
-	protected override getRuntimeState(): Record<string, unknown> {
-		return {
-			count: this._count,
-			capped: this._capped,
-		};
-	}
+  override dispose(): void {
+    this._count = 0;
+    this._capped = false;
+  }
+
+  protected override getRuntimeState(): Record<string, unknown> {
+    return {
+      count: this._count,
+      capped: this._capped,
+    };
+  }
 }
 
 // ── Kit conformance test ──────────────────────────────────────────────────────
@@ -139,105 +139,109 @@ export class PlaybackTrackerPlugin
 // You add your own behavior assertions inside the callback.
 
 describePlugin(PlaybackTrackerPlugin, (ctx) => {
-	// ── Kit guarantees (always checked by describePlugin) ─────────────────────
-	//
-	// These don't need explicit assertions — describePlugin enforces them for
-	// every test. They are shown here as comments so you know what you get free.
-	//
-	//   - ctx.plugin is an instance of PlaybackTrackerPlugin
-	//   - ctx.player is a StubPlayer (IPlayer-compliant, no real media element)
-	//   - use() completed without throwing
-	//   - After the test: dispose() ran and listener count returned to baseline
+  // ── Kit guarantees (always checked by describePlugin) ─────────────────────
+  //
+  // These don't need explicit assertions — describePlugin enforces them for
+  // every test. They are shown here as comments so you know what you get free.
+  //
+  //   - ctx.plugin is an instance of PlaybackTrackerPlugin
+  //   - ctx.player is a StubPlayer (IPlayer-compliant, no real media element)
+  //   - use() completed without throwing
+  //   - After the test: dispose() ran and listener count returned to baseline
 
-	// ── Behavior assertions (your additions) ──────────────────────────────────
+  // ── Behavior assertions (your additions) ──────────────────────────────────
 
-	describe('initial state', () => {
-		it('starts with zero play events recorded', () => {
-			expect(ctx.plugin.playCount()).toBe(0);
-		});
+  describe('initial state', () => {
+    it('starts with zero play events recorded', () => {
+      expect(ctx.plugin.playCount()).toBe(0);
+    });
 
-		it('starts uncapped', () => {
-			expect(ctx.plugin.isCapped()).toBe(false);
-		});
+    it('starts uncapped', () => {
+      expect(ctx.plugin.isCapped()).toBe(false);
+    });
 
-		it('state().runtime reports count and capped', () => {
-			const runtime = ctx.plugin.state().runtime;
-			expect(runtime['count']).toBe(0);
-			expect(runtime['capped']).toBe(false);
-		});
-	});
+    it('state().runtime reports count and capped', () => {
+      const runtime = ctx.plugin.state().runtime;
 
-	describe('tracking play events', () => {
-		it('increments count each time play fires', () => {
-			ctx.player.emit('play', undefined as any);
-			ctx.player.emit('play', undefined as any);
-			expect(ctx.plugin.playCount()).toBe(2);
-		});
+      expect(runtime['count']).toBe(0);
+      expect(runtime['capped']).toBe(false);
+    });
+  });
 
-		it('emits plugin:playback-tracker:tracked with the running count', () => {
-			const received: Array<{ count: number }> = [];
-			const handler = (data: { count: number }): void => { received.push(data); };
-			ctx.player.on('plugin:playback-tracker:tracked' as any, handler);
+  describe('tracking play events', () => {
+    it('increments count each time play fires', () => {
+      ctx.player.emit('play', undefined as any);
+      ctx.player.emit('play', undefined as any);
+      expect(ctx.plugin.playCount()).toBe(2);
+    });
 
-			ctx.player.emit('play', undefined as any);
-			ctx.player.emit('play', undefined as any);
+    it('emits plugin:playback-tracker:tracked with the running count', () => {
+      const received: Array<{ count: number }> = [];
+      const handler = (data: { count: number }): void => { received.push(data); };
 
-			ctx.player.off('plugin:playback-tracker:tracked' as any, handler);
+      ctx.player.on('plugin:playback-tracker:tracked' as any, handler);
 
-			expect(received).toEqual([{ count: 1 }, { count: 2 }]);
-		});
-	});
+      ctx.player.emit('play', undefined as any);
+      ctx.player.emit('play', undefined as any);
 
-	describe('maxEvents cap', () => {
-		it('stops tracking after maxEvents play events', () => {
-			ctx.plugin.options({ maxEvents: 2 });
-			ctx.player.emit('play', undefined as any);
-			ctx.player.emit('play', undefined as any);
-			ctx.player.emit('play', undefined as any);
+      ctx.player.off('plugin:playback-tracker:tracked' as any, handler);
 
-			expect(ctx.plugin.playCount()).toBe(2);
-			expect(ctx.plugin.isCapped()).toBe(true);
-		});
+      expect(received).toEqual([{ count: 1 }, { count: 2 }]);
+    });
+  });
 
-		it('emits plugin:playback-tracker:cap-reached when the cap is hit', () => {
-			const capEvents: Array<{ cap: number }> = [];
-			const handler = (data: { cap: number }): void => { capEvents.push(data); };
-			ctx.player.on('plugin:playback-tracker:cap-reached' as any, handler);
+  describe('maxEvents cap', () => {
+    it('stops tracking after maxEvents play events', () => {
+      ctx.plugin.options({ maxEvents: 2 });
+      ctx.player.emit('play', undefined as any);
+      ctx.player.emit('play', undefined as any);
+      ctx.player.emit('play', undefined as any);
 
-			ctx.plugin.options({ maxEvents: 1 });
-			ctx.player.emit('play', undefined as any);
+      expect(ctx.plugin.playCount()).toBe(2);
+      expect(ctx.plugin.isCapped()).toBe(true);
+    });
 
-			ctx.player.off('plugin:playback-tracker:cap-reached' as any, handler);
+    it('emits plugin:playback-tracker:cap-reached when the cap is hit', () => {
+      const capEvents: Array<{ cap: number }> = [];
+      const handler = (data: { cap: number }): void => { capEvents.push(data); };
 
-			expect(capEvents).toHaveLength(1);
-			expect(capEvents[0]).toEqual({ cap: 1 });
-		});
+      ctx.player.on('plugin:playback-tracker:cap-reached' as any, handler);
 
-		it('emits cap-reached exactly once even when more play events arrive', () => {
-			const capHandler = vi.fn();
-			ctx.player.on('plugin:playback-tracker:cap-reached' as any, capHandler);
+      ctx.plugin.options({ maxEvents: 1 });
+      ctx.player.emit('play', undefined as any);
 
-			ctx.plugin.options({ maxEvents: 1 });
-			ctx.player.emit('play', undefined as any);
-			ctx.player.emit('play', undefined as any);
-			ctx.player.emit('play', undefined as any);
+      ctx.player.off('plugin:playback-tracker:cap-reached' as any, handler);
 
-			ctx.player.off('plugin:playback-tracker:cap-reached' as any, capHandler);
+      expect(capEvents).toHaveLength(1);
+      expect(capEvents[0]).toEqual({ cap: 1 });
+    });
 
-			expect(capHandler).toHaveBeenCalledTimes(1);
-		});
-	});
+    it('emits cap-reached exactly once even when more play events arrive', () => {
+      const capHandler = vi.fn();
 
-	describe('options() hot-reload', () => {
-		it('applies a new maxEvents cap mid-session', () => {
-			ctx.player.emit('play', undefined as any);
-			expect(ctx.plugin.isCapped()).toBe(false);
+      ctx.player.on('plugin:playback-tracker:cap-reached' as any, capHandler);
 
-			ctx.plugin.options({ maxEvents: 1 });
-			ctx.player.emit('play', undefined as any);
-			expect(ctx.plugin.isCapped()).toBe(true);
-		});
-	});
+      ctx.plugin.options({ maxEvents: 1 });
+      ctx.player.emit('play', undefined as any);
+      ctx.player.emit('play', undefined as any);
+      ctx.player.emit('play', undefined as any);
+
+      ctx.player.off('plugin:playback-tracker:cap-reached' as any, capHandler);
+
+      expect(capHandler).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('options() hot-reload', () => {
+    it('applies a new maxEvents cap mid-session', () => {
+      ctx.player.emit('play', undefined as any);
+      expect(ctx.plugin.isCapped()).toBe(false);
+
+      ctx.plugin.options({ maxEvents: 1 });
+      ctx.player.emit('play', undefined as any);
+      expect(ctx.plugin.isCapped()).toBe(true);
+    });
+  });
 });
 
 // ── Using a custom StubPlayer factory ─────────────────────────────────────────
@@ -246,11 +250,11 @@ describePlugin(PlaybackTrackerPlugin, (ctx) => {
 // translations, injected auth) pass `createPlayer` to the options bag.
 
 describePlugin(PlaybackTrackerPlugin, (ctx) => {
-	it('works with a custom player factory', () => {
-		expect(ctx.player.playerId).toBe('my-app-player');
-	});
+  it('works with a custom player factory', () => {
+    expect(ctx.player.playerId).toBe('my-app-player');
+  });
 }, {
-	createPlayer: () => new StubPlayer({ id: 'my-app-player' }),
+  createPlayer: () => new StubPlayer({ id: 'my-app-player' }),
 });
 
 // ── Using assertNoListenerLeak directly ───────────────────────────────────────
@@ -260,21 +264,22 @@ describePlugin(PlaybackTrackerPlugin, (ctx) => {
 // example to assert that a *pair* of plugins cleans up together.
 
 describe('standalone leak harness example', () => {
-	it('the plugin registers and disposes cleanly outside describePlugin', async () => {
-		const { LifecycleRegistry } = await import('../../adapters/lifecycle-registry/default');
-		const player = new StubPlayer();
-		const lifecycle = new LifecycleRegistry();
-		const plugin = new PlaybackTrackerPlugin();
+  it('the plugin registers and disposes cleanly outside describePlugin', async () => {
+    const { LifecycleRegistry } = await import('../../adapters/lifecycle-registry/default');
+    const player = new StubPlayer();
+    const lifecycle = new LifecycleRegistry();
+    const plugin = new PlaybackTrackerPlugin();
 
-		const before = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
+    const before = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
 
-		plugin.initialize(player as unknown as IPlayer, {}, lifecycle);
-		plugin.use();
+    plugin.initialize(player as unknown as IPlayer, {}, lifecycle);
+    plugin.use();
 
-		plugin.dispose();
-		lifecycle.dispose();
+    plugin.dispose();
+    lifecycle.dispose();
 
-		const after = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
-		expect(after - before).toBe(0);
-	});
+    const after = (player as unknown as { listenerCount?: () => number }).listenerCount?.() ?? 0;
+
+    expect(after - before).toBe(0);
+  });
 });

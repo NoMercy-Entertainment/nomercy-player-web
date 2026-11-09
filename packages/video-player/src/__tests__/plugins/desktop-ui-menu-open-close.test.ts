@@ -29,373 +29,411 @@ import { DesktopUiPlugin, desktopUiPlugin } from '../../plugins/desktop-ui';
 
 type ResizeCallback = (entries: Array<{ contentRect: { width: number } }>) => void;
 const MockResizeObserver = vi.fn(function (this: unknown, _cb: ResizeCallback) {
-	return { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() };
+  return {
+    observe: vi.fn(),
+    disconnect: vi.fn(),
+    unobserve: vi.fn(),
+  };
 });
 
 async function makePlayer(opts: Record<string, unknown> = {}): Promise<NMVideoPlayer> {
-	const player = new NMVideoPlayer('test').setup({});
-	await player.addPlugin(desktopUiPlugin, {
-		buttons: {
-			speed: true,
-			quality: true,
-			subtitles: true,
-			audio: true,
-			playlist: true,
-			theater: true,
-			pip: true,
-			aspectRatio: true,
-			settings: true,
-		},
-		...opts,
-	}).ready();
-	return player;
+  const player = new NMVideoPlayer('test').setup({});
+
+  await player.addPlugin(desktopUiPlugin, {
+    buttons: {
+      speed: true,
+      quality: true,
+      subtitles: true,
+      audio: true,
+      playlist: true,
+      theater: true,
+      pip: true,
+      aspectRatio: true,
+      settings: true,
+    },
+    ...opts,
+  }).ready();
+
+  return player;
 }
 
 describe('DesktopUiPlugin — menu open / close', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	it('settings button click adds .open to menu frame and sets aria-expanded=true', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-		const settingsBtn = container.querySelector<HTMLButtonElement>('[id="settings"]');
-		expect(settingsBtn).not.toBeNull();
+  it('settings button click adds .open to menu frame and sets aria-expanded=true', async () => {
+    const player = await makePlayer();
+    const container = player.container;
 
-		settingsBtn!.click();
+    const settingsBtn = container.querySelector<HTMLButtonElement>('[id="settings"]');
 
-		const frame = container.querySelector('.menu-frame');
-		expect(frame?.classList.contains('open')).toBe(true);
-		expect(settingsBtn!.getAttribute('aria-expanded')).toBe('true');
-	});
+    expect(settingsBtn).not.toBeNull();
 
-	it('closeAllMenus removes .open from menu frame and resets aria-expanded', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    settingsBtn!.click();
 
-		const settingsBtn = container.querySelector<HTMLButtonElement>('[id="settings"]');
-		settingsBtn!.click();
+    const frame = container.querySelector('.menu-frame');
 
-		const frame = container.querySelector('.menu-frame')!;
-		expect(frame.classList.contains('open')).toBe(true);
+    expect(frame?.classList.contains('open')).toBe(true);
+    expect(settingsBtn!.getAttribute('aria-expanded')).toBe('true');
+  });
 
-		// Click outside the frame to close
-		document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  it('closeAllMenus removes .open from menu frame and resets aria-expanded', async () => {
+    const player = await makePlayer();
+    const container = player.container;
 
-		expect(frame.classList.contains('open')).toBe(false);
-		expect(settingsBtn!.getAttribute('aria-expanded')).toBe('false');
-	});
+    const settingsBtn = container.querySelector<HTMLButtonElement>('[id="settings"]');
 
-	it('speed button opens speed pane with sub-menu-open class on content', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    settingsBtn!.click();
 
-		const speedBtn = container.querySelector<HTMLButtonElement>('[id="speed"]');
-		expect(speedBtn).not.toBeNull();
+    const frame = container.querySelector('.menu-frame')!;
 
-		speedBtn!.click();
+    expect(frame.classList.contains('open')).toBe(true);
 
-		const content = container.querySelector('.menu-content');
-		expect(content?.classList.contains('sub-menu-open')).toBe(true);
+    // Click outside the frame to close
+    document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
-		const speedPane = container.querySelector('.speed-menu');
-		expect(speedPane?.classList.contains('is-open')).toBe(true);
+    expect(frame.classList.contains('open')).toBe(false);
+    expect(settingsBtn!.getAttribute('aria-expanded')).toBe('false');
+  });
 
-		expect(speedBtn!.getAttribute('aria-expanded')).toBe('true');
-	});
+  it('speed button opens speed pane with sub-menu-open class on content', async () => {
+    const player = await makePlayer();
+    const container = player.container;
 
-	it('quality button opens quality pane', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    const speedBtn = container.querySelector<HTMLButtonElement>('[id="speed"]');
 
-		const qualityBtn = container.querySelector<HTMLButtonElement>('[id="quality"]');
-		qualityBtn!.click();
+    expect(speedBtn).not.toBeNull();
 
-		const qualityPane = container.querySelector('.quality-menu');
-		expect(qualityPane?.classList.contains('is-open')).toBe(true);
-	});
+    speedBtn!.click();
 
-	it('subtitles button opens subtitles pane', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    const content = container.querySelector('.menu-content');
 
-		const subsBtn = container.querySelector<HTMLButtonElement>('[id="subtitles"]');
-		subsBtn!.click();
+    expect(content?.classList.contains('sub-menu-open')).toBe(true);
 
-		const subsPane = container.querySelector('.subtitles-menu');
-		expect(subsPane?.classList.contains('is-open')).toBe(true);
-	});
+    const speedPane = container.querySelector('.speed-menu');
 
-	it('audio button opens language pane', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    expect(speedPane?.classList.contains('is-open')).toBe(true);
 
-		const audioBtn = container.querySelector<HTMLButtonElement>('[id="audio"]');
-		audioBtn!.click();
+    expect(speedBtn!.getAttribute('aria-expanded')).toBe('true');
+  });
 
-		const langPane = container.querySelector('.language-menu');
-		expect(langPane?.classList.contains('is-open')).toBe(true);
-	});
+  it('quality button opens quality pane', async () => {
+    const player = await makePlayer();
+    const container = player.container;
 
-	it('aspectRatio button opens aspectRatio pane', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    const qualityBtn = container.querySelector<HTMLButtonElement>('[id="quality"]');
 
-		const arBtn = container.querySelector<HTMLButtonElement>('[id="aspect-ratio"]');
-		arBtn!.click();
+    qualityBtn!.click();
 
-		const arPane = container.querySelector('.aspectRatio-menu');
-		expect(arPane?.classList.contains('is-open')).toBe(true);
-	});
+    const qualityPane = container.querySelector('.quality-menu');
 
-	it('opening a second sub-menu collapses the first', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    expect(qualityPane?.classList.contains('is-open')).toBe(true);
+  });
 
-		const speedBtn = container.querySelector<HTMLButtonElement>('[id="speed"]');
-		speedBtn!.click();
+  it('subtitles button opens subtitles pane', async () => {
+    const player = await makePlayer();
+    const container = player.container;
 
-		const qualityBtn = container.querySelector<HTMLButtonElement>('[id="quality"]');
-		qualityBtn!.click();
+    const subsBtn = container.querySelector<HTMLButtonElement>('[id="subtitles"]');
 
-		const speedPane = container.querySelector('.speed-menu');
-		const qualityPane = container.querySelector('.quality-menu');
-		expect(speedPane?.classList.contains('is-open')).toBe(false);
-		expect(qualityPane?.classList.contains('is-open')).toBe(true);
-	});
+    subsBtn!.click();
 
-	it('Escape key closes an open menu', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    const subsPane = container.querySelector('.subtitles-menu');
 
-		const speedBtn = container.querySelector<HTMLButtonElement>('[id="speed"]');
-		speedBtn!.click();
+    expect(subsPane?.classList.contains('is-open')).toBe(true);
+  });
 
-		expect(container.querySelector('.menu-frame')?.classList.contains('open')).toBe(true);
+  it('audio button opens language pane', async () => {
+    const player = await makePlayer();
+    const container = player.container;
 
-		container.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    const audioBtn = container.querySelector<HTMLButtonElement>('[id="audio"]');
 
-		expect(container.querySelector('.menu-frame')?.classList.contains('open')).toBe(false);
-	});
+    audioBtn!.click();
 
-	it('? key toggles the shortcuts overlay', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    const langPane = container.querySelector('.language-menu');
 
-		const shortcutsOverlay = container.querySelector<HTMLElement>('#nmplayer-keybinds-dialog');
-		expect(shortcutsOverlay).not.toBeNull();
+    expect(langPane?.classList.contains('is-open')).toBe(true);
+  });
 
-		// Not visible initially.
-		expect(shortcutsOverlay!.classList.contains('keybinds-dialog-visible')).toBe(false);
+  it('aspectRatio button opens aspectRatio pane', async () => {
+    const player = await makePlayer();
+    const container = player.container;
 
-		// Dispatch '?' key (which is shift+? on real keyboards, but the container
-		// keydown handler listens for key === '?' directly).
-		container.dispatchEvent(new KeyboardEvent('keydown', { key: '?', bubbles: true }));
-		expect(shortcutsOverlay!.classList.contains('keybinds-dialog-visible')).toBe(true);
+    const arBtn = container.querySelector<HTMLButtonElement>('[id="aspect-ratio"]');
 
-		// Toggle off.
-		container.dispatchEvent(new KeyboardEvent('keydown', { key: '?', bubbles: true }));
-		expect(shortcutsOverlay!.classList.contains('keybinds-dialog-visible')).toBe(false);
-	});
+    arBtn!.click();
 
-	it('Escape key closes shortcuts overlay when no menu is open', async () => {
-		const player = await makePlayer();
-		const container = player.container;
+    const arPane = container.querySelector('.aspectRatio-menu');
 
-		container.dispatchEvent(new KeyboardEvent('keydown', { key: '?', bubbles: true }));
-		const shortcutsOverlay = container.querySelector<HTMLElement>('#nmplayer-keybinds-dialog');
-		expect(shortcutsOverlay!.classList.contains('keybinds-dialog-visible')).toBe(true);
+    expect(arPane?.classList.contains('is-open')).toBe(true);
+  });
 
-		container.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-		expect(shortcutsOverlay!.classList.contains('keybinds-dialog-visible')).toBe(false);
-	});
+  it('opening a second sub-menu collapses the first', async () => {
+    const player = await makePlayer();
+    const container = player.container;
+
+    const speedBtn = container.querySelector<HTMLButtonElement>('[id="speed"]');
+
+    speedBtn!.click();
+
+    const qualityBtn = container.querySelector<HTMLButtonElement>('[id="quality"]');
+
+    qualityBtn!.click();
+
+    const speedPane = container.querySelector('.speed-menu');
+    const qualityPane = container.querySelector('.quality-menu');
+
+    expect(speedPane?.classList.contains('is-open')).toBe(false);
+    expect(qualityPane?.classList.contains('is-open')).toBe(true);
+  });
+
+  it('Escape key closes an open menu', async () => {
+    const player = await makePlayer();
+    const container = player.container;
+
+    const speedBtn = container.querySelector<HTMLButtonElement>('[id="speed"]');
+
+    speedBtn!.click();
+
+    expect(container.querySelector('.menu-frame')?.classList.contains('open')).toBe(true);
+
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    expect(container.querySelector('.menu-frame')?.classList.contains('open')).toBe(false);
+  });
+
+  it('? key toggles the shortcuts overlay', async () => {
+    const player = await makePlayer();
+    const container = player.container;
+
+    const shortcutsOverlay = container.querySelector<HTMLElement>('#nmplayer-keybinds-dialog');
+
+    expect(shortcutsOverlay).not.toBeNull();
+
+    // Not visible initially.
+    expect(shortcutsOverlay!.classList.contains('keybinds-dialog-visible')).toBe(false);
+
+    // Dispatch '?' key (which is shift+? on real keyboards, but the container
+    // keydown handler listens for key === '?' directly).
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: '?', bubbles: true }));
+    expect(shortcutsOverlay!.classList.contains('keybinds-dialog-visible')).toBe(true);
+
+    // Toggle off.
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: '?', bubbles: true }));
+    expect(shortcutsOverlay!.classList.contains('keybinds-dialog-visible')).toBe(false);
+  });
+
+  it('Escape key closes shortcuts overlay when no menu is open', async () => {
+    const player = await makePlayer();
+    const container = player.container;
+
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: '?', bubbles: true }));
+    const shortcutsOverlay = container.querySelector<HTMLElement>('#nmplayer-keybinds-dialog');
+
+    expect(shortcutsOverlay!.classList.contains('keybinds-dialog-visible')).toBe(true);
+
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(shortcutsOverlay!.classList.contains('keybinds-dialog-visible')).toBe(false);
+  });
 });
 
 describe('DesktopUiPlugin — applyStateVisibility', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	it('theater button is hidden when fullscreen is active', async () => {
-		const player = await makePlayer({ buttons: { theater: true } });
-		const container = player.container;
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-		const theaterBtn = container.querySelector<HTMLButtonElement>('[id="theater"]');
-		expect(theaterBtn).not.toBeNull();
+  it('theater button is hidden when fullscreen is active', async () => {
+    const player = await makePlayer({ buttons: { theater: true } });
+    const container = player.container;
 
-		// Simulate fullscreen entering
-		Object.defineProperty(document, 'fullscreenElement', { value: container, configurable: true });
-		player.emit('fullscreen', {});
+    const theaterBtn = container.querySelector<HTMLButtonElement>('[id="theater"]');
 
-		expect(theaterBtn!.hidden).toBe(true);
+    expect(theaterBtn).not.toBeNull();
 
-		// Restore
-		Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true });
-	});
+    // Simulate fullscreen entering
+    Object.defineProperty(document, 'fullscreenElement', { value: container, configurable: true });
+    player.emit('fullscreen', {});
 
-	it('theater button is hidden when PiP is active', async () => {
-		const player = await makePlayer({ buttons: { theater: true } });
-		const container = player.container;
+    expect(theaterBtn!.hidden).toBe(true);
 
-		const theaterBtn = container.querySelector<HTMLButtonElement>('[id="theater"]');
+    // Restore
+    Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true });
+  });
 
-		Object.defineProperty(document, 'pictureInPictureElement', { value: {}, configurable: true });
-		player.emit('pip', {});
+  it('theater button is hidden when PiP is active', async () => {
+    const player = await makePlayer({ buttons: { theater: true } });
+    const container = player.container;
 
-		expect(theaterBtn!.hidden).toBe(true);
+    const theaterBtn = container.querySelector<HTMLButtonElement>('[id="theater"]');
 
-		Object.defineProperty(document, 'pictureInPictureElement', { value: null, configurable: true });
-	});
+    Object.defineProperty(document, 'pictureInPictureElement', { value: {}, configurable: true });
+    player.emit('pip', {});
 
-	it('theater button is visible when neither fullscreen nor PiP is active', async () => {
-		const player = await makePlayer({ buttons: { theater: true } });
-		const container = player.container;
+    expect(theaterBtn!.hidden).toBe(true);
 
-		const theaterBtn = container.querySelector<HTMLButtonElement>('[id="theater"]');
+    Object.defineProperty(document, 'pictureInPictureElement', { value: null, configurable: true });
+  });
 
-		// Ensure both are off
-		Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true });
-		Object.defineProperty(document, 'pictureInPictureElement', { value: null, configurable: true });
-		player.emit('pip', {});
+  it('theater button is visible when neither fullscreen nor PiP is active', async () => {
+    const player = await makePlayer({ buttons: { theater: true } });
+    const container = player.container;
 
-		expect(theaterBtn!.hidden).toBe(false);
-	});
+    const theaterBtn = container.querySelector<HTMLButtonElement>('[id="theater"]');
 
-	it('cast button is visible when buttons.cast is true and PiP is inactive', async () => {
-		const player = await makePlayer({ buttons: { cast: true } });
-		const container = player.container;
+    // Ensure both are off
+    Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true });
+    Object.defineProperty(document, 'pictureInPictureElement', { value: null, configurable: true });
+    player.emit('pip', {});
 
-		const castBtn = container.querySelector<HTMLButtonElement>('[id="cast-btn"]');
-		expect(castBtn).not.toBeNull();
-		expect(castBtn!.hidden).toBe(false);
-	});
+    expect(theaterBtn!.hidden).toBe(false);
+  });
 
-	it('cast button is hidden when PiP is active, same as back/close', async () => {
-		const player = await makePlayer({ buttons: { cast: true } });
-		const container = player.container;
+  it('cast button is visible when buttons.cast is true and PiP is inactive', async () => {
+    const player = await makePlayer({ buttons: { cast: true } });
+    const container = player.container;
 
-		const castBtn = container.querySelector<HTMLButtonElement>('[id="cast-btn"]');
+    const castBtn = container.querySelector<HTMLButtonElement>('[id="cast-btn"]');
 
-		Object.defineProperty(document, 'pictureInPictureElement', { value: {}, configurable: true });
-		player.emit('pip', {});
+    expect(castBtn).not.toBeNull();
+    expect(castBtn!.hidden).toBe(false);
+  });
 
-		expect(castBtn!.hidden).toBe(true);
+  it('cast button is hidden when PiP is active, same as back/close', async () => {
+    const player = await makePlayer({ buttons: { cast: true } });
+    const container = player.container;
 
-		Object.defineProperty(document, 'pictureInPictureElement', { value: null, configurable: true });
-	});
+    const castBtn = container.querySelector<HTMLButtonElement>('[id="cast-btn"]');
+
+    Object.defineProperty(document, 'pictureInPictureElement', { value: {}, configurable: true });
+    player.emit('pip', {});
+
+    expect(castBtn!.hidden).toBe(true);
+
+    Object.defineProperty(document, 'pictureInPictureElement', { value: null, configurable: true });
+  });
 });
 
 describe('DesktopUiPlugin — plugin event: opts:changed', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	it('opts:changed event with hideTitle:true hides the top bar right column', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin, { hideTitle: false }).ready();
-		const container = player.container;
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-		const plugin = player.getPlugin(DesktopUiPlugin)!;
+  it('opts:changed event with hideTitle:true hides the top bar right column', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		// The right column in the top bar
-		const topBarRight = container.querySelector<HTMLElement>('.top-bar-right') ?? container.querySelector<HTMLElement>('.top-right');
+    await player.addPlugin(desktopUiPlugin, { hideTitle: false }).ready();
+    const container = player.container;
 
-		// Emit opts:changed scoped event
-		player.emit('plugin:desktop-ui:opts:changed', { hideTitle: true });
+    const plugin = player.getPlugin(DesktopUiPlugin)!;
 
-		// If we found the right column, it should now be hidden
-		if (topBarRight) {
-			expect(topBarRight.hidden).toBe(true);
-		}
-		else {
-			// Verify the plugin is at least alive after the event
-			expect(plugin).toBeInstanceOf(DesktopUiPlugin);
-		}
-	});
+    // The right column in the top bar
+    const topBarRight = container.querySelector<HTMLElement>('.top-bar-right') ?? container.querySelector<HTMLElement>('.top-right');
+
+    // Emit opts:changed scoped event
+    player.emit('plugin:desktop-ui:opts:changed', { hideTitle: true });
+
+    // If we found the right column, it should now be hidden
+    if (topBarRight) {
+      expect(topBarRight.hidden).toBe(true);
+    } else {
+      // Verify the plugin is at least alive after the event
+      expect(plugin).toBeInstanceOf(DesktopUiPlugin);
+    }
+  });
 });
 
 describe('DesktopUiPlugin — enable / disable lifecycle', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		const div = document.createElement('div');
-		div.id = 'test';
-		div.className = 'nomercyplayer';
-		document.body.appendChild(div);
-		vi.stubGlobal('ResizeObserver', MockResizeObserver);
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    const div = document.createElement('div');
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		vi.unstubAllGlobals();
-	});
+    div.id = 'test';
+    div.className = 'nomercyplayer';
+    document.body.appendChild(div);
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  });
 
-	it('disable() hides the overlay root', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin).ready();
-		const plugin = player.getPlugin(DesktopUiPlugin)!;
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
 
-		const overlay = plugin.overlay();
-		expect(overlay).not.toBeNull();
-		expect(overlay!.hidden).toBe(false);
+  it('disable() hides the overlay root', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		plugin.disable();
-		expect(overlay!.hidden).toBe(true);
-	});
+    await player.addPlugin(desktopUiPlugin).ready();
+    const plugin = player.getPlugin(DesktopUiPlugin)!;
 
-	it('enable() after disable() shows the overlay root again', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin).ready();
-		const plugin = player.getPlugin(DesktopUiPlugin)!;
+    const overlay = plugin.overlay();
 
-		plugin.disable();
-		expect(plugin.overlay()!.hidden).toBe(true);
+    expect(overlay).not.toBeNull();
+    expect(overlay!.hidden).toBe(false);
 
-		plugin.enable();
-		expect(plugin.overlay()!.hidden).toBe(false);
-	});
+    plugin.disable();
+    expect(overlay!.hidden).toBe(true);
+  });
 
-	it('overlay() returns the overlay root element', async () => {
-		const player = new NMVideoPlayer('test').setup({});
-		await player.addPlugin(desktopUiPlugin).ready();
-		const plugin = player.getPlugin(DesktopUiPlugin)!;
+  it('enable() after disable() shows the overlay root again', async () => {
+    const player = new NMVideoPlayer('test').setup({});
 
-		const overlay = plugin.overlay();
-		expect(overlay).toBeInstanceOf(HTMLElement);
-		expect(overlay!.classList.contains('overlay')).toBe(true);
-	});
+    await player.addPlugin(desktopUiPlugin).ready();
+    const plugin = player.getPlugin(DesktopUiPlugin)!;
+
+    plugin.disable();
+    expect(plugin.overlay()!.hidden).toBe(true);
+
+    plugin.enable();
+    expect(plugin.overlay()!.hidden).toBe(false);
+  });
+
+  it('overlay() returns the overlay root element', async () => {
+    const player = new NMVideoPlayer('test').setup({});
+
+    await player.addPlugin(desktopUiPlugin).ready();
+    const plugin = player.getPlugin(DesktopUiPlugin)!;
+
+    const overlay = plugin.overlay();
+
+    expect(overlay).toBeInstanceOf(HTMLElement);
+    expect(overlay!.classList.contains('overlay')).toBe(true);
+  });
 });

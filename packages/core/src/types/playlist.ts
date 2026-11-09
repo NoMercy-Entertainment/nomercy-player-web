@@ -21,16 +21,16 @@
  * names.
  */
 export interface BasePlaylistItem {
-	id: string | number;
-	/** Cross-library canonical display name for the item. */
-	title?: string;
-	/** Cross-library canonical cover art / poster URL. */
-	image?: string;
-	/**
-	 * Cross-library canonical media source URL. The `load()` pipeline resolves
-	 * this field through the auth transformer and passes it to the backend.
-	 * Declaring it on the base type removes the need for intersection constraints
-	 * at call sites and lets queue items carry their URL without casts.
-	 */
-	url?: string;
+  id: string | number;
+  /** Cross-library canonical display name for the item. */
+  title?: string;
+  /** Cross-library canonical cover art / poster URL. */
+  image?: string;
+  /**
+   * Cross-library canonical media source URL. The `load()` pipeline resolves
+   * this field through the auth transformer and passes it to the backend.
+   * Declaring it on the base type removes the need for intersection constraints
+   * at call sites and lets queue items carry their URL without casts.
+   */
+  url?: string;
 }

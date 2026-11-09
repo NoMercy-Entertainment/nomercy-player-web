@@ -15,27 +15,29 @@
 import type { VideoPlaylistItem } from '../types';
 
 export interface StartSelection {
-	index: number;
-	/** Offset (seconds) the item should START at — passed as `startAt` so the backend begins fetching there. Absent = start at 0. */
-	resumeTime?: number;
+  index: number;
+  /** Offset (seconds) the item should START at — passed as `startAt` so the backend begins fetching there. Absent = start at 0. */
+  resumeTime?: number;
 }
 
 export function pickStartItem(items: ReadonlyArray<VideoPlaylistItem>): StartSelection {
-	const withProgress = items.filter(item => item.progress);
-	if (withProgress.length === 0)
-		return { index: 0 };
+  const withProgress = items.filter((item) => item.progress);
 
-	const mostRecent = [...withProgress].sort((itemA, itemB) => itemB.progress!.timestamp - itemA.progress!.timestamp)[0]!;
-	const index = items.indexOf(mostRecent);
+  if (withProgress.length === 0)
+    return { index: 0 };
 
-	if (mostRecent.progress!.percentage > 90)
-		return { index: Math.min(index + 1, items.length - 1) };
+  const mostRecent = [...withProgress].sort((itemA, itemB) => itemB.progress!.timestamp - itemA.progress!.timestamp)[0]!;
+  const index = items.indexOf(mostRecent);
 
-	const resumeTime = mostRecent.progress!.time;
-	return resumeTime
-		? {
-				index,
-				resumeTime,
-			}
-		: { index };
+  if (mostRecent.progress!.percentage > 90)
+    return { index: Math.min(index + 1, items.length - 1) };
+
+  const resumeTime = mostRecent.progress!.time;
+
+  return resumeTime
+    ? {
+        index,
+        resumeTime,
+      }
+    : { index };
 }

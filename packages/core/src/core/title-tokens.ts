@@ -41,24 +41,26 @@ const TOKEN_RE = /%([A-Z])(\d+)/gi;
  *  - Empty input returns the empty string unchanged.
  */
 export function interpolateTitleTokens(
-	text: string,
-	translator: ITranslator | undefined,
-	registry: TokenRegistry,
+  text: string,
+  translator: ITranslator | undefined,
+  registry: TokenRegistry,
 ): string {
-	if (!text)
-		return text;
+  if (!text)
+    return text;
 
-	const hasEntries = Object.keys(registry).length > 0;
-	if (!hasEntries || !translator)
-		return text;
+  const hasEntries = Object.keys(registry).length > 0;
 
-	TOKEN_RE.lastIndex = 0;
+  if (!hasEntries || !translator)
+    return text;
 
-	return text.replace(TOKEN_RE, (_match: string, letter: string, digits: string): string => {
-		const key = registry[letter];
-		if (!key)
-			return _match;
+  TOKEN_RE.lastIndex = 0;
 
-		return translator.t(key, { number: digits });
-	});
+  return text.replace(TOKEN_RE, (_match: string, letter: string, digits: string): string => {
+    const key = registry[letter];
+
+    if (!key)
+      return _match;
+
+    return translator.t(key, { number: digits });
+  });
 }

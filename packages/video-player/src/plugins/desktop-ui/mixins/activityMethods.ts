@@ -23,20 +23,20 @@ import type { DesktopUiInternals } from '../internals';
 import { bumpActivity, dismissOverlay, maybeHide } from '../helpers/activity';
 
 export const activityMethods = {
-	bumpActivity(this: DesktopUiInternals): void {
-		bumpActivity(
-			this._activityState,
-			this.player,
-			this.opts?.inactivityMs ?? 4000,
-			ms => this.timeout(() => this.maybeHide(), ms),
-		);
-	},
+  bumpActivity(this: DesktopUiInternals): void {
+    bumpActivity(
+      this._activityState,
+      this.player,
+      this.opts?.inactivityMs ?? 4000,
+      (ms) => this.timeout(() => this.maybeHide(), ms),
+    );
+  },
 
-	maybeHide(this: DesktopUiInternals): void {
-		maybeHide(this._activityState, this.player);
-	},
+  maybeHide(this: DesktopUiInternals): void {
+    maybeHide(this._activityState, this.player);
+  },
 
-	dismissOverlay(this: DesktopUiInternals): void {
-		dismissOverlay(this._activityState, this.player);
-	},
+  dismissOverlay(this: DesktopUiInternals): void {
+    dismissOverlay(this._activityState, this.player);
+  },
 } as const;

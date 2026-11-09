@@ -9,9 +9,9 @@
 import type { CastSenderTranslationKey } from './en';
 
 export default {
-	'plugin.cast-sender.casting.track': 'Predvajanje "{title}" izvajalca {artist}',
-	'plugin.cast-sender.casting.album': 'Predvajanje albuma "{album}"',
-	'plugin.cast-sender.casting.queue': 'Predvajanje {count} skladb',
-	'plugin.cast-sender.action.cast-album': 'Predvajaj album',
-	'plugin.cast-sender.action.cast-queue': 'Predvajaj čakalno vrsto',
+  'plugin.cast-sender.casting.track': 'Predvajanje "{title}" izvajalca {artist}',
+  'plugin.cast-sender.casting.album': 'Predvajanje albuma "{album}"',
+  'plugin.cast-sender.casting.queue': 'Predvajanje {count} skladb',
+  'plugin.cast-sender.action.cast-album': 'Predvajaj album',
+  'plugin.cast-sender.action.cast-queue': 'Predvajaj čakalno vrsto',
 } satisfies Record<CastSenderTranslationKey, string>;

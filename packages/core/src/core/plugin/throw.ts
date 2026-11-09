@@ -18,23 +18,23 @@ import type { RetryConfig, Severity } from '../../errors';
  *  - falls back to console if no handler called `markHandled()`
  */
 export interface ThrowPayload {
-	code: string;
-	severity?: Severity;
-	message?: string;
-	cause?: unknown;
-	context?: Record<string, unknown>;
-	suggestion?: string;
-	/** Override per-throw retry policy. `null` disables retries entirely. */
-	retry?: RetryConfig | null;
-	/** Numeric id if registered. Optional — string code always works. */
-	id?: number;
+  code: string;
+  severity?: Severity;
+  message?: string;
+  cause?: unknown;
+  context?: Record<string, unknown>;
+  suggestion?: string;
+  /** Override per-throw retry policy. `null` disables retries entirely. */
+  retry?: RetryConfig | null;
+  /** Numeric id if registered. Optional — string code always works. */
+  id?: number;
 }
 
 export const PLUGIN_RECOVERY_ACTION = {
-	RETRY_ONCE: 'retry-once',
-	FALLBACK: 'fallback',
-	DISABLE: 'disable',
-	IGNORE: 'ignore',
+  RETRY_ONCE: 'retry-once',
+  FALLBACK: 'fallback',
+  DISABLE: 'disable',
+  IGNORE: 'ignore',
 } as const;
 
 /**
@@ -48,7 +48,7 @@ export type PluginRecoveryAction = typeof PLUGIN_RECOVERY_ACTION[keyof typeof PL
  * directly.
  */
 export class PluginThrow extends Error {
-	constructor(public readonly payload: ThrowPayload, public readonly pluginId: string) {
-		super(payload.message ?? payload.code);
-	}
+  constructor(public readonly payload: ThrowPayload, public readonly pluginId: string) {
+    super(payload.message ?? payload.code);
+  }
 }

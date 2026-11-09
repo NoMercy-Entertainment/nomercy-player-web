@@ -22,45 +22,48 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { NMVideoPlayer } from '../index';
 
 function mountContainer(id: string): void {
-	const div = document.createElement('div');
-	div.id = id;
-	document.body.appendChild(div);
+  const div = document.createElement('div');
+
+  div.id = id;
+  document.body.appendChild(div);
 }
 
 describe('NMVideoPlayer — container hand-over', () => {
-	beforeEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-		mountContainer('handover');
-	});
+  beforeEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+    mountContainer('handover');
+  });
 
-	afterEach(() => {
-		(NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
-		document.body.innerHTML = '';
-	});
+  afterEach(() => {
+    (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
+    document.body.innerHTML = '';
+  });
 
-	it('releases the container id before the teardown resolves', () => {
-		const first = new NMVideoPlayer('handover').setup({});
+  it('releases the container id before the teardown resolves', () => {
+    const first = new NMVideoPlayer('handover').setup({});
 
-		// Not awaited — the same tick, which is the whole point.
-		void first.dispose();
+    // Not awaited — the same tick, which is the whole point.
+    void first.dispose();
 
-		const second = new NMVideoPlayer('handover');
-		expect(second).not.toBe(first);
-		expect(() => second.setup({})).not.toThrow();
+    const second = new NMVideoPlayer('handover');
 
-		void second.dispose();
-	});
+    expect(second).not.toBe(first);
+    expect(() => second.setup({})).not.toThrow();
 
-	it('gives the id back when a plugin prevents the disposal', async () => {
-		const player = new NMVideoPlayer('handover').setup({});
-		player.on('beforeDispose' as never, (event: unknown) => {
-			(event as { preventDefault: () => void }).preventDefault();
-		});
+    void second.dispose();
+  });
 
-		await player.dispose();
+  it('gives the id back when a plugin prevents the disposal', async () => {
+    const player = new NMVideoPlayer('handover').setup({});
 
-		// Still alive, so it still owns the container — a fresh call finds it.
-		expect(new NMVideoPlayer('handover')).toBe(player);
-	});
+    player.on('beforeDispose' as never, (event: unknown) => {
+      (event as { preventDefault: () => void }).preventDefault();
+    });
+
+    await player.dispose();
+
+    // Still alive, so it still owns the container — a fresh call finds it.
+    expect(new NMVideoPlayer('handover')).toBe(player);
+  });
 });

@@ -10,10 +10,11 @@ import { describe, expect, it } from 'vitest';
 import { StubPlayer } from '../testing';
 
 describe('StubPlayer.reset activity tracking', () => {
-	it('restores activityTracking to its constructed value', () => {
-		const player = new StubPlayer();
-		player.activityTracking(false);
-		player.reset();
-		expect(player.activityTracking()).toBe(true);
-	});
+  it('restores activityTracking to its constructed value', () => {
+    const player = new StubPlayer();
+
+    player.activityTracking(false);
+    player.reset();
+    expect(player.activityTracking()).toBe(true);
+  });
 });

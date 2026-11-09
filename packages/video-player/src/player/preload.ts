@@ -32,65 +32,66 @@ import { DefaultPreloadStrategy } from '@nomercy-entertainment/nomercy-player-co
  * observable output is `preloadProgress` and `preloadComplete`.
  */
 export class VideoPreloadStrategy extends DefaultPreloadStrategy {
-	override assetsToPreload(item: BasePlaylistItem): PreloadAsset[] {
-		const videoItem = item as VideoPlaylistItem & { tracks?: LegacyTrackEntry[] };
-		const assets: PreloadAsset[] = [];
+  override assetsToPreload(item: BasePlaylistItem): PreloadAsset[] {
+    const videoItem = item as VideoPlaylistItem & { tracks?: LegacyTrackEntry[] };
+    const assets: PreloadAsset[] = [];
 
-		if (videoItem.url) {
-			assets.push({
-				url: videoItem.url,
-				category: 'media',
-				mode: 'metadata',
-			});
-		}
+    if (videoItem.url) {
+      assets.push({
+        url: videoItem.url,
+        category: 'media',
+        mode: 'metadata',
+      });
+    }
 
-		const posterUrl = videoItem.image ?? videoItem.poster ?? videoItem.thumbnail;
-		if (posterUrl) {
-			assets.push({
-				url: posterUrl,
-				category: 'poster',
-				mode: 'auto',
-			});
-		}
+    const posterUrl = videoItem.image ?? videoItem.poster ?? videoItem.thumbnail;
 
-		if (videoItem.previewSpriteUrl) {
-			assets.push({
-				url: videoItem.previewSpriteUrl,
-				category: 'sprite',
-				mode: 'metadata',
-			});
-		}
+    if (posterUrl) {
+      assets.push({
+        url: posterUrl,
+        category: 'poster',
+        mode: 'auto',
+      });
+    }
 
-		for (const subtitle of videoItem.subtitles ?? []) {
-			if (subtitle.url) {
-				assets.push({
-					url: subtitle.url,
-					category: 'subtitle',
-					mode: 'auto',
-				});
-			}
-		}
+    if (videoItem.previewSpriteUrl) {
+      assets.push({
+        url: videoItem.previewSpriteUrl,
+        category: 'sprite',
+        mode: 'metadata',
+      });
+    }
 
-		for (const track of videoItem.tracks ?? []) {
-			if (track.kind === 'chapters' && track.file) {
-				assets.push({
-					url: track.file,
-					category: 'chapter',
-					mode: 'auto',
-				});
-			}
-		}
+    for (const subtitle of videoItem.subtitles ?? []) {
+      if (subtitle.url) {
+        assets.push({
+          url: subtitle.url,
+          category: 'subtitle',
+          mode: 'auto',
+        });
+      }
+    }
 
-		for (const font of videoItem.fonts ?? []) {
-			if (font.file) {
-				assets.push({
-					url: font.file,
-					category: 'font',
-					mode: 'auto',
-				});
-			}
-		}
+    for (const track of videoItem.tracks ?? []) {
+      if (track.kind === 'chapters' && track.file) {
+        assets.push({
+          url: track.file,
+          category: 'chapter',
+          mode: 'auto',
+        });
+      }
+    }
 
-		return assets;
-	}
+    for (const font of videoItem.fonts ?? []) {
+      if (font.file) {
+        assets.push({
+          url: font.file,
+          category: 'font',
+          mode: 'auto',
+        });
+      }
+    }
+
+    return assets;
+  }
 }

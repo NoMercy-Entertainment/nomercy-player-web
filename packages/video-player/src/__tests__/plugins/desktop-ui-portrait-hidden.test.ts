@@ -29,56 +29,57 @@ const ROOMY = 10_000;
  * thing that can hide a button here is `portraitHidden`.
  */
 const ALL_ENABLED: DesktopUiButtonOptions = Object.fromEntries(
-	[...PORTRAIT_HIDDEN, 'play', 'mute', 'fullscreen', 'settings', 'seekBack', 'seekForward'].map(key => [key, true]),
+  [...PORTRAIT_HIDDEN, 'play', 'mute', 'fullscreen', 'settings', 'seekBack', 'seekForward'].map((key) => [key, true]),
 ) as DesktopUiButtonOptions;
 
 function showsInPortrait(key: ButtonKey, portraitHidden?: ReadonlySet<ButtonKey>): boolean {
-	return shouldShowButton(key, 0, ROOMY, true, false, ALL_ENABLED, portraitHidden);
+  return shouldShowButton(key, 0, ROOMY, true, false, ALL_ENABLED, portraitHidden);
 }
 
 describe('desktopUiOptions.portraitHidden', () => {
-	it('falls back to the default set when the consumer says nothing', () => {
-		expect(resolvePortraitHidden(undefined)).toBe(PORTRAIT_HIDDEN);
-		expect(resolvePortraitHidden({})).toBe(PORTRAIT_HIDDEN);
-	});
+  it('falls back to the default set when the consumer says nothing', () => {
+    expect(resolvePortraitHidden(undefined)).toBe(PORTRAIT_HIDDEN);
+    expect(resolvePortraitHidden({})).toBe(PORTRAIT_HIDDEN);
+  });
 
-	it('hides next and chapterNext in portrait by default', () => {
-		expect(showsInPortrait('next')).toBe(false);
-		expect(showsInPortrait('chapterNext')).toBe(false);
-	});
+  it('hides next and chapterNext in portrait by default', () => {
+    expect(showsInPortrait('next')).toBe(false);
+    expect(showsInPortrait('chapterNext')).toBe(false);
+  });
 
-	it('keeps next and chapterNext when the consumer drops them from the set', () => {
-		const hidden = resolvePortraitHidden({ portraitHidden: ['previous', 'chapterPrev'] });
+  it('keeps next and chapterNext when the consumer drops them from the set', () => {
+    const hidden = resolvePortraitHidden({ portraitHidden: ['previous', 'chapterPrev'] });
 
-		expect(showsInPortrait('next', hidden)).toBe(true);
-		expect(showsInPortrait('chapterNext', hidden)).toBe(true);
-		expect(showsInPortrait('previous', hidden)).toBe(false);
-		expect(showsInPortrait('chapterPrev', hidden)).toBe(false);
-	});
+    expect(showsInPortrait('next', hidden)).toBe(true);
+    expect(showsInPortrait('chapterNext', hidden)).toBe(true);
+    expect(showsInPortrait('previous', hidden)).toBe(false);
+    expect(showsInPortrait('chapterPrev', hidden)).toBe(false);
+  });
 
-	it('replaces the default set rather than merging with it', () => {
-		// `quality` is hidden by default; naming only `next` must free it.
-		const hidden = resolvePortraitHidden({ portraitHidden: ['next'] });
+  it('replaces the default set rather than merging with it', () => {
+    // `quality` is hidden by default; naming only `next` must free it.
+    const hidden = resolvePortraitHidden({ portraitHidden: ['next'] });
 
-		expect(showsInPortrait('quality', hidden)).toBe(true);
-		expect(showsInPortrait('next', hidden)).toBe(false);
-	});
+    expect(showsInPortrait('quality', hidden)).toBe(true);
+    expect(showsInPortrait('next', hidden)).toBe(false);
+  });
 
-	it('forces nothing off in portrait for an empty set', () => {
-		const hidden = resolvePortraitHidden({ portraitHidden: [] });
+  it('forces nothing off in portrait for an empty set', () => {
+    const hidden = resolvePortraitHidden({ portraitHidden: [] });
 
-		for (const key of PORTRAIT_HIDDEN)
-			expect(showsInPortrait(key, hidden)).toBe(true);
-	});
+    for (const key of PORTRAIT_HIDDEN) {
+      expect(showsInPortrait(key, hidden)).toBe(true);
+    }
+  });
 
-	it('still yields to width — the override buys a seat, not immunity', () => {
-		const hidden = resolvePortraitHidden({ portraitHidden: [] });
+  it('still yields to width — the override buys a seat, not immunity', () => {
+    const hidden = resolvePortraitHidden({ portraitHidden: [] });
 
-		// Accumulated width already at the limit: no room left for another button.
-		expect(shouldShowButton('next', ROOMY, ROOMY, true, false, ALL_ENABLED, hidden)).toBe(false);
-	});
+    // Accumulated width already at the limit: no room left for another button.
+    expect(shouldShowButton('next', ROOMY, ROOMY, true, false, ALL_ENABLED, hidden)).toBe(false);
+  });
 
-	it('leaves landscape untouched', () => {
-		expect(shouldShowButton('next', 0, ROOMY, false, false, ALL_ENABLED)).toBe(true);
-	});
+  it('leaves landscape untouched', () => {
+    expect(shouldShowButton('next', 0, ROOMY, false, false, ALL_ENABLED)).toBe(true);
+  });
 });

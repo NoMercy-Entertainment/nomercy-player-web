@@ -22,15 +22,15 @@ import type { PlayerPhase } from '../types';
  * and every test site that references it.
  */
 export interface PlayerTestInternals {
-	/** Current lifecycle phase. Read by tests that need to assert or force a phase. */
-	_phase: PlayerPhase;
+  /** Current lifecycle phase. Read by tests that need to assert or force a phase. */
+  _phase: PlayerPhase;
 
-	/** Registered cue parser registry. Tests introspect parser resolution. */
-	_cueParsers: CueParserRegistry;
+  /** Registered cue parser registry. Tests introspect parser resolution. */
+  _cueParsers: CueParserRegistry;
 
-	/** Push a dispatching event name onto the stack (simulates a before* dispatch in flight). */
-	pushDispatch(name: string): void;
+  /** Push a dispatching event name onto the stack (simulates a before* dispatch in flight). */
+  pushDispatch(name: string): void;
 
-	/** Pop the innermost dispatching event name. */
-	popDispatch(): string | undefined;
+  /** Pop the innermost dispatching event name. */
+  popDispatch(): string | undefined;
 }

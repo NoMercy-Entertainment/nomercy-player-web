@@ -18,8 +18,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LifecycleRegistry } from '../../adapters/lifecycle-registry/default';
 import {
-	composeMixins,
-	playerCoreMethods,
+  composeMixins,
+  playerCoreMethods,
 } from '../../index';
 import { VolumeMemoryPlugin } from '../../plugins/volume-memory';
 import { MockPlayerBase } from '../helpers/mock-player-base';
@@ -27,87 +27,95 @@ import { MockPlayerBase } from '../helpers/mock-player-base';
 const STORAGE_KEY = 'nmplayer-volume-memory-volume';
 
 class MockPlayer extends MockPlayerBase {
-	declare setup: (config: any) => this;
-	declare ready: () => Promise<void>;
-	declare dispose: () => void;
-	declare addPlugin: (PluginClass: any, opts?: any) => this;
-	declare getPlugin: (PluginClass: any) => any;
-	declare volume: (level?: number) => any;
-	declare mute: () => Promise<void>;
-	declare unmute: () => Promise<void>;
+  declare setup: (config: any) => this;
+  declare ready: () => Promise<void>;
+  declare dispose: () => void;
+  declare addPlugin: (PluginClass: any, opts?: any) => this;
+  declare getPlugin: (PluginClass: any) => any;
+  declare volume: (level?: number) => any;
+  declare mute: () => Promise<void>;
+  declare unmute: () => Promise<void>;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
 
 function makePlayer(divId: string): MockPlayer {
-	const div = document.createElement('div');
-	div.id = divId;
-	document.body.appendChild(div);
-	return new MockPlayer(divId);
+  const div = document.createElement('div');
+
+  div.id = divId;
+  document.body.appendChild(div);
+
+  return new MockPlayer(divId);
 }
 
 function startPlugin(player: MockPlayer): VolumeMemoryPlugin {
-	const plugin = new VolumeMemoryPlugin();
-	plugin.initialize(player as any, {}, new LifecycleRegistry());
-	plugin.use();
-	return plugin;
+  const plugin = new VolumeMemoryPlugin();
+
+  plugin.initialize(player as any, {}, new LifecycleRegistry());
+  plugin.use();
+
+  return plugin;
 }
 
-const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
+const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
 
 function stored(): { level?: number; muted?: boolean } {
-	return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
+  return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
 }
 
 describe('VolumeMemoryPlugin', () => {
-	beforeEach(() => {
-		MockPlayer._resetRegistry();
-		localStorage.clear();
-	});
+  beforeEach(() => {
+    MockPlayer._resetRegistry();
+    localStorage.clear();
+  });
 
-	afterEach(() => {
-		MockPlayer._resetRegistry();
-		document.body.innerHTML = '';
-		localStorage.clear();
-	});
+  afterEach(() => {
+    MockPlayer._resetRegistry();
+    document.body.innerHTML = '';
+    localStorage.clear();
+  });
 
-	it('keeps the chosen level in storage while muted', async () => {
-		const player = makePlayer('vm-1');
-		startPlugin(player);
+  it('keeps the chosen level in storage while muted', async () => {
+    const player = makePlayer('vm-1');
 
-		await player.volume(80);
-		await player.mute();
+    startPlugin(player);
 
-		expect(stored()).toEqual({ level: 80, muted: true });
-	});
+    await player.volume(80);
+    await player.mute();
 
-	it('restores the chosen level on unmute after a muted reload', async () => {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify({ level: 70, muted: true }));
-		const player = makePlayer('vm-2');
-		startPlugin(player);
-		await settle();
+    expect(stored()).toEqual({ level: 80, muted: true });
+  });
 
-		expect(player.volume()).toBe(0);
-		await player.unmute();
-		expect(player.volume()).toBe(70);
-	});
+  it('restores the chosen level on unmute after a muted reload', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ level: 70, muted: true }));
+    const player = makePlayer('vm-2');
 
-	it('does not restore silence from the old { level: 0, muted: true } pair', async () => {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify({ level: 0, muted: true }));
-		const player = makePlayer('vm-3');
-		startPlugin(player);
-		await settle();
+    startPlugin(player);
+    await settle();
 
-		await player.unmute();
-		expect(player.volume()).toBeGreaterThan(0);
-	});
+    expect(player.volume()).toBe(0);
+    await player.unmute();
+    expect(player.volume()).toBe(70);
+  });
 
-	it('still applies a level the listener set to 0 on purpose', async () => {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify({ level: 0, muted: false }));
-		const player = makePlayer('vm-4');
-		startPlugin(player);
-		await settle();
+  it('does not restore silence from the old { level: 0, muted: true } pair', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ level: 0, muted: true }));
+    const player = makePlayer('vm-3');
 
-		expect(player.volume()).toBe(0);
-	});
+    startPlugin(player);
+    await settle();
+
+    await player.unmute();
+    expect(player.volume()).toBeGreaterThan(0);
+  });
+
+  it('still applies a level the listener set to 0 on purpose', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ level: 0, muted: false }));
+    const player = makePlayer('vm-4');
+
+    startPlugin(player);
+    await settle();
+
+    expect(player.volume()).toBe(0);
+  });
 });
