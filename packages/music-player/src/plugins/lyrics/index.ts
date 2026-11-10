@@ -55,9 +55,9 @@ export class LyricsPlugin<T extends MusicPlaylistItem = MusicPlaylistItem> exten
   static override readonly version: string = '2.0.0';
   static override readonly description: string = 'Synced lyrics via cue parser registry + CueTracker';
 
-  private tracker?: CueTracker<LyricPayload>;
-  private cueList?: CueList<LyricPayload>;
-  private activeCue?: Cue<LyricPayload>;
+  private tracker?: CueTracker<LyricPayload> | undefined;
+  private cueList?: CueList<LyricPayload> | undefined;
+  private activeCue?: Cue<LyricPayload> | undefined;
   private requestVersion = 0;
 
   /** Attaches the `item` listener to auto-fetch lyrics when a new track loads. */

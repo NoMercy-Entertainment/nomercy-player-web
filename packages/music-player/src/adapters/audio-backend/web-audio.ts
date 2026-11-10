@@ -93,25 +93,25 @@ export class WebAudioBackend
   implements IAudioBackend {
   readonly kind = 'webaudio' as const;
 
-  private readonly container?: HTMLElement;
+  private readonly container?: HTMLElement | undefined;
   private ctx: AudioContext;
   private currentState: BackendState = 'idle';
   private prevVolume: number = 1;
 
-  private sourceNode?: MediaElementAudioSourceNode;
-  private analyserNode?: AnalyserNode;
-  private gainNode?: GainNode;
+  private sourceNode?: MediaElementAudioSourceNode | undefined;
+  private analyserNode?: AnalyserNode | undefined;
+  private gainNode?: GainNode | undefined;
 
   // ── Crossfade secondary ──────────────────────────────────────────────────
   // Each crossfade allocates a fresh <audio> element + MediaElementAudioSourceNode
   // pair because createMediaElementSource() permanently binds an element to a
   // context — the same element cannot be reattached to a different source node.
-  private _secondaryEl?: HTMLAudioElement;
-  private _secondarySource?: MediaElementAudioSourceNode;
-  private _secondaryGain?: GainNode;
-  private _secondaryAnalyser?: AnalyserNode;
-  private _secondaryHls?: HlsHandle;
-  private activeEqualPowerFade?: { startTime: number; endTime: number };
+  private _secondaryEl?: HTMLAudioElement | undefined;
+  private _secondarySource?: MediaElementAudioSourceNode | undefined;
+  private _secondaryGain?: GainNode | undefined;
+  private _secondaryAnalyser?: AnalyserNode | undefined;
+  private _secondaryHls?: HlsHandle | undefined;
+  private activeEqualPowerFade?: { startTime: number; endTime: number } | undefined;
 
   constructor(container?: HTMLElement, opts?: { audioContext?: AudioContext }) {
     const resolved = WebAudioBackend.resolveElement(container);

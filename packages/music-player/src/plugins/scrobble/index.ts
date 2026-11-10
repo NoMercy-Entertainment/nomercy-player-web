@@ -58,7 +58,7 @@ export class ScrobblePlugin extends Plugin<NMMusicPlayer, ScrobbleOptions, Scrob
 
   private readonly defaultScrobbler = new NoopScrobbler<MusicPlaylistItem>();
 
-  private currentItem?: MusicPlaylistItem;
+  private currentItem?: MusicPlaylistItem | undefined;
   private listenedSeconds = 0;
   private lastTime = 0;
   private lastDuration = 0;

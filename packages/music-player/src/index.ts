@@ -154,7 +154,7 @@ export class NMMusicPlayer<T extends MusicPlaylistItem = MusicPlaylistItem>
   // The active audio backend. `_isTransitioning` flips true during a crossfade
   // so that simultaneous calls are rejected. The crossfade dual-buffer logic
   // lives inside each backend implementation (loadSecondary / crossfade / etc.).
-  private _backend?: IAudioBackend;
+  private _backend?: IAudioBackend | undefined;
   private _isTransitioning = false;
   private _automaticCrossfadeWired = false;
 
@@ -537,7 +537,7 @@ composeMixins(NMMusicPlayer.prototype, ...playerCoreMethods);
       return;
     }
 
-    const self = this as unknown as { _backend?: IAudioBackend }; // dispose needs write access to the private _backend field
+    const self = this as unknown as { _backend?: IAudioBackend | undefined }; // dispose needs write access to the private _backend field
 
     try { self._backend?.dispose?.(); } catch { /* defensive — kit must still finish disposing */ }
 

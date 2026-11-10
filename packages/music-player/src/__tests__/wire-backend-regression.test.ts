@@ -70,7 +70,14 @@ async function makeReadyPlayer(id: string, opts?: { backend?: 'webaudio' | 'audi
 }> {
   const player = new NMMusicPlayer(id);
 
-  player.setup({ backend: opts?.backend, controls: opts?.controls });
+  player.setup({
+    ...(opts?.backend !== undefined
+      ? { backend: opts.backend }
+      : {}),
+    ...(opts?.controls !== undefined
+      ? { controls: opts.controls }
+      : {}),
+  });
 
   // Trigger lazy backend init before ready() so the <audio> element exists.
   const backend = player.backend();

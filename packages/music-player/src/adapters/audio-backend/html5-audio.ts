@@ -43,18 +43,18 @@ export class AudioElementBackend
   implements IAudioBackend {
   readonly kind = 'audio-element' as const;
 
-  private readonly container?: HTMLElement;
+  private readonly container?: HTMLElement | undefined;
   private currentState: BackendState = 'idle';
 
   private prevVolume: number = 1;
-  private sourceNode?: MediaElementAudioSourceNode;
-  private sourceCtx?: AudioContext;
-  private analyserNode?: AnalyserNode;
-  private outputGain?: GainNode;
+  private sourceNode?: MediaElementAudioSourceNode | undefined;
+  private sourceCtx?: AudioContext | undefined;
+  private analyserNode?: AnalyserNode | undefined;
+  private outputGain?: GainNode | undefined;
 
   // ── Crossfade secondary ──────────────────────────────────────────────────
-  private _secondary?: HTMLAudioElement;
-  private _secondaryHls?: HlsHandle;
+  private _secondary?: HTMLAudioElement | undefined;
+  private _secondaryHls?: HlsHandle | undefined;
   private _secondaryVol: number = 0;
 
   constructor(container?: HTMLElement, opts?: { element?: HTMLAudioElement }) {
