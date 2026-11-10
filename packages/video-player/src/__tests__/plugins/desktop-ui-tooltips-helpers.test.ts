@@ -333,7 +333,7 @@ describe('desktop-ui tooltip helpers', () => {
         BUTTON_NAMES.map((name) => {
           const btn = document.createElement('button');
 
-          btn.dataset.ref = name;
+          btn.dataset['ref'] = name;
           player.container.appendChild(btn);
 
           return [name, btn];

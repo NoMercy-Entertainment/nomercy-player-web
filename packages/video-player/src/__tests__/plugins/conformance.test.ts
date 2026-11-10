@@ -178,10 +178,10 @@ describe('Plugin conformance: key-handler (real player)', () => {
     player = makeRealPlayer();
     // Stub transport methods up-front so key dispatches never reach the real
     // transport layer — avoids "player disposed" unhandled rejections.
-    (player as unknown as Record<string, unknown>).togglePlayback = vi.fn().mockResolvedValue(undefined);
-    (player as unknown as Record<string, unknown>).rewind = vi.fn().mockResolvedValue(undefined);
-    (player as unknown as Record<string, unknown>).forward = vi.fn().mockResolvedValue(undefined);
-    (player as unknown as Record<string, unknown>).stop = vi.fn().mockResolvedValue(undefined);
+    (player as unknown as Record<string, unknown>)['togglePlayback'] = vi.fn().mockResolvedValue(undefined);
+    (player as unknown as Record<string, unknown>)['rewind'] = vi.fn().mockResolvedValue(undefined);
+    (player as unknown as Record<string, unknown>)['forward'] = vi.fn().mockResolvedValue(undefined);
+    (player as unknown as Record<string, unknown>)['stop'] = vi.fn().mockResolvedValue(undefined);
     player.addPlugin(KeyHandlerPlugin);
     await player.ready();
   });
@@ -198,7 +198,7 @@ describe('Plugin conformance: key-handler (real player)', () => {
   });
 
   it('Space key triggers togglePlayback()', () => {
-    const stub = (player as unknown as Record<string, unknown>).togglePlayback as ReturnType<typeof vi.fn>;
+    const stub = (player as unknown as Record<string, unknown>)['togglePlayback'] as ReturnType<typeof vi.fn>;
 
     document.dispatchEvent(new KeyboardEvent('keydown', {
       key: ' ',
@@ -446,7 +446,7 @@ describe('Plugin conformance: touch-zones (real player)', () => {
   it('single-tap on center zone calls player.togglePlayback()', () => {
     const togglePlayback = vi.fn();
 
-    (player as unknown as Record<string, unknown>).togglePlayback = togglePlayback;
+    (player as unknown as Record<string, unknown>)['togglePlayback'] = togglePlayback;
 
     vi.useFakeTimers();
 
@@ -487,10 +487,10 @@ describe('Plugin conformance: tv-key-handler (real player)', () => {
     player = makeRealPlayer();
     // Stub transport methods up-front so key dispatches never reach the real
     // transport layer — avoids "player disposed" unhandled rejections.
-    (player as unknown as Record<string, unknown>).rewind = vi.fn().mockResolvedValue(undefined);
-    (player as unknown as Record<string, unknown>).forward = vi.fn().mockResolvedValue(undefined);
-    (player as unknown as Record<string, unknown>).volumeUp = vi.fn();
-    (player as unknown as Record<string, unknown>).volumeDown = vi.fn();
+    (player as unknown as Record<string, unknown>)['rewind'] = vi.fn().mockResolvedValue(undefined);
+    (player as unknown as Record<string, unknown>)['forward'] = vi.fn().mockResolvedValue(undefined);
+    (player as unknown as Record<string, unknown>)['volumeUp'] = vi.fn();
+    (player as unknown as Record<string, unknown>)['volumeDown'] = vi.fn();
     player.addPlugin(TvKeyHandlerPlugin);
     await player.ready();
   });
@@ -507,7 +507,7 @@ describe('Plugin conformance: tv-key-handler (real player)', () => {
   });
 
   it('ArrowLeft triggers player.rewind() with default 5 s', () => {
-    const rewind = (player as unknown as Record<string, unknown>).rewind as ReturnType<typeof vi.fn>;
+    const rewind = (player as unknown as Record<string, unknown>)['rewind'] as ReturnType<typeof vi.fn>;
 
     document.dispatchEvent(new KeyboardEvent('keydown', {
       key: 'ArrowLeft',
@@ -519,7 +519,7 @@ describe('Plugin conformance: tv-key-handler (real player)', () => {
   });
 
   it('ArrowRight triggers player.forward() with default 5 s', () => {
-    const forward = (player as unknown as Record<string, unknown>).forward as ReturnType<typeof vi.fn>;
+    const forward = (player as unknown as Record<string, unknown>)['forward'] as ReturnType<typeof vi.fn>;
 
     document.dispatchEvent(new KeyboardEvent('keydown', {
       key: 'ArrowRight',

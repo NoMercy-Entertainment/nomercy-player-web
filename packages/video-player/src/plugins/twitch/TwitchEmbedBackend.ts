@@ -158,7 +158,7 @@ export class TwitchEmbedBackend extends MediaElementBackend<HTMLVideoElement, Ba
       this.mount.style.transition = RESIZE_TRANSITION;
     }
 
-    this.mount.dataset.twitchEmbed = '';
+    this.mount.dataset['twitchEmbed'] = '';
     this.container = container;
     container.append(this.element, this.mount);
     this.menuWatcher = new MutationObserver(() => this.makeRoomForMenu());

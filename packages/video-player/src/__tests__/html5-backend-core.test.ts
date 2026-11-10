@@ -1107,7 +1107,7 @@ describe('setSubtitleTrack()', () => {
     });
 
     backend.setSubtitleTrack(0);
-    expect(mockTrack.mode).toBe('hidden');
+    expect(mockTrack['mode']).toBe('hidden');
   });
 
   describe('closed-caption rows', () => {
@@ -1313,24 +1313,24 @@ describe('live sync', () => {
     const hls = _hlsRegistry.lastInstance!;
 
     hls.fire('hlsLevelLoaded', { details: { live: false } });
-    expect(hls.config.maxBufferLength).toBeUndefined();
+    expect(hls.config['maxBufferLength']).toBeUndefined();
 
     hls.fire('hlsLevelLoaded', { details: { live: true } });
-    expect(hls.config.maxBufferLength).toBe(12);
+    expect(hls.config['maxBufferLength']).toBe(12);
   });
 
   it('pauses hls.js catch-up while the viewer picks another speed, so it cannot reset it', async () => {
     await loadHls();
     const hls = _hlsRegistry.lastInstance!;
 
-    expect(hls.config.maxLiveSyncPlaybackRate).toBe(1.05);
+    expect(hls.config['maxLiveSyncPlaybackRate']).toBe(1.05);
 
     backend.playbackRate(1.5);
-    expect(hls.config.maxLiveSyncPlaybackRate).toBe(1);
+    expect(hls.config['maxLiveSyncPlaybackRate']).toBe(1);
     expect(backend.playbackRate()).toBe(1.5);
 
     backend.playbackRate(1);
-    expect(hls.config.maxLiveSyncPlaybackRate).toBe(1.05);
+    expect(hls.config['maxLiveSyncPlaybackRate']).toBe(1.05);
   });
 
   it('keeps the pitch while the rate changes', () => {
@@ -1379,7 +1379,7 @@ describe('captions on a muxed stream', () => {
     _hlsRegistry.lastInstance!.fire('hlsBufferAppended', { type: 'video', timeRanges: { video: [{}] } });
 
     expect(added).toEqual([]);
-    expect(cueCache.textTrack1).toHaveLength(1);
+    expect(cueCache['textTrack1']).toHaveLength(1);
   });
 });
 
@@ -1675,7 +1675,7 @@ describe('setAuthHeaderProvider()', () => {
     await loadPromise;
 
     const config = _hlsRegistry.lastConfig!;
-    const xhrSetup = config.xhrSetup as (xhr: XMLHttpRequest) => void;
+    const xhrSetup = config['xhrSetup'] as (xhr: XMLHttpRequest) => void;
     const mockXhr = { setRequestHeader: vi.fn() } as unknown as XMLHttpRequest;
 
     xhrSetup(mockXhr);
@@ -1695,7 +1695,7 @@ describe('setAuthHeaderProvider()', () => {
     await loadPromise;
 
     const config = _hlsRegistry.lastConfig!;
-    const xhrSetup = config.xhrSetup as (xhr: XMLHttpRequest) => void;
+    const xhrSetup = config['xhrSetup'] as (xhr: XMLHttpRequest) => void;
     const mockXhr = { setRequestHeader: vi.fn() } as unknown as XMLHttpRequest;
 
     xhrSetup(mockXhr);

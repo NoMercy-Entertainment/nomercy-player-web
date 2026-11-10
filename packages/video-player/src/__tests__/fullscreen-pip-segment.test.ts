@@ -66,7 +66,7 @@ describe('NMVideoPlayer — fullscreen()', () => {
     await player.ready();
 
     // Replace the whole platform() accessor to return no fullscreen ctrl.
-    (player as unknown as Record<string, unknown>).platform = () => ({ fullscreen: undefined });
+    (player as unknown as Record<string, unknown>)['platform'] = () => ({ fullscreen: undefined });
 
     expect(player.fullscreen()).toBe('off');
   });
@@ -123,7 +123,7 @@ describe('NMVideoPlayer — fullscreen()', () => {
       pip: undefined,
     };
 
-    (player as unknown as Record<string, unknown>).platform = () => fakePlatform;
+    (player as unknown as Record<string, unknown>)['platform'] = () => fakePlatform;
 
     player.fullscreen(false);
 
@@ -144,7 +144,7 @@ describe('NMVideoPlayer — fullscreen()', () => {
       pip: undefined,
     };
 
-    (player as unknown as Record<string, unknown>).platform = () => fakePlatform;
+    (player as unknown as Record<string, unknown>)['platform'] = () => fakePlatform;
 
     expect(player.fullscreen()).toBe('on');
   });
@@ -154,7 +154,7 @@ describe('NMVideoPlayer — fullscreen()', () => {
 
     await player.ready();
 
-    (player as unknown as Record<string, unknown>).platform = () => ({ fullscreen: undefined });
+    (player as unknown as Record<string, unknown>)['platform'] = () => ({ fullscreen: undefined });
 
     expect(() => player.fullscreen(true)).toThrow();
   });
@@ -178,7 +178,7 @@ describe('NMVideoPlayer — fullscreen()', () => {
       pip: undefined,
     };
 
-    (player as unknown as Record<string, unknown>).platform = () => fakePlatform;
+    (player as unknown as Record<string, unknown>)['platform'] = () => fakePlatform;
 
     player.toggleFullscreen();
 
@@ -197,7 +197,7 @@ describe('NMVideoPlayer — pip()', () => {
     const player = new NMVideoPlayer('test').setup({});
 
     await player.ready();
-    (player as unknown as Record<string, unknown>).platform = () => ({ pip: undefined });
+    (player as unknown as Record<string, unknown>)['platform'] = () => ({ pip: undefined });
 
     expect(player.pip()).toBe('off');
   });
@@ -220,7 +220,7 @@ describe('NMVideoPlayer — pip()', () => {
       },
     };
 
-    (player as unknown as Record<string, unknown>).platform = () => fakePlatform;
+    (player as unknown as Record<string, unknown>)['platform'] = () => fakePlatform;
 
     const events: unknown[] = [];
 
@@ -251,7 +251,7 @@ describe('NMVideoPlayer — pip()', () => {
       },
     };
 
-    (player as unknown as Record<string, unknown>).platform = () => fakePlatform;
+    (player as unknown as Record<string, unknown>)['platform'] = () => fakePlatform;
 
     player.pip(false);
     expect(exits.length).toBe(1);
@@ -270,7 +270,7 @@ describe('NMVideoPlayer — pip()', () => {
       },
     };
 
-    (player as unknown as Record<string, unknown>).platform = () => fakePlatform;
+    (player as unknown as Record<string, unknown>)['platform'] = () => fakePlatform;
 
     expect(player.pip()).toBe('on');
   });
@@ -279,7 +279,7 @@ describe('NMVideoPlayer — pip()', () => {
     const player = new NMVideoPlayer('test').setup({});
 
     await player.ready();
-    (player as unknown as Record<string, unknown>).platform = () => ({ pip: undefined });
+    (player as unknown as Record<string, unknown>)['platform'] = () => ({ pip: undefined });
 
     expect(() => player.pip(true)).toThrow();
   });
@@ -302,7 +302,7 @@ describe('NMVideoPlayer — pip()', () => {
       },
     };
 
-    (player as unknown as Record<string, unknown>).platform = () => fakePlatform;
+    (player as unknown as Record<string, unknown>)['platform'] = () => fakePlatform;
 
     player.togglePip();
 
@@ -396,7 +396,7 @@ describe('NMVideoPlayer — playSegment / clearSegment', () => {
 
     const timeSpy = vi.fn().mockResolvedValue(undefined);
 
-    (player as unknown as Record<string, unknown>).time = timeSpy;
+    (player as unknown as Record<string, unknown>)['time'] = timeSpy;
 
     const boundaries: unknown[] = [];
 
@@ -422,7 +422,7 @@ describe('NMVideoPlayer — playSegment / clearSegment', () => {
 
     await player.ready();
 
-    (player as unknown as Record<string, unknown>).time = vi.fn().mockResolvedValue(undefined);
+    (player as unknown as Record<string, unknown>)['time'] = vi.fn().mockResolvedValue(undefined);
 
     const boundaries: unknown[] = [];
 
@@ -451,9 +451,9 @@ describe('NMVideoPlayer — playSegment / clearSegment', () => {
 
     const pauseCalls: number[] = [];
 
-    (player as unknown as Record<string, unknown>).time = () => Promise.resolve();
+    (player as unknown as Record<string, unknown>)['time'] = () => Promise.resolve();
 
-    (player as unknown as Record<string, unknown>).pause = () => {
+    (player as unknown as Record<string, unknown>)['pause'] = () => {
       pauseCalls.push(1);
 
       return Promise.resolve();
@@ -480,7 +480,7 @@ describe('NMVideoPlayer — playSegment / clearSegment', () => {
 
     const seekCalls: number[] = [];
 
-    (player as unknown as Record<string, unknown>).time = (seconds?: number) => {
+    (player as unknown as Record<string, unknown>)['time'] = (seconds?: number) => {
       if (seconds !== undefined) {
         seekCalls.push(seconds);
       }
@@ -511,9 +511,9 @@ describe('NMVideoPlayer — playSegment / clearSegment', () => {
 
     const pauseCalls: number[] = [];
 
-    (player as unknown as Record<string, unknown>).time = () => Promise.resolve();
+    (player as unknown as Record<string, unknown>)['time'] = () => Promise.resolve();
 
-    (player as unknown as Record<string, unknown>).pause = () => {
+    (player as unknown as Record<string, unknown>)['pause'] = () => {
       pauseCalls.push(1);
 
       return Promise.resolve();
@@ -538,7 +538,7 @@ describe('NMVideoPlayer — playSegment / clearSegment', () => {
     const seekAfterInit: number[] = [];
     let initDone = false;
 
-    (player as unknown as Record<string, unknown>).time = (seconds?: number) => {
+    (player as unknown as Record<string, unknown>)['time'] = (seconds?: number) => {
       if (seconds !== undefined && initDone) {
         seekAfterInit.push(seconds);
       }
@@ -550,7 +550,7 @@ describe('NMVideoPlayer — playSegment / clearSegment', () => {
 
     const pauseCalls: number[] = [];
 
-    (player as unknown as Record<string, unknown>).pause = () => {
+    (player as unknown as Record<string, unknown>)['pause'] = () => {
       pauseCalls.push(1);
 
       return Promise.resolve();
@@ -573,7 +573,7 @@ describe('NMVideoPlayer — playSegment / clearSegment', () => {
 
     await player.ready();
 
-    (player as unknown as Record<string, unknown>).time = () => Promise.resolve();
+    (player as unknown as Record<string, unknown>)['time'] = () => Promise.resolve();
 
     const boundaries: unknown[] = [];
 
@@ -597,7 +597,7 @@ describe('NMVideoPlayer — playSegment / clearSegment', () => {
 
     await player.ready();
 
-    (player as unknown as Record<string, unknown>).time = () => Promise.resolve();
+    (player as unknown as Record<string, unknown>)['time'] = () => Promise.resolve();
 
     const boundaries: unknown[] = [];
 
@@ -624,7 +624,7 @@ describe('NMVideoPlayer — playSegment / clearSegment', () => {
 
     const seekCalls: number[] = [];
 
-    (player as unknown as Record<string, unknown>).time = (seconds?: number) => {
+    (player as unknown as Record<string, unknown>)['time'] = (seconds?: number) => {
       if (seconds !== undefined) {
         seekCalls.push(seconds);
       }

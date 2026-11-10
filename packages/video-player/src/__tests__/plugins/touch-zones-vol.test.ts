@@ -57,7 +57,7 @@ describe('TouchZonesPlugin — mobile volume zones', () => {
 
     const volUpSpy = vi.fn();
 
-    (player as unknown as Record<string, unknown>).volumeUp = volUpSpy;
+    (player as unknown as Record<string, unknown>)['volumeUp'] = volUpSpy;
 
     const container = document.getElementById('test')!;
 
@@ -83,7 +83,7 @@ describe('TouchZonesPlugin — mobile volume zones', () => {
 
     const volDownSpy = vi.fn();
 
-    (player as unknown as Record<string, unknown>).volumeDown = volDownSpy;
+    (player as unknown as Record<string, unknown>)['volumeDown'] = volDownSpy;
 
     const container = document.getElementById('test')!;
 

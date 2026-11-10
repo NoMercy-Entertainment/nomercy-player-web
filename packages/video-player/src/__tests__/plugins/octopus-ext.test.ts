@@ -57,22 +57,22 @@ vi.mock('@nomercy-entertainment/nomercy-subtitle-octopus', () => {
   function MockOctopus(this: Record<string, unknown>, options: Record<string, unknown>) {
     octopusCalls.push(options);
     type AnyListener = (...args: unknown[]) => void;
-    this._listeners = {} as Record<string, AnyListener[]>;
+    this['_listeners'] = {} as Record<string, AnyListener[]>;
 
-    this.on = (event: string, fn: AnyListener) => {
-      if (!(this._listeners as Record<string, AnyListener[]>)[event]) {
-        (this._listeners as Record<string, AnyListener[]>)[event] = [];
+    this['on'] = (event: string, fn: AnyListener) => {
+      if (!(this['_listeners'] as Record<string, AnyListener[]>)[event]) {
+        (this['_listeners'] as Record<string, AnyListener[]>)[event] = [];
       }
 
-      (this._listeners as Record<string, AnyListener[]>)[event]!.push(fn);
+      (this['_listeners'] as Record<string, AnyListener[]>)[event]!.push(fn);
     };
 
-    this.dispose = () => { octopusDisposed.push(this); };
+    this['dispose'] = () => { octopusDisposed.push(this); };
 
     Promise.resolve().then(() => {
-      const listeners = this._listeners as Record<string, AnyListener[]>;
+      const listeners = this['_listeners'] as Record<string, AnyListener[]>;
 
-      listeners.rendererReady?.forEach((fn: AnyListener) => fn({ url: '' }));
+      listeners['rendererReady']?.forEach((fn: AnyListener) => fn({ url: '' }));
     });
   }
 
@@ -171,7 +171,7 @@ describe('OctopusPlugin — loadCtor failure (degraded mode)', () => {
 
     // Simulate the peer-absent state by forcing _ctor to null.
     // loadCtor() caches the result — once null it stays null.
-    (inst as unknown as Record<string, unknown>)._ctor = null;
+    (inst as unknown as Record<string, unknown>)['_ctor'] = null;
 
     // subtitle() → load() → loadCtor() returns null → no instance created
     await inst.subtitle('https://cdn.example.com/sub.ass');
@@ -189,7 +189,7 @@ describe('OctopusPlugin — loadCtor failure (degraded mode)', () => {
 
     const inst = player.getPlugin(OctopusPlugin)!;
 
-    (inst as unknown as Record<string, unknown>)._ctor = null;
+    (inst as unknown as Record<string, unknown>)['_ctor'] = null;
 
     await inst.subtitle('https://cdn.example.com/sub.ass');
     expect(inst.subtitle()).toBeNull();
@@ -256,7 +256,7 @@ describe('OctopusPlugin — item event resets font cache', () => {
     await Promise.resolve();
 
     // Font cache is cleared: _availableFontsForCurrent should be null
-    const fontCache = (inst as unknown as Record<string, unknown>)._availableFontsForCurrent;
+    const fontCache = (inst as unknown as Record<string, unknown>)['_availableFontsForCurrent'];
 
     expect(fontCache).toBeNull();
 
@@ -281,7 +281,7 @@ describe('OctopusPlugin — item event resets font cache', () => {
     await player.ready();
     await player.getPlugin(OctopusPlugin)!.subtitle('https://cdn.example.com/sub.ass');
 
-    expect(octopusCalls[0]!.debug).toBe(true);
+    expect(octopusCalls[0]!['debug']).toBe(true);
 
     for (const retired of ['renderAhead', 'targetFps', 'prescaleFactor', 'renderMode']) {
       expect(octopusCalls[0]).not.toHaveProperty(retired);
@@ -368,8 +368,8 @@ describe('OctopusPlugin — manifest fetch failure', () => {
 
     await player.getPlugin(OctopusPlugin)!.subtitle('https://cdn.example.com/sub.ass');
 
-    expect(typeof octopusCalls[0]!.availableFonts).toBe('object');
-    expect(Object.keys(octopusCalls[0]!.availableFonts as object)).toHaveLength(0);
+    expect(typeof octopusCalls[0]!['availableFonts']).toBe('object');
+    expect(Object.keys(octopusCalls[0]!['availableFonts'] as object)).toHaveLength(0);
   });
 });
 
@@ -436,7 +436,7 @@ describe('OctopusPlugin — per-font-binary failure in allSettled', () => {
     expect(octopusCalls).toHaveLength(1);
 
     // GoodFont succeeded → map has one entry; BadFont failed → skipped
-    const fontMap = octopusCalls[0]!.availableFonts as Record<string, string>;
+    const fontMap = octopusCalls[0]!['availableFonts'] as Record<string, string>;
 
     expect(Object.keys(fontMap)).toHaveLength(1);
     expect(Object.keys(fontMap)[0]).toBe('goodfont');
@@ -463,7 +463,7 @@ describe('OctopusPlugin — per-font-binary failure in allSettled', () => {
       player.getPlugin(OctopusPlugin)!.subtitle('https://cdn.example.com/sub.ass'),
     ).resolves.not.toThrow();
 
-    const fontMap = octopusCalls[0]!.availableFonts as Record<string, string>;
+    const fontMap = octopusCalls[0]!['availableFonts'] as Record<string, string>;
 
     expect(Object.keys(fontMap)).toHaveLength(0);
   });
@@ -557,7 +557,7 @@ describe('OctopusPlugin — fonts() getter paths', () => {
     await inst.subtitle('https://cdn.example.com/sub.ass');
 
     // After load, _availableFontsForCurrent is populated with blob URLs
-    const fontCache = (inst as unknown as Record<string, unknown>)._availableFontsForCurrent as Record<string, string>;
+    const fontCache = (inst as unknown as Record<string, unknown>)['_availableFontsForCurrent'] as Record<string, string>;
     const hasCache = Object.keys(fontCache ?? {}).length > 0;
 
     if (hasCache) {

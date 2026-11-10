@@ -60,7 +60,7 @@ describe('video-plugins (extras)', () => {
 
       const meta = (inst as unknown as { getMetadata: (i: any) => any }).getMetadata(item);
 
-      expect(meta.title).toBe('Pilot');
+      expect(meta['title']).toBe('Pilot');
       expect(meta.artist).toBe('Test Show');
       expect(meta.album).toBe('Season 1');
       // Artwork is resolved by the kit base class via resolveUrl(url, 'poster')
@@ -78,7 +78,7 @@ describe('video-plugins (extras)', () => {
       const item = { id: 'm-001', title: 'Movie' } as any;
       const meta = (inst as unknown as { getMetadata: (i: any) => any }).getMetadata(item);
 
-      expect(meta.title).toBe('Movie');
+      expect(meta['title']).toBe('Movie');
       expect(meta.artist).toBe('');
       expect(meta.album).toBe('');
       expect(meta.artwork).toBeUndefined();
@@ -99,7 +99,7 @@ describe('video-plugins (extras)', () => {
       } as any;
       const meta = (inst as unknown as { getMetadata: (i: any) => any }).getMetadata(item);
 
-      expect(meta.title).toBe('Show S1 E1');
+      expect(meta['title']).toBe('Show S1 E1');
     });
   });
 
@@ -323,7 +323,7 @@ describe('video-plugins (extras)', () => {
           (stubRemoteRef as StubRemote).isPaused = true;
         }
 
-        handlers.isPausedChanged?.({ value: true });
+        handlers['isPausedChanged']?.({ value: true });
 
         expect(seenPause.length).toBeGreaterThan(0);
         expect(seenPause[0]).toMatchObject({ source: 'cast', silent: true });
@@ -356,7 +356,7 @@ describe('video-plugins (extras)', () => {
         buildMetadata: (mediaItem: typeof item, mediaCastors: typeof ctors) => Promise<Record<string, unknown>>;
       }).buildMetadata(item, ctors);
 
-      expect(meta.title).toBe('Show S1 E1');
+      expect(meta['title']).toBe('Show S1 E1');
     });
 
     // `image` is the cross-library canonical cover-art field; `poster` and
@@ -384,8 +384,8 @@ describe('video-plugins (extras)', () => {
         buildMetadata: (mediaItem: typeof item, mediaCastors: typeof ctors) => Promise<Record<string, unknown>>;
       }).buildMetadata(item, ctors);
 
-      expect(meta.images).toBeDefined();
-      expect((meta.images as Array<{ url: string }>)[0]?.url).toContain('art.jpg');
+      expect(meta['images']).toBeDefined();
+      expect((meta['images'] as Array<{ url: string }>)[0]?.url).toContain('art.jpg');
     });
   });
 

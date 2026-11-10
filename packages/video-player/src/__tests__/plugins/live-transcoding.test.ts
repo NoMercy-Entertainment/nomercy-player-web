@@ -66,12 +66,12 @@ function makeMockChannel(): MockChannel {
     close: vi.fn(),
     handlers,
     triggerMessage: (data: unknown) => {
-      for (const fn of handlers.message ?? []) {
+      for (const fn of handlers['message'] ?? []) {
         fn(data);
       }
     },
     triggerError: (err: unknown) => {
-      for (const fn of handlers.error ?? []) {
+      for (const fn of handlers['error'] ?? []) {
         fn(err);
       }
     },
@@ -184,7 +184,7 @@ describe('LiveTranscodingPlugin — message routing', () => {
     // onServerMessage by calling it directly through the internal message handler.
     // Since the channel was already created in use(), we need to deliver messages
     // through the stored handler. We capture it during setup.
-    (inst as unknown as Record<string, unknown>).channel = channel;
+    (inst as unknown as Record<string, unknown>)['channel'] = channel;
   });
 
   afterEach(() => {

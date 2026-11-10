@@ -221,7 +221,7 @@ describe('Html5VideoBackend — startTime load hint', () => {
     await resolveMetadata();
     await loadPromise;
 
-    expect(HlsDefault.lastConfig?.startPosition).toBe(300);
+    expect(HlsDefault.lastConfig?.['startPosition']).toBe(300);
   });
 
   it('defaults startPosition to -1 without a startTime', async () => {
@@ -232,7 +232,7 @@ describe('Html5VideoBackend — startTime load hint', () => {
     await resolveMetadata();
     await loadPromise;
 
-    expect(HlsDefault.lastConfig?.startPosition).toBe(-1);
+    expect(HlsDefault.lastConfig?.['startPosition']).toBe(-1);
   });
 
   it('positions the element at startTime for progressive sources', async () => {

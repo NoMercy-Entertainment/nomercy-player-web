@@ -23,9 +23,9 @@ const resizeCalls: number[] = [];
 vi.mock('@nomercy-entertainment/nomercy-subtitle-octopus', () => {
   function MockOctopus(this: Record<string, unknown>, options: Record<string, unknown>) {
     octopusCalls.push(options);
-    this.on = () => {};
-    this.dispose = () => {};
-    this.resize = () => { resizeCalls.push(1); };
+    this['on'] = () => {};
+    this['dispose'] = () => {};
+    this['resize'] = () => { resizeCalls.push(1); };
   }
 
   return { NMSubtitleOctopus: MockOctopus };
@@ -73,7 +73,7 @@ describe('OctopusPlugin — subtitle box', () => {
     await player.ready();
     await player.getPlugin(OctopusPlugin)!.subtitle('https://cdn.example.com/sub.ass');
 
-    const box = octopusCalls[0]!.geometrySource as HTMLElement;
+    const box = octopusCalls[0]!['geometrySource'] as HTMLElement;
 
     expect(box.parentElement).toBe(player.container);
     expect(box.style.visibility).not.toBe('hidden');

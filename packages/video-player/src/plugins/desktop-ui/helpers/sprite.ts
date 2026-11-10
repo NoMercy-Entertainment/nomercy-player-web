@@ -215,16 +215,16 @@ export function resolveSpriteUrl(item: unknown): string | undefined {
 
   const rec = item as Record<string, unknown>;
 
-  if (typeof rec.previewSpriteUrl === 'string' && rec.previewSpriteUrl)
-    return rec.previewSpriteUrl;
+  if (typeof rec['previewSpriteUrl'] === 'string' && rec['previewSpriteUrl'])
+    return rec['previewSpriteUrl'];
 
-  if (!Array.isArray(rec.tracks))
+  if (!Array.isArray(rec['tracks']))
     return undefined;
 
-  const tracks = rec.tracks as Array<Record<string, unknown>>;
-  const thumbs = tracks.find((track) => track?.kind === 'thumbnails' && typeof track.file === 'string');
+  const tracks = rec['tracks'] as Array<Record<string, unknown>>;
+  const thumbs = tracks.find((track) => track?.['kind'] === 'thumbnails' && typeof track['file'] === 'string');
 
-  return typeof thumbs?.file === 'string'
-    ? thumbs.file
+  return typeof thumbs?.['file'] === 'string'
+    ? thumbs['file']
     : undefined;
 }

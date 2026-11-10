@@ -245,8 +245,8 @@ describe('NMVideoPlayer — video domain API', () => {
 
     // Direct videoWidth/videoHeight properties do not exist on NMVideoPlayer.
     // This is a MEDIUM finding — see Findings table in slice-06 spec.
-    expect((player as unknown as Record<string, unknown>).videoWidth).toBeUndefined();
-    expect((player as unknown as Record<string, unknown>).videoHeight).toBeUndefined();
+    expect((player as unknown as Record<string, unknown>)['videoWidth']).toBeUndefined();
+    expect((player as unknown as Record<string, unknown>)['videoHeight']).toBeUndefined();
   });
 });
 

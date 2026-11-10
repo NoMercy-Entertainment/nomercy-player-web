@@ -1577,9 +1577,9 @@ export class Html5VideoBackend
         return;
       }
 
-      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+      if (data.type === Hls.ErrorTypes['NETWORK_ERROR']) {
         this._rideOutNetworkError(data);
-      } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+      } else if (data.type === Hls.ErrorTypes['MEDIA_ERROR']) {
         const now = Date.now();
 
         if (this._mediaRecoveryStartMs > 0 && (now - this._mediaRecoveryStartMs) < 5_000) {

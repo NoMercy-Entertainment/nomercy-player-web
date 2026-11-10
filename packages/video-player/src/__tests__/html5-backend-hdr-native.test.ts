@@ -180,9 +180,9 @@ describe('native-HLS vs hls.js routing', () => {
     container.appendChild(videoEl);
 
     // Ensure MediaSource is defined (it is in happy-dom, but be explicit)
-    const origMediaSource = (globalThis as Record<string, unknown>).MediaSource;
+    const origMediaSource = (globalThis as Record<string, unknown>)['MediaSource'];
 
-    (globalThis as Record<string, unknown>).MediaSource = class {};
+    (globalThis as Record<string, unknown>)['MediaSource'] = class {};
 
     backend = new Html5VideoBackend(container);
     const loadPromise = backend.load('https://example.invalid/test.m3u8');
@@ -197,7 +197,7 @@ describe('native-HLS vs hls.js routing', () => {
     // hls.js path was taken — an HLS instance was created
     expect(_hlsRegistry.lastInstance).toBeDefined();
 
-    (globalThis as Record<string, unknown>).MediaSource = origMediaSource;
+    (globalThis as Record<string, unknown>)['MediaSource'] = origMediaSource;
   });
 
   it('uses native path (sets element.src) when canPlayType returns "probably"', async () => {
@@ -237,9 +237,9 @@ describe('native-HLS vs hls.js routing', () => {
 
     container.appendChild(videoEl);
 
-    const orig = (globalThis as Record<string, unknown>).MediaSource;
+    const orig = (globalThis as Record<string, unknown>)['MediaSource'];
 
-    delete (globalThis as Record<string, unknown>).MediaSource;
+    delete (globalThis as Record<string, unknown>)['MediaSource'];
 
     backend = new Html5VideoBackend(container);
     const loadPromise = backend.load('https://example.invalid/ios.m3u8');
@@ -254,7 +254,7 @@ describe('native-HLS vs hls.js routing', () => {
     // Mobile Safari / iOS path — no hls.js, src set natively
     expect(_hlsRegistry.lastInstance).toBeUndefined();
 
-    (globalThis as Record<string, unknown>).MediaSource = orig;
+    (globalThis as Record<string, unknown>)['MediaSource'] = orig;
   });
 });
 
@@ -735,7 +735,7 @@ describe('pane-size ABR constraint (_applyAbrConstraints)', () => {
     backend = new Html5VideoBackend(container);
     await loadHls(backend, container);
 
-    expect(_hlsRegistry.lastConfig?.capLevelToPlayerSize).toBeUndefined();
+    expect(_hlsRegistry.lastConfig?.['capLevelToPlayerSize']).toBeUndefined();
   });
 });
 

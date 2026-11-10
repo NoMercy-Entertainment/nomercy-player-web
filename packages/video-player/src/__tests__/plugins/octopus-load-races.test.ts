@@ -23,8 +23,8 @@ const octopusDisposed: unknown[] = [];
 vi.mock('@nomercy-entertainment/nomercy-subtitle-octopus', () => {
   function MockOctopus(this: Record<string, unknown>, options: Record<string, unknown>) {
     octopusCalls.push(options);
-    this.on = () => {};
-    this.dispose = () => { octopusDisposed.push(this); };
+    this['on'] = () => {};
+    this['dispose'] = () => { octopusDisposed.push(this); };
   }
 
   return { NMSubtitleOctopus: MockOctopus };
@@ -139,7 +139,7 @@ describe('OctopusPlugin — stale load', () => {
     await loadA;
 
     expect(octopusCalls).toHaveLength(1);
-    expect(String(octopusCalls[0]!.trackContent)).toContain('[B]');
+    expect(String(octopusCalls[0]!['trackContent'])).toContain('[B]');
     expect(octopusDisposed).toHaveLength(0);
     expect(plugin.subtitle()).toBe('https://cdn.example.com/b.ass');
   });
@@ -361,7 +361,7 @@ describe('OctopusPlugin — failures that heal on the next try', () => {
     await plugin.subtitle('https://server.test/a.ass');
 
     expect(manifestAttempts).toBe(2);
-    expect(Object.keys(octopusCalls.at(-1)!.availableFonts as object)).toContain('inter');
+    expect(Object.keys(octopusCalls.at(-1)!['availableFonts'] as object)).toContain('inter');
   });
 });
 
@@ -435,7 +435,7 @@ describe('OctopusPlugin — font reuse across loads', () => {
     await plugin.subtitle('https://cdn.example.com/a.ass');
 
     expect(octopusCalls).toHaveLength(1);
-    expect(Object.keys(octopusCalls[0]!.availableFonts as object)).toEqual(['b']);
+    expect(Object.keys(octopusCalls[0]!['availableFonts'] as object)).toEqual(['b']);
   });
 });
 

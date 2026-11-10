@@ -92,13 +92,13 @@ function pickVariant(master: string, preferredHeight: number | undefined): Maste
     if (!uri) continue;
 
     const attrs = parseAttributes(line);
-    const height = Number(attrs.RESOLUTION?.split('x')[1] ?? 0);
+    const height = Number(attrs['RESOLUTION']?.split('x')[1] ?? 0);
 
     variants.push({
       uri: uri.trim(),
       height,
-      bandwidth: Number(attrs.BANDWIDTH ?? 0),
-      audioGroup: attrs.AUDIO,
+      bandwidth: Number(attrs['BANDWIDTH'] ?? 0),
+      audioGroup: attrs['AUDIO'],
     });
   }
 
@@ -125,10 +125,10 @@ function pickAudioUri(master: string, group: string | undefined): string | undef
   const candidates = master.split(/\r?\n/)
     .filter((line) => line.startsWith('#EXT-X-MEDIA') && line.includes('TYPE=AUDIO'))
     .map(parseAttributes)
-    .filter((attrs) => attrs['GROUP-ID'] === group && attrs.URI);
-  const chosen = candidates.find((attrs) => attrs.DEFAULT === 'YES') ?? candidates[0];
+    .filter((attrs) => attrs['GROUP-ID'] === group && attrs['URI']);
+  const chosen = candidates.find((attrs) => attrs['DEFAULT'] === 'YES') ?? candidates[0];
 
-  return chosen?.URI;
+  return chosen?.['URI'];
 }
 
 /** Init segment first, then the first `count` media segments. Empty when byte ranges make the keys unpredictable. */
@@ -140,7 +140,7 @@ function leadingResources(playlist: string, count: number): string[] {
   const lines = playlist.split(/\r?\n/);
   const mapLine = lines.find((line) => line.startsWith('#EXT-X-MAP'));
   const mapUri = mapLine
-    ? parseAttributes(mapLine).URI
+    ? parseAttributes(mapLine)['URI']
     : undefined;
 
   if (mapUri) {

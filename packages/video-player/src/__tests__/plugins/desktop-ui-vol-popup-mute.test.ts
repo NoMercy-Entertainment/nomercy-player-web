@@ -58,13 +58,13 @@ describe('DesktopUiPlugin — vertical popup mute button', () => {
     div.className = 'nomercyplayer';
     document.body.appendChild(div);
 
-    (globalThis as unknown as Record<string, unknown>).ResizeObserver = MockResizeObserver;
+    (globalThis as unknown as Record<string, unknown>)['ResizeObserver'] = MockResizeObserver;
   });
 
   afterEach(() => {
     (NMVideoPlayer as unknown as { _resetRegistry: () => void })._resetRegistry();
     document.body.innerHTML = '';
-    delete (globalThis as unknown as Record<string, unknown>).ResizeObserver;
+    delete (globalThis as unknown as Record<string, unknown>)['ResizeObserver'];
   });
 
   // ── Presence ──────────────────────────────────────────────────────────────

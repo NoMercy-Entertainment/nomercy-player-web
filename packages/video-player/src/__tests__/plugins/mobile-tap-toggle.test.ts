@@ -109,7 +109,7 @@ describe('Rule 5 — mobile tap-toggle', () => {
 
     // Drive controls to hidden state via the real inactivity path so the
     // plugin's activityActive flag is correctly set to false.
-    (player as unknown as Record<string, unknown>).playState = () => 'playing';
+    (player as unknown as Record<string, unknown>)['playState'] = () => 'playing';
     vi.advanceTimersByTime(200);
     expect(isActive(player), 'precondition: controls must be hidden').toBe(false);
 
@@ -223,7 +223,7 @@ describe('Rule 5 — mobile tap-toggle', () => {
     await player.ready();
 
     // Drive to hidden via inactivity (fake timers; inactivityMs=4000 so advance 4500).
-    (player as unknown as Record<string, unknown>).playState = () => 'playing';
+    (player as unknown as Record<string, unknown>)['playState'] = () => 'playing';
     vi.advanceTimersByTime(4500);
     expect(isActive(player), 'precondition: controls hidden before tap').toBe(false);
 
@@ -284,7 +284,7 @@ describe('Rules 1–4 — desktop autohide regressions', () => {
     await player.ready();
 
     // Drive to hidden.
-    (player as unknown as Record<string, unknown>).playState = () => 'playing';
+    (player as unknown as Record<string, unknown>)['playState'] = () => 'playing';
     vi.advanceTimersByTime(4500);
     expect(isActive(player), 'precondition: hidden').toBe(false);
 
@@ -308,7 +308,7 @@ describe('Rules 1–4 — desktop autohide regressions', () => {
 
     expect(isActive(player), 'precondition: visible on mount').toBe(true);
 
-    (player as unknown as Record<string, unknown>).playState = () => 'playing';
+    (player as unknown as Record<string, unknown>)['playState'] = () => 'playing';
     vi.advanceTimersByTime(4500);
 
     expect(isActive(player), 'Rule 2: .active gone after 4 s').toBe(false);
@@ -321,7 +321,7 @@ describe('Rules 1–4 — desktop autohide regressions', () => {
     player.addPlugin(desktopUiPlugin, { inactivityMs: 4000 });
     await player.ready();
 
-    (player as unknown as Record<string, unknown>).playState = () => 'playing';
+    (player as unknown as Record<string, unknown>)['playState'] = () => 'playing';
     expect(isActive(player), 'precondition: visible').toBe(true);
 
     const container = document.getElementById('test')!;
@@ -338,7 +338,7 @@ describe('Rules 1–4 — desktop autohide regressions', () => {
     await player.ready();
 
     // Stub as paused — maybeHide() bails when not 'playing'.
-    (player as unknown as Record<string, unknown>).playState = () => 'paused';
+    (player as unknown as Record<string, unknown>)['playState'] = () => 'paused';
     vi.advanceTimersByTime(8000);
 
     expect(isActive(player), 'Rule 4: controls stay visible while paused (timer)').toBe(true);
@@ -350,7 +350,7 @@ describe('Rules 1–4 — desktop autohide regressions', () => {
     player.addPlugin(desktopUiPlugin, { inactivityMs: 4000 });
     await player.ready();
 
-    (player as unknown as Record<string, unknown>).playState = () => 'paused';
+    (player as unknown as Record<string, unknown>)['playState'] = () => 'paused';
 
     const container = document.getElementById('test')!;
 
@@ -366,7 +366,7 @@ describe('Rules 1–4 — desktop autohide regressions', () => {
     await player.ready();
 
     // Arm the timer in playing state.
-    (player as unknown as Record<string, unknown>).playState = () => 'playing';
+    (player as unknown as Record<string, unknown>)['playState'] = () => 'playing';
     const container = document.getElementById('test')!;
 
     container.dispatchEvent(new MouseEvent('mousemove', {
@@ -377,7 +377,7 @@ describe('Rules 1–4 — desktop autohide regressions', () => {
 
     // Emit pause — should cancel the timer.
     player.emit('pause' as never, {} as never);
-    (player as unknown as Record<string, unknown>).playState = () => 'paused';
+    (player as unknown as Record<string, unknown>)['playState'] = () => 'paused';
 
     // Advance past original 4 s window — controls must still be visible.
     vi.advanceTimersByTime(5000);

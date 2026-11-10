@@ -29,7 +29,7 @@ function isFontEntry(value: unknown): value is FontManifestEntry {
     value !== null &&
     typeof value === 'object' &&
     'file' in value &&
-    typeof (value as Record<string, unknown>).file === 'string'
+    typeof (value as Record<string, unknown>)['file'] === 'string'
   );
 }
 

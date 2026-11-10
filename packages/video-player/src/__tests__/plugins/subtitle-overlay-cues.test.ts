@@ -428,7 +428,7 @@ describe('SubtitleOverlayPlugin — bindOverlayToVideo null rect', () => {
     const player = new NMVideoPlayer('test').setup({});
 
     // Patch videoRect to return null before plugin attaches.
-    (player as unknown as Record<string, unknown>).videoRect = () => null;
+    (player as unknown as Record<string, unknown>)['videoRect'] = () => null;
 
     await player.addPlugin(subtitleOverlayPlugin).ready();
 
@@ -452,7 +452,7 @@ describe('SubtitleOverlayPlugin — bindOverlayToVideo null rect', () => {
 
     const fakeRect = { width: 640, height: 360 };
 
-    (player as unknown as Record<string, unknown>).videoRect = () => fakeRect;
+    (player as unknown as Record<string, unknown>)['videoRect'] = () => fakeRect;
 
     await player.addPlugin(subtitleOverlayPlugin).ready();
 

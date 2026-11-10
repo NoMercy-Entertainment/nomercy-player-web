@@ -151,7 +151,7 @@ export class LiveTranscodingPlugin<T extends VideoPlaylistItem = VideoPlaylistIt
 
         this.emit('job:started', {
           jobId: this.currentJobId ?? '',
-          sourceUrl: String(msg.sourceUrl ?? ''),
+          sourceUrl: String(msg['sourceUrl'] ?? ''),
         });
 
         break;
@@ -162,8 +162,8 @@ export class LiveTranscodingPlugin<T extends VideoPlaylistItem = VideoPlaylistIt
           this.emit('job:progress', {
             jobId: msg.jobId ?? this.currentJobId ?? '',
             transcodedSeconds: msg.transcodedSeconds,
-            totalSeconds: msg.totalSeconds as number | undefined,
-            variantsReady: (msg.variantsReady as string[]) ?? [],
+            totalSeconds: msg['totalSeconds'] as number | undefined,
+            variantsReady: (msg['variantsReady'] as string[]) ?? [],
           });
         }
 
