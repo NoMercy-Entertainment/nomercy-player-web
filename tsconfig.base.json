@@ -9,6 +9,7 @@
     "resolveJsonModule": true,
     "types": ["vitest/globals", "vite/client", "node"],
     "strict": true,
+    "exactOptionalPropertyTypes": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
