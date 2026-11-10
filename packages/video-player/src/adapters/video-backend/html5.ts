@@ -81,7 +81,7 @@ interface HlsConstructor {
   new(config?: Record<string, unknown>): HlsInstance;
   isSupported?(): boolean;
   DefaultConfig?: { loader?: HlsLoaderConstructor };
-  Events: Record<string, string>;
+  Events: Record<'ERROR' | 'FRAG_LOADED' | 'LEVEL_SWITCHED' | 'FRAG_CHANGED', string>;
   ErrorTypes: Record<string, string>;
 }
 

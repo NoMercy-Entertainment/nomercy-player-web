@@ -101,7 +101,7 @@ describe('MediaSession (extended)', () => {
 
       const artwork = ms.metadata.artwork as MediaImage[];
 
-      expect(artwork[0].src).toBe(
+      expect(artwork[0]?.src).toBe(
         'https://example.com/my%20image.jpg?width=96&type=png&aspect_ratio=1',
       );
     });

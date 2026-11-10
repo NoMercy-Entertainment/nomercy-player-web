@@ -456,8 +456,10 @@ function parseColorToHex(color: string, opacity: number = 1): string {
   if (color.toLowerCase() === 'transparent')
     return '#00000000';
 
-  if (NAMED_COLORS[color.toLowerCase()]) {
-    return normalizeHex(NAMED_COLORS[color.toLowerCase()], opacity);
+  const named = NAMED_COLORS[color.toLowerCase()];
+
+  if (named) {
+    return normalizeHex(named, opacity);
   }
 
   const ctx = document.createElement('canvas').getContext('2d');

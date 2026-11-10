@@ -7,7 +7,6 @@
     },
     // Phase 2 turns these on: 143 and 5 errors to fix first.
     "noPropertyAccessFromIndexSignature": false,
-    "noUncheckedIndexedAccess": false,
     // Video publishes no map files; enabling them changes the npm file list.
     "declarationMap": false,
     "sourceMap": false

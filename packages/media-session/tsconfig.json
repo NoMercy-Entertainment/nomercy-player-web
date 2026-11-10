@@ -5,7 +5,6 @@
     "target": "ES2020",
     "lib": ["ES2020", "DOM"],
     "types": ["vitest/globals", "node"],
-    "noUncheckedIndexedAccess": false,
     "declarationMap": false,
     "sourceMap": false
   }
