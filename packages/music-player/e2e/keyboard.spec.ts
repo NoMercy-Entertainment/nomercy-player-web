@@ -71,19 +71,17 @@ test.describe('keyboard (KeyHandlerPlugin default bindings)', () => {
     expect(playStateBefore).not.toBe('playing');
 
     // Register a one-shot play listener so we can await the state change.
-    const played = page.evaluate(() => {
-      return new Promise<boolean>((resolve) => {
-        (window as any).playerBasic.on('play', () =>
-          resolve(true));
+    await page.evaluate(() => {
+      (window as any).playSeen = false;
 
-        setTimeout(resolve, 3_000, false);
+      (window as any).playerBasic.on('play', () => {
+        (window as any).playSeen = true;
       });
     });
 
     await page.keyboard.press('Space');
-    const result = await played;
 
-    expect(result).toBe(true);
+    await expect.poll(() => page.evaluate(() => (window as any).playSeen), { timeout: 15_000 }).toBe(true);
   });
 
   test('Space pauses playback when playing', async ({ page }) => {
@@ -92,19 +90,18 @@ test.describe('keyboard (KeyHandlerPlugin default bindings)', () => {
     // Wait for play event.
     await page.waitForFunction(() => (window as any).playerBasic.playState() === 'playing', { timeout: 5_000 });
 
-    const paused = page.evaluate(() => {
-      return new Promise<boolean>((resolve) => {
-        (window as any).playerBasic.on('pause', () =>
-          resolve(true));
+    // The listener is in place before the key is pressed, and a busy machine gets time to answer.
+    await page.evaluate(() => {
+      (window as any).pauseSeen = false;
 
-        setTimeout(resolve, 3_000, false);
+      (window as any).playerBasic.on('pause', () => {
+        (window as any).pauseSeen = true;
       });
     });
 
     await page.keyboard.press('Space');
-    const result = await paused;
 
-    expect(result).toBe(true);
+    await expect.poll(() => page.evaluate(() => (window as any).pauseSeen), { timeout: 15_000 }).toBe(true);
   });
 
   test('ArrowLeft rewinds position toward 0', async ({ page }) => {
