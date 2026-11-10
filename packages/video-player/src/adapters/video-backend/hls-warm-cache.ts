@@ -205,9 +205,9 @@ export class HlsWarmCache {
 
       return doFetch(url, {
         signal: abort.signal,
-        headers: authorization
-          ? { Authorization: authorization }
-          : undefined,
+        ...(authorization
+          ? { headers: { Authorization: authorization } }
+          : {}),
         priority: 'low',
       }).then(async (response) => {
         if (!response.ok)

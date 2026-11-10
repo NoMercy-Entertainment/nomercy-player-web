@@ -254,7 +254,11 @@ export class TwitchPlugin extends Plugin<NMVideoPlayer, TwitchPluginOptions, Twi
   /** A link alone tells a viewer nothing, so the real name is looked up. Playback never waits on a failure. */
   private async fillTitle(item: VideoPlaylistItem, source: TwitchSource): Promise<void> {
     try {
-      item.title = await lookUpTitle(this.postWithoutAuth, source, this.opts?.clientId) ?? item.title;
+      const title = await lookUpTitle(this.postWithoutAuth, source, this.opts?.clientId) ?? item.title;
+
+      if (title !== undefined) {
+        item.title = title;
+      }
 
       // eslint-disable-next-line player/no-raw-player-bus -- the UI drew this item before its title was known, and only `item` redraws it.
       this.player.emit('item', {

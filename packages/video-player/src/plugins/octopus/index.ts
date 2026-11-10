@@ -48,12 +48,12 @@ interface SubtitleOctopusCtorOptions {
   video: HTMLVideoElement;
   trackContent: unknown;
   availableFonts: Record<string, string>;
-  lazyFileLoading?: boolean;
-  debug?: boolean;
-  workerUrl?: string;
-  legacyWorkerUrl?: string;
-  fallbackFont?: string;
-  geometrySource?: HTMLElement;
+  lazyFileLoading?: boolean | undefined;
+  debug?: boolean | undefined;
+  workerUrl?: string | undefined;
+  legacyWorkerUrl?: string | undefined;
+  fallbackFont?: string | undefined;
+  geometrySource?: HTMLElement | undefined;
 }
 
 /** Minimal constructor signature resolved from the dynamic import. */

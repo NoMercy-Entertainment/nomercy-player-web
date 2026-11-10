@@ -373,13 +373,17 @@ export function repaintPane(
   }
 
   if (id === 'playlist') {
+    const imageBaseUrl = opts?.imageBaseUrl ??
+      (player as { options?: VideoPlayerConfig }).options?.baseImageUrl;
+
     renderPlaylistPane(menus.panes.playlist, player, listen, closeOnPick, {
       // The player config is the single place a consumer sets an image base.
       // Without this fallback, setting `baseImageUrl` there still leaves the
       // playlist thumbnails relative, and the same value has to be repeated
       // as a plugin option to make them resolve.
-      imageBaseUrl: opts?.imageBaseUrl ??
-        (player as { options?: VideoPlayerConfig }).options?.baseImageUrl,
+      ...(imageBaseUrl !== undefined
+        ? { imageBaseUrl }
+        : {}),
     });
   }
 

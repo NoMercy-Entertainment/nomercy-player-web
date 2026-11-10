@@ -5,6 +5,7 @@
     "paths": {
       "@nomercy-entertainment/nomercy-video-player": ["./src/index.ts"]
     },
+    "exactOptionalPropertyTypes": true,
     "noPropertyAccessFromIndexSignature": true,
     // Video publishes no map files; enabling them changes the npm file list.
     "declarationMap": false,

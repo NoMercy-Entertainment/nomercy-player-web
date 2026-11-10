@@ -237,10 +237,10 @@ export class Html5VideoBackend
   private _onlineHandler: (() => void) | undefined;
 
   // ── Web Audio graph ──────────────────────────────────────────────────────
-  private _sourceNode?: MediaElementAudioSourceNode;
-  private _sourceCtx?: AudioContext;
-  private _analyserNode?: AnalyserNode;
-  private _outputGain?: GainNode;
+  private _sourceNode?: MediaElementAudioSourceNode | undefined;
+  private _sourceCtx?: AudioContext | undefined;
+  private _analyserNode?: AnalyserNode | undefined;
+  private _outputGain?: GainNode | undefined;
 
   // ── HDR-aware ABR state ──
   /**
@@ -622,9 +622,13 @@ export class Html5VideoBackend
 
     await this._warmCache.warm(url, {
       segments: opts?.segments ?? 3,
-      preferredHeight: playingHeight,
+      ...(playingHeight !== undefined
+        ? { preferredHeight: playingHeight }
+        : {}),
       maxBytes: WARM_MAX_BYTES,
-      authHeader: this._authHeaderProvider,
+      ...(this._authHeaderProvider
+        ? { authHeader: this._authHeaderProvider }
+        : {}),
     });
   }
 
@@ -693,7 +697,7 @@ export class Html5VideoBackend
   // resumeLoader / loaderState / setAuthHeaderProvider
 
   private _streamResolver?: StreamResolver;
-  private _customSource?: IStreamSource;
+  private _customSource?: IStreamSource | undefined;
 
   private _destroyCustomSource(): void {
     this._customSource?.destroy();
@@ -747,7 +751,9 @@ export class Html5VideoBackend
     if (this.hls?.audioTracks?.length) {
       return this.hls.audioTracks.map((hlsAudioTrack, index) => ({
         id: `audio-${index}`,
-        language: hlsAudioTrack.lang ?? undefined,
+        ...(typeof hlsAudioTrack.lang === 'string'
+          ? { language: hlsAudioTrack.lang }
+          : {}),
         label: hlsAudioTrack.name ?? `Track ${index + 1}`,
         default: hlsAudioTrack.default === true,
       }));
@@ -776,7 +782,9 @@ export class Html5VideoBackend
 
         out.push({
           id: track.id || `audio-${i}`,
-          language: track.language || undefined,
+          ...(track.language
+            ? { language: track.language }
+            : {}),
           label: track.label || `Track ${i + 1}`,
           default: track.enabled,
         });
@@ -808,7 +816,9 @@ export class Html5VideoBackend
     if (this.hls?.subtitleTracks?.length) {
       return this.hls.subtitleTracks.map((hlsSubtitleTrack, index) => ({
         id: `subtitle-${index}`,
-        language: hlsSubtitleTrack.lang ?? undefined,
+        ...(typeof hlsSubtitleTrack.lang === 'string'
+          ? { language: hlsSubtitleTrack.lang }
+          : {}),
         label: hlsSubtitleTrack.name ?? `Subtitles ${index + 1}`,
         kind: 'subtitles' as const,
         url: hlsSubtitleTrack.url ?? '',
@@ -830,7 +840,9 @@ export class Html5VideoBackend
 
       out.push({
         id: track.id || `subtitle-${i}`,
-        language: track.language || undefined,
+        ...(track.language
+          ? { language: track.language }
+          : {}),
         label: track.label || `Subtitles ${i + 1}`,
         kind: track.kind === 'captions'
           ? 'captions'
@@ -1000,7 +1012,6 @@ export class Html5VideoBackend
   private emitEmptySubtitleCue(): void {
     const change: SubtitleCueChange = {
       cues: [],
-      language: undefined,
     };
 
     this.emit('subtitleCue', change);
@@ -1022,7 +1033,9 @@ export class Html5VideoBackend
       : rows.map(normaliseVttCue);
     const change: SubtitleCueChange = {
       cues,
-      language: tt.language || undefined,
+      ...(tt.language
+        ? { language: tt.language }
+        : {}),
     };
 
     this.emit('subtitleCue', change);
@@ -1046,8 +1059,12 @@ export class Html5VideoBackend
 
       return {
         bitrate: level.bitrate ?? 0,
-        height: level.height ?? undefined,
-        width: level.width ?? undefined,
+        ...(typeof level.height === 'number'
+          ? { height: level.height }
+          : {}),
+        ...(typeof level.width === 'number'
+          ? { width: level.width }
+          : {}),
         label: level.name ?? `${level.height ?? '?'}p`,
         index,
         supported: cached ?? true,
@@ -1983,9 +2000,9 @@ export class Html5VideoBackend
               id: 'hls',
             },
             message: `HLS fatal: ${data.details}`,
-            context: data.status === undefined
-              ? undefined
-              : { httpStatus: data.status },
+            ...(data.status === undefined
+              ? {}
+              : { context: { httpStatus: data.status } }),
           }));
         }
       };
@@ -2103,9 +2120,13 @@ function normaliseVttCue(cue: VTTCue): SubtitleCue {
   return {
     text: safe,
     plainText: plain,
-    line,
+    ...(line !== undefined
+      ? { line }
+      : {}),
     align,
     size,
-    position,
+    ...(position !== undefined
+      ? { position }
+      : {}),
   };
 }

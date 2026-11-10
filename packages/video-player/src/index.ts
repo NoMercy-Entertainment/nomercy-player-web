@@ -1340,7 +1340,9 @@ composeMixins(NMVideoPlayer.prototype, ...playerCoreMethods);
         this.item(index, {
           autoplay: wantsAutoplay,
           source: 'auto-play',
-          startAt: resumeTime,
+          ...(resumeTime !== undefined
+            ? { startAt: resumeTime }
+            : {}),
         });
       })
       .catch(() => { /* setup failed — error surfaced via the 'error' event */ });

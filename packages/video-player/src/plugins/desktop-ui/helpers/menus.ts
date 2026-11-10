@@ -592,9 +592,9 @@ export function renderQualityPane(
     : undefined;
 
   appendChoice(scroll, 'quality-auto', player.t('plugin.desktop-ui.menu.auto'), auto, () => { player.quality?.('auto'); onPick(); }, listen, player, {
-    sublabel: auto && playingLabel
-      ? playingLabel
-      : undefined,
+    ...(auto && playingLabel
+      ? { sublabel: playingLabel }
+      : {}),
   });
 
   levels.forEach((qualityLevel, i) => {

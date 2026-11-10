@@ -102,7 +102,13 @@ describe('NMVideoPlayer title-token ingest', () => {
     if (!first)
       throw new Error('expected item');
 
-    queueMethods.queue.call(internals, [{ id: first.id, title: first.title }]);
+    queueMethods.queue.call(internals, [{
+      id: first.id,
+      ...(first.title !== undefined
+        ? { title: first.title }
+        : {}),
+    }]);
+
     const items = queueMethods.queue.call(internals) as ReadonlyArray<BasePlaylistItem>;
 
     expect(items[0]?.title).toBe('S1 E1 - Pilot');

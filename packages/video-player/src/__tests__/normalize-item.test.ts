@@ -191,7 +191,9 @@ describe('pickStartItem()', () => {
     ({
       id,
       url: `https://cdn.test/${id}.m3u8`,
-      progress,
+      ...(progress !== undefined
+        ? { progress }
+        : {}),
     });
 
   it('starts at 0 when nothing carries progress', () => {

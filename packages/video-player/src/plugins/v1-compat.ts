@@ -670,7 +670,9 @@ export class V1VideoCompatPlugin extends Plugin<NMVideoPlayer> {
         counts.set(item.season, {
           season: item.season,
           episodes: 1,
-          seasonName: item.seasonName,
+          ...(item.seasonName !== undefined
+            ? { seasonName: item.seasonName }
+            : {}),
         });
       }
 

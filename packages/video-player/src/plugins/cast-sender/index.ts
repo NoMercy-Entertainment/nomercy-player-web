@@ -66,7 +66,9 @@ export class CastSenderPlugin<T extends VideoPlaylistItem = VideoPlaylistItem> e
     meta.title = item.title ?? '';
 
     if (isEpisode) {
-      meta.seriesTitle = item.show;
+      if (item.show !== undefined) {
+        meta.seriesTitle = item.show;
+      }
 
       if (item.season !== undefined) {
         meta.season = Number(item.season);

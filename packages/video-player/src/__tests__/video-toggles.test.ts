@@ -61,24 +61,28 @@ function buildFakePlatform(opts: { fullscreen?: boolean; pip?: boolean } = { ful
         powerEfficient: true,
       }),
     },
-    fullscreen: opts.fullscreen
+    ...(opts.fullscreen
       ? {
-          enter: fsEnter,
-          exit: fsExit,
-          isActive: () => fsActive,
-          isSupported: () => true,
-          subscribe: () => () => {},
+          fullscreen: {
+            enter: fsEnter,
+            exit: fsExit,
+            isActive: () => fsActive,
+            isSupported: () => true,
+            subscribe: () => () => {},
+          },
         }
-      : undefined,
-    pip: opts.pip
+      : {}),
+    ...(opts.pip
       ? {
-          enter: pipEnter,
-          exit: pipExit,
-          isActive: () => pipActive,
-          isSupported: () => true,
-          subscribe: () => () => {},
+          pip: {
+            enter: pipEnter,
+            exit: pipExit,
+            isActive: () => pipActive,
+            isSupported: () => true,
+            subscribe: () => () => {},
+          },
         }
-      : undefined,
+      : {}),
   };
 
   return {

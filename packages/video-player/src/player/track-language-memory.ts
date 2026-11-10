@@ -109,11 +109,17 @@ export interface SubtitleDescriptor {
 }
 
 function descriptorOf(track: SubtitleTrack): SubtitleDescriptor | null {
+  const format = formatOf(track);
+
   return track.language
     ? {
         language: track.language,
-        type: track.type,
-        format: formatOf(track),
+        ...(track.type !== undefined
+          ? { type: track.type }
+          : {}),
+        ...(format !== undefined
+          ? { format }
+          : {}),
         explicit: true,
       }
     : null;

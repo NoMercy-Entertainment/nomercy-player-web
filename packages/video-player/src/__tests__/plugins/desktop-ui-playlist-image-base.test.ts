@@ -46,7 +46,9 @@ async function playerWith(
   player.addPlugin(DesktopUiPlugin, pluginOpts ?? {});
 
   player.setup({
-    baseImageUrl: config.baseImageUrl,
+    ...(config.baseImageUrl !== undefined
+      ? { baseImageUrl: config.baseImageUrl }
+      : {}),
     playlist: [
       {
         id: 'a',

@@ -68,7 +68,9 @@ const SUBTITLE_TRACK_DEFAULTS = { kind: 'subtitles' as const, default: false };
 function subtitleTrack(id: string, language: string | undefined): SubtitleTrack {
   return {
     id,
-    language,
+    ...(language !== undefined
+      ? { language }
+      : {}),
     label: id,
     url: `${id}.vtt`,
     ...SUBTITLE_TRACK_DEFAULTS,
@@ -78,7 +80,9 @@ function subtitleTrack(id: string, language: string | undefined): SubtitleTrack 
 function audioTrack(id: string, language: string | undefined): AudioTrack {
   return {
     id,
-    language,
+    ...(language !== undefined
+      ? { language }
+      : {}),
     label: id,
     default: false,
   };

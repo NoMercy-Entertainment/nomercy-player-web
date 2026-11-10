@@ -129,11 +129,13 @@ function normalizeTracks(tracks: LegacyTrackEntry[] | undefined): LegacyTrackEnt
   if (!tracks)
     return undefined;
 
-  return tracks.map((track) =>
+  return tracks.map((track): LegacyTrackEntry =>
     track.kind === 'subtitles' && track.type === undefined
       ? {
           ...track,
-          type: track.label,
+          ...(track.label !== undefined
+            ? { type: track.label }
+            : {}),
         }
       : track);
 }
@@ -177,17 +179,48 @@ export function normalizeVideoPlaylistItem(item: BasePlaylistItem): VideoPlaylis
   const loose = item as LooseVideoItem;
   const durationSeconds = normalizeDuration(loose.duration);
   const tracks = normalizeTracks(loose.tracks);
+  const chapters = normalizeChapters(loose.chapters);
+  const previewSpriteUrl = loose.previewSpriteUrl ??
+    tracks?.find((track) => track.kind === 'thumbnails')?.file;
+  const fonts = normalizeFonts(loose.fonts) ?? fontsFromTracks(tracks);
+  const progress = normalizeProgress(loose.progress, durationSeconds);
+
+  // Normalized fields replace the loose ones even when empty, so drop them from the spread source.
+  const url = loose.url ?? loose.file;
+  const {
+    url: looseUrl,
+    duration: looseDuration,
+    tracks: looseTracks,
+    chapters: looseChapters,
+    previewSpriteUrl: loosePreview,
+    fonts: looseFonts,
+    progress: looseProgress,
+    ...rest
+  } = loose;
 
   const normalized: VideoPlaylistItem & { tracks?: LegacyTrackEntry[] } = {
-    ...loose,
-    url: loose.url ?? loose.file,
-    duration: durationSeconds,
-    tracks,
-    chapters: normalizeChapters(loose.chapters),
-    previewSpriteUrl: loose.previewSpriteUrl ??
-      tracks?.find((track) => track.kind === 'thumbnails')?.file,
-    fonts: normalizeFonts(loose.fonts) ?? fontsFromTracks(tracks),
-    progress: normalizeProgress(loose.progress, durationSeconds),
+    ...rest,
+    ...(url !== undefined
+      ? { url }
+      : {}),
+    ...(durationSeconds !== undefined
+      ? { duration: durationSeconds }
+      : {}),
+    ...(tracks !== undefined
+      ? { tracks }
+      : {}),
+    ...(chapters !== undefined
+      ? { chapters }
+      : {}),
+    ...(previewSpriteUrl !== undefined
+      ? { previewSpriteUrl }
+      : {}),
+    ...(fonts !== undefined
+      ? { fonts }
+      : {}),
+    ...(progress !== undefined
+      ? { progress }
+      : {}),
   };
 
   return normalized;

@@ -80,21 +80,16 @@ describe('subtitleTrackLabel()', () => {
   it('language without variant renders the name alone', () => {
     expect(subtitleTrackLabel(track({
       language: 'eng',
-      type: undefined,
       label: 'English',
     }), 'en', translate, 'Track 1')).toBe('English');
   });
 
   it('falls back to the raw label, then the default', () => {
     expect(subtitleTrackLabel(track({
-      language: undefined,
-      type: undefined,
       label: 'Commentary',
     }), 'en', translate, 'Track 1')).toBe('Commentary');
 
     expect(subtitleTrackLabel(track({
-      language: undefined,
-      type: undefined,
       label: '',
     }), 'en', translate, 'Track 3')).toBe('Track 3');
   });
