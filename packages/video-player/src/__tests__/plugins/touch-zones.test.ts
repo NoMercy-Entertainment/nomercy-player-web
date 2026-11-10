@@ -45,6 +45,20 @@ describe('TouchZonesPlugin', () => {
   const setup = (_opts?: Record<string, unknown>): NMVideoPlayer<any> =>
     new NMVideoPlayer('test').setup({});
 
+  // Fake time keeps a busy machine from stretching the 50ms gap past the double-tap window.
+  const clickTwice = async (box: Element, settleMs: number): Promise<void> => {
+    vi.useFakeTimers();
+
+    try {
+      box.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await vi.advanceTimersByTimeAsync(50);
+      box.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await vi.advanceTimersByTimeAsync(settleMs);
+    } finally {
+      vi.useRealTimers();
+    }
+  };
+
   const findZoneBox = (container: Element, colStart: string, colEnd: string): HTMLElement | undefined =>
     Array.from(container.querySelectorAll<HTMLElement>('.nm-touch-box')).find(
       (box) => box.style.gridColumnStart === colStart && box.style.gridColumnEnd === colEnd,
@@ -168,10 +182,7 @@ describe('TouchZonesPlugin', () => {
 
       expect(centerBox).toBeDefined();
 
-      centerBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      centerBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await new Promise((resolve) => setTimeout(resolve, 350));
+      await clickTwice(centerBox!, 350);
 
       expect(fullscreenSpy).toHaveBeenCalledTimes(1);
       expect(toggleSpy).not.toHaveBeenCalled();
@@ -221,13 +232,8 @@ describe('TouchZonesPlugin', () => {
 
       expect(centerBox).toBeDefined();
 
-      // Two clicks spaced within the doubleTap window (but gap > 0).
-      // doubleTap requires gap > 0 && gap < delay, so we need a real
-      // time gap. Schedule the second click 50ms after the first.
-      centerBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      centerBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await new Promise((resolve) => setTimeout(resolve, 350));
+      // doubleTap requires gap > 0 && gap < delay.
+      await clickTwice(centerBox!, 350);
 
       expect(fullscreenSpy).toHaveBeenCalledTimes(1);
       expect(toggleSpy).not.toHaveBeenCalled();
@@ -342,10 +348,7 @@ describe('TouchZonesPlugin', () => {
 
       expect(leftBox).toBeDefined();
 
-      leftBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      leftBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await new Promise((resolve) => setTimeout(resolve, 350));
+      await clickTwice(leftBox!, 350);
 
       expect(rewindSpy).toHaveBeenCalledTimes(1);
     });
@@ -365,10 +368,7 @@ describe('TouchZonesPlugin', () => {
 
       expect(rightBox).toBeDefined();
 
-      rightBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      rightBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await new Promise((resolve) => setTimeout(resolve, 350));
+      await clickTwice(rightBox!, 350);
 
       expect(forwardSpy).toHaveBeenCalledTimes(1);
     });
@@ -394,10 +394,7 @@ describe('TouchZonesPlugin', () => {
       expect(leftBox).toBeDefined();
 
       // Two taps 50ms apart (within 100ms window) → double-tap → seek.
-      leftBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      leftBox!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await clickTwice(leftBox!, 150);
 
       expect(rewindSpy).toHaveBeenCalledTimes(1);
     });
