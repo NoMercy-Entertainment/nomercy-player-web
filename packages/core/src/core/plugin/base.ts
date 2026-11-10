@@ -298,7 +298,9 @@ export class Plugin<
 
     const rootLogger: ILogger = config.logger ?? new Logger({
       prefix: 'nmplayer',
-      level: config.logLevel,
+      ...(config.logLevel !== undefined
+        ? { level: config.logLevel }
+        : {}),
     });
 
     this.logger = rootLogger.child(this.id);
@@ -607,16 +609,24 @@ export class Plugin<
   private buildError(payload: ThrowPayload): PlayerError {
     return new PlayerError({
       code: payload.code,
-      id: payload.id,
+      ...(payload.id !== undefined
+        ? { id: payload.id }
+        : {}),
       severity: payload.severity ?? 'error',
       scope: {
         kind: 'plugin',
         id: this.id,
       },
-      message: payload.message,
+      ...(payload.message !== undefined
+        ? { message: payload.message }
+        : {}),
       cause: payload.cause,
-      context: payload.context,
-      suggestion: payload.suggestion,
+      ...(payload.context !== undefined
+        ? { context: payload.context }
+        : {}),
+      ...(payload.suggestion !== undefined
+        ? { suggestion: payload.suggestion }
+        : {}),
     });
   }
 

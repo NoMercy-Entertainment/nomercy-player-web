@@ -12,7 +12,7 @@ interface ListenerRecord {
   target: EventTarget;
   event: string;
   handler: EventListener;
-  options?: AddEventListenerOptions | boolean;
+  options?: AddEventListenerOptions | boolean | undefined;
 }
 
 interface DisconnectableObserver { disconnect(): void }

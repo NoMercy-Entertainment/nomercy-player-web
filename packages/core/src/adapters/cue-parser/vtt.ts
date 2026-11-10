@@ -146,8 +146,10 @@ export function parseVttSubtitles(text: string): CueList<VTTSubtitlePayload> {
 
     const colorClassMatch = cue.body.match(/<c\.([\w-]+)>/);
 
-    if (colorClassMatch) {
-      styles.color = colorClassMatch[1];
+    const colorClass = colorClassMatch?.[1];
+
+    if (colorClass) {
+      styles.color = colorClass;
     }
 
     const payload: VTTSubtitlePayload = { text: cleaned };

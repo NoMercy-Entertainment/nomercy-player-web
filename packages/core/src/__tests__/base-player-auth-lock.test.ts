@@ -444,7 +444,7 @@ describe('token encapsulation — adversarial surface walk', () => {
 
     await authFetch({
       url: 'https://media.example.com/stream.m3u8',
-      auth: rawAuth as Parameters<typeof authFetch>[0]['auth'],
+      auth: rawAuth as NonNullable<Parameters<typeof authFetch>[0]['auth']>,
       signal: new AbortController().signal,
     });
 

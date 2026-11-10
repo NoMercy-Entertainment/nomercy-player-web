@@ -75,7 +75,9 @@ export const timeMethods = {
     return (async () => {
       const result = await this._dispatchBefore<{ time: number; source?: string }>('beforeSeek', {
         time: target,
-        source: opts.source,
+        ...(opts.source !== undefined
+          ? { source: opts.source }
+          : {}),
       });
 
       if (result.prevented) {

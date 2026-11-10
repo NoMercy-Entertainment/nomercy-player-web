@@ -111,7 +111,9 @@ export const loadingMethods = {
       'beforeLoad',
       {
         item,
-        source: opts?.source,
+        ...(opts?.source !== undefined
+          ? { source: opts.source }
+          : {}),
       },
     );
 
@@ -369,16 +371,20 @@ export const loadingMethods = {
 
     const config = this.options ?? {};
     const ctrl = new AbortController();
+    const auth = this._authConfig ?? config.auth;
 
     try {
       const items = await authFetch<T[]>({
         url,
-        auth: this._authConfig ?? config.auth,
-        fetch: config.fetch,
+        ...(auth !== undefined
+          ? { auth }
+          : {}),
+        ...(config.fetch !== undefined
+          ? { fetch: config.fetch }
+          : {}),
         liveAuth: () => this._authConfig ?? config.auth,
         parser: parser ?? ((raw: string): T[] => JSON.parse(raw)),
         emit: (event: string, data: unknown) => this.emit(event, data),
-        pluginId: undefined,
         scope: 'player',
         signal: ctrl.signal,
       });

@@ -50,6 +50,8 @@ export function pluginError(
         }
       : { kind: 'core' },
     message: `${code}: ${message}`,
-    context: opts?.context,
+    ...(opts?.context !== undefined
+      ? { context: opts.context }
+      : {}),
   });
 }

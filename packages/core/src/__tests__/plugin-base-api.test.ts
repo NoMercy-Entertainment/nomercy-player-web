@@ -353,8 +353,8 @@ describePlugin(ApiProbePlugin, (ctx) => {
 
   describe('static moduleUrl + appendStyles()', () => {
     interface HappyDomSettings {
-      disableCSSFileLoading?: boolean;
-      handleDisabledFileLoadingAsSuccess?: boolean;
+      disableCSSFileLoading?: boolean | undefined;
+      handleDisabledFileLoadingAsSuccess?: boolean | undefined;
     }
 
     interface HappyDomWindow {

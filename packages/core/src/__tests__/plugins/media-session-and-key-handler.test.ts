@@ -92,10 +92,10 @@ describe('MediaSessionPlugin', () => {
     originalMediaMetadata = (globalThis as any).MediaMetadata;
 
     (globalThis as any).MediaMetadata = class FakeMediaMetadata {
-      title?: string;
-      artist?: string;
-      album?: string;
-      artwork?: Array<{ src: string }>;
+      title?: string | undefined;
+      artist?: string | undefined;
+      album?: string | undefined;
+      artwork?: Array<{ src: string }> | undefined;
       constructor(init: {
         title?: string;
         artist?: string;

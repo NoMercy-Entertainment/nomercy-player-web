@@ -62,7 +62,8 @@ interface PluginFetchHost {
 export function pluginFetch<T = string>(host: PluginFetchHost, url: string, options?: FetchOptions<T>): Promise<T> {
   const ctrl = host.lifecycle.abortable();
   const config = host.player.options ?? {};
-  const authless = options?.auth === false;
+  const { auth: authOption, ...restOptions } = options ?? {};
+  const authless = authOption === false;
   const liveAuth = authless
     ? undefined
     : host.player._rawAuth?.();
@@ -71,13 +72,17 @@ export function pluginFetch<T = string>(host: PluginFetchHost, url: string, opti
     : (liveAuth ?? config.auth);
   const scope = options?.scope ?? 'plugin';
   const fetchOpts: InternalFetchOptions<T> = {
-    ...options,
+    ...restOptions,
     url,
-    auth,
-    fetch: config.fetch,
-    liveAuth: authless
-      ? undefined
-      : () => host.player._rawAuth?.() ?? config.auth,
+    ...(auth !== undefined
+      ? { auth }
+      : {}),
+    ...(config.fetch !== undefined
+      ? { fetch: config.fetch }
+      : {}),
+    ...(authless
+      ? {}
+      : { liveAuth: () => host.player._rawAuth?.() ?? config.auth }),
     signal: ctrl.signal,
     pluginId: host.id,
     scope,

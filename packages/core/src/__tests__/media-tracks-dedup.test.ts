@@ -59,8 +59,12 @@ function makeInternals(opts: {
         return undefined;
 
       return {
-        tracks: opts.sidecarTracks,
-        subtitles: opts.typedSubtitles,
+        ...(opts.sidecarTracks !== undefined
+          ? { tracks: opts.sidecarTracks }
+          : {}),
+        ...(opts.typedSubtitles !== undefined
+          ? { subtitles: opts.typedSubtitles }
+          : {}),
       };
     },
   } as unknown as ThisParameterType<typeof mediaTracksMethods.subtitles>;
@@ -540,7 +544,9 @@ describe('subtitles() — language-less stream tracks', () => {
   }];
   const stream = (language?: string): SubtitleTrack => ({
     id: 's',
-    language,
+    ...(language !== undefined
+      ? { language }
+      : {}),
     label: 'Track 1',
     url: '',
   });

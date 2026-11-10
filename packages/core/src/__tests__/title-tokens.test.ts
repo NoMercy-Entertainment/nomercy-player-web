@@ -192,7 +192,6 @@ describe('queue ingest — token resolution', () => {
   it('leaves title unchanged when translator is absent', () => {
     const internals = makeQueueInternals({
       registry: SE_REGISTRY,
-      translator: undefined,
     });
 
     queueMethods.queue.call(internals, [{ id: 1, title: '%S1 %E1 - No Translator' }]);
@@ -215,7 +214,13 @@ describe('queue ingest — token resolution', () => {
     if (!first)
       throw new Error('expected item');
 
-    queueMethods.queue.call(internals, [{ id: first.id, title: first.title }]);
+    queueMethods.queue.call(internals, [{
+      id: first.id,
+      ...(first.title !== undefined
+        ? { title: first.title }
+        : {}),
+    }]);
+
     const items5 = queueMethods.queue.call(internals) as ReadonlyArray<BasePlaylistItem>;
 
     expect(items5[0]?.title).toBe('S1 E1 - Pilot');

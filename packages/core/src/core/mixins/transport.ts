@@ -42,7 +42,9 @@ async function _dispatchSeek(
 ): Promise<{ proceeded: boolean }> {
   const result = await self._dispatchBefore<{ time: number; source?: string }>('beforeSeek', {
     time: beforeSeekTime,
-    source: opts.source,
+    ...(opts.source !== undefined
+      ? { source: opts.source }
+      : {}),
   });
 
   if (result.prevented) {
@@ -121,9 +123,13 @@ async function _loadAndPlay(
   data: LoadOptions,
   skipMissing = false,
 ): Promise<void> {
-  const loadOpts = {
-    source: data.source,
-    startAt: data.startAt,
+  const loadOpts: LoadOptions = {
+    ...(data.source !== undefined
+      ? { source: data.source }
+      : {}),
+    ...(data.startAt !== undefined
+      ? { startAt: data.startAt }
+      : {}),
   };
   let current = item;
   // Ids tried in this call: a run of missing items ends at the queue's end.
@@ -167,7 +173,9 @@ async function _loadAndPlay(
   // Same reason as the autoplay continuation in queue.ts item(): a browser
   // that refuses playback without a gesture rejects here, nobody awaits it,
   // and a bare call leaves an unhandled rejection in the console.
-  void self.play({ source: data.source }).catch(() => { /* surfaces via playPrevented */ });
+  void self.play(data.source !== undefined
+    ? { source: data.source }
+    : {}).catch(() => { /* surfaces via playPrevented */ });
 }
 
 // ──────────────────────────────────────────────────────────────────────────

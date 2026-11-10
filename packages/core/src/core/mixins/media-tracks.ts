@@ -110,8 +110,12 @@ async function fetchChaptersVtt(url: string, self: Internals): Promise<Chapter[]
   try {
     const text = await authFetch<string>({
       url,
-      auth: self._authConfig,
-      fetch: self.options?.fetch,
+      ...(self._authConfig !== undefined
+        ? { auth: self._authConfig }
+        : {}),
+      ...(self.options?.fetch !== undefined
+        ? { fetch: self.options.fetch }
+        : {}),
       liveAuth: () => self._authConfig,
       signal: ctrl.signal,
       responseType: 'text',
@@ -169,9 +173,13 @@ function _resolveSidecarSubtitle(
 
   return {
     url: track.url,
-    language: track.language,
+    ...(track.language !== undefined
+      ? { language: track.language }
+      : {}),
     label: track.label,
-    type: track.type,
+    ...(track.type !== undefined
+      ? { type: track.type }
+      : {}),
   };
 }
 
@@ -197,8 +205,12 @@ async function _startSidecarSubtitle(
   try {
     raw = await authFetch<string>({
       url: track.url,
-      auth: self._authConfig,
-      fetch: self.options?.fetch,
+      ...(self._authConfig !== undefined
+        ? { auth: self._authConfig }
+        : {}),
+      ...(self.options?.fetch !== undefined
+        ? { fetch: self.options.fetch }
+        : {}),
       liveAuth: () => self._authConfig,
       signal: ctrl.signal,
       responseType: 'text',
@@ -219,14 +231,16 @@ async function _startSidecarSubtitle(
   // Every selection change bumps the epoch, so a superseded fetch bails here.
   if ((self._sidecarEpoch ?? 0) !== epoch) return;
 
-  self._sidecarAbort = undefined;
+  delete self._sidecarAbort;
 
   const cueList = parseVttSubtitles(raw);
   const tracker = new CueTracker<VTTSubtitlePayload>(cueList, { trackerId: 'subtitle-sidecar' });
   const ctx: SidecarSubtitleContext = {
     tracker,
     active: new Set<Cue<VTTSubtitlePayload>>(),
-    language: track.language,
+    ...(track.language !== undefined
+      ? { language: track.language }
+      : {}),
   };
 
   self._sidecarSubtitle = ctx;
@@ -273,7 +287,9 @@ function _toSubtitleCue(payload: VTTSubtitlePayload): SubtitleCuePayload {
   return {
     text: payload.markup ?? payload.text,
     plainText: payload.text,
-    line: payload.linePosition,
+    ...(payload.linePosition !== undefined
+      ? { line: payload.linePosition }
+      : {}),
     align: payload.alignment ?? 'center',
     size: typeof payload.size === 'number'
       ? payload.size
@@ -329,10 +345,14 @@ function _sidecarSubtitleTracks(self: Internals): SubtitleTrack[] {
       typeof track?.url === 'string' && track.url.length > 0)
     .map((track, idx): SubtitleTrack => ({
       id: track.id ?? `subtitle-item-${idx}`,
-      language: track.language,
+      ...(track.language !== undefined
+        ? { language: track.language }
+        : {}),
       label: track.label ?? track.language ?? `Subtitle ${idx + 1}`,
       kind: 'subtitles',
-      type: track.type,
+      ...(track.type !== undefined
+        ? { type: track.type }
+        : {}),
       url: track.url,
       default: track.default ?? false,
     }));
@@ -346,10 +366,14 @@ function _sidecarSubtitleTracks(self: Internals): SubtitleTrack[] {
       sidecarTrack?.kind === 'subtitles' && typeof sidecarTrack.file === 'string' && sidecarTrack.file.length > 0)
     .map((sidecarTrack, idx): SubtitleTrack => ({
       id: sidecarTrack.id ?? `subtitle-sidecar-${idx}`,
-      language: sidecarTrack.language,
+      ...(sidecarTrack.language !== undefined
+        ? { language: sidecarTrack.language }
+        : {}),
       label: sidecarTrack.label ?? sidecarTrack.language ?? `Subtitle ${idx + 1}`,
       kind: 'subtitles',
-      type: sidecarTrack.type,
+      ...(sidecarTrack.type !== undefined
+        ? { type: sidecarTrack.type }
+        : {}),
       url: sidecarTrack.file,
       default: false,
     }));
@@ -490,10 +514,9 @@ async function _startNativeSubtitle(self: Internals, track: {
 
   if (!element || !track.url || !format) return;
 
-  const native = {
+  const native: NonNullable<Internals['_nativeSubtitle']> = {
     element,
     track: document.createElement('track'),
-    objectUrl: undefined as string | undefined,
     abort: new AbortController(),
     onListenersChanged: (_data: { name: string; count: number }): void => {},
   };
@@ -527,8 +550,12 @@ async function _startNativeSubtitle(self: Internals, track: {
       if (!native.objectUrl) {
         const raw = await authFetch<string>({
           url: track.url!,
-          auth: self._authConfig,
-          fetch: self.options?.fetch,
+          ...(self._authConfig !== undefined
+            ? { auth: self._authConfig }
+            : {}),
+          ...(self.options?.fetch !== undefined
+            ? { fetch: self.options.fetch }
+            : {}),
           liveAuth: () => self._authConfig,
           signal: native.abort.signal,
           responseType: 'text',
@@ -586,11 +613,11 @@ export const mediaTracksMethods = {
   _disposeSidecarSubtitle(this: Internals): void {
     this._sidecarEpoch = (this._sidecarEpoch ?? 0) + 1;
     this._sidecarAbort?.abort();
-    this._sidecarAbort = undefined;
+    delete this._sidecarAbort;
     const native = this._nativeSubtitle;
 
     if (native) {
-      this._nativeSubtitle = undefined;
+      delete this._nativeSubtitle;
       native.abort.abort();
       this.off('listeners-changed', native.onListenersChanged);
       native.track.remove();
@@ -608,7 +635,7 @@ export const mediaTracksMethods = {
       ctx.tracker.dispose();
     } catch { /* defensive */ }
 
-    this._sidecarSubtitle = undefined;
+    delete this._sidecarSubtitle;
   },
 
   /**
@@ -717,7 +744,9 @@ export const mediaTracksMethods = {
 
     const merged: BasePlaylistItem & ItemWithTracks = {
       ...latestItem,
-      tracks: resolved.tracks,
+      ...(resolved.tracks !== undefined
+        ? { tracks: resolved.tracks }
+        : {}),
     };
 
     this._queueList.replaceItem(merged);
@@ -983,7 +1012,9 @@ export const mediaTracksMethods = {
       language: input.language,
       label: input.label ?? input.language,
       kind: 'subtitles',
-      type: input.type,
+      ...(input.type !== undefined
+        ? { type: input.type }
+        : {}),
       url: input.url,
       default: input.default ?? false,
     };

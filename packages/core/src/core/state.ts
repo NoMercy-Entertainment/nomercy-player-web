@@ -470,7 +470,7 @@ export function initPlayerCoreState(player: object, opts: { className: string })
   target._volumeBeforeMute = 100;
   target._internalCurrentTime = 0;
   target._internalDuration = 0;
-  target._mountedItemId = undefined;
+  delete target._mountedItemId;
   target._itemEndingSoonEmitted = false;
   target._playbackRate = 1;
   target._queueList = new MediaList();

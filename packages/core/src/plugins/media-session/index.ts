@@ -258,10 +258,18 @@ export class MediaSessionPlugin<
     if (typeof MediaMetadata === 'undefined') return;
 
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: meta.title,
-      artist: meta.artist,
-      album: meta.album,
-      artwork: meta.artwork,
+      ...(meta.title !== undefined
+        ? { title: meta.title }
+        : {}),
+      ...(meta.artist !== undefined
+        ? { artist: meta.artist }
+        : {}),
+      ...(meta.album !== undefined
+        ? { album: meta.album }
+        : {}),
+      ...(meta.artwork !== undefined
+        ? { artwork: meta.artwork }
+        : {}),
     });
   }
 
@@ -403,9 +411,15 @@ export class MediaSessionPlugin<
     };
 
     return {
-      title: candidate.title,
-      artist: candidate.artist,
-      album: candidate.album,
+      ...(candidate.title !== undefined
+        ? { title: candidate.title }
+        : {}),
+      ...(candidate.artist !== undefined
+        ? { artist: candidate.artist }
+        : {}),
+      ...(candidate.album !== undefined
+        ? { album: candidate.album }
+        : {}),
     };
   }
 

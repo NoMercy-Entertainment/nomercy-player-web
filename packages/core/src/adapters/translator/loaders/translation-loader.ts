@@ -86,7 +86,9 @@ export function createNetworkTranslationLoader(opts: NetworkTranslationLoaderOpt
     try {
       const result = await authFetch<Record<string, string>>({
         url,
-        auth: opts.auth,
+        ...(opts.auth !== undefined
+          ? { auth: opts.auth }
+          : {}),
         parser,
         signal,
         scope: 'silent',

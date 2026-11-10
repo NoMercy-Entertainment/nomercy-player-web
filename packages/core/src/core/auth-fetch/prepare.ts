@@ -88,7 +88,9 @@ export async function buildRequest<T>(url: string, opts: AttemptCtx<T>): Promise
     headers,
     credentials: opts.auth?.credentials ?? 'same-origin',
     signal: opts.signal,
-    body: opts.body,
+    ...(opts.body !== undefined
+      ? { body: opts.body }
+      : {}),
   };
 
   let request: Request;

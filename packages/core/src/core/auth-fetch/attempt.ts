@@ -80,9 +80,9 @@ async function sendVia(transport: IFetch, request: Request): Promise<Response> {
     headers: request.headers,
     credentials: request.credentials,
     signal: request.signal,
-    body: hasBody
-      ? await request.arrayBuffer()
-      : undefined,
+    ...(hasBody
+      ? { body: await request.arrayBuffer() }
+      : {}),
   });
 }
 

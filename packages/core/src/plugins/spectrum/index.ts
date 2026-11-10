@@ -712,8 +712,12 @@ export class SpectrumPlugin<P extends IPlayer<BaseEventMap> = IPlayer> extends P
         mid,
         treble,
       },
-      beat,
-      bpm,
+      ...(beat !== undefined
+        ? { beat }
+        : {}),
+      ...(bpm !== undefined
+        ? { bpm }
+        : {}),
       frequencyFloat: this.freqFloatBuffer,
       waveformFloat: this.waveFloatBuffer,
       sampleRate,
@@ -724,10 +728,18 @@ export class SpectrumPlugin<P extends IPlayer<BaseEventMap> = IPlayer> extends P
         mid: this._peakMid,
         treble: this._peakTreble,
       },
-      frequencyLeft,
-      frequencyRight,
-      waveformLeft,
-      waveformRight,
+      ...(frequencyLeft !== undefined
+        ? { frequencyLeft }
+        : {}),
+      ...(frequencyRight !== undefined
+        ? { frequencyRight }
+        : {}),
+      ...(waveformLeft !== undefined
+        ? { waveformLeft }
+        : {}),
+      ...(waveformRight !== undefined
+        ? { waveformRight }
+        : {}),
     };
 
     this._currentFrame = frameData;

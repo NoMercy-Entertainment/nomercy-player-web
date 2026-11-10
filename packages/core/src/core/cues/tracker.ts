@@ -50,9 +50,9 @@ export class CueTracker<T> {
   private readonly tolerance: number;
   private readonly listeners = new Map<TrackerEvent, Set<Handler<T>>>();
   private active = new Set<Cue<T>>();
-  private playerRef?: CueTrackerTarget;
-  private boundOnTime?: (data: { time: number }) => void;
-  private boundOnSeek?: (data: { time: number }) => void;
+  private playerRef?: CueTrackerTarget | undefined;
+  private boundOnTime?: ((data: { time: number }) => void) | undefined;
+  private boundOnSeek?: ((data: { time: number }) => void) | undefined;
   private suspended = false;
   private readonly historyBuffer: Cue<T>[] = [];
   private readonly historyMax: number;

@@ -146,7 +146,9 @@ export async function assertNoListenerLeakOverCycles(opts: {
       subjectId: `${opts.subjectId}#${i + 1}`,
       player: opts.player,
       setup: opts.setup,
-      exercise: opts.exercise,
+      ...(opts.exercise !== undefined
+        ? { exercise: opts.exercise }
+        : {}),
       teardown: opts.teardown,
     }));
   }

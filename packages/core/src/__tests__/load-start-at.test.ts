@@ -53,7 +53,12 @@ function stubBackend(player: MockPlayer, opts?: { canStartAt?: boolean }): Backe
   (player as unknown as { _resolveBackend: () => unknown })._resolveBackend = () => ({
     canStartAt: opts?.canStartAt,
     load: async (url: string, hints?: { startTime?: number }) => {
-      spy.loadCalls.push({ url, hints });
+      spy.loadCalls.push({
+        url,
+        ...(hints !== undefined
+          ? { hints }
+          : {}),
+      });
     },
     play: async () => {},
     pause: () => {},

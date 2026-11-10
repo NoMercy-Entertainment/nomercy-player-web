@@ -34,8 +34,8 @@ export class DefaultTranslator implements ITranslator {
   private currentLanguage: string;
   private readonly bundles: Translations;
   private readonly loaded = new Set<string>();
-  private readonly loader?: (lang: string) => Promise<Record<string, string> | undefined>;
-  private readonly missingHandler?: (key: string, lang: string) => string;
+  private readonly loader?: ((lang: string) => Promise<Record<string, string> | undefined>) | undefined;
+  private readonly missingHandler?: ((key: string, lang: string) => string) | undefined;
   private readonly fallbackLanguage: string | null;
 
   constructor(opts?: DefaultTranslatorOptions) {

@@ -56,12 +56,22 @@ export class PlayerError extends Error {
   constructor(init: PlayerErrorInit) {
     super(init.message ?? init.code);
     this.code = init.code;
-    this.id = init.id;
+
+    if (init.id !== undefined) {
+      this.id = init.id;
+    }
+
     this.severity = init.severity ?? 'error';
     this.scope = init.scope;
     this.cause = init.cause;
-    this.context = init.context;
-    this.suggestion = init.suggestion;
+
+    if (init.context !== undefined) {
+      this.context = init.context;
+    }
+
+    if (init.suggestion !== undefined) {
+      this.suggestion = init.suggestion;
+    }
   }
 
   /** True if context.httpStatus is in the requested 1xx-5xx century. */
@@ -156,6 +166,8 @@ export function stateError(
     severity: 'error',
     scope: { kind: 'core' },
     message: `${code}: ${message}`,
-    context,
+    ...(context !== undefined
+      ? { context }
+      : {}),
   });
 }

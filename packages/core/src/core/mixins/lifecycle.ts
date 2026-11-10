@@ -55,8 +55,12 @@ async function _resolvePlaylistUrl(self: Internals, url: string): Promise<void> 
     const ctrl = new AbortController();
     const items = await authFetch<BasePlaylistItem[]>({
       url,
-      auth: self._authConfig,
-      fetch: self.options?.fetch,
+      ...(self._authConfig !== undefined
+        ? { auth: self._authConfig }
+        : {}),
+      ...(self.options?.fetch !== undefined
+        ? { fetch: self.options.fetch }
+        : {}),
       liveAuth: () => self._authConfig,
       signal: ctrl.signal,
       responseType: 'json',
@@ -461,13 +465,21 @@ function _initTranslator(self: Internals): void {
 
   const kitLoader = getLazyTranslationLoader(kitTranslations);
 
+  const loadTranslations = kitLoader
+    ? _composeKitAndConsumerLoaders(kitLoader, self.options.loadTranslations)
+    : self.options.loadTranslations;
+
   self._translator = new DefaultTranslator({
-    language: self.options.language,
+    ...(self.options.language !== undefined
+      ? { language: self.options.language }
+      : {}),
     translations: seededTranslations,
-    loadTranslations: kitLoader
-      ? _composeKitAndConsumerLoaders(kitLoader, self.options.loadTranslations)
-      : self.options.loadTranslations,
-    onMissingTranslation: self.options.onMissingTranslation,
+    ...(loadTranslations !== undefined
+      ? { loadTranslations }
+      : {}),
+    ...(self.options.onMissingTranslation !== undefined
+      ? { onMissingTranslation: self.options.onMissingTranslation }
+      : {}),
   });
 }
 
@@ -666,7 +678,9 @@ function _wireWakeLockPolicy(self: Internals): void {
  */
 function _wireLogger(self: Internals): void {
   const logger = self.options.logger ?? new Logger({
-    level: self.options.logLevel,
+    ...(self.options.logLevel !== undefined
+      ? { level: self.options.logLevel }
+      : {}),
     prefix: 'nmplayer',
   });
 
@@ -1164,10 +1178,16 @@ async function _runPreload(player: Internals, nextItem: BasePlaylistItem, strate
         return auth && Object.assign({}, auth, { transformUrl: undefined });
       };
 
+      const auth = withoutTransform();
+
       await authFetch<unknown>({
         url: resolved.href,
-        auth: withoutTransform(),
-        fetch: player.options?.fetch,
+        ...(auth !== undefined
+          ? { auth }
+          : {}),
+        ...(player.options?.fetch !== undefined
+          ? { fetch: player.options.fetch }
+          : {}),
         liveAuth: withoutTransform,
         signal: abort.signal,
         method: asset.mode === 'auto'

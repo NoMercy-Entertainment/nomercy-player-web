@@ -150,7 +150,7 @@ export class EmbedPlugin<P extends IPlayer<BaseEventMap> = IPlayer> extends Plug
   static override readonly description: string = 'iframe-context bridge — postMessage protocol for parent ↔ embed';
 
   private _allowedOrigins: string[] = [];
-  private _messageListener?: (event: MessageEvent) => void;
+  private _messageListener?: ((event: MessageEvent) => void) | undefined;
   private _eventForwarders: Array<{ event: string; fn: (data: unknown) => void }> = [];
 
   /**
@@ -414,8 +414,12 @@ export class EmbedPlugin<P extends IPlayer<BaseEventMap> = IPlayer> extends Plug
       message: event.error.message,
       severity: event.severity,
       scope: event.scope,
-      suggestion: event.error.suggestion,
-      context: event.error.context,
+      ...(event.error.suggestion !== undefined
+        ? { suggestion: event.error.suggestion }
+        : {}),
+      ...(event.error.context !== undefined
+        ? { context: event.error.context }
+        : {}),
     };
   }
 

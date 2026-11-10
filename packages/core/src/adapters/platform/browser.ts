@@ -208,18 +208,20 @@ function browserCapabilitiesProbe(): ICapabilitiesProbe {
       try {
         const decodingConfig: MediaDecodingConfiguration = {
           type: 'media-source',
-          video: profile.width && profile.height && profile.bitrate && profile.framerate
+          ...(profile.width && profile.height && profile.bitrate && profile.framerate
             ? {
-                contentType: profile.contentType,
-                width: profile.width,
-                height: profile.height,
-                bitrate: profile.bitrate,
-                framerate: profile.framerate,
+                video: {
+                  contentType: profile.contentType,
+                  width: profile.width,
+                  height: profile.height,
+                  bitrate: profile.bitrate,
+                  framerate: profile.framerate,
+                },
               }
-            : undefined,
-          audio: !profile.width
-            ? { contentType: profile.contentType }
-            : undefined,
+            : {}),
+          ...(!profile.width
+            ? { audio: { contentType: profile.contentType } }
+            : {}),
         };
         const info = await navigator.mediaCapabilities.decodingInfo(decodingConfig);
 

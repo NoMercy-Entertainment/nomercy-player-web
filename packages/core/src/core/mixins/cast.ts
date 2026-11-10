@@ -45,7 +45,7 @@ interface _CastGlobal {
 }
 
 interface _CastApiGlobal {
-  __onGCastApiAvailable?: (loaded: boolean, errorInfo?: string) => void;
+  __onGCastApiAvailable?: ((loaded: boolean, errorInfo?: string) => void) | undefined;
 }
 
 const DEFAULT_CAST_SCRIPT = 'https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1';

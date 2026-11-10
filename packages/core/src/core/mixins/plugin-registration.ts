@@ -87,7 +87,9 @@ function makePlayerLogger(self: Internals, scope: string): ILogger {
   const configured = self.options.logger;
   const root: ILogger = configured ?? new Logger({
     prefix: 'nmplayer',
-    level: self.options.logLevel,
+    ...(self.options.logLevel !== undefined
+      ? { level: self.options.logLevel }
+      : {}),
   });
 
   return root.child(scope);

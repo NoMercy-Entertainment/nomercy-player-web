@@ -92,7 +92,9 @@ export const streamRegistrationMethods = {
   resolveCustomStream(this: Internals, url: string, contentType?: string): IStreamSource | undefined {
     return _ensureStreamRegistry(this).resolveCustom({
       url,
-      contentType,
+      ...(contentType !== undefined
+        ? { contentType }
+        : {}),
     });
   },
   /** Look up a registered factory by id. Returns `undefined` when not found. */

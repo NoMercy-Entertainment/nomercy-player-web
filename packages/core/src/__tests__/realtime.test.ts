@@ -35,7 +35,7 @@ class MockWebSocket {
 
   readyState = 0;
   url: string;
-  protocols?: string | string[];
+  protocols?: string | string[] | undefined;
   private listeners = new Map<string, Set<EventListener>>();
   send = vi.fn();
   close = vi.fn();

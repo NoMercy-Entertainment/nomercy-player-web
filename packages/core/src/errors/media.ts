@@ -56,7 +56,9 @@ export function mediaFormatError(
     severity: 'error',
     scope: { kind: 'core' },
     message: `${code}: ${message}`,
-    context,
+    ...(context !== undefined
+      ? { context }
+      : {}),
   });
 }
 
@@ -78,6 +80,8 @@ export function resourceError(
     severity: 'error',
     scope: { kind: 'core' },
     message: `${code}: ${message}`,
-    context,
+    ...(context !== undefined
+      ? { context }
+      : {}),
   });
 }

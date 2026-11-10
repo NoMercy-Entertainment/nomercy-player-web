@@ -21,8 +21,8 @@ const VIDEO_EXT_RE = /\.(?:mp4|webm|mov|m4v|ogv)(?:[?#]|$)/iu;
 class NativeStreamSource implements IStreamSource {
   readonly kind = 'native' as const;
   private listeners = new Map<StreamEvent, Set<(data: StreamEventPayloadMap[StreamEvent]) => void>>();
-  private element?: HTMLMediaElement;
-  private boundError?: () => void;
+  private element?: HTMLMediaElement | undefined;
+  private boundError?: (() => void) | undefined;
   private _state: StreamSourceState = 'idle';
 
   constructor(private readonly url: string) {}

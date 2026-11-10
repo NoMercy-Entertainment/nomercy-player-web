@@ -40,7 +40,11 @@ export function browserPolicyError(
     severity: 'error',
     scope: { kind: 'core' },
     message: `${code}: ${message}`,
-    suggestion: opts?.suggestion,
-    context: opts?.context,
+    ...(opts?.suggestion !== undefined
+      ? { suggestion: opts.suggestion }
+      : {}),
+    ...(opts?.context !== undefined
+      ? { context: opts.context }
+      : {}),
   });
 }

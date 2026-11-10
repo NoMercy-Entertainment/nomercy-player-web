@@ -48,10 +48,10 @@ const HLS_MIME_RE = /^(?:application|audio)\/(?:vnd\.apple\.mpegurl|x-mpegurl|mp
 export class HlsStreamSource implements IStreamSource {
   readonly kind = 'hls' as const;
 
-  private hls?: Hls;
-  private element?: HTMLMediaElement;
+  private hls?: Hls | undefined;
+  private element?: HTMLMediaElement | undefined;
   private listeners = new Map<StreamEvent, Set<(data: StreamEventPayloadMap[StreamEvent]) => void>>();
-  private boundElementError?: () => void;
+  private boundElementError?: (() => void) | undefined;
   private _state: StreamSourceState = 'idle';
   private currentLevelIdx = -1;
 
@@ -101,13 +101,16 @@ export class HlsStreamSource implements IStreamSource {
     }
 
     const registry = this.registry;
+    const loader = registry
+      ? makeInterceptingLoader(Hls, registry)
+      : undefined;
 
     this.hls = new Hls({
       autoStartLoad: true,
       enableWorker: true,
       lowLatencyMode: false,
-      ...(registry
-        ? { loader: makeInterceptingLoader(Hls, registry) }
+      ...(loader
+        ? { loader }
         : {}),
     });
 
@@ -378,9 +381,13 @@ function makeInterceptingLoader(HlsCtor: typeof import('hls.js').default, regist
             const synthetic = toResponse(response, ctx.url ?? context.url);
             const intercepted = await registry.runInterceptors(ctx.url ?? context.url, synthetic);
 
+            const body = await readBody(intercepted, response.data);
+
             result = {
               ...response,
-              data: await readBody(intercepted, response.data),
+              ...(body !== undefined
+                ? { data: body }
+                : {}),
             };
           } catch {
             // Interceptor failure must not break playback — pass through

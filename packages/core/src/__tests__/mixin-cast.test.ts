@@ -114,7 +114,7 @@ class MockPlayer extends MockPlayerBase {
   declare transferTo: (target: string) => Promise<void>;
 
   // video element for AirPlay/RemotePlayback tests
-  videoElement?: HTMLVideoElement & { webkitShowPlaybackTargetPicker?: () => void; remote?: { prompt: () => Promise<void> } };
+  videoElement?: (HTMLVideoElement & { webkitShowPlaybackTargetPicker?: () => void; remote?: { prompt: () => Promise<void> } }) | undefined;
 }
 
 composeMixins(MockPlayer.prototype, ...playerCoreMethods);
@@ -145,7 +145,7 @@ interface CastGlobal {
         media?: { DEFAULT_MEDIA_RECEIVER_APP_ID?: string };
       };
     };
-  };
+  } | undefined;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

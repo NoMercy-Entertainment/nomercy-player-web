@@ -68,7 +68,7 @@ export function applyPendingSelection(self: Internals): void {
 
   const target = self._pendingSelection;
 
-  self._pendingSelection = undefined;
+  delete self._pendingSelection;
   self._queueList.setCurrent(target);
 }
 
@@ -365,8 +365,12 @@ export const queueMethods = {
       if (!currentItem) return;
 
       void this.load(currentItem, {
-        source: opts?.source,
-        startAt: opts?.startAt,
+        ...(opts?.source !== undefined
+          ? { source: opts.source }
+          : {}),
+        ...(opts?.startAt !== undefined
+          ? { startAt: opts.startAt }
+          : {}),
       }).then(() => {
         if (this._currentEpoch !== navigationEpoch) return;
 
@@ -380,7 +384,9 @@ export const queueMethods = {
           // surfaces as an unhandled rejection in every consumer's
           // console. Nothing else reports it: a play failure reaches
           // no listener at all.
-          void this.play({ source: opts?.source }).catch(() => { /* see above */ });
+          void this.play(opts?.source !== undefined
+            ? { source: opts.source }
+            : {}).catch(() => { /* see above */ });
         }
       })
         .catch(() => { /* load errors reach no listener; suppressed to avoid an unhandled rejection. */ });

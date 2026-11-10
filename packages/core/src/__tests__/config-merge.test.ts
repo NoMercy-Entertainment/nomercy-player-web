@@ -21,7 +21,7 @@ describe('mergeConfig', () => {
     });
 
     it('undefined user value falls through to default', () => {
-      expect(mergeConfig({ volume: 0.8 }, { volume: undefined })).toEqual({ volume: 0.8 });
+      expect(mergeConfig<{ volume?: number | undefined }>({ volume: 0.8 }, { volume: undefined })).toEqual({ volume: 0.8 });
     });
 
     it('null user value overwrites default', () => {

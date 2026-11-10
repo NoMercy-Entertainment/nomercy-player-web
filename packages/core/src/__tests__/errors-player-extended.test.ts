@@ -23,9 +23,9 @@ describe('PlayerError.isHttp()', () => {
     return new PlayerError({
       code: 'core:test/http',
       scope: { kind: 'core' },
-      context: httpStatus !== undefined
-        ? { httpStatus }
-        : undefined,
+      ...(httpStatus !== undefined
+        ? { context: { httpStatus } }
+        : {}),
     });
   }
 
