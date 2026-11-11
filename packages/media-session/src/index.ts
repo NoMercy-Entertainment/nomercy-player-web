@@ -81,12 +81,12 @@ export default class MediaSession {
     ) {
       navigator.mediaSession.setActionHandler(
         'seekbackward',
-        (details) => seek(getPosition() - (details.seekTime ?? 30)),
+        (details) => seek(getPosition() - (details.seekOffset ?? 30)),
       );
 
       navigator.mediaSession.setActionHandler(
         'seekforward',
-        (details) => seek(getPosition() + (details.seekTime ?? 30)),
+        (details) => seek(getPosition() + (details.seekOffset ?? 30)),
       );
 
       navigator.mediaSession.setActionHandler(

@@ -226,7 +226,7 @@ describe('MediaSession (extended)', () => {
       expect(names).toContain('seekto');
     });
 
-    it('seekbackward uses a 30s default delta and details.seekTime when present', () => {
+    it('seekbackward uses a 30s default delta and details.seekOffset when present', () => {
       const seek = vi.fn();
       const getPosition = vi.fn().mockReturnValue(100);
 
@@ -240,11 +240,11 @@ describe('MediaSession (extended)', () => {
       back({});
       expect(seek).toHaveBeenLastCalledWith(70);
 
-      back({ seekTime: 10 });
+      back({ seekOffset: 10 });
       expect(seek).toHaveBeenLastCalledWith(90);
     });
 
-    it('seekforward uses a 30s default delta and details.seekTime when present', () => {
+    it('seekforward uses a 30s default delta and details.seekOffset when present', () => {
       const seek = vi.fn();
       const getPosition = vi.fn().mockReturnValue(100);
 
@@ -258,7 +258,7 @@ describe('MediaSession (extended)', () => {
       forward({});
       expect(seek).toHaveBeenLastCalledWith(130);
 
-      forward({ seekTime: 5 });
+      forward({ seekOffset: 5 });
       expect(seek).toHaveBeenLastCalledWith(105);
     });
 
