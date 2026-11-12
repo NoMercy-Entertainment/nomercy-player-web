@@ -681,6 +681,36 @@ describe('CastSenderPlugin — deep behavioral coverage', () => {
       expect((timeCalls[0] as { seconds: number }).seconds).toBe(60);
       expect(playCalls).toHaveLength(1);
     });
+
+    // Parity with nomercy-player-core-kmp db3ada9: no receiver state means the
+    // local position is kept, never reset to zero.
+    it('handleRemoteDisconnect keeps the local position when the receiver never reported one', async () => {
+      buildFakeSdk();
+      fakeSdk.remote.isPaused = false;
+      fakeSdk.remote.currentTime = 0;
+
+      const player = makeStubPlayer();
+      const timeCalls: unknown[] = [];
+
+      (player as unknown as Record<string, unknown>)['time'] = (seconds?: number): number | Promise<void> => {
+        if (seconds === undefined)
+          return 0;
+
+        timeCalls.push(seconds);
+
+        return Promise.resolve();
+      };
+
+      const plugin = wirePluginForPlayer(player);
+
+      await plugin.connect();
+
+      fakeSdk.remote.isConnected = false;
+      fakeSdk.triggerEvent('IS_CONNECTED_CHANGED');
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+      expect(timeCalls).toHaveLength(0);
+    });
   });
 
   // ── forwardCurrent() ──────────────────────────────────────────────────────
