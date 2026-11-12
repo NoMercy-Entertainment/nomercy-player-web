@@ -122,6 +122,8 @@ export interface BackendEventPayload extends MinimalBackendEventPayload {
    * manifest declares multiple audio renditions.
    */
   audioTracks: { tracks: AudioTrack[] };
+  /** The engine now plays audio track `index` (hls.js: the new rendition is buffered). */
+  'audio-track-switched': { index: number };
 }
 
 /** Backend-internal events forwarded to the player's eventTarget. */
@@ -256,6 +258,8 @@ export interface IVideoBackend {
   videoHeight(): number;
   audioTracks(): AudioTrack[];
   setAudioTrack(idx: number): void;
+  /** Set when the backend emits `audio-track-switched` once a switch is applied; the player's `audioTrack` waits for it. */
+  readonly reportsAudioTrackApplied?: true;
   subtitleTracks(): SubtitleTrack[];
   setSubtitleTrack(idx: number | null): void;
   qualityLevels(): QualityLevel[];

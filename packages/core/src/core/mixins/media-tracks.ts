@@ -70,6 +70,9 @@ export interface MediaTracksState {
   /** Currently-selected audio track index, or null when no explicit selection. Written by `audioTrack(idx)`. */
   _currentAudioTrackIdx: number | null;
 
+  /** The audio pick a `reportsAudioTrackApplied` backend has not yet reported as applied. */
+  _pendingAudioApply?: { index: number; settle: (applied: boolean) => void };
+
   /** Currently-selected quality index or 'auto'. Written by `quality(idx)`. */
   _currentQualityIdx: number | 'auto';
 
@@ -140,7 +143,42 @@ interface _BackendWithSubtitleTracks {
   setSubtitleTrack?: (idx: number | null) => void;
   subtitleTracks?: () => SubtitleTrack[];
 }
-interface _BackendWithAudioTrack { setAudioTrack?: (idx: number) => void }
+interface _BackendWithAudioTrack {
+  setAudioTrack?: (idx: number) => void;
+  /** The backend applies a switch late and reports it via `_audioTrackApplied`; `audioTrack` waits for that. */
+  reportsAudioTrackApplied?: true;
+}
+
+// How long a pick waits for the backend's report before core gives up on it.
+// hls.js reports once the new rendition is buffered, well inside this.
+const AUDIO_APPLY_TIMEOUT_MS = 10_000;
+
+// Resolves true when the backend reports `index` as applied, false when a
+// newer pick replaces this one or the report never comes.
+function _awaitAudioApply(self: Internals, index: number): Promise<boolean> {
+  self._pendingAudioApply?.settle(false);
+
+  return new Promise<boolean>((resolve) => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const entry = {
+      index,
+      settle: (applied: boolean): void => {
+        clearTimeout(timer);
+
+        if (self._pendingAudioApply === entry) {
+          delete self._pendingAudioApply;
+        }
+
+        resolve(applied);
+      },
+    };
+
+    self._pendingAudioApply = entry;
+
+    timer = setTimeout(() => entry.settle(false), AUDIO_APPLY_TIMEOUT_MS);
+  });
+}
+
 interface _BackendWithQualityLevels { qualityLevels?: (opts?: { includeUnsupported?: true }) => QualityLevel[] }
 interface _BackendWithSetQualityLevel { setQuality?: (idx: number | 'auto') => void }
 interface _BackendWithAudioTracks { audioTracks?: () => AudioTrack[] }
@@ -1155,12 +1193,33 @@ export const mediaTracksMethods = {
 
       const backend = this._peekBackendTyped<_BackendWithAudioTrack>();
 
-      if (typeof backend?.setAudioTrack === 'function') {
-        backend.setAudioTrack(targetIdx);
+      if (typeof backend?.setAudioTrack !== 'function') {
+        this.emit('audioTrack', { id: targetIdx });
+
+        return;
       }
+
+      // Listen before the call: a backend may report the switch from inside it.
+      const applied = backend.reportsAudioTrackApplied === true
+        ? _awaitAudioApply(this, targetIdx)
+        : undefined;
+
+      backend.setAudioTrack(targetIdx);
+
+      // A switch the backend never applied is not announced (as on KMP).
+      if (applied && !await applied) return;
 
       this.emit('audioTrack', { id: targetIdx });
     })();
+  },
+
+  /** The backend bridge reports that audio track `index` is applied; only the pending pick for it is released. */
+  _audioTrackApplied(this: Internals, index: number): void {
+    const pending = this._pendingAudioApply;
+
+    if (pending?.index === index) {
+      pending.settle(true);
+    }
   },
 
   /**

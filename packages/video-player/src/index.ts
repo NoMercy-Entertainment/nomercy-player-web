@@ -214,6 +214,8 @@ export class NMVideoPlayer<T extends VideoPlaylistItem = VideoPlaylistItem>
   declare private _timeStateAt: (position: number) => KitTimeState;
   /** @internal */
   declare private _mediaIsStale: (() => boolean) | undefined;
+  /** @internal */
+  declare private _audioTrackApplied: ((index: number) => void) | undefined;
 
   constructor(id?: string | number) {
     super();
@@ -764,6 +766,13 @@ export class NMVideoPlayer<T extends VideoPlaylistItem = VideoPlaylistItem>
       if (!data) return;
 
       this.emit('level-switched', data);
+    });
+
+    // Optional call: an older core has no reader and announces the pick at once.
+    instance.on('audio-track-switched', (data) => {
+      if (data) {
+        this._audioTrackApplied?.(data.index);
+      }
     });
 
     instance.on('audioTracks', (data) => {

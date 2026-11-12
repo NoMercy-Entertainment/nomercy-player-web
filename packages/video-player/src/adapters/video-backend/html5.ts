@@ -185,6 +185,7 @@ export class Html5VideoBackend
   extends MediaElementBackend<HTMLVideoElement, BackendEventPayload>
   implements IVideoBackend {
   readonly kind = 'html5' as const;
+  readonly reportsAudioTrackApplied = true as const;
 
   private hls: HlsInstance | undefined;
   private currentUrl: string | undefined;
@@ -511,6 +512,11 @@ export class Html5VideoBackend
         this._emitAudioTracks();
       });
 
+      // The payload id is manifest-wide; `audioTrack` is the index setAudioTrack takes.
+      hlsInstance.on(Hls.Events.AUDIO_TRACK_SWITCHED, () => {
+        this.emit('audio-track-switched', { index: hlsInstance.audioTrack });
+      });
+
       performance.mark('nm:backend:loadSource');
       hlsInstance.loadSource(url);
       performance.mark('nm:backend:attachMedia');
@@ -798,6 +804,13 @@ export class Html5VideoBackend
 
   setAudioTrack(idx: number): void {
     if (this.hls && typeof idx === 'number') {
+      // hls.js fires no switch event for the track it already plays.
+      if (this.hls.audioTrack === idx) {
+        this.emit('audio-track-switched', { index: idx });
+
+        return;
+      }
+
       this.hls.audioTrack = idx;
 
       return;
@@ -810,6 +823,8 @@ export class Html5VideoBackend
         nativeTracks[i]!.enabled = i === idx;
       }
     }
+
+    this.emit('audio-track-switched', { index: idx });
   }
 
   subtitleTracks(): SubtitleTrack[] {

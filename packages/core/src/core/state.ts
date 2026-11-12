@@ -291,6 +291,7 @@ export interface MixinSurface {
 
   // mediaTracksMethods (see mixins/media-tracks.ts) — sidecar + chapter helpers
   _disposeSidecarSubtitle(): void;
+  _audioTrackApplied(index: number): void;
   resolveItemTrackUrls<T extends BasePlaylistItem>(item: T): Promise<T>;
   _resolveAndEmitChapters(itemId: string | number | undefined): Promise<void>;
   _applyChapterGapFill(itemId: string | number, chapters: ReadonlyArray<Chapter>, opts: { alwaysEmit: boolean }): void;

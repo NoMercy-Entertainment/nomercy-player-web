@@ -90,6 +90,7 @@ vi.mock('hls.js', () => {
       LEVEL_SWITCHED: 'hlsLevelSwitched',
       FRAG_CHANGED: 'hlsFragChanged',
       AUDIO_TRACKS_UPDATED: 'hlsAudioTracksUpdated',
+      AUDIO_TRACK_SWITCHED: 'hlsAudioTrackSwitched',
       LEVEL_LOADED: 'hlsLevelLoaded',
       BUFFER_APPENDED: 'hlsBufferAppended',
     };
@@ -966,6 +967,74 @@ describe('setAudioTrack()', () => {
     backend.setAudioTrack(1);
     expect(track0.enabled).toBe(false);
     expect(track1.enabled).toBe(true);
+  });
+});
+
+describe('audio-track-switched', () => {
+  async function loadHls(): Promise<FakeHlsInstance> {
+    const loadPromise = backend.load('https://example.invalid/test.m3u8');
+
+    await flushMicrotasks();
+    const videoEl = container.querySelector('video') as HTMLVideoElement;
+
+    Object.defineProperty(videoEl, 'readyState', { value: 1, configurable: true });
+    videoEl.dispatchEvent(new Event('loadedmetadata'));
+    await loadPromise;
+
+    return _hlsRegistry.lastInstance!;
+  }
+
+  it('declares that it reports the applied switch', () => {
+    expect(backend.reportsAudioTrackApplied).toBe(true);
+  });
+
+  it('reports an hls.js switch only when hls.js says the new audio is in', async () => {
+    const hls = await loadHls();
+    const reports: unknown[] = [];
+
+    backend.on('audio-track-switched', (data) =>
+      reports.push(data));
+
+    backend.setAudioTrack(1);
+    expect(reports).toEqual([]);
+
+    hls.fire('hlsAudioTrackSwitched', { id: 7 });
+    expect(reports).toEqual([{ index: 1 }]);
+  });
+
+  it('reports at once when hls.js already plays the picked track', async () => {
+    const hls = await loadHls();
+    const reports: unknown[] = [];
+
+    hls.audioTrack = 1;
+
+    backend.on('audio-track-switched', (data) =>
+      reports.push(data));
+
+    backend.setAudioTrack(1);
+
+    expect(reports).toEqual([{ index: 1 }]);
+  });
+
+  it('reports at once on the native path', () => {
+    const videoEl = container.querySelector('video') as HTMLVideoElement;
+    const reports: unknown[] = [];
+
+    Object.defineProperty(videoEl, 'audioTracks', {
+      value: {
+        length: 2,
+        0: { enabled: true },
+        1: { enabled: false },
+      },
+      configurable: true,
+    });
+
+    backend.on('audio-track-switched', (data) =>
+      reports.push(data));
+
+    backend.setAudioTrack(1);
+
+    expect(reports).toEqual([{ index: 1 }]);
   });
 });
 

@@ -1061,6 +1061,105 @@ describe('audioTracks() / audioTrack()', () => {
   });
 });
 
+// A backend that sets `reportsAudioTrackApplied` switches audio later than
+// the setter returns (hls.js buffers the new rendition first) and says so.
+// `audioTrack` then fires on that report, as on KMP (core-kmp a30c06f).
+describe('audioTrack(idx) — a backend that reports the applied switch', () => {
+  beforeEach(() => MockPlayer._resetRegistry());
+  afterEach(() => vi.useRealTimers());
+
+  interface Applying { _audioTrackApplied: (index: number) => void }
+
+  function setupLateBackend(): { player: ReturnType<typeof setupPlayer>; events: Array<{ id: number }> } {
+    const player = setupPlayer();
+    const backend = {
+      ...makeBackendWithTracks({
+        audioTracks: [
+          {
+            id: 'a0',
+            language: 'en',
+            label: 'English',
+            channels: 2,
+          },
+          {
+            id: 'a1',
+            language: 'fr',
+            label: 'French',
+            channels: 2,
+          },
+        ],
+      }),
+      reportsAudioTrackApplied: true as const,
+    };
+
+    (player as unknown as { backend: () => unknown }).backend = () => backend;
+
+    const events: Array<{ id: number }> = [];
+
+    player.on('audioTrack' as never, (data: { id: number }) =>
+      events.push(data));
+
+    return {
+      player,
+      events,
+    };
+  }
+
+  it('fires audioTrack only after the backend reports the switch, and the setter resolves then', async () => {
+    const { player, events } = setupLateBackend();
+    let resolved = false;
+    const pending = (player.audioTrack(1) as unknown as Promise<void>).then(() => {
+      resolved = true;
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(events).toHaveLength(0);
+    expect(resolved).toBe(false);
+
+    (player as unknown as Applying)._audioTrackApplied(1);
+    await pending;
+
+    expect(events).toEqual([{ id: 1 }]);
+  });
+
+  it('a switch the backend never reports does not fire audioTrack, and the setter still resolves', async () => {
+    vi.useFakeTimers();
+    const { player, events } = setupLateBackend();
+    const pending = player.audioTrack(1) as unknown as Promise<void>;
+
+    await vi.advanceTimersByTimeAsync(10_000);
+    await pending;
+
+    expect(events).toHaveLength(0);
+  });
+
+  it('a newer pick replaces a pending one: only the newer one fires', async () => {
+    const { player, events } = setupLateBackend();
+    const first = player.audioTrack(1) as unknown as Promise<void>;
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const second = player.audioTrack(0) as unknown as Promise<void>;
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    (player as unknown as Applying)._audioTrackApplied(0);
+    await Promise.all([first, second]);
+
+    expect(events).toEqual([{ id: 0 }]);
+  });
+
+  it('a report for another track than the pending pick does not fire audioTrack', async () => {
+    const { player, events } = setupLateBackend();
+
+    void player.audioTrack(1);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    (player as unknown as Applying)._audioTrackApplied(0);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(events).toHaveLength(0);
+  });
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // qualityLevels() / quality()
 // ─────────────────────────────────────────────────────────────────────────────
