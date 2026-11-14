@@ -81,6 +81,7 @@ export const loadingMethods = {
    * that declare `canStartAt: true` consume the hint natively; for all
    * others the kit falls back to a post-load seek. `opts.fadeIn` — ramp
    * volume from 0 to the current level over this many seconds.
+   * `beforeLoad` carries `startAt`; a listener that sets it wins over opts.
    *
    * Emits `mediaReady` after a successful load. On failure it re-throws.
    * Nothing is emitted: an undecodable source reaches no severity channel,
@@ -107,12 +108,19 @@ export const loadingMethods = {
     this._loadEpoch = epoch;
     const isLatest = (): boolean => this._loadEpoch === epoch;
 
-    const beforeResult = await this._dispatchBefore<{ item: T; source?: string }>(
+    const beforeResult = await this._dispatchBefore<{
+      item: T;
+      source?: string;
+      startAt?: number;
+    }>(
       'beforeLoad',
       {
         item,
         ...(opts?.source !== undefined
           ? { source: opts.source }
+          : {}),
+        ...(opts?.startAt !== undefined
+          ? { startAt: opts.startAt }
           : {}),
       },
     );
@@ -194,8 +202,10 @@ export const loadingMethods = {
     // for each new item that starts loading.
     this._itemEndingSoonEmitted = false;
 
-    const startAt = typeof opts?.startAt === 'number' && opts.startAt > 0
-      ? opts.startAt
+    // Read off the event: it carries opts.startAt, and a listener's value wins.
+    const requestedStartAt = beforeResult.data.startAt;
+    const startAt = typeof requestedStartAt === 'number' && requestedStartAt > 0
+      ? requestedStartAt
       : undefined;
 
     try {

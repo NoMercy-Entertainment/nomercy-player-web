@@ -164,4 +164,54 @@ describe('startAt → backend startTime hint', () => {
     expect(spy.loadCalls.at(-1)!.url).toContain('e2.mp4');
     expect(spy.loadCalls.at(-1)!.hints).toEqual({ startTime: 90 });
   });
+
+  it('a beforeLoad listener that sets startAt decides where a next() load starts', async () => {
+    const player = makePlayer('start-at-listener').setup({});
+
+    await player.ready();
+
+    player.queue([
+      { id: 1, url: 'http://example.test/e1.mp4' },
+      { id: 2, url: 'http://example.test/e2.mp4' },
+    ]);
+
+    const spy = stubBackend(player, { canStartAt: true });
+
+    await player.load(player.queue()[0]!);
+
+    player.on('beforeLoad' as any, (event: { data: { startAt?: number } }) => {
+      event.data.startAt = 103;
+    });
+
+    await player.next();
+
+    expect(spy.loadCalls.at(-1)!.url).toContain('e2.mp4');
+    expect(spy.loadCalls.at(-1)!.hints).toEqual({ startTime: 103 });
+  });
+
+  it('a next() load starts at 0 when the beforeLoad listener sets no startAt', async () => {
+    const player = makePlayer('start-at-listener-none').setup({});
+
+    await player.ready();
+
+    player.queue([
+      { id: 1, url: 'http://example.test/e1.mp4' },
+      { id: 2, url: 'http://example.test/e2.mp4' },
+    ]);
+
+    const spy = stubBackend(player, { canStartAt: true });
+    const offered: Array<number | undefined> = [];
+
+    await player.load(player.queue()[0]!);
+
+    player.on('beforeLoad' as any, (event: { data: { startAt?: number } }) => {
+      offered.push(event.data.startAt);
+    });
+
+    await player.next();
+
+    expect(offered).toEqual([undefined]);
+    expect(spy.loadCalls.at(-1)!.url).toContain('e2.mp4');
+    expect(spy.loadCalls.at(-1)!.hints).toBeUndefined();
+  });
 });

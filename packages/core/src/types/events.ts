@@ -119,7 +119,11 @@ export interface BaseEventMap<I extends BasePlaylistItem = BasePlaylistItem> {
   previousPrevented: { reason: PreventedReason; cause?: unknown };
   beforeSeek: BeforeEvent<{ time: number; source?: ActionSource }>;
   seekPrevented: { reason: PreventedReason; cause?: unknown };
-  beforeLoad: BeforeEvent<{ item: I; source?: ActionSource }>;
+  beforeLoad: BeforeEvent<{
+    item: I;
+    source?: ActionSource;
+    startAt?: number;
+  }>;
   loadPrevented: { reason: PreventedReason; cause?: unknown };
 
   // ── Phase-aware mutation contract ─────────────────────────────────────────
