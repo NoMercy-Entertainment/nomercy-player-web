@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [2.9.0] — 2026-11-14
+
+### Fixed
+
+- The html5 backend reports when an audio track switch is applied (`reportsAudioTrackApplied`, from hls.js `AUDIO_TRACK_SWITCHED`), so `audioTrack` fires once the new track plays. Needs core 2.9.0.
+
 ### Changed
 
 - `./plugins/twitch`: the Twitch GQL calls go through `Plugin.fetch` with `auth: false`, so they use the configured transport and abort on dispose, and the player's token still never reaches Twitch.

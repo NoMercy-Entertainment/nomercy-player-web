@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [2.9.0] — 2026-11-14
+
+### Changed
+
+- Released at the trio version with core 2.9.0 (`beforeLoad` `startAt`, `Plugin.fetch` with `auth: false`). No music player changes.
+
 ## [2.6.1] — 2026-11-09
 
 ### Changed

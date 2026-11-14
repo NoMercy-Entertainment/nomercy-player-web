@@ -2,9 +2,16 @@
 
 ## [Unreleased]
 
+## [2.9.0] — 2026-11-14
+
 ### Added
 
+- The `beforeLoad` payload has an optional `startAt` in seconds. A listener that sets it decides where the load starts, so a plugin can start an item past its opening without a visible seek.
 - `Plugin.fetch(url, { auth: false })` sends the request without the player's auth (no bearer token, headers, `transformUrl`, `signRequest` or 401 refresh). The configured transport, retry and dispose abort still apply. Use it for third-party hosts.
+
+### Fixed
+
+- `audioTrack(idx)` emits `audioTrack` after the backend applies the switch, when the backend reports it (`reportsAudioTrackApplied`). A newer pick, or 10 s without a report, resolves with no event. A backend without the flag keeps the old timing.
 
 ## [2.6.1] — 2026-11-09
 
