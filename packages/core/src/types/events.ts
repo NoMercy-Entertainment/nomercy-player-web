@@ -310,6 +310,9 @@ export interface BaseEventMap<I extends BasePlaylistItem = BasePlaylistItem> {
   /** Fires from `next()` when an item's media is missing (HTTP 404 or 410) and the player moves on. */
   itemSkipped: { item: I; status: number };
 
+  /** Fires once when an item fails to start: a codec, stream, URL, file or server failure. */
+  itemFailed: { item: I; error: PlayerErrorEvent['error'] };
+
   // ── Backlog / history ─────────────────────────────────────────────────────
   // A separate MediaList<T> the consumer owns. Transport never touches it:
   // `next()` and `previous()` do not reference `_backlogList` at all, so a

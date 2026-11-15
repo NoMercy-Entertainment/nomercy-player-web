@@ -11,6 +11,7 @@ import type { Internals } from '../state';
 import type { ItemWithTracks } from './sidecar-util';
 import {
   makePlayerErrorEvent,
+  MediaFormatError,
   mediaFormatError,
   PlayerError,
   resourceError,
@@ -48,6 +49,37 @@ const RESUMABLE_PHASES_FOR_LOAD = ['ready', 'playing', 'paused', 'starting', 'en
  */
 const RESUMABLE_PHASES_FOR_ERROR = ['ready', 'playing', 'paused', 'ended'] as const;
 
+// Loads whose caller reports the failure itself, after its own retries.
+export const callerReportedLoads = new WeakSet<LoadOptions>();
+
+/** Emit `itemFailed` for `item`; a cause that is no `PlayerError` is wrapped in one. */
+export function emitItemFailed(self: Internals, item: BasePlaylistItem, cause: unknown): void {
+  const mediaErrorCode = (cause as { code?: unknown } | null)?.code;
+  const detail = (cause as { message?: unknown } | null)?.message;
+  const error = cause instanceof PlayerError
+    ? cause
+    : new MediaFormatError({
+        code: 'core:media/load-failed',
+        severity: 'error',
+        scope: { kind: 'core' },
+        message: `core:media/load-failed: ${typeof detail === 'string' && detail !== ''
+          ? detail
+          : 'The media failed to load.'}`,
+        cause,
+        context: {
+          id: item.id,
+          ...(typeof mediaErrorCode === 'number'
+            ? { mediaErrorCode }
+            : {}),
+        },
+      });
+
+  self.emit('itemFailed', {
+    item,
+    error,
+  });
+}
+
 export const loadingMethods = {
   /**
    * Load a single playlist item into the player. Dispatches `beforeLoad`
@@ -83,9 +115,9 @@ export const loadingMethods = {
    * volume from 0 to the current level over this many seconds.
    * `beforeLoad` carries `startAt`; a listener that sets it wins over opts.
    *
-   * Emits `mediaReady` after a successful load. On failure it re-throws.
-   * Nothing is emitted: an undecodable source reaches no severity channel,
-   * and `playState()` stays where it was.
+   * Emits `mediaReady` after a successful load. On failure it emits
+   * `itemFailed` with the item and its `PlayerError`, then re-throws; no
+   * severity channel fires, and `playState()` stays where it was.
    *
    * @throws when `item.url` is missing or the backend is not wired.
    */
@@ -144,8 +176,17 @@ export const loadingMethods = {
     const item2 = beforeResult.data.item;
     const rawUrl = item2.url;
 
+    // A retrying caller reports the final failure itself.
+    const reportsFailure = !(opts && callerReportedLoads.has(opts));
+
     if (!rawUrl) {
-      throw mediaFormatError('core:media/missing-url', 'load(item) requires `item.url` to be present.', { id: item2.id });
+      const missingUrl = mediaFormatError('core:media/missing-url', 'load(item) requires `item.url` to be present.', { id: item2.id });
+
+      if (reportsFailure) {
+        emitItemFailed(this, item2, missingUrl);
+      }
+
+      throw missingUrl;
     }
 
     const url = (await this.resolveUrl(rawUrl, 'media')).href;
@@ -326,6 +367,11 @@ export const loadingMethods = {
       // raced transport call, or a fatal now owns the field.
       if (isLatest() && this._playState === PlayState.LOADING) {
         this._playState = priorPlayState;
+      }
+
+      // A load a newer one replaced is no failed start of its item.
+      if (reportsFailure && isLatest()) {
+        emitItemFailed(this, item2, err);
       }
 
       throw err;

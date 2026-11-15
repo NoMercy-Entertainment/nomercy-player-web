@@ -11,6 +11,7 @@ import type { ActionOptions, BasePlaylistItem, LoadOptions } from '../../types';
 import type { Internals } from '../state';
 import { makePlayerErrorEvent, PlayerError } from '../../errors';
 import { PlayState, RepeatState } from '../state';
+import { callerReportedLoads, emitItemFailed } from './loading';
 
 /**
  * The transport mixin's slice of player state — composed into `PlayerCoreState`.
@@ -94,17 +95,26 @@ async function _loadWithAuthRetry(
 ): Promise<void> {
   const maxRefreshes = self._authConfig?.retryAfterRefresh ?? 1;
 
-  for (let refreshes = 0; ; refreshes++) {
-    try {
-      await self.load(item, opts);
+  // A 401 the refresh repairs is no failed start: report only the final error.
+  callerReportedLoads.add(opts);
 
-      return;
-    } catch (err) {
-      if (_httpStatusOf(err) !== 401 || refreshes >= maxRefreshes)
-        throw err;
+  try {
+    for (let refreshes = 0; ; refreshes++) {
+      try {
+        await self.load(item, opts);
 
-      await self.refreshAuth();
+        return;
+      } catch (err) {
+        if (_httpStatusOf(err) !== 401 || refreshes >= maxRefreshes)
+          throw err;
+
+        await self.refreshAuth();
+      }
     }
+  } catch (err) {
+    emitItemFailed(self, item, err);
+
+    throw err;
   }
 }
 

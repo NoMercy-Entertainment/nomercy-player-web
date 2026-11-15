@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `itemFailed` fires once when an item fails to start, with the item and its `PlayerError`: an unsupported codec, a fatal stream error, a missing URL, a missing file (beside `itemSkipped`) or a server error (beside `fatal`). A cause that is no `PlayerError` is wrapped as `core:media/load-failed`. A 401 that the token refresh repairs and a load that a newer load replaced stay silent.
+
 ## [2.9.0] — 2026-11-14
 
 ### Added
