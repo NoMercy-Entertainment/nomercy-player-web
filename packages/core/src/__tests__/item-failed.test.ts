@@ -141,6 +141,32 @@ describe('itemFailed', () => {
     expect(failed[0]!.error.code).toBe('core:media/missing-url');
   });
 
+  it('fires when resolveUrl throws before the backend is reached', async () => {
+    const error = streamFailure('resolveFailed');
+    const { player, failed } = setup(async () => {});
+
+    (player as unknown as { resolveUrl: () => Promise<never> }).resolveUrl = async () => { throw error; };
+
+    await player.ready();
+    await expect(player.load(ITEMS[0]!)).rejects.toBe(error);
+
+    expect(failed).toEqual([{ item: expect.objectContaining({ id: 'a' }), error }]);
+  });
+
+  it('fires when resolveItemTrackUrls throws before the backend is reached', async () => {
+    const cause = new Error('track url rejected');
+    const { player, failed } = setup(async () => {});
+
+    (player as unknown as { resolveItemTrackUrls: () => Promise<never> }).resolveItemTrackUrls = async () => { throw cause; };
+
+    await player.ready();
+    await expect(player.load(ITEMS[0]!)).rejects.toBe(cause);
+
+    expect(failed).toHaveLength(1);
+    expect(failed[0]!.error.code).toBe('core:media/load-failed');
+    expect(failed[0]!.error.cause).toBe(cause);
+  });
+
   it('fires when item(target) starts an item that fails, where the rejection reaches no caller', async () => {
     const error = streamFailure('levelParsingError');
     const { player, failed } = setup(async (id) => {

@@ -189,11 +189,22 @@ export const loadingMethods = {
       throw missingUrl;
     }
 
-    const url = (await this.resolveUrl(rawUrl, 'media')).href;
+    let url: string;
+    let resolvedItem: T;
 
-    if (!isLatest()) return;
+    try {
+      url = (await this.resolveUrl(rawUrl, 'media')).href;
 
-    const resolvedItem = await this.resolveItemTrackUrls(item2);
+      if (!isLatest()) return;
+
+      resolvedItem = await this.resolveItemTrackUrls(item2);
+    } catch (error) {
+      if (reportsFailure && isLatest()) {
+        emitItemFailed(this, item2, error);
+      }
+
+      throw error;
+    }
 
     if (!isLatest()) return;
 
