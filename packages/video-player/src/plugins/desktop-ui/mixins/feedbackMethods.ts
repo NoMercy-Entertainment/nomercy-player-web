@@ -62,8 +62,13 @@ export const feedbackMethods = {
     this.on('playing', clearFeedback);
     this.on('time', clearFeedback);
 
-    this.on('error', () => {
+    this.on('error', ({ error }) => {
       this.centerWrap.classList.remove('busy');
+
+      // The source already told the viewer why (a Twitch channel that is
+      // offline), and the generic line would replace that message.
+      if (error.context?.['announced'] === true) return;
+
       this.showMessage(this.t('message.error'), undefined, true);
     });
 

@@ -179,7 +179,10 @@ export class TwitchPlugin extends Plugin<NMVideoPlayer, TwitchPluginOptions, Twi
       return this.throw({
         code: 'plugin:twitch/stream-unavailable',
         message: 'Twitch has no stream for this link',
-        context: { channel },
+        context: {
+          channel,
+          announced: true,
+        },
       });
     }
 

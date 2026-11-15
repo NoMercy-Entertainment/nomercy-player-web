@@ -26,10 +26,12 @@
  *   - remaining time toggle on click
  */
 
+import { PlayerError } from '@nomercy-entertainment/nomercy-player-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { NMVideoPlayer } from '../../index';
 import { desktopUiPlugin } from '../../plugins/desktop-ui';
+import { TwitchPlugin } from '../../plugins/twitch';
 
 type ResizeCallback = (entries: Array<{ contentRect: { width: number } }>) => void;
 const MockResizeObserver = vi.fn(function (this: unknown, _cb: ResizeCallback) {
@@ -267,6 +269,32 @@ describe('DesktopUiPlugin — playback feedback', () => {
 
     expect(msgEl).not.toBeNull();
     expect(msgEl!.textContent?.length).toBeGreaterThan(0);
+  });
+
+  it('a playback error shows the generic error message', async () => {
+    const player = await makePlayer();
+
+    player.emit('error', { error: new PlayerError({ code: 'core:media/decode-failed', scope: { kind: 'core' } }) } as never);
+
+    const msgEl = player.container.querySelector('.player-message')!;
+
+    expect(msgEl.classList.contains('visible')).toBe(true);
+    expect(msgEl.textContent).toBe('Something went wrong trying to play this item');
+  });
+
+  it('an offline Twitch channel keeps its channel message', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data: { user: { stream: null } } }))));
+    const player = await makePlayer();
+
+    await player.addPlugin(TwitchPlugin, { proxyUrl: 'http://127.0.0.1:5097' }).ready();
+
+    await expect(player.resolveUrl('https://www.twitch.tv/example_channel', 'media')).rejects.toThrow();
+
+    const msgEl = player.container.querySelector('.player-message')!;
+
+    expect(msgEl.classList.contains('visible')).toBe(true);
+    expect(msgEl.textContent).toBe('example_channel is offline');
+    expect(player.container.querySelector('.center')!.classList.contains('busy')).toBe(false);
   });
 });
 

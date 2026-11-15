@@ -249,7 +249,10 @@ describePlugin(TwitchPlugin, (ctx) => {
     answerWith({ user: { stream: null }, streamPlaybackAccessToken: token });
     const emitted = vi.spyOn(player, 'emit');
 
-    await expect(resolve(CHANNEL_LINK)).rejects.toThrow();
+    await expect(resolve(CHANNEL_LINK)).rejects.toMatchObject({
+      code: 'plugin:twitch/stream-unavailable',
+      context: { channel: 'some_channel', announced: true },
+    });
 
     expect(emitted).toHaveBeenCalledWith('display-message', { text: 'some_channel is offline', ms: 6000 });
   });
