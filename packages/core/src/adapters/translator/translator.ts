@@ -14,11 +14,10 @@ import { bcp47FallbackChain } from '../language-matcher/bcp47';
 export type { DefaultTranslatorOptions, ITranslator } from './ITranslator';
 
 const VAR_RE = /\{(\w+)\}/g;
-const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 /** True for a language or key that would write through to `Object.prototype`. */
-export function isUnsafeTranslationKey(...parts: string[]): boolean {
-  return parts.some((part) => UNSAFE_KEYS.has(part));
+export function isUnsafeTranslationKey(part: string): boolean {
+  return part === '__proto__' || part === 'constructor' || part === 'prototype';
 }
 
 /**
@@ -181,7 +180,7 @@ export class DefaultTranslator implements ITranslator {
       return this.bundles[lang]?.[key];
     }
 
-    if (isUnsafeTranslationKey(lang, key)) return;
+    if (isUnsafeTranslationKey(lang) || isUnsafeTranslationKey(key)) return;
 
     if (!this.bundles[lang]) {
       this.bundles[lang] = {};

@@ -309,7 +309,7 @@ export class StubPlayer extends EventEmitter<BaseEventMap> implements IPlayer<Ba
     if (value === undefined)
       return this._translations[lang]?.[key];
 
-    if (isUnsafeTranslationKey(lang, key)) return;
+    if (isUnsafeTranslationKey(lang) || isUnsafeTranslationKey(key)) return;
 
     if (!this._translations[lang]) {
       this._translations[lang] = {};
