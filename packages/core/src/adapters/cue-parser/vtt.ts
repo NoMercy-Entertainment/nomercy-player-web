@@ -85,13 +85,12 @@ export interface VTTSpritePayload {
 const TIMESTAMP_LINE_RE = /^((?:\d{1,3}:)?\d{2}:\d{2}(?:\.\d{1,3})?)\s+-->\s+((?:\d{1,3}:)?\d{2}:\d{2}(?:\.\d{1,3})?)(\s+(?:\S.*)?)?$/;
 const TAG_STRIP_RE = /<[^>]+>/g;
 /**
- * Strip everything except the inline tags renderers know how to draw safely:
- *  `<i>`, `<b>`, `<u>` (with closing variants). `<c.foo>`, `<v Speaker>`,
- *  `<ruby>`, `<rt>`, `<lang ...>`, and inline timestamp tags are removed so
- *  consumers using `buildSubtitleFragment` produce an identical DOM tree.
+ * Strip every tag except `<i>`, `<b>`, `<u>` (and their closers): `<c.foo>`,
+ *  `<v Speaker>`, `<ruby>`, timestamps and anything unknown. A `<` left that
+ *  could still open a tag (a nested `<scr<script>ipt>`) is dropped too.
  */
-const UNRECOGNISED_TAG_RE = /<\/?(?:c(?:\.[^>]*)?|v(?:\s[^>]*)?|ruby|rt|lang(?:\.[^>]*)?)>/gi;
-const TIMESTAMP_TAG_RE = /<\d{2}:\d{2}:\d{2}\.\d{3}>/g;
+const NON_INLINE_TAG_RE = /<(?!\/?[ibu]>)[^<>]*>/gi;
+const STRAY_TAG_OPEN_RE = /<(?!\/?[ibu]>)(?=[a-z/!?])/gi;
 const SPRITE_FRAGMENT_RE = /^([^#]+)#xywh=(-?\d+),(-?\d+),(\d+),(\d+)$/;
 
 interface CueSettings {
@@ -131,8 +130,8 @@ export function parseVttSubtitles(text: string): CueList<VTTSubtitlePayload> {
   return createCueList<VTTSubtitlePayload>(raw.map((cue) => {
     const cleaned = cue.body.replace(TAG_STRIP_RE, '').trim();
     const markup = cue.body
-      .replace(TIMESTAMP_TAG_RE, '')
-      .replace(UNRECOGNISED_TAG_RE, '')
+      .replace(NON_INLINE_TAG_RE, '')
+      .replace(STRAY_TAG_OPEN_RE, '')
       .trim();
     const styles: VTTSubtitlePayload['styles'] = {};
 
@@ -382,7 +381,5 @@ function joinUrl(base: string, relative: string): string {
       : relative;
   }
 
-  const baseDir = base.replace(/[^/]*$/, '');
-
-  return baseDir + relative;
+  return base.slice(0, base.lastIndexOf('/') + 1) + relative;
 }

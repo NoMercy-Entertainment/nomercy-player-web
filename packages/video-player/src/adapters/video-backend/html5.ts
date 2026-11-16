@@ -2034,11 +2034,11 @@ export class Html5VideoBackend
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Tags renderers know how to draw safely. Everything else is stripped at
- *  parse time so consumers never need to re-sanitise downstream.
+ * Keep only `<i>`, `<b>`, `<u>` so consumers never re-sanitise; same rule as
+ *  core's `parseVttSubtitles`. A `<` that could still open a tag is dropped.
  */
-const UNRECOGNISED_INLINE_TAG_RE = /<\/?(?:c(?:\.[^>]*)?|v(?:\s[^>]*)?|ruby|rt|lang(?:\.[^>]*)?)>/gi;
-const TIMESTAMP_TAG_RE = /<\d{2}:\d{2}:\d{2}\.\d{3}>/g;
+const NON_INLINE_TAG_RE = /<(?!\/?[ibu]>)[^<>]*>/gi;
+const STRAY_TAG_OPEN_RE = /<(?!\/?[ibu]>)(?=[a-z/!?])/gi;
 const ALL_TAG_RE = /<[^>]+>/g;
 
 /**
@@ -2075,7 +2075,7 @@ function mergeCaptionRows(rows: VTTCue[]): SubtitleCue[] {
 
 function normaliseVttCue(cue: VTTCue): SubtitleCue {
   const raw = cue.text ?? '';
-  const safe = raw.replace(TIMESTAMP_TAG_RE, '').replace(UNRECOGNISED_INLINE_TAG_RE, '');
+  const safe = raw.replace(NON_INLINE_TAG_RE, '').replace(STRAY_TAG_OPEN_RE, '');
   const plain = safe.replace(ALL_TAG_RE, '').trim();
 
   // `cue.line` is either a number or 'auto'. `cue.snapToLines` decides

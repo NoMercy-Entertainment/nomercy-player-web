@@ -42,6 +42,7 @@ import type {
 } from '../types';
 import { EventEmitter } from '../adapters/event-bus/default';
 import { browserPlatform } from '../adapters/platform/browser';
+import { isUnsafeTranslationKey } from '../adapters/translator/translator';
 import { RepeatState, ShuffleState } from '../core/mixins/state-mutators';
 import { buildResolvedUrl } from '../core/resolved-url';
 import {
@@ -307,6 +308,8 @@ export class StubPlayer extends EventEmitter<BaseEventMap> implements IPlayer<Ba
   translation(lang: string, key: string, value?: string): string | undefined | void {
     if (value === undefined)
       return this._translations[lang]?.[key];
+
+    if (isUnsafeTranslationKey(lang, key)) return;
 
     if (!this._translations[lang]) {
       this._translations[lang] = {};

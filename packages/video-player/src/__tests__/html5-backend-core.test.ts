@@ -1252,6 +1252,14 @@ describe('setSubtitleTrack()', () => {
 
       expect((events.at(-1) as { cues: unknown[] }).cues).toEqual([]);
     });
+
+    it('keeps only the <i> <b> <u> tags in cue text, even when tags are nested to rebuild one', () => {
+      const events = selectTrack('subtitles', [row(1, '<script>x</script><i>hi</i> <scr<script>ipt>y</b>')]);
+      const text = (events.at(-1) as { cues: Array<{ text: string }> }).cues[0]!.text;
+
+      expect(text).not.toMatch(/<(?!\/?[ibu]>)/i);
+      expect(text).toContain('<i>hi</i>');
+    });
   });
 
   it('emits active cues when setSubtitleTrack selects a track with pre-existing cues', () => {
