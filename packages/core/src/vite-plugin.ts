@@ -99,7 +99,10 @@ export function nomercyTranslationsPlugin(opts: NomercyTranslationsPluginOptions
     transform(code: string, id: string) {
       // Dev-served dep modules carry ?v=<hash> / #fragment suffixes; strip
       // them or the extension-anchored filter skips node_modules dists.
-      const cleanId = id.replace(/[?#].*$/u, '');
+      const cut = id.search(/[?#]/u);
+      const cleanId = cut === -1
+        ? id
+        : id.slice(0, cut);
 
       if (!include.test(cleanId))
         return null;

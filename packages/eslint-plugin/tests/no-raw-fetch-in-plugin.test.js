@@ -6,13 +6,32 @@
 //  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
+import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import tsParser from '@typescript-eslint/parser';
 import { RuleTester } from 'eslint';
-import rule from '../rules/no-raw-fetch-in-plugin.js';
+import rule, { inPluginFolder } from '../rules/no-raw-fetch-in-plugin.js';
 
 RuleTester.describe = describe;
 RuleTester.it = it;
+
+describe('no-raw-fetch-in-plugin path check', () => {
+  it('stays linear on a long path of repeated /src/ parts', () => {
+    const filename = `/${'src/a/'.repeat(15_000)}x.js`;
+    const start = performance.now();
+
+    assert.equal(inPluginFolder(filename), false);
+    assert.ok(performance.now() - start < 250, `took ${Math.round(performance.now() - start)} ms`);
+  });
+
+  it('matches only a plugins folder below src, not the file name', () => {
+    assert.equal(inPluginFolder('/r/packages/x/src/a/plugins/b/c.ts'), true);
+    assert.equal(inPluginFolder('C:\\r\\src\\plugins\\c.ts'), true);
+    assert.equal(inPluginFolder('/r/src/a/plugins'), false);
+    assert.equal(inPluginFolder('src/plugins/c.ts'), false);
+    assert.equal(inPluginFolder('/r/plugins/src/c.ts'), false);
+  });
+});
 
 const ruleTester = new RuleTester({
   languageOptions: {

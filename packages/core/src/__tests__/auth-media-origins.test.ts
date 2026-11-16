@@ -206,7 +206,7 @@ describe('auth.mediaOrigins', () => {
       bearerToken: 'tok-1',
       mediaOrigins: OURS,
       mediaAuthorization: (url: string) =>
-        url.startsWith('https://only.example.test')
+        new URL(url).origin === 'https://only.example.test'
           ? 'Bearer only'
           : undefined,
     });

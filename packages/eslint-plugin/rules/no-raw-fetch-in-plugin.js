@@ -24,8 +24,15 @@
 
 import { inPluginSubclass } from './_in-plugin-subclass.js';
 
-const PLUGIN_FOLDER = /[\\/]src[\\/](?:[^\\/]+[\\/])*plugins[\\/]/;
 const TEST_PATH = /[\\/]__tests__[\\/]|\.(?:test|spec)\.[cm]?[jt]sx?$/;
+
+// Segment walk instead of a regex: a nested-repeat regex here runs in quadratic time on long paths.
+function underSrcPlugins(filename) {
+  const parts = filename.split(/[\\/]/);
+  const src = parts.indexOf('src', 1);
+
+  return src !== -1 && parts.slice(src + 1, -1).includes('plugins');
+}
 
 /**
  * True for a non-test file under a package's `src/**\/plugins/` folder, so helper
@@ -34,8 +41,8 @@ const TEST_PATH = /[\\/]__tests__[\\/]|\.(?:test|spec)\.[cm]?[jt]sx?$/;
  * @param {string} filename
  * @returns {boolean} True when the file is plugin-folder code.
  */
-function inPluginFolder(filename) {
-  return PLUGIN_FOLDER.test(filename) && !TEST_PATH.test(filename);
+export function inPluginFolder(filename) {
+  return underSrcPlugins(filename) && !TEST_PATH.test(filename);
 }
 
 /** @type {import('eslint').Rule.RuleModule} */
