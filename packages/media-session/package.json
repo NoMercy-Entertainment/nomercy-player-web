@@ -12,7 +12,7 @@
     "Stoney Eagle <stoney@nomercy.tv>"
   ],
   "license": "Apache-2.0",
-  "homepage": "https://github.com/NoMercy-Entertainment/nomercy-media-session",
+  "homepage": "https://github.com/NoMercy-Entertainment/nomercy-player-web/tree/master/packages/media-session#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/NoMercy-Entertainment/nomercy-player-web.git",
