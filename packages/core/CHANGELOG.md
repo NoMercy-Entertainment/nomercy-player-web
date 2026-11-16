@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [2.9.1] — 2026-11-16
+
+2.9.0 never reached npm (its publish failed), so 2.9.1 is the first release with the 2.9.0 changes below, plus:
+
 ### Added
 
 - `itemFailed` fires once when an item fails to start, with the item and its `PlayerError`: an unsupported codec, a fatal stream error, a missing URL, a missing file (beside `itemSkipped`) or a server error (beside `fatal`). A cause that is no `PlayerError` is wrapped as `core:media/load-failed`. A 401 that the token refresh repairs and a load that a newer load replaced stay silent.
