@@ -702,9 +702,15 @@ export const mediaTracksMethods = {
           ? await transformer(sidecarTrack.file)
           : sidecarTrack.file;
 
+        // baseUrl is a path prefix, as in resolveUrl: new URL(path, base) would drop its path segment.
+        const isAbsolute = /^[a-z][a-z\d+\-.]*:/iu.test(transformed);
+        const file = base && !isAbsolute
+          ? buildResolvedUrl(sidecarTrack.file, `${base.replace(/\/+$/u, '')}/${transformed.replace(/^\/+/u, '')}`).href
+          : buildResolvedUrl(sidecarTrack.file, transformed, base).href;
+
         return {
           ...sidecarTrack,
-          file: buildResolvedUrl(sidecarTrack.file, transformed, base).href,
+          file,
         };
       }),
     );

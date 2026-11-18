@@ -1780,6 +1780,59 @@ describe('resolveItemTrackUrls()', () => {
     expect(result.tracks[0]!.file).toBe('https://cdn.example.com/en.vtt');
   });
 
+  it('keeps the baseUrl path segment for a leading-slash track file', async () => {
+    const player = setupPlayer();
+
+    player.baseUrl('https://cdn.example.com/media/Films/Sintel');
+    const item = {
+      id: '1',
+      title: 'Test',
+      tracks: [
+        { kind: 'chapters', file: '/chapters.vtt' },
+        {
+          kind: 'subtitles',
+          file: 'subs/en.vtt',
+          language: 'en',
+        },
+        {
+          kind: 'subtitles',
+          file: 'https://other.example.com/nl.vtt',
+          language: 'nl',
+        },
+      ],
+    };
+    const result = await player.resolveItemTrackUrls(item);
+
+    expect(result.tracks.map((track) => track.file)).toEqual([
+      'https://cdn.example.com/media/Films/Sintel/chapters.vtt',
+      'https://cdn.example.com/media/Films/Sintel/subs/en.vtt',
+      'https://other.example.com/nl.vtt',
+    ]);
+  });
+
+  it('leaves a transformUrl result that is absolute untouched under a baseUrl', async () => {
+    const player = setupPlayer();
+
+    player.baseUrl('https://cdn.example.com/media');
+
+    (player as unknown as { _authConfig: unknown })._authConfig = {
+      transformUrl: (url: string) => Promise.resolve(`https://signed.example.com${url}?sig=1`),
+    };
+
+    const item = {
+      id: '1',
+      title: 'Test',
+      tracks: [{
+        kind: 'subtitles',
+        file: '/en.vtt',
+        language: 'en',
+      }],
+    };
+    const result = await player.resolveItemTrackUrls(item);
+
+    expect(result.tracks[0]!.file).toBe('https://signed.example.com/en.vtt?sig=1');
+  });
+
   it('calls transformUrl when _authConfig.transformUrl is set', async () => {
     const player = setupPlayer();
     const transformUrl = vi.fn().mockImplementation((url: string) => Promise.resolve(`${url}?token=abc`));
