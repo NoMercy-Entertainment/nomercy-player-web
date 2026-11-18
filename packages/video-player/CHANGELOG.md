@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [2.9.3] — 2026-11-18
+
+### Fixed
+
+- The Twitch embed takes clicks until its stream plays, so Twitch's own prompts work, such as the "Start Watching" button on a mature-content channel. Once the stream plays, clicks pass through to the player's controls again.
+
 ## [2.9.2] — 2026-11-18
 
 ### Fixed

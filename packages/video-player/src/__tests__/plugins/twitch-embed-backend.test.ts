@@ -323,6 +323,15 @@ describe('TwitchEmbedBackend', () => {
       expect(mount().style.pointerEvents).toBe('none');
     });
 
+    // Twitch shows its own prompts (the mature-content gate's "Start Watching") before a stream plays.
+    it('takes clicks until the stream plays, so Twitch\'s own prompts can be answered', async () => {
+      await backend.load(VOD);
+      expect(mount().style.pointerEvents).toBe('auto');
+
+      FakeTwitchPlayer.latest.fire(FakeTwitchPlayer.PLAYING);
+      expect(mount().style.pointerEvents).toBe('none');
+    });
+
     it('fits the embed between the bars while they show, then fills the player again', () => {
       addBar('top-bar', 86);
       addBar('bottom-bar', 80);

@@ -151,7 +151,7 @@ export class TwitchEmbedBackend extends MediaElementBackend<HTMLVideoElement, Ba
     this.captionsLabel = captionsLabel;
     this.element.style.display = 'none';
     this.mount = document.createElement('div');
-    // The mouse passes through to the player's own controls, and a click cannot pull keyboard focus into the iframe.
+    // Once playing, the mouse passes through to the player's own controls, and a click cannot pull keyboard focus into the iframe.
     this.mount.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
 
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -212,6 +212,8 @@ export class TwitchEmbedBackend extends MediaElementBackend<HTMLVideoElement, Ba
     this.reportedLevel = -1;
     this.backendState = 'loading';
     this.raiseEmbed();
+    // Twitch's own prompts (the mature-content gate) need clicks until the stream plays.
+    this.mount.style.pointerEvents = 'auto';
 
     const attempt = ++this.loadAttempt;
     const sdk = await loadSdk();
@@ -259,6 +261,7 @@ export class TwitchEmbedBackend extends MediaElementBackend<HTMLVideoElement, Ba
     window.clearInterval(this.poller);
     this.player = undefined;
     this.mount.replaceChildren();
+    this.mount.style.pointerEvents = 'none';
     this.backendState = 'idle';
   }
 
@@ -443,6 +446,7 @@ export class TwitchEmbedBackend extends MediaElementBackend<HTMLVideoElement, Ba
 
   private onPlaying(): void {
     this.hasPlayed = true;
+    this.mount.style.pointerEvents = 'none';
     this.applyVolume();
     this.backendState = 'playing';
     this.signal('play');
