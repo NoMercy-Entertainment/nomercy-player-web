@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [2.9.2] — 2026-11-18
+
+### Fixed
+
+- Sidecar tracks (`tracks: [{ file }]`, subtitles and chapters) keep the `baseUrl` path. A base of `https://cdn.example/media/Sintel` and a file of `/chapters.vtt` now give `https://cdn.example/media/Sintel/chapters.vtt`, the same prefix rule media urls use. Before, the file resolved against the host root and returned 404.
+- Subtitle markup keeps only the `i`, `b` and `u` tags, and translation keys cannot reach `Object.prototype`.
+- The sprite URL join runs in linear time.
+
 ## [2.9.1] — 2026-11-16
 
 2.9.0 never reached npm (its publish failed), so 2.9.1 is the first release with the 2.9.0 changes below, plus:

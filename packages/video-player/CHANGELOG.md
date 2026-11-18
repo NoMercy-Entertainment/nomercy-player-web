@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [2.9.1] — 2026-11-18
+
+### Changed
+
+- Released at the trio version with core 2.9.2 (sidecar subtitles and chapters keep the `baseUrl` path). No video player changes.
+
 ## [2.9.0] — 2026-11-14
 
 ### Fixed

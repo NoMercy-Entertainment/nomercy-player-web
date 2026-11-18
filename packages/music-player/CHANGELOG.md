@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [2.9.1] — 2026-11-18
+
+### Changed
+
+- Released at the trio version with core 2.9.2 (sidecar tracks keep the `baseUrl` path). No music player changes.
+
 ## [2.9.0] — 2026-11-14
 
 ### Changed
