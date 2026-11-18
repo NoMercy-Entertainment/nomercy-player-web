@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [2.9.2] — 2026-11-18
+
+### Fixed
+
+- The desktop UI's progress bar stays inside its track. When a live stream ends, it can report a time just past its duration, and the fill ran past the bar's right edge.
+
 ## [2.9.1] — 2026-11-18
 
 ### Changed

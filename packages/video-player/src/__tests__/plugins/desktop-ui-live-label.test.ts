@@ -147,6 +147,26 @@ describe('DesktopUiPlugin — live', () => {
     expect(document.querySelector('.remaining-time')!.classList.contains('behind-live')).toBe(false);
   });
 
+  it('keeps the bar inside its track when an ended live stream reports a time past its duration', () => {
+    // 2026-11-18: a Twitch stream ended at 2:50 and the fill ran past the bar's right edge.
+    backend.goLive(true);
+    player.emit('duration', { duration: 170 });
+    backend.goLive(false);
+
+    player.emit('time', { time: 172.9 } as never);
+
+    expect(fillWidth()).toBe('100%');
+    expect(document.querySelector<HTMLElement>('.slider-nipple')?.style.left).toBe('100%');
+  });
+
+  it('never draws a negative fill for a recorded source', () => {
+    player.emit('duration', { duration: 100 });
+
+    player.emit('time', { time: -3 } as never);
+
+    expect(fillWidth()).toBe('0%');
+  });
+
   it('goes back to the remaining time when the source stops being live', () => {
     backend.goLive(true);
     player.emit('duration', { duration: 125 });

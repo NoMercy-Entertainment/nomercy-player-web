@@ -101,11 +101,10 @@ export const transportStateMethods = {
       ? ((seconds - offset) / dur) * 100
       : 0;
 
-    if (live) {
-      pct = win && dur > 0
-        ? Math.min(100, Math.max(0, pct))
-        : 100;
-    }
+    // Clamp in every mode: an ended live stream can report a time just past its duration.
+    pct = live && !(win && dur > 0)
+      ? 100
+      : Math.min(100, Math.max(0, pct));
 
     this.remainingTimeEl.classList.toggle('behind-live', Boolean(win) && win!.end - seconds > LIVE_EDGE_SLACK_SECONDS);
 
