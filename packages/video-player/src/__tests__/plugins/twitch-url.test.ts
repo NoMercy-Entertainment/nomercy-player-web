@@ -12,8 +12,8 @@ describe('parseTwitchUrl', () => {
   it.each([
     ['https://clips.twitch.tv/SomeSlug-abc', { type: 'clip', slug: 'SomeSlug-abc' }],
     ['https://clips.twitch.tv/embed?clip=SomeSlug&parent=x', { type: 'clip', slug: 'SomeSlug' }],
-    ['https://www.twitch.tv/stoney_eagle/clip/SomeSlug', { type: 'clip', slug: 'SomeSlug' }],
-    ['https://m.twitch.tv/stoney_eagle/clip/SomeSlug', { type: 'clip', slug: 'SomeSlug' }],
+    ['https://www.twitch.tv/some_channel/clip/SomeSlug', { type: 'clip', slug: 'SomeSlug' }],
+    ['https://m.twitch.tv/some_channel/clip/SomeSlug', { type: 'clip', slug: 'SomeSlug' }],
     ['https://www.twitch.tv/videos/123', {
       type: 'video',
       video: 'v123',
@@ -32,8 +32,8 @@ describe('parseTwitchUrl', () => {
       start: 90,
       length: 0,
     }],
-    ['https://player.twitch.tv/?channel=stoney_eagle', { type: 'channel', channel: 'stoney_eagle' }],
-    ['https://www.twitch.tv/stoney_eagle', { type: 'channel', channel: 'stoney_eagle' }],
+    ['https://player.twitch.tv/?channel=some_channel', { type: 'channel', channel: 'some_channel' }],
+    ['https://www.twitch.tv/some_channel', { type: 'channel', channel: 'some_channel' }],
     ['twitch-vod://123?t=3600&d=30', {
       type: 'video',
       video: 'v123',
