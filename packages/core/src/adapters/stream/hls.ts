@@ -374,7 +374,7 @@ function makeInterceptingLoader(HlsCtor: typeof import('hls.js').default, regist
       this.context = context;
       const wrapped: LoaderCallbacks<LoaderContext> = {
         ...callbacks,
-        onSuccess: async (response: LoaderResponse, stats: LoaderStats, ctx: LoaderContext, networkDetails: unknown) => {
+        onSuccess: async (response: LoaderResponse, stats: LoaderStats, ctx: LoaderContext, networkDetails: Parameters<LoaderCallbacks<LoaderContext>['onSuccess']>[3]) => {
           let result: LoaderResponse = response;
 
           try {

@@ -124,7 +124,7 @@
   },
   "devDependencies": {
     "@nomercy-entertainment/test-support": "workspace:*",
-    "hls.js": "^1.6.16"
+    "hls.js": "^1.7.4"
   },
   "publishConfig": {
     "access": "public"
