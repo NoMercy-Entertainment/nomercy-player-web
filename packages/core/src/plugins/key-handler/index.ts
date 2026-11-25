@@ -28,7 +28,8 @@ const KEY_CODE_NAMES: Readonly<Record<number, string>> = {
 };
 
 function resolveKeyName(ev: KeyboardEvent): string {
-  if (ev.key && ev.key !== 'Unidentified') return ev.key;
+  if (ev.key && ev.key !== 'Unidentified')
+    return ev.key;
 
   return KEY_CODE_NAMES[ev.keyCode] ?? ev.key;
 }
