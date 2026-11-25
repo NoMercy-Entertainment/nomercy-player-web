@@ -19,6 +19,20 @@ import { Plugin } from '../../core/plugin';
  */
 export type KeyBindings<P> = Record<string, (player: P, keyboardEvent: KeyboardEvent) => void>;
 
+/** HbbTV colour keys, sent by some TV remotes with a keyCode and no usable `key`. */
+const KEY_CODE_NAMES: Readonly<Record<number, string>> = {
+  403: 'ColorF0Red',
+  404: 'ColorF1Green',
+  405: 'ColorF2Yellow',
+  406: 'ColorF3Blue',
+};
+
+function resolveKeyName(ev: KeyboardEvent): string {
+  if (ev.key && ev.key !== 'Unidentified') return ev.key;
+
+  return KEY_CODE_NAMES[ev.keyCode] ?? ev.key;
+}
+
 /** Options for {@link KeyHandlerPlugin}. */
 export interface KeyHandlerOptions<P> {
   /**
@@ -464,7 +478,7 @@ export class KeyHandlerPlugin<P extends IPlayer<BaseEventMap> = IPlayer> extends
 
     if (cooldown > 0 && now - this.lastFireAt < cooldown) return;
 
-    const canonical = this.canonicalKey(ev.key, {
+    const canonical = this.canonicalKey(resolveKeyName(ev), {
       alt: ev.altKey,
       ctrl: ev.ctrlKey,
       shift: ev.shiftKey,

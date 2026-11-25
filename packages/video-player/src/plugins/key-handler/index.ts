@@ -158,7 +158,9 @@ export class KeyHandlerPlugin<T extends VideoPlaylistItem = VideoPlaylistItem> e
     this.bind('Subtitle', () => { void this.player.cycleSubtitles?.(); });
     this.bind('5', () => { void this.player.cycleSubtitles?.(); });
     this.bind('v', () => { void this.player.cycleSubtitles?.(); });
+    this.bind('ClosedCaptionToggle', () => { void this.player.cycleSubtitles?.(); });
     this.bind('Audio', () => { void this.player.cycleAudioTracks?.(); });
+    this.bind('MediaAudioTrack', () => { void this.player.cycleAudioTracks?.(); });
     this.bind('2', () => { void this.player.cycleAudioTracks?.(); });
     this.bind('b', () => { void this.player.cycleAudioTracks?.(); });
   }

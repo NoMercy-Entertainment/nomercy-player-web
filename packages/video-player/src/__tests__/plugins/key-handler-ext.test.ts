@@ -467,6 +467,35 @@ describe('KeyHandlerPlugin (video) — consequence tests', () => {
     expect(spy).toHaveBeenCalledWith(120);
   });
 
+  it('ClosedCaptionToggle cycles subtitles', async () => {
+    const spy = vi.fn().mockResolvedValue(undefined);
+
+    await ready(makePlayer({ cycleSubtitles: spy }));
+    key('ClosedCaptionToggle');
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('MediaAudioTrack cycles audio tracks', async () => {
+    const spy = vi.fn().mockResolvedValue(undefined);
+
+    await ready(makePlayer({ cycleAudioTracks: spy }));
+    key('MediaAudioTrack');
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    [403, 30],
+    [404, 60],
+    [405, 90],
+    [406, 120],
+  ])('keyCode-only colour key %i → forward(%i)', async (keyCode, seconds) => {
+    const spy = vi.fn().mockResolvedValue(undefined);
+
+    await ready(makePlayer({ forward: spy }));
+    key('Unidentified', { keyCode });
+    expect(spy).toHaveBeenCalledWith(seconds);
+  });
+
   // ── Help key ─────────────────────────────────────────────────────────────
 
   it('shift+? toggles the mounted DesktopUiPlugin\'s shortcuts overlay directly (no event forge)', async () => {
