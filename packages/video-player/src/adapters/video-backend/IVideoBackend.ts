@@ -217,6 +217,12 @@ export interface IVideoBackend {
   /** Abort an in-flight `warm()` and drop what it held. Idempotent. */
   cancelWarm?(): void;
 
+  /** Fetch the fragments of the current source that cover `[seconds, seconds + opts.seconds)` (default 10 s) into memory, so a later seek there is answered without the network. Optional; a no-op until the playlist is parsed. */
+  prefetchAt?(seconds: number, opts?: { seconds?: number }): Promise<void>;
+
+  /** `true` when a seek to `seconds` lands on media already held: buffered, or fully fetched by `prefetchAt`. Optional. */
+  isPrerolled?(seconds: number): boolean;
+
   // Transport
   play(): Promise<void>;
   pause(): void;

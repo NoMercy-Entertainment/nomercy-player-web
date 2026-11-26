@@ -14,6 +14,7 @@ import type {
   SubtitleTrack,
 } from '@nomercy-entertainment/nomercy-player-core';
 import type { HtmlPreloadMode } from '../../types';
+import type { PrefetchFragment } from './hls-seek-prefetch';
 import type { HlsLoaderConstructor } from './hls-warm-cache';
 import type {
   BackendEventPayload,
@@ -42,6 +43,7 @@ import {
   supportsNativeHls,
 } from '@nomercy-entertainment/nomercy-player-core';
 import { drainCaptionCache } from './hls-caption-drain';
+import { SeekPrefetch } from './hls-seek-prefetch';
 import { createWarmLoader, HlsWarmCache } from './hls-warm-cache';
 import { definiteFailureCode, SOURCE_OUTAGE_BACKOFF_MS, sourceOutageRetryLimit } from './source-outage';
 
@@ -61,12 +63,15 @@ interface HlsLevel {
   width?: number;
   frameRate?: number;
   name?: string;
+  /** Parsed playlist; present once hls.js has loaded this level. */
+  details?: { fragments?: PrefetchFragment[] };
 }
 
 interface HlsAudioTrack {
   lang?: string;
   name?: string;
   default?: boolean;
+  details?: { fragments?: PrefetchFragment[] };
 }
 
 interface HlsSubtitleTrack {
@@ -351,6 +356,9 @@ export class Html5VideoBackend
 
     const hlsUrl = isHls(url);
     const warmed = this._warmCache.take(url);
+
+    this._seekPrefetch.clear();
+    this._seekPrefetch = new SeekPrefetch(warmed?.entries);
     let nativeHls = this._useNativeHls();
 
     // Preferred hls.js that cannot run here leaves the element's own HLS in place.
@@ -460,8 +468,8 @@ export class Html5VideoBackend
       }
 
       const BaseLoader = Hls.DefaultConfig?.loader;
-      const warmLoader = warmed && BaseLoader
-        ? createWarmLoader(BaseLoader, warmed.entries)
+      const warmLoader = BaseLoader
+        ? createWarmLoader(BaseLoader, this._seekPrefetch.entries)
         : undefined;
       const hlsInstance: HlsInstance = new Hls({
         ...(warmLoader
@@ -664,7 +672,38 @@ export class Html5VideoBackend
     this._warmCache.cancel();
   }
 
+  private _seekPrefetch = new SeekPrefetch();
+
+  async prefetchAt(seconds: number, opts?: { seconds?: number }): Promise<void> {
+    const hls = this.hls;
+
+    if (!hls) return;
+
+    const video = hls.levels[this.currentLevel()]?.details?.fragments;
+    const audio = hls.audioTracks[hls.audioTrack]?.details?.fragments;
+    const streams = [video, audio].filter((frags): frags is PrefetchFragment[] => Array.isArray(frags));
+
+    await this._seekPrefetch.prefetch(streams, seconds, {
+      seconds: opts?.seconds ?? 10,
+      ...(this._authHeaderProvider
+        ? { authHeader: this._authHeaderProvider }
+        : {}),
+    });
+  }
+
+  isPrerolled(seconds: number): boolean {
+    const ranges = this.element.buffered;
+
+    for (let i = 0; i < ranges.length; i += 1) {
+      if (seconds >= ranges.start(i) && seconds <= ranges.end(i) - 1)
+        return true;
+    }
+
+    return this._seekPrefetch.isPrerolled(seconds);
+  }
+
   unload(): void {
+    this._seekPrefetch.clear();
     this._state = 'idle';
     this._ended = false;
     this._resetRecoveryState();

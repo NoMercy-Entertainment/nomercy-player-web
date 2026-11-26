@@ -516,6 +516,16 @@ export class NMVideoPlayer<T extends VideoPlaylistItem = VideoPlaylistItem>
     return this._backend?.isLive?.() ?? false;
   }
 
+  /** Fetch the media around `seconds` of the current source into memory so a later seek there starts without waiting on the network. */
+  async prefetchAt(seconds: number, opts?: { seconds?: number }): Promise<void> {
+    await this._backend?.prefetchAt?.(seconds, opts);
+  }
+
+  /** `true` when a seek to `seconds` lands on media already held (buffered, or fetched by `prefetchAt`). */
+  isPrerolled(seconds: number): boolean {
+    return this._backend?.isPrerolled?.(seconds) ?? false;
+  }
+
   backend(): IVideoBackend;
   backend(kind: VideoBackendKind): Promise<void>;
   backend(kind?: VideoBackendKind): IVideoBackend | Promise<void> {
