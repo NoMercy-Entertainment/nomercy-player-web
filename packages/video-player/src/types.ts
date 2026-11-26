@@ -452,6 +452,8 @@ export interface VideoPlayerConfig<T extends BasePlaylistItem = VideoPlaylistIte
   backendFactory?: VideoBackendFactory;
   /** How a live stream stays near the live edge: target latency, catch-up speed and forward buffer. Applies to live only. */
   liveSync?: LiveSyncOptions;
+  /** Use hls.js over the element's native HLS when supported, so audio and quality lists fill. Default `false`. */
+  preferHlsJs?: boolean;
   /** Auto-select the subtitle track matching this language tag. */
   defaultSubtitleLanguage?: string;
   /** Auto-select the audio track matching this language tag. */

@@ -583,6 +583,7 @@ export class NMVideoPlayer<T extends VideoPlaylistItem = VideoPlaylistItem>
     // point of use when this was never pushed at all.
     instance.setHdrOnSdrFallback?.(this.options?.hdrOnSdr ?? 'play');
     instance.setLiveSync?.(this.options?.liveSync ?? {});
+    instance.setPreferHlsJs?.(this.options?.preferHlsJs ?? false);
 
     // Mount the ResizeObserver that keeps videoRect() fresh. Done here so
     // the observer sees the real video element immediately after backend init.

@@ -351,7 +351,14 @@ export class Html5VideoBackend
 
     const hlsUrl = isHls(url);
     const warmed = this._warmCache.take(url);
-    const nativeHls = supportsNativeHls(this.element);
+    let nativeHls = this._useNativeHls();
+
+    // Preferred hls.js that cannot run here leaves the element's own HLS in place.
+    if (hlsUrl && !nativeHls && supportsNativeHls(this.element)) {
+      const { default: Hls } = await import('hls.js');
+
+      nativeHls = !Hls?.isSupported?.();
+    }
 
     // Tear down any previous Hls instance BEFORE wiring a new source.
     // Without this, every load() leaks an Hls that keeps polling segment 0
@@ -582,6 +589,21 @@ export class Html5VideoBackend
     this._liveSync = options;
   }
 
+  private _preferHlsJs = false;
+
+  setPreferHlsJs(prefer: boolean): void {
+    this._preferHlsJs = prefer;
+  }
+
+  /** The element's own HLS, unless hls.js is preferred and MediaSource lets it run. */
+  private _useNativeHls(): boolean {
+    if (!supportsNativeHls(this.element)) {
+      return false;
+    }
+
+    return !(this._preferHlsJs && typeof MediaSource !== 'undefined');
+  }
+
   private _maxCatchUpRate(): number {
     return this._liveSync.maxCatchUpRate ?? DEFAULT_MAX_CATCH_UP_RATE;
   }
@@ -622,7 +644,7 @@ export class Html5VideoBackend
   private readonly _warmCache = new HlsWarmCache();
 
   async warm(url: string, opts?: { segments?: number }): Promise<void> {
-    if (!isHls(url) || supportsNativeHls(this.element)) return;
+    if (!isHls(url) || this._useNativeHls()) return;
 
     const playingHeight = this.hls?.levels[this.currentLevel()]?.height;
 

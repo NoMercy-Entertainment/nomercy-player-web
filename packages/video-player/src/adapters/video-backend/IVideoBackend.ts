@@ -208,6 +208,9 @@ export interface IVideoBackend {
   /** How a live stream stays near the live edge. `NMVideoPlayer` pushes `options.liveSync` here before the first load; backends with no live catch-up omit it. */
   setLiveSync?(options: LiveSyncOptions): void;
 
+  /** Use hls.js over the element's native HLS when it is supported. `NMVideoPlayer` pushes `options.preferHlsJs` here before the first load; backends with one HLS path omit it. */
+  setPreferHlsJs?(prefer: boolean): void;
+
   /** Fetch the manifests and first `segments` segments of `url` into memory for the next `load(url)`. Optional; a repeat call for the same URL is a no-op. */
   warm?(url: string, opts?: { segments?: number }): Promise<void>;
 
