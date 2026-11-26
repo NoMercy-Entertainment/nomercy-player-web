@@ -69,8 +69,7 @@ describe('Html5VideoBackend prefetchAt', () => {
     document.body.innerHTML = '';
   });
 
-  it('fetches the current level and audio fragments for the window and reports prerolled', async () => {
-    expect(backend.isPrerolled(40)).toBe(false);
+  it('fetches the current level and audio fragments for the window', async () => {
     await backend.prefetchAt(40);
 
     const urls = fetchSpy.mock.calls.map(([url]) => String(url));
@@ -78,7 +77,13 @@ describe('Html5VideoBackend prefetchAt', () => {
     expect(urls).toContain(`${BASE}/v0/seg_10.ts`);
     expect(urls).toContain(`${BASE}/audio_ja/seg_10.ts`);
     expect(urls).not.toContain(`${BASE}/v0/seg_20.ts`);
-    expect(backend.isPrerolled(41)).toBe(true);
+  });
+
+  // KMP isPrerolled: the seek shows its first frame at once. Fetched bytes still decode from the
+  // segment keyframe (about 1.4 s for 6.6 s into a 10 s segment), so a prefetch is not a preroll.
+  it('a prefetched target is not prerolled', async () => {
+    await backend.prefetchAt(40);
+    expect(backend.isPrerolled(41)).toBe(false);
   });
 
   it('does nothing when the level has no parsed fragments yet', async () => {

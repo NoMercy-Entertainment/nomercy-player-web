@@ -521,7 +521,7 @@ export class NMVideoPlayer<T extends VideoPlaylistItem = VideoPlaylistItem>
     await this._backend?.prefetchAt?.(seconds, opts);
   }
 
-  /** `true` when a seek to `seconds` lands on media already held (buffered, or fetched by `prefetchAt`). */
+  /** `true` when a seek to `seconds` shows its first frame at once. A prefetch alone is not enough: the frame still decodes from its keyframe. */
   isPrerolled(seconds: number): boolean {
     return this._backend?.isPrerolled?.(seconds) ?? false;
   }

@@ -691,15 +691,10 @@ export class Html5VideoBackend
     });
   }
 
-  isPrerolled(seconds: number): boolean {
-    const ranges = this.element.buffered;
-
-    for (let i = 0; i < ranges.length; i += 1) {
-      if (seconds >= ranges.start(i) && seconds <= ranges.end(i) - 1)
-        return true;
-    }
-
-    return this._seekPrefetch.isPrerolled(seconds);
+  // Held bytes still decode from the segment keyframe before the first frame shows,
+  // and there is no standby decoder here yet (KMP prerollAt), so no seek is instant.
+  isPrerolled(_seconds: number): boolean {
+    return false;
   }
 
   unload(): void {
