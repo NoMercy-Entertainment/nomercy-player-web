@@ -96,15 +96,16 @@ export class SeekPrefetch {
 
         const startedAt = performance.now();
         const authorization = opts.authHeader?.(frag.url);
-        const range = (frag.byteRangeStartOffset ?? 0) !== 0 || (frag.byteRangeEndOffset ?? 0) !== 0
-          ? { Range: `bytes=${frag.byteRangeStartOffset}-${(frag.byteRangeEndOffset ?? 1) - 1}` }
-          : {};
-        const headers = {
-          ...range,
-          ...(authorization
-            ? { Authorization: authorization }
-            : {}),
-        };
+        const headers = new Headers();
+
+        if ((frag.byteRangeStartOffset ?? 0) !== 0 || (frag.byteRangeEndOffset ?? 0) !== 0) {
+          headers.set('Range', `bytes=${frag.byteRangeStartOffset}-${(frag.byteRangeEndOffset ?? 1) - 1}`);
+        }
+
+        if (authorization) {
+          headers.set('Authorization', authorization);
+        }
+
         const request = doFetch(frag.url, {
           signal,
           headers,
