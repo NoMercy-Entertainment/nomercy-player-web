@@ -158,7 +158,7 @@ describePlugin(TwitchPlugin, () => {
     const backend = player.options.backendFactory?.('twitch', {});
 
     if (!(backend instanceof TwitchEmbedBackend))
-      throw new Error('The plugin did not build the Twitch backend');
+      throw new TypeError('The plugin did not build the Twitch backend');
 
     vi.spyOn(document.head, 'appendChild').mockImplementation(<T extends Node>(node: T): T => {
       if (node instanceof HTMLScriptElement) {
@@ -281,7 +281,7 @@ describePlugin(TwitchPlugin, () => {
     const backend = player.options.backendFactory?.('twitch', {});
 
     if (!(backend instanceof TwitchEmbedBackend))
-      throw new Error('The plugin did not build the Twitch backend');
+      throw new TypeError('The plugin did not build the Twitch backend');
 
     const makeRoom = vi.spyOn(backend, 'makeRoomForControls');
 

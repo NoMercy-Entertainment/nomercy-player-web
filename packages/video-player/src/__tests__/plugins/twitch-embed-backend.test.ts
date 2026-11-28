@@ -273,7 +273,7 @@ describe('TwitchEmbedBackend', () => {
     const mount = container.lastElementChild;
 
     if (!(mount instanceof HTMLElement))
-      throw new Error('The backend added no mount');
+      throw new TypeError('The backend added no mount');
 
     FakeTwitchPlayer.latest.fire(FakeTwitchPlayer.PAUSE);
     expect(mount.style.zIndex).toBe('1000');

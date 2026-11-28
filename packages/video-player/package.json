@@ -143,7 +143,7 @@
   },
   "dependencies": {
     "@nomercy-entertainment/nomercy-player-core": "workspace:*",
-    "@nomercy-entertainment/nomercy-subtitle-octopus": "^0.2.0"
+    "@nomercy-entertainment/nomercy-subtitle-octopus": "^0.2.4"
   },
   "devDependencies": {
     "@nomercy-entertainment/test-support": "workspace:*",

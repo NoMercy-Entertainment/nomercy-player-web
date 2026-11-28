@@ -17,22 +17,22 @@
     "test:e2e": "yarn workspaces foreach -A --no-private run test:e2e"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^9.0.0",
+    "@antfu/eslint-config": "^10.0.0",
     "@nomercy-entertainment/eslint-plugin-player": "workspace:*",
-    "@playwright/test": "^1.60.0",
+    "@playwright/test": "^1.65.1",
     "@stylistic/eslint-plugin": "^5.10.0",
-    "@types/node": "^25.9.0",
-    "@typescript-eslint/utils": "^8.70.0",
-    "@vitest/coverage-v8": "^4.1.11",
-    "@vitest/ui": "^4.1.11",
-    "eslint": "^10.4.0",
+    "@types/node": "^26.6.11",
+    "@typescript-eslint/utils": "^8.74.0",
+    "@vitest/coverage-v8": "^5.1.2",
+    "@vitest/ui": "^5.1.2",
+    "eslint": "^10.16.0",
     "eslint-plugin-format": "^2.0.1",
     "happy-dom": "^21.0.4",
-    "playwright": "^1.60.0",
-    "tsc-alias": "^1.8.17",
+    "playwright": "^1.65.1",
+    "tsc-alias": "^1.9.12",
     "typescript": "^6.0.3",
-    "vite": "^8.0.13",
-    "vitest": "^4.1.11"
+    "vite": "^8.4.0",
+    "vitest": "^5.1.2"
   },
   "resolutions": {
     "@istanbuljs/load-nyc-config/js-yaml": "^4.3.2",

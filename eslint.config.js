@@ -94,6 +94,7 @@ export default antfu({
   name: 'player/nomzbot-format',
   rules: {
     ...nomzbotFormat,
+    'antfu/reasonable-newline': 'off',
     'no-nested-ternary': 'error',
     'style/newline-per-chained-call': ['error', { ignoreChainWithDepth: 2 }],
     'style/object-curly-newline': ['error', {
